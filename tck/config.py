@@ -11,6 +11,9 @@ def set_config(sut_url: str, test_scope: str = 'core'):
     _test_scope = test_scope
 
 def get_sut_url() -> str:
+    global _sut_url
+    if _sut_url is None:
+        _sut_url = os.getenv("SUT_URL")
     if _sut_url is None:
         raise RuntimeError("SUT URL is not configured. Did you forget to pass --sut-url?")
     return _sut_url
