@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from typing import Any, AsyncGenerator, Dict, List, Optional
+import uuid
 
 import httpx
 import pytest
@@ -91,9 +92,11 @@ async def test_message_stream_basic(async_http_client, agent_card_data):
     # Prepare the streaming request payload
     params = {
         "message": {
+            "messageId": "test-stream-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": "Stream test message"
                 }
             ]
@@ -278,9 +281,11 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
     sut_client = SUTClient()
     message_params = {
         "message": {
+            "messageId": "test-resubscribe-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": "Test message for resubscribe"
                 }
             ]
@@ -297,7 +302,7 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
     task_id = task["id"]
     
     # Now try to resubscribe to this task
-    resubscribe_params = {"taskId": task_id}
+    resubscribe_params = {"id": task_id}
     req_id = message_utils.generate_request_id()
     json_rpc_request = message_utils.make_json_rpc_request("tasks/resubscribe", params=resubscribe_params, id=req_id)
     
@@ -369,7 +374,7 @@ async def test_tasks_resubscribe_nonexistent(async_http_client, agent_card_data)
     # Use a random, non-existent task ID
     task_id = "non-existent-task-id-" + message_utils.generate_request_id()
     
-    resubscribe_params = {"taskId": task_id}
+    resubscribe_params = {"id": task_id}
     req_id = message_utils.generate_request_id()
     json_rpc_request = message_utils.make_json_rpc_request("tasks/resubscribe", params=resubscribe_params, id=req_id)
     

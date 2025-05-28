@@ -14,13 +14,24 @@ class SUTClient:
 
     def send_json_rpc(
         self,
-        method: str,
+        method: Optional[str] = None,
         params: Union[dict, list, None] = None,
         id: Union[str, int, None] = None,
         extra_headers: Optional[Dict[str, str]] = None,
+        jsonrpc: Optional[str] = None,
+        **kwargs
     ) -> Dict[str, Any]:
+        if method is None and kwargs:
+            method = kwargs.get("method")
+            params = kwargs.get("params", params)
+            id = kwargs.get("id", id)
+            jsonrpc = kwargs.get("jsonrpc", jsonrpc)
+        
+        if method is None:
+            raise ValueError("Method is required for JSON-RPC request")
+            
         jsonrpc_request = {
-            "jsonrpc": "2.0",
+            "jsonrpc": jsonrpc or "2.0",
             "method": method,
             "params": params if params is not None else {},
             "id": id if id is not None else "tck-auto-id",
@@ -69,4 +80,35 @@ class SUTClient:
             return response.status_code, response.text
         except requests.exceptions.RequestException as e:
             logger.error(f"HTTP request failed: {e}")
+            raise
+
+    def send_raw_json_rpc(self, json_request: dict) -> Dict[str, Any]:
+        """
+        Send a JSON-RPC request without validation.
+        
+        This method is primarily used for testing the SUT's handling of malformed 
+        JSON-RPC requests and protocol violations.
+        
+        Args:
+            json_request: The JSON-RPC request as a dictionary (can be malformed)
+            
+        Returns:
+            The JSON response from the SUT
+        """
+        headers = {"Content-Type": "application/json"}
+        
+        logger.info(f"Sending raw JSON-RPC request to {self.base_url}: {json_request}")
+        
+        try:
+            response = self.session.post(
+                self.base_url, json=json_request, headers=headers, timeout=10
+            )
+            logger.info(f"SUT responded with {response.status_code}: {response.text}")
+            response.raise_for_status()
+            return cast(Dict[str, Any], response.json())
+        except requests.RequestException as e:
+            logger.error(f"HTTP error communicating with SUT: {e}")
+            raise
+        except ValueError as e:
+            logger.error(f"Failed to parse JSON response from SUT: {e}")
             raise

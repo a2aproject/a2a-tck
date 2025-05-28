@@ -22,9 +22,11 @@ def test_very_long_string(sut_client):
     long_text = "A" * (1024 * 1024)  # 1MB string
     params = {
         "message": {
+            "messageId": "test-long-string-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": long_text
                 }
             ]
@@ -52,6 +54,8 @@ def test_empty_arrays(sut_client):
     # Empty parts array (should be rejected)
     params = {
         "message": {
+            "messageId": "test-empty-array-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": []
         }
     }
@@ -71,9 +75,11 @@ def test_null_optional_fields(sut_client):
     """
     params = {
         "message": {
+            "messageId": "test-null-fields-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": "Hello with null fields"
                 }
             ],
@@ -127,9 +133,11 @@ def test_extra_fields(sut_client):
     """
     params = {
         "message": {
+            "messageId": "test-extra-fields-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": "Message with extra fields"
                 }
             ],
@@ -160,9 +168,11 @@ def test_unicode_and_special_chars(sut_client):
     """
     params = {
         "message": {
+            "messageId": "test-unicode-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": "Unicode: 你好, здравствуйте, مرحبا, こんにちは\nControl chars: \t\b\f\r\n"
                 }
             ]
@@ -177,7 +187,7 @@ def test_unicode_and_special_chars(sut_client):
     
     # Get the task to verify it was stored correctly
     task_id = resp["result"]["id"]
-    get_req = message_utils.make_json_rpc_request("tasks/get", params={"taskId": task_id})
+    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
     get_resp = sut_client.send_json_rpc(**get_req)
     
     assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])
@@ -194,21 +204,21 @@ def test_boundary_values(sut_client):
     # Very large historyLength (e.g., int32 max)
     large_history_req = message_utils.make_json_rpc_request(
         "tasks/get", 
-        params={"taskId": task_id, "historyLength": 2147483647}
+        params={"id": task_id, "historyLength": 2147483647}
     )
     large_history_resp = sut_client.send_json_rpc(**large_history_req)
     
     # Very small historyLength (e.g., 0)
     zero_history_req = message_utils.make_json_rpc_request(
         "tasks/get", 
-        params={"taskId": task_id, "historyLength": 0}
+        params={"id": task_id, "historyLength": 0}
     )
     zero_history_resp = sut_client.send_json_rpc(**zero_history_req)
     
     # Negative historyLength (invalid)
     neg_history_req = message_utils.make_json_rpc_request(
         "tasks/get", 
-        params={"taskId": task_id, "historyLength": -1}
+        params={"id": task_id, "historyLength": -1}
     )
     neg_history_resp = sut_client.send_json_rpc(**neg_history_req)
     
@@ -224,9 +234,11 @@ def _create_simple_task(sut_client):
     """Create a simple task and return its ID."""
     params = {
         "message": {
+            "messageId": "test-simple-task-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": f"Simple task for edge case testing {uuid.uuid4()}"
                 }
             ]

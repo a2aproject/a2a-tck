@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 
 import pytest
@@ -6,6 +7,7 @@ import pytest
 from tck import message_utils
 from tck.sut_client import SUTClient
 
+logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="module")
 def sut_client():
@@ -16,9 +18,11 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
+            "messageId": "test-protocol-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": "Hello from protocol violation test!"
                 }
             ]
@@ -71,20 +75,23 @@ def test_invalid_jsonrpc_version(sut_client, text_message_params):
     """
     Test SUT's response to an invalid JSON-RPC version.
     
-    Send a request with an incorrect jsonrpc field value and verify the SUT rejects it.
+    Per JSON-RPC 2.0 specification, the jsonrpc field MUST be exactly "2.0".
+    The SUT MUST reject requests with invalid jsonrpc versions.
     """
     # Create a valid request first
     req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
     
-    # Modify the jsonrpc version to an invalid value
+    # Modify the jsonrpc version to an invalid value (violates JSON-RPC 2.0 MUST requirement)
     req["jsonrpc"] = "1.0"  # Should be "2.0"
     
-    # Send the malformed request
-    resp = sut_client.send_json_rpc(**req)
+    # Send the malformed request using raw JSON-RPC method
+    resp = sut_client.send_raw_json_rpc(req)
     
-    # SUT should reject with InvalidRequest error
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-    assert resp["error"]["code"] == -32600  # InvalidRequest
+    # Per JSON-RPC 2.0 spec, this MUST be rejected with InvalidRequest error
+    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+        f"SUT MUST reject requests with invalid jsonrpc version per JSON-RPC 2.0 spec, but got: {resp}"
+    assert resp["error"]["code"] == -32600, \
+        f"Expected InvalidRequest error code -32600, but got: {resp['error']['code']}"
 
 # Protocol Violation: Missing Required Field
 @pytest.mark.all  # Not a core test
@@ -92,20 +99,23 @@ def test_missing_method_field(sut_client, text_message_params):
     """
     Test SUT's response to a request missing the method field.
     
-    Send a request without the required method field and verify the SUT rejects it.
+    Per JSON-RPC 2.0 specification, the method field is REQUIRED. 
+    The SUT MUST reject requests missing required fields.
     """
     # Create a valid request first
     req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
     
-    # Remove the method field
+    # Remove the method field (violates JSON-RPC 2.0 MUST requirement)
     req.pop("method")
     
-    # Send the malformed request
-    resp = sut_client.send_json_rpc(**req)
+    # Send the malformed request using raw JSON-RPC method
+    resp = sut_client.send_raw_json_rpc(req)
     
-    # SUT should reject with InvalidRequest error
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-    assert resp["error"]["code"] == -32600  # InvalidRequest
+    # Per JSON-RPC 2.0 spec, this MUST be rejected with InvalidRequest error
+    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+        f"SUT MUST reject requests missing required 'method' field per JSON-RPC 2.0 spec, but got: {resp}"
+    assert resp["error"]["code"] == -32600, \
+        f"Expected InvalidRequest error code -32600, but got: {resp['error']['code']}"
 
 # Protocol Violation: Send raw invalid JSON
 @pytest.mark.all  # Not a core test

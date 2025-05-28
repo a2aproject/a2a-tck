@@ -21,9 +21,11 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
+            "messageId": "test-resilience-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": "Hello from resilience test!"
                 }
             ]
@@ -187,10 +189,12 @@ def test_partial_update_recovery(sut_client, text_message_params):
     for i, text in enumerate(update_texts):
         params = {
             "message": {
+                "messageId": "test-update-message-id-" + str(uuid.uuid4()),
+                "role": "user",
                 "taskId": task_id,
                 "parts": [
                     {
-                        "kind": "text",
+                        "type": "text",
                         "text": text
                     }
                 ]
@@ -210,7 +214,7 @@ def test_partial_update_recovery(sut_client, text_message_params):
         logger.info(f"Update {i+1} successful")
     
     # Step 3: Get the final task state to verify integrity
-    get_req = message_utils.make_json_rpc_request("tasks/get", params={"taskId": task_id})
+    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
     get_resp = sut_client.send_json_rpc(**get_req)
     
     assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])

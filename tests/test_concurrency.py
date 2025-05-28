@@ -20,9 +20,11 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
+            "messageId": "test-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
-                    "kind": "text",
+                    "type": "text",
                     "text": "Hello from concurrency test!"
                 }
             ]
@@ -131,7 +133,7 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     
     # Step 2: Define operations to perform concurrently on the task
     def get_task():
-        req = message_utils.make_json_rpc_request("tasks/get", params={"taskId": task_id})
+        req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
         resp = sut_client.send_json_rpc(**req)
         return ("get", req["id"], resp)
     
@@ -139,9 +141,11 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
         params = {
             "message": {
                 "taskId": task_id,
+                "messageId": "test-update-message-id-" + str(uuid.uuid4()),
+                "role": "user",
                 "parts": [
                     {
-                        "kind": "text",
+                        "type": "text",
                         "text": f"Concurrent update {uuid.uuid4()}"
                     }
                 ]
@@ -154,7 +158,7 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     def cancel_task():
         # Sleep briefly to let other operations start
         time.sleep(0.1)
-        req = message_utils.make_json_rpc_request("tasks/cancel", params={"taskId": task_id})
+        req = message_utils.make_json_rpc_request("tasks/cancel", params={"id": task_id})
         resp = sut_client.send_json_rpc(**req)
         return ("cancel", req["id"], resp)
     

@@ -71,7 +71,7 @@ def test_missing_authentication(sut_client, auth_schemes):
     # Prepare a simple JSON-RPC request (tasks/get with a non-existent ID to ensure
     # the error is auth-related, not business logic)
     req_id = message_utils.generate_request_id()
-    params = {"taskId": f"non-existent-task-{req_id}"}
+    params = {"id": f"non-existent-task-{req_id}"}
     json_rpc_request = message_utils.make_json_rpc_request(
         "tasks/get", params=params, id=req_id
     )
@@ -165,7 +165,7 @@ def test_invalid_authentication(sut_client, auth_schemes):
     
     # Prepare a simple JSON-RPC request
     req_id = message_utils.generate_request_id()
-    params = {"taskId": f"non-existent-task-{req_id}"}
+    params = {"id": f"non-existent-task-{req_id}"}
     json_rpc_request = message_utils.make_json_rpc_request(
         "tasks/get", params=params, id=req_id
     )
