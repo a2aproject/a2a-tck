@@ -144,12 +144,23 @@ def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str
     """
     Get the authentication schemes declared in the Agent Card.
     
+    According to the A2A specification, authentication schemes should be defined
+    using OpenAPI 3.x Security Scheme objects in the 'securitySchemes' field.
+    
     Args:
         agent_card_data: The parsed Agent Card data
     
     Returns:
-        A list of authentication scheme objects
+        A list of authentication scheme objects from securitySchemes
     """
+    # Look for securitySchemes as per A2A/OpenAPI specification
+    if "securitySchemes" in agent_card_data:
+        schemes = agent_card_data["securitySchemes"]
+        if isinstance(schemes, dict):
+            # Convert dict of schemes to list of scheme objects
+            return list(schemes.values())
+    
+    # Fallback: check for legacy 'authentication' field for backward compatibility
     if "authentication" in agent_card_data:
         auth = agent_card_data["authentication"]
         if isinstance(auth, list):

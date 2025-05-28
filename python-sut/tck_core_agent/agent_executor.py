@@ -156,7 +156,7 @@ class TckCoreAgentExecutor(AgentExecutor):
             event_queue.enqueue_event(
                 TaskStatusUpdateEvent(
                     status=TaskStatus(
-                        state=TaskState.completed,  # Use completed with error message
+                        state=TaskState.failed,
                         message=new_agent_text_message(
                             error_message,
                             task.contextId,

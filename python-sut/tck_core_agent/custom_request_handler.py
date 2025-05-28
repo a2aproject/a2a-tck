@@ -7,9 +7,8 @@ from copy import deepcopy
 
 from a2a.server.context import ServerCallContext
 from a2a.server.request_handlers import DefaultRequestHandler
-from a2a.types import Task, TaskQueryParams
+from a2a.types import Task, TaskQueryParams, TaskIdParams, TaskNotFoundError
 from a2a.utils.errors import ServerError
-from a2a.types import TaskNotFoundError
 
 
 class TckCoreRequestHandler(DefaultRequestHandler):
@@ -35,4 +34,22 @@ class TckCoreRequestHandler(DefaultRequestHandler):
                 task_copy.history = task_copy.history[-params.historyLength:]
             return task_copy
         
-        return task 
+        return task
+
+    @override
+    async def on_resubscribe_to_task(
+        self,
+        params: TaskIdParams,
+        context: ServerCallContext | None = None,
+    ):
+        """Handler for 'tasks/resubscribe' with proper error handling for non-existent tasks."""
+        # Check if task exists first - if not, return proper error instead of streaming
+        task: Task | None = await self.task_store.get(params.id)
+        if not task:
+            raise ServerError(error=TaskNotFoundError(
+                message=f"Cannot resubscribe to non-existent task: {params.id}"
+            ))
+        
+        # Delegate to parent implementation
+        async for event in super().on_resubscribe_to_task(params, context):
+            yield event 

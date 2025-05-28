@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 import pytest
 
@@ -16,6 +17,8 @@ def created_task_id(sut_client):
     # Create a task using message/send and return its id
     params = {
         "message": {
+            "messageId": "test-push-notification-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {"kind": "text", "text": "Task for push notification config test"}
             ]
