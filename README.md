@@ -34,7 +34,7 @@ The TCK acts as a client, sending requests to a running A2A implementation (the 
 
 2. Clone this repository:
    ```bash
-   git clone https://github.com/your-organization/a2a-tck.git
+   git clone https://github.com/maeste/a2a-tck.git
    cd a2a-tck
    ```
 
@@ -56,6 +56,10 @@ The TCK acts as a client, sending requests to a running A2A implementation (the 
    # For development with additional tools (linting, formatting)
    uv pip install -e ".[dev]"
    ```
+5. Run the SUT (here the example to run the local python based on python sdk https://github.com/google/a2a-python to run core tests)
+   ```bash
+   cd a2a-tck/python-sut/tck_core_agent
+   uv run .
 
 ## Usage
 
@@ -87,22 +91,22 @@ The runner script supports several options:
 
 Run only core tests with verbose output:
 ```bash
-./run_tck.py --sut-url http://localhost:8000/api --verbose
+./run_tck.py --sut-url http://localhost:9999 --verbose
 ```
 
 Run all tests and generate an HTML report:
 ```bash
-./run_tck.py --sut-url http://localhost:8000/api --test-scope all --report
+./run_tck.py --sut-url http://localhost:9999 --test-scope all --report
 ```
 
 Run only streaming tests:
 ```bash
-./run_tck.py --sut-url http://localhost:8000/api --test-pattern "test_message_stream"
+./run_tck.py --sut-url http://localhost:9999 --test-pattern "test_message_stream"
 ```
 
 Run without fetching the Agent Card (for SUTs that don't expose one):
 ```bash
-./run_tck.py --sut-url http://localhost:8000/api --skip-agent-card
+./run_tck.py --sut-url http://localhost:9999 --skip-agent-card
 ```
 
 ### Running Without the Runner Script
@@ -110,7 +114,7 @@ Run without fetching the Agent Card (for SUTs that don't expose one):
 You can also run pytest directly:
 
 ```bash
-pytest --sut-url http://localhost:8000/api -m core
+pytest --sut-url http://localhost:9999 -m core
 ```
 
 ## Test Categories
@@ -150,10 +154,10 @@ You can select specific test groups or patterns using pytest's `-k` option:
 
 ```bash
 # Run only message/send tests
-./run_tck.py --sut-url http://localhost:8000/api --test-pattern "test_message_send"
+./run_tck.py --sut-url http://localhost:9999 --test-pattern "test_message_send"
 
 # Run all tests except streaming tests
-./run_tck.py --sut-url http://localhost:8000/api --test-pattern "not test_streaming"
+./run_tck.py --sut-url http://localhost:9999 --test-pattern "not test_streaming"
 ```
 
 ## Debugging
@@ -161,7 +165,7 @@ You can select specific test groups or patterns using pytest's `-k` option:
 For detailed debugging information, increase the log level:
 
 ```bash
-./run_tck.py --sut-url http://localhost:8000/api --log-level DEBUG
+./run_tck.py --sut-url http://localhost:9999 --log-level DEBUG
 ```
 
 This will show:

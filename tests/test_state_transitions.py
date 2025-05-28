@@ -1,4 +1,5 @@
 import time
+import uuid
 
 import pytest
 
@@ -15,6 +16,8 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
+            "messageId": "test-state-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
                     "kind": "text",
@@ -29,6 +32,8 @@ def follow_up_message_params(text_message_params):
     """Create a follow-up message params object"""
     return {
         "message": {
+            "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
+            "role": "user",
             "parts": [
                 {
                     "kind": "text",
@@ -46,18 +51,29 @@ def test_task_state_transitions(sut_client, text_message_params, follow_up_messa
     
     This tests sends multiple messages to a task and verifies its state transitions using tasks/get.
     """
-    # Step 1: Create a new task
-    create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
+    # Step 1: Create a new task with an explicit taskId
+    task_id = "test-state-task-" + str(uuid.uuid4())
+    create_params = text_message_params.copy()
+    create_params["message"]["taskId"] = task_id
+    # Add non-blocking configuration to help get intermediate states
+    create_params["configuration"] = {
+        "blocking": False,
+        "acceptedOutputModes": ["text"]
+    }
+    
+    create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
     create_resp = sut_client.send_json_rpc(method=create_req["method"], params=create_req["params"], id=create_req["id"])
     assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
-    task_id = create_resp["result"]["id"]
     
-    # Verify initial state (typically "submitted" or "working")
-    initial_state = create_resp["result"]["status"]["state"]
-    assert initial_state in {"submitted", "working"}, f"Unexpected initial state: {initial_state}"
+    # Verify the response (can be Task or Message)
+    result = create_resp["result"]
+    if "status" in result:
+        # This is a Task object
+        initial_state = result["status"]["state"]
+        assert initial_state in {"submitted", "working"}, f"Unexpected initial state: {initial_state}"
     
     # Step 2: Get task to verify state and history
-    get_req = message_utils.make_json_rpc_request("tasks/get", params={"taskId": task_id})
+    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
     get_resp = sut_client.send_json_rpc(method=get_req["method"], params=get_req["params"], id=get_req["id"])
     assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])
     
@@ -68,6 +84,11 @@ def test_task_state_transitions(sut_client, text_message_params, follow_up_messa
     # Step 3: Send a follow-up message to the task
     follow_up_params = follow_up_message_params.copy()
     follow_up_params["message"]["taskId"] = task_id
+    # Add non-blocking configuration for follow-up message too
+    follow_up_params["configuration"] = {
+        "blocking": False,
+        "acceptedOutputModes": ["text"]
+    }
     update_req = message_utils.make_json_rpc_request("message/send", params=follow_up_params)
     update_resp = sut_client.send_json_rpc(method=update_req["method"], params=update_req["params"], id=update_req["id"])
     assert message_utils.is_json_rpc_success_response(update_resp, expected_id=update_req["id"])
@@ -76,8 +97,8 @@ def test_task_state_transitions(sut_client, text_message_params, follow_up_messa
     time.sleep(1)
     
     # Step 4: Get task again to verify updated state and history
-    get_req2 = message_utils.make_json_rpc_request("tasks/get", params={"taskId": task_id})
-    get_resp2 = sut_client.send_json_rpc(**get_req2)
+    get_req2 = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
+    get_resp2 = sut_client.send_json_rpc(method=get_req2["method"], params=get_req2["params"], id=get_req2["id"])
     assert message_utils.is_json_rpc_success_response(get_resp2, expected_id=get_req2["id"])
     
     # Verify updated history contains the follow-up message
@@ -94,17 +115,22 @@ def test_task_history_length(sut_client, text_message_params):
     A2A JSON-RPC Spec: Task History Length Parameter
     Test that the historyLength parameter in tasks/get properly limits the history entries returned.
     """
-    # Step 1: Create a new task
-    create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
+    # Step 1: Create a new task with an explicit taskId
+    task_id = "test-history-task-" + str(uuid.uuid4())
+    create_params = text_message_params.copy()
+    create_params["message"]["taskId"] = task_id
+    
+    create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
     create_resp = sut_client.send_json_rpc(method=create_req["method"], params=create_req["params"], id=create_req["id"])
     assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
-    task_id = create_resp["result"]["id"]
     
     # Step 2: Send additional messages to build up history
     for i in range(3):
         follow_up_params = {
             "message": {
                 "taskId": task_id,
+                "messageId": f"test-history-message-{i+1}-" + str(uuid.uuid4()),
+                "role": "user",
                 "parts": [
                     {
                         "kind": "text",
@@ -119,14 +145,14 @@ def test_task_history_length(sut_client, text_message_params):
         time.sleep(0.5)  # Brief pause between messages
     
     # Step 3: Get task with full history
-    get_full_req = message_utils.make_json_rpc_request("tasks/get", params={"taskId": task_id})
+    get_full_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
     get_full_resp = sut_client.send_json_rpc(method=get_full_req["method"], params=get_full_req["params"], id=get_full_req["id"])
     assert message_utils.is_json_rpc_success_response(get_full_resp, expected_id=get_full_req["id"])
     full_history = get_full_resp["result"].get("history", [])
     
     # Step 4: Get task with limited history (historyLength=2)
-    get_limited_req = message_utils.make_json_rpc_request("tasks/get", params={"taskId": task_id, "historyLength": 2})
-    get_limited_resp = sut_client.send_json_rpc(**get_limited_req)
+    get_limited_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id, "historyLength": 2})
+    get_limited_resp = sut_client.send_json_rpc(method=get_limited_req["method"], params=get_limited_req["params"], id=get_limited_req["id"])
     assert message_utils.is_json_rpc_success_response(get_limited_resp, expected_id=get_limited_req["id"])
     limited_history = get_limited_resp["result"].get("history", [])
     

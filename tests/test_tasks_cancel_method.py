@@ -1,4 +1,5 @@
 import pytest
+import uuid
 
 from tck import message_utils
 from tck.sut_client import SUTClient
@@ -11,17 +12,26 @@ def sut_client():
 @pytest.fixture
 def created_task_id(sut_client):
     # Create a task using message/send and return its id
+    task_id = "test-cancel-task-" + str(uuid.uuid4())
     params = {
         "message": {
+            "messageId": "test-cancel-message-id-" + str(uuid.uuid4()),
+            "role": "user",
+            "taskId": task_id,  # Provide the task ID explicitly
             "parts": [
                 {"kind": "text", "text": "Task for cancel test"}
             ]
+        },
+        "configuration": {
+            "blocking": False,
+            "acceptedOutputModes": ["text"]
         }
     }
     req = message_utils.make_json_rpc_request("message/send", params=params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
     assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
-    return resp["result"]["id"]
+    # Return the task ID we provided, since the SUT may return a Message object
+    return task_id
 
 @pytest.mark.core
 def test_tasks_cancel_valid(sut_client, created_task_id):
@@ -29,7 +39,7 @@ def test_tasks_cancel_valid(sut_client, created_task_id):
     A2A JSON-RPC Spec: tasks/cancel
     Test canceling a valid task. Expect a Task object in result with state 'canceled'.
     """
-    params = {"taskId": created_task_id}
+    params = {"id": created_task_id}
     req = message_utils.make_json_rpc_request("tasks/cancel", params=params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
     assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
@@ -43,11 +53,11 @@ def test_tasks_cancel_nonexistent(sut_client):
     A2A JSON-RPC Spec: tasks/cancel
     Test canceling a non-existent task. Expect TaskNotFoundError.
     """
-    params = {"taskId": "nonexistent-task-id"}
+    params = {"id": "nonexistent-task-id"}
     req = message_utils.make_json_rpc_request("tasks/cancel", params=params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-    assert resp["error"]["code"] == -32001  # Example: TaskNotFoundError (custom code, may vary)
+    assert resp["error"]["code"] == -32001  # TaskNotFoundError
 
 @pytest.mark.core
 def test_tasks_cancel_already_canceled(sut_client, created_task_id):
@@ -55,7 +65,7 @@ def test_tasks_cancel_already_canceled(sut_client, created_task_id):
     A2A JSON-RPC Spec: tasks/cancel
     Test canceling a task that is already canceled. Expect TaskNotCancelableError or similar.
     """
-    params = {"taskId": created_task_id}
+    params = {"id": created_task_id}
     # First cancel
     req1 = message_utils.make_json_rpc_request("tasks/cancel", params=params)
     resp1 = sut_client.send_json_rpc(method=req1["method"], params=req1["params"], id=req1["id"])

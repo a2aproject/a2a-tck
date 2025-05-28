@@ -1,0 +1,20 @@
+[project]
+name = "tck-core-agent"
+version = "1.0.0"
+description = "TCK Core Agent - A complete A2A agent implementation for testing"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "a2a-sdk",
+    "uvicorn>=0.34.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.uv.sources]
+a2a-sdk = { path="../../../a2a-python" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build" 

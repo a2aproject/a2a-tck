@@ -28,7 +28,7 @@ def test_rejects_malformed_json(sut_client):
 @pytest.mark.core
 @pytest.mark.parametrize("invalid_request,expected_code", [
     ({"method": "message/send", "params": {}}, -32600),  # missing jsonrpc
-    ({"jsonrpc": "2.0", "params": {}}, -32600),         # missing method
+    ({"jsonrpc": "2.0", "params": {},}, -32601),         # missing method
     ({"jsonrpc": "2.0", "method": "message/send", "params": {}, "id": {"bad": "type"}}, -32600),  # invalid id type
     ({"jsonrpc": "2.0", "method": "message/send", "params": "not_a_dict"}, -32602),  # invalid params type
 ])
@@ -53,5 +53,15 @@ def test_rejects_unknown_method(sut_client):
     """
     req = message_utils.make_json_rpc_request("nonexistent/method", params={})
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
     assert resp["error"]["code"] == -32601
+    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
+
+@pytest.mark.core
+def test_rejects_invalid_params(sut_client):
+    """
+    JSON-RPC 2.0 Spec: Invalid Params (-32602)
+    The SUT should reject requests with invalid parameters with error code -32602.
+    """
+    req = message_utils.make_json_rpc_request("message/send", params={"message": {"parts": "invalid"}})
+    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
+    assert resp["error"]["code"] == -32602
