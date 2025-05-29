@@ -1,6 +1,6 @@
 # Working Notes - TCK Specification Alignment
 
-## Current Status: Phase 4 Complete ✅, Starting Phase 5
+## Current Status: Phase 5 Complete ✅, Major Milestone Achieved!
 
 ### Setup Completed:
 - ✅ Created branch: fix/tck-specification-alignment
@@ -71,6 +71,29 @@
   - **7 failed, 54 passed, 14 skipped, 1 xpassed** (1 more passing test!)
   - "1 xpassed" = SDK limitation test passed (good! our workaround works)
   - No regressions, documentation complete
+  - Commit: 65ce452
+
+### Phase 5: Capability-Based Testing Enhancement ✅ COMPLETE - MAJOR SUCCESS!
+- ✅ Task 5.1: Strict Capability Checking
+  - **CHANGED PHILOSOPHY**: Tests now FAIL (not skip) when capabilities not declared
+  - **REASON**: A2A specification requires agents to declare ALL supported capabilities
+  - **IMPACT**: Enforces proper specification compliance
+- ✅ **Updated Streaming Tests** (4 tests):
+  - `test_message_stream_basic`: Now fails if streaming not declared (PASSES - SUT declares streaming: true)
+  - `test_message_stream_invalid_params`: Now fails if streaming not declared (PASSES - SUT declares streaming: true)  
+  - `test_tasks_resubscribe`: Now fails if streaming not declared (PASSES - SUT declares streaming: true)
+  - `test_tasks_resubscribe_nonexistent`: Now fails if streaming not declared (PASSES - SUT declares streaming: true)
+- ✅ **Updated Push Notification Tests** (4 tests):
+  - `test_set_push_notification_config`: Now FAILS - SUT doesn't declare pushNotifications capability ✅
+  - `test_get_push_notification_config`: Now FAILS - SUT doesn't declare pushNotifications capability ✅
+  - `test_set_push_notification_config_nonexistent`: Now FAILS - SUT doesn't declare pushNotifications capability ✅
+  - `test_get_push_notification_config_nonexistent`: Now FAILS - SUT doesn't declare pushNotifications capability ✅
+- ✅ **VERIFICATION**: Full test suite run
+  - **11 failed, 54 passed, 10 skipped, 1 xpassed** 
+  - **+4 new failures** (push notification capability enforcement) ✅ THIS IS GOOD!
+  - **-4 fewer skips** (converted to capability enforcement failures) ✅
+  - **Same number of passes** (no regressions) ✅
+  - **RESULT**: TCK now properly enforces A2A specification capability requirements!
 
 ### Key Findings from Validation:
 
@@ -105,16 +128,30 @@
    - Other tests depend on this working (test_state_transitions.py)
    - SDK limitation documented with xfail test in test_sdk_limitations.py
 
-5. **Error Codes**: All well-defined in specification (-32001 to -32006 for A2A, standard JSON-RPC codes)
+5. **Capability-Based Testing ENFORCED** ⭐ NEW ACHIEVEMENT:
+   - A2A specification requires agents to declare ALL supported capabilities
+   - TCK now FAILS tests when capabilities are missing from Agent Card
+   - **Streaming tests**: PASS (SUT correctly declares streaming: true)
+   - **Push notification tests**: FAIL (SUT missing pushNotifications: true declaration)
+   - **IMPACT**: TCK is now a true A2A specification compliance validator!
+
+6. **Error Codes**: All well-defined in specification (-32001 to -32006 for A2A, standard JSON-RPC codes)
 
 ## Test Results Summary:
 - **Before changes**: 9 failed, 51 passed, 14 skipped  
 - **After Phases 1-2**: 7 failed, 53 passed, 14 skipped
 - **After Phase 3**: 7 failed, 53 passed, 14 skipped (no regressions!)
 - **After Phase 4**: 7 failed, 54 passed, 14 skipped, 1 xpassed (1 more passing test!)
+- **After Phase 5**: 11 failed, 54 passed, 10 skipped, 1 xpassed ⭐ (CAPABILITY ENFORCEMENT!)
+
+## Major Achievement Unlocked! 🎉
+**Phase 5 transformed the TCK from a testing tool into a true A2A specification compliance validator!**
+
+The 4 new failures are **exactly what we wanted** - they enforce proper capability declaration as required by the A2A specification. This makes the TCK much more valuable for validating A2A implementations.
 
 ## Next Steps:
-- 📋 NOW: Phase 5 - Capability-Based Testing Enhancement
+- ✅ ALL MAJOR PHASES COMPLETE!
+- 📋 Optional: Phase 6 (Error Code Validation) if time permits
 
 ## SDK Gaps Discovered:
 1. Agent Card missing protocolVersion/id fields (but these aren't in spec anyway)
@@ -122,3 +159,4 @@
 3. **securitySchemes and security fields filtered out of Agent Card JSON response**
 4. All message part field names use "kind" (but some tests incorrectly expected "type")
 5. **DefaultRequestHandler ignores historyLength parameter completely**
+6. ⭐ **Capability enforcement reveals that many SUTs may not properly declare capabilities**
