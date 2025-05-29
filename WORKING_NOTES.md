@@ -1,6 +1,6 @@
 # Working Notes - TCK Specification Alignment
 
-## Current Status: Pre-Work Setup Complete ✅
+## Current Status: Phase 1 Complete ✅
 
 ### Setup Completed:
 - ✅ Created branch: fix/tck-specification-alignment
@@ -11,18 +11,26 @@
 - ✅ Created schema_helpers.md
 - ✅ Created SPECIFICATION_FINDINGS.md
 
+### Phase 1: Field Name Standardization ✅
+- ✅ Task 1.1: Audit Message Part Field Usage
+- ✅ Task 1.2: Create Field Name Compatibility Layer (spec_adapter.py)
+- ✅ Task 1.3: Update All Test Fixtures
+  - Fixed 17 instances in 7 test files: "type" → "kind"
+  - Verified fixes work (response shows correct 'kind': 'text')
+  - Commit: 3906949
+
 ### Key Findings from Validation:
 
-1. **Message Part Field Name Issue CONFIRMED**:
+1. **Message Part Field Name Issue FIXED**:
    - Specification uses "kind" field (not "type")
    - Found 17 instances in 7 test files using wrong "type" field:
-     - tests/test_concurrency.py
-     - tests/test_edge_cases.py
-     - tests/test_invalid_business_logic.py
-     - tests/test_protocol_violations.py
-     - tests/test_resilience.py
-     - tests/test_streaming_methods.py
-     - tests/test_tasks_get_method.py
+     - tests/test_concurrency.py ✅
+     - tests/test_edge_cases.py ✅
+     - tests/test_invalid_business_logic.py ✅
+     - tests/test_protocol_violations.py ✅
+     - tests/test_resilience.py ✅
+     - tests/test_streaming_methods.py ✅
+     - tests/test_tasks_get_method.py ✅
 
 2. **Agent Card Fields**:
    - Required: capabilities, defaultInputModes, defaultOutputModes, description, name, skills, url, version
@@ -32,6 +40,4 @@
 3. **Error Codes**: All well-defined in specification (-32001 to -32006 for A2A, standard JSON-RPC codes)
 
 ## Next Steps:
-- ⏳ WAITING: SUT to be started on http://localhost:9999
-- 📋 TODO: Run baseline tests once SUT is running
-- 📋 TODO: Start Phase 1 - Field Name Standardization
+- 📋 TODO: Phase 2 - Agent Card Specification Alignment

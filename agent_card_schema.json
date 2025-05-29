@@ -1,0 +1,89 @@
+{
+  "description": "An AgentCard conveys key information:\n- Overall details (version, name, description, uses)\n- Skills: A set of capabilities the agent can perform\n- Default modalities/content types supported by the agent.\n- Authentication requirements",
+  "properties": {
+    "capabilities": {
+      "$ref": "#/definitions/AgentCapabilities",
+      "description": "Optional capabilities supported by the agent."
+    },
+    "defaultInputModes": {
+      "description": "The set of interaction modes that the agent supports across all skills. This can be overridden per-skill.\nSupported mime types for input.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "defaultOutputModes": {
+      "description": "Supported mime types for output.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "description": {
+      "description": "A human-readable description of the agent. Used to assist users and\nother agents in understanding what the agent can do.",
+      "type": "string"
+    },
+    "documentationUrl": {
+      "description": "A URL to documentation for the agent.",
+      "type": "string"
+    },
+    "name": {
+      "description": "Human readable name of the agent.",
+      "type": "string"
+    },
+    "provider": {
+      "$ref": "#/definitions/AgentProvider",
+      "description": "The service provider of the agent"
+    },
+    "security": {
+      "description": "Security requirements for contacting the agent.",
+      "items": {
+        "additionalProperties": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "securitySchemes": {
+      "additionalProperties": {
+        "$ref": "#/definitions/SecurityScheme"
+      },
+      "description": "Security scheme details used for authenticating with this agent.",
+      "type": "object"
+    },
+    "skills": {
+      "description": "Skills are a unit of capability that an agent can perform.",
+      "items": {
+        "$ref": "#/definitions/AgentSkill"
+      },
+      "type": "array"
+    },
+    "supportsAuthenticatedExtendedCard": {
+      "description": "true if the agent supports providing an extended agent card when the user is authenticated.\nDefaults to false if not specified.",
+      "type": "boolean"
+    },
+    "url": {
+      "description": "A URL to the address the agent is hosted at.",
+      "type": "string"
+    },
+    "version": {
+      "description": "The version of the agent - format is up to the provider.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "capabilities",
+    "defaultInputModes",
+    "defaultOutputModes",
+    "description",
+    "name",
+    "skills",
+    "url",
+    "version"
+  ],
+  "type": "object"
+}

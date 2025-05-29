@@ -16,6 +16,28 @@
 - Required fields: ['capabilities', 'defaultInputModes', 'defaultOutputModes', 'description', 'name', 'skills', 'url', 'version']
 - All available fields: ['capabilities', 'defaultInputModes', 'defaultOutputModes', 'description', 'documentationUrl', 'name', 'provider', 'security', 'securitySchemes', 'skills', 'supportsAuthenticatedExtendedCard', 'url', 'version']
 
+**Detailed Field Analysis**:
+
+| Field | Type | Required | In Spec | In SDK | Notes |
+|-------|------|----------|---------|--------|-------|
+| name | string | Yes | Yes | Yes | |
+| description | string | Yes | Yes | Yes | |
+| version | string | Yes | Yes | Yes | |
+| url | string | Yes | Yes | Yes | |
+| capabilities | object | Yes | Yes | Yes | |
+| defaultInputModes | array | Yes | Yes | Yes | |
+| defaultOutputModes | array | Yes | Yes | Yes | |
+| skills | array | Yes | Yes | Yes | |
+| documentationUrl | string | No | Yes | Yes | Optional field |
+| provider | object | No | Yes | Yes | Optional field |
+| security | array | No | Yes | Yes | Optional field |
+| securitySchemes | object | No | Yes | Yes | Optional field |
+| supportsAuthenticatedExtendedCard | boolean | No | Yes | Yes | Optional field |
+| **protocolVersion** | string | **NO** | **NO** | **NO** | **NOT in specification!** |
+| **id** | string | **NO** | **NO** | **NO** | **NOT in specification!** |
+
+**Critical Finding**: Tests expecting 'protocolVersion' or 'id' fields are testing for non-specification fields and should be fixed.
+
 **Notable Findings**:
 - Fields like 'protocolVersion' and 'id' are NOT in the specification
 - The specification includes 'security' and 'securitySchemes' fields
@@ -40,6 +62,6 @@
 ## Next Steps
 
 Based on these findings:
-1. **Field Name Issue**: Need to audit all tests for incorrect use of "type" instead of "kind"
-2. **Agent Card Issue**: Tests expecting 'protocolVersion' or 'id' are testing for non-specification fields
+1. **Field Name Issue**: ✅ FIXED - Updated all tests to use "kind" instead of "type"
+2. **Agent Card Issue**: Need to update tests to NOT expect 'protocolVersion' or 'id'
 3. **Error Codes**: All error codes are properly defined in the specification 
