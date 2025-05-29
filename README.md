@@ -117,30 +117,127 @@ You can also run pytest directly:
 pytest --sut-url http://localhost:9999 -m core
 ```
 
-## Test Categories
+## Test Categories and Compliance Levels
 
-The TCK includes the following test categories:
+The TCK uses a marker-based system to categorize tests by A2A specification compliance requirements:
 
-1. **JSON-RPC Compliance** - Tests basic JSON-RPC 2.0 compliance (request/response structure, error codes).
-2. **Core A2A Methods** - Tests for essential A2A methods:
-   - `message/send` - Send messages to create or continue tasks
-   - `tasks/get` - Retrieve task state and history
-   - `tasks/cancel` - Cancel a task
-   - `tasks/pushNotificationConfig/set` and `tasks/pushNotificationConfig/get` - Manage push notifications
-3. **Streaming Methods** - Tests for streaming capabilities:
-   - `message/stream` - Send messages with streaming responses
-   - `tasks/resubscribe` - Resubscribe to an active task's event stream
+### Mandatory Tests (MUST Requirements)
+These tests **MUST** pass for A2A compliance. Any failure indicates the implementation is not A2A compliant.
+
+- **`mandatory_jsonrpc`** - JSON-RPC 2.0 compliance tests
+  - Parse error handling (-32700)
+  - Invalid request validation (-32600)
+  - Method not found handling (-32601)
+  - Invalid parameters handling (-32602)
+
+- **`mandatory_protocol`** - Core A2A protocol requirements
+  - Agent Card availability and mandatory fields
+  - Core message/send functionality with text
+  - Task management (tasks/get, tasks/cancel)
+  - Required parameter support (e.g., historyLength)
+  - Error handling for non-existent resources
+
+### Optional Tests (SHOULD/MAY Requirements)
+These tests validate optional features and implementation quality.
+
+- **`optional_capability`** - Capability-dependent tests
+  - File/data modality support (if declared in Agent Card)
+  - Streaming capabilities (if declared)
+  - Push notifications (if declared)
+  - Multiple message parts (if modalities supported)
+
+- **`quality_basic`** - Implementation quality indicators
+  - State transition handling
+  - Idempotent operations
+  - Edge case robustness
+
+### Legacy Test Categories
+For backward compatibility, the following legacy markers are still supported:
+
+- **`core`** - Essential tests (mix of mandatory and core optional)
+- **`all`** - All tests including advanced features
+
+## Test Selection Examples
+
+### Run Mandatory Tests Only (Compliance Validation)
+```bash
+# Run all mandatory tests (JSON-RPC + A2A protocol)
+./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc or mandatory_protocol"
+
+# Run only JSON-RPC compliance tests
+./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc"
+
+# Run only A2A protocol mandatory tests
+./run_tck.py --sut-url http://localhost:9999 -m "mandatory_protocol"
+```
+
+### Run Capability-Based Tests
+```bash
+# Run tests for declared capabilities (file, data, streaming, etc.)
+./run_tck.py --sut-url http://localhost:9999 -m "optional_capability"
+
+# Run mandatory tests + capability tests (recommended for full validation)
+./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc or mandatory_protocol or optional_capability"
+```
+
+### Run Quality Tests
+```bash
+# Run implementation quality tests
+./run_tck.py --sut-url http://localhost:9999 -m "quality_basic"
+
+# Run everything except quality tests (focus on compliance)
+./run_tck.py --sut-url http://localhost:9999 -m "not quality_basic"
+```
+
+### Generate Compliance Reports
+```bash
+# Generate HTML report focusing on mandatory compliance
+./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc or mandatory_protocol" --report
+
+# Generate comprehensive report with all test categories
+./run_tck.py --sut-url http://localhost:9999 --test-scope all --report
+```
 
 ## Understanding Test Results
+
+### Compliance Interpretation
+- **Mandatory test failures** = Implementation is **NOT A2A compliant**
+- **Optional test failures** = Implementation may be compliant but missing recommended features
+- **Quality test failures** = Implementation works but may have robustness/performance issues
 
 Test results are displayed in the console by default. Each test will be marked as:
 
 - **PASSED**: The SUT behaved as expected
-- **FAILED**: The SUT did not behave as expected
-- **SKIPPED**: The test was skipped (e.g., if the SUT doesn't support a feature)
+- **FAILED**: The SUT did not behave as expected (check if mandatory vs optional)
+- **SKIPPED**: The test was skipped (e.g., capability not declared in Agent Card)
 - **ERROR**: An unexpected error occurred during the test
 
-If you generate an HTML report (using the `--report` option), a file named `tck_report.html` will be created with detailed test results.
+If you generate an HTML report (using the `--report` option), a file named `tck_report.html` will be created with detailed test results including marker information.
+
+**Note**: Pytest markers are used for test selection but do not appear in standard HTML reports by default. To see which tests belong to which categories, use the marker selection commands shown above.
+
+## Current Test Suite Statistics
+
+The TCK contains **75 total tests** categorized as follows:
+
+- **24 mandatory tests** (MUST pass for A2A compliance)
+  - 11 JSON-RPC 2.0 compliance tests (`mandatory_jsonrpc`)
+  - 13 A2A protocol requirements (`mandatory_protocol`)
+- **7 optional capability tests** (`optional_capability`)
+- **2 quality tests** (`quality_basic`)
+- **42 additional tests** (legacy categories and utilities)
+
+### Verification Commands
+```bash
+# Count mandatory tests
+pytest -m "mandatory_jsonrpc or mandatory_protocol" --collect-only -q | grep "collected"
+
+# Count capability tests  
+pytest -m "optional_capability" --collect-only -q | grep "collected"
+
+# Count quality tests
+pytest -m "quality_basic" --collect-only -q | grep "collected"
+```
 
 ## Advanced Configuration
 
@@ -150,14 +247,17 @@ If you generate an HTML report (using the `--report` option), a file named `tck_
 
 ### Test Selection
 
-You can select specific test groups or patterns using pytest's `-k` option:
+You can combine markers with pytest's `-k` option for fine-grained control:
 
 ```bash
-# Run only message/send tests
-./run_tck.py --sut-url http://localhost:9999 --test-pattern "test_message_send"
+# Run mandatory tests for message/send only
+./run_tck.py --sut-url http://localhost:9999 -m "mandatory_protocol" -k "message_send"
 
 # Run all tests except streaming tests
-./run_tck.py --sut-url http://localhost:9999 --test-pattern "not test_streaming"
+./run_tck.py --sut-url http://localhost:9999 -k "not streaming"
+
+# Run mandatory tests and generate detailed logs
+./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc or mandatory_protocol" --log-level DEBUG
 ```
 
 ## Debugging
