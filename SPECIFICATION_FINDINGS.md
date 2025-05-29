@@ -92,3 +92,75 @@ Based on these findings:
 2. **Agent Card Issue**: ✅ FIXED - Updated tests to NOT expect 'protocolVersion' or 'id'
 3. **Authentication Issue**: Need to address SDK limitation - no built-in auth enforcement
 4. **Error Codes**: All error codes are properly defined in the specification 
+
+## History Length Parameter Finding
+
+### A2A Specification Section 7.3: tasks/get
+
+**Specification requirement**: 
+> `historyLength`: If positive, requests the server to include up to `N` recent messages in `Task.history`.
+
+### JSON Schema Evidence
+```json
+{
+  "description": "Parameters for querying a task, including optional history length.",
+  "properties": {
+    "historyLength": {
+      "description": "Number of recent messages to be retrieved.",
+      "type": "integer"
+    },
+    "id": {
+      "description": "Task id.",
+      "type": "string"
+    }
+  }
+}
+```
+
+### SDK Reality
+**SDK DefaultRequestHandler limitation**: The `historyLength` parameter is completely ignored by the SDK's `DefaultRequestHandler.on_get_task()` method.
+
+### SUT Workaround
+✅ **KEPT**: SUT uses `TckCoreRequestHandler` which correctly implements `historyLength`
+```python
+# If historyLength is specified, limit the history
+if params.historyLength is not None and task.history:
+    task_copy = deepcopy(task)
+    if len(task_copy.history) > params.historyLength:
+        task_copy.history = task_copy.history[-params.historyLength:]
+    return task_copy
+```
+
+### TCK Documentation
+✅ **ADDED**: `test_sdk_limitations.py` documents this SDK bug
+- `test_sdk_default_handler_history_length_bug`: Marked as xfail, documents SDK limitation
+- `test_sut_workaround_implements_history_length_correctly`: Verifies our workaround works
+
+### Decision
+Keep the SUT workaround because:
+1. Other tests (like `test_state_transitions.py`) depend on `historyLength` working
+2. This is needed for proper A2A specification compliance testing
+3. Test suite documents the SDK limitation clearly
+
+## Error Codes Finding
+
+### A2A-Specific Error Codes
+| Code | Name | SDK Constant | Description |
+|------|------|--------------|-------------|
+| -32001 | TaskNotFoundError | TaskNotFoundError | Task ID not found |
+| -32002 | TaskNotCancelableError | TaskNotCancelableError | Task not in cancelable state |
+| -32003 | PushNotificationNotSupportedError | PushNotificationNotSupportedError | Push notifications not supported |
+| -32004 | UnsupportedOperationError | UnsupportedOperationError | Operation not supported |
+| -32005 | ContentTypeNotSupportedError | ContentTypeNotSupportedError | MIME type not supported |
+| -32006 | InvalidAgentResponseError | InvalidAgentResponseError | Invalid agent response |
+
+### Standard JSON-RPC Error Codes
+| Code | Name | Description |
+|------|------|-------------|
+| -32700 | Parse error | Invalid JSON |
+| -32600 | Invalid Request | Not a valid Request object |
+| -32601 | Method not found | Method doesn't exist |
+| -32602 | Invalid params | Invalid parameters |
+| -32603 | Internal error | Internal server error |
+
+✅ All error codes are properly defined in the specification and SDK. 
