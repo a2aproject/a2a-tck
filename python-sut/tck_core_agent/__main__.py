@@ -67,21 +67,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class TckA2AStarletteApplication(A2AStarletteApplication):
-    """Custom A2A application that includes TCK-expected fields in agent card."""
-    
-    async def _handle_get_agent_card(self, request: Request) -> JSONResponse:
-        """Override to include protocolVersion and id fields expected by TCK tests."""
-        # Get the standard agent card data
-        agent_card_data = self.agent_card.model_dump(mode='json', exclude_none=True)
-        
-        # Add the missing fields that TCK tests expect
-        agent_card_data['protocolVersion'] = '1.0.0'  # A2A protocol version
-        agent_card_data['id'] = 'tck-core-agent-id'   # Unique agent identifier
-        
-        return JSONResponse(agent_card_data)
-
-
 def main() -> None:
     """Main entry point for the TCK Core Agent."""
     
@@ -135,8 +120,8 @@ def main() -> None:
     task_store = InMemoryTaskStore()
     agent_executor = TckCoreAgentExecutor()
     
-    # Create the application
-    app = TckA2AStarletteApplication(
+    # Create the application using standard SDK class (no custom field injection)
+    app = A2AStarletteApplication(
         agent_card=agent_card,
         http_handler=TckCoreRequestHandler(agent_executor=agent_executor, task_store=task_store),
     )
