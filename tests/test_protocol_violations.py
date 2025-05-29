@@ -6,6 +6,7 @@ import pytest
 
 from tck import message_utils
 from tck.sut_client import SUTClient
+from tests.markers import mandatory_jsonrpc
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +30,16 @@ def text_message_params():
         }
     }
 
-# Protocol Violation: Duplicate Request IDs
-@pytest.mark.all  # Not a core test
+@mandatory_jsonrpc
 def test_duplicate_request_ids(sut_client, text_message_params):
     """
-    Test SUT's response to duplicate request IDs.
+    MANDATORY: JSON-RPC 2.0 Specification §4.1 - Request ID Uniqueness
     
-    Send two different requests with the same ID and verify the SUT handles this protocol violation correctly.
+    JSON-RPC 2.0 requires proper handling of request IDs. While the specification
+    doesn't explicitly mandate rejecting duplicates, proper implementations
+    should handle duplicate IDs consistently.
+    
+    Failure Impact: Implementation may not follow JSON-RPC 2.0 ID semantics
     """
     # Generate a fixed ID for both requests
     fixed_id = f"duplicate-{uuid.uuid4()}"
@@ -69,14 +73,15 @@ def test_duplicate_request_ids(sut_client, text_message_params):
     assert "jsonrpc" in second_resp
     assert "id" in second_resp and second_resp["id"] == fixed_id
 
-# Protocol Violation: Malformed Version
-@pytest.mark.all  # Not a core test
+@mandatory_jsonrpc
 def test_invalid_jsonrpc_version(sut_client, text_message_params):
     """
-    Test SUT's response to an invalid JSON-RPC version.
+    MANDATORY: JSON-RPC 2.0 Specification §4.1 - Version Field Validation
     
-    Per JSON-RPC 2.0 specification, the jsonrpc field MUST be exactly "2.0".
-    The SUT MUST reject requests with invalid jsonrpc versions.
+    The JSON-RPC 2.0 specification states the jsonrpc field MUST be exactly "2.0".
+    The server MUST reject requests with invalid jsonrpc versions.
+    
+    Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
     # Create a valid request first
     req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
@@ -93,14 +98,15 @@ def test_invalid_jsonrpc_version(sut_client, text_message_params):
     assert resp["error"]["code"] == -32600, \
         f"Expected InvalidRequest error code -32600, but got: {resp['error']['code']} (Spec: InvalidRequestError)"
 
-# Protocol Violation: Missing Required Field
-@pytest.mark.all  # Not a core test
+@mandatory_jsonrpc
 def test_missing_method_field(sut_client, text_message_params):
     """
-    Test SUT's response to a request missing the method field.
+    MANDATORY: JSON-RPC 2.0 Specification §4.1 - Required Method Field
     
-    Per JSON-RPC 2.0 specification, the method field is REQUIRED. 
-    The SUT MUST reject requests missing required fields.
+    The JSON-RPC 2.0 specification states the method field is REQUIRED. 
+    The server MUST reject requests missing required fields.
+    
+    Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
     # Create a valid request first
     req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
@@ -117,13 +123,15 @@ def test_missing_method_field(sut_client, text_message_params):
     assert resp["error"]["code"] == -32600, \
         f"Expected InvalidRequest error code -32600, but got: {resp['error']['code']} (Spec: InvalidRequestError)"
 
-# Protocol Violation: Send raw invalid JSON
-@pytest.mark.all  # Not a core test
+@mandatory_jsonrpc
 def test_raw_invalid_json(sut_client):
     """
-    Test SUT's response to raw invalid JSON.
+    MANDATORY: JSON-RPC 2.0 Specification §4.2 - JSON Parse Error Handling
     
-    Send a request with invalid JSON syntax and verify the SUT rejects it.
+    The JSON-RPC 2.0 specification requires servers to reject
+    syntactically invalid JSON with Parse Error (-32700).
+    
+    Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
     # Create an intentionally invalid JSON string
     invalid_json = """{"jsonrpc": "2.0", "method": "message/send", "params": {"unclosed_object": true"""

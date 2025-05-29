@@ -3,6 +3,7 @@ import uuid
 
 from tck import message_utils
 from tck.sut_client import SUTClient
+from tests.markers import mandatory_protocol
 
 
 @pytest.fixture(scope="module")
@@ -29,11 +30,15 @@ def created_task_id(sut_client):
     # Return the task ID we provided, since the SUT may return a Message object
     return task_id
 
-@pytest.mark.core
+@mandatory_protocol
 def test_tasks_get_valid(sut_client, created_task_id):
     """
-    A2A JSON-RPC Spec: tasks/get
-    Test retrieving a task's state and history by id. Expect a Task object in result.
+    MANDATORY: A2A Specification §7.3 - Task Retrieval
+    
+    The A2A specification requires all implementations to support
+    tasks/get for retrieving task state and history by ID.
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": created_task_id}
     req = message_utils.make_json_rpc_request("tasks/get", params=params)
@@ -43,15 +48,15 @@ def test_tasks_get_valid(sut_client, created_task_id):
     assert result["id"] == created_task_id
     assert "status" in result
 
-@pytest.mark.core
+@mandatory_protocol
 def test_tasks_get_with_history_length(sut_client, created_task_id):
     """
-    MANDATORY: A2A Specification Section 7.3 - historyLength parameter
+    MANDATORY: A2A Specification §7.3 - historyLength Parameter
     
-    The A2A specification states that tasks/get MUST support the historyLength parameter
-    to limit the number of history entries returned.
+    The A2A specification states that tasks/get MUST support the historyLength 
+    parameter to limit the number of history entries returned.
     
-    Test retrieving a task with historyLength param. Expect a Task object in result.
+    Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": created_task_id, "historyLength": 1}
     req = message_utils.make_json_rpc_request("tasks/get", params=params)
@@ -61,11 +66,15 @@ def test_tasks_get_with_history_length(sut_client, created_task_id):
     assert result["id"] == created_task_id
     assert "history" in result
 
-@pytest.mark.core
+@mandatory_protocol
 def test_tasks_get_nonexistent(sut_client):
     """
-    A2A JSON-RPC Spec: tasks/get
-    Test retrieving a non-existent task. Expect TaskNotFoundError.
+    MANDATORY: A2A Specification §7.3 - Task Not Found Error Handling
+    
+    The A2A specification requires proper error handling when attempting
+    to retrieve a non-existent task. MUST return TaskNotFoundError (-32001).
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": "nonexistent-task-id"}
     req = message_utils.make_json_rpc_request("tasks/get", params=params)

@@ -3,6 +3,7 @@ import uuid
 
 from tck import message_utils
 from tck.sut_client import SUTClient
+from tests.markers import mandatory_protocol, quality_basic
 
 
 @pytest.fixture(scope="module")
@@ -33,11 +34,15 @@ def created_task_id(sut_client):
     # Return the task ID we provided, since the SUT may return a Message object
     return task_id
 
-@pytest.mark.core
+@mandatory_protocol
 def test_tasks_cancel_valid(sut_client, created_task_id):
     """
-    A2A JSON-RPC Spec: tasks/cancel
-    Test canceling a valid task. Expect a Task object in result with state 'canceled'.
+    MANDATORY: A2A Specification §7.4 - Task Cancellation
+    
+    The A2A specification requires all implementations to support
+    tasks/cancel for canceling active tasks.
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": created_task_id}
     req = message_utils.make_json_rpc_request("tasks/cancel", params=params)
@@ -47,11 +52,15 @@ def test_tasks_cancel_valid(sut_client, created_task_id):
     assert result["id"] == created_task_id
     assert result.get("status", {}).get("state") == "canceled"
 
-@pytest.mark.core
+@mandatory_protocol
 def test_tasks_cancel_nonexistent(sut_client):
     """
-    A2A JSON-RPC Spec: tasks/cancel
-    Test canceling a non-existent task. Expect TaskNotFoundError.
+    MANDATORY: A2A Specification §7.4 - Task Not Found Error Handling
+    
+    The A2A specification requires proper error handling when attempting
+    to cancel a non-existent task. MUST return TaskNotFoundError (-32001).
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": "nonexistent-task-id"}
     req = message_utils.make_json_rpc_request("tasks/cancel", params=params)
@@ -59,11 +68,15 @@ def test_tasks_cancel_nonexistent(sut_client):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
     assert resp["error"]["code"] == -32001  # TaskNotFoundError
 
-@pytest.mark.core
+@quality_basic
 def test_tasks_cancel_already_canceled(sut_client, created_task_id):
     """
-    A2A JSON-RPC Spec: tasks/cancel
-    Test canceling a task that is already canceled. Expect TaskNotCancelableError or similar.
+    OPTIONAL QUALITY: A2A Specification §7.4 - Idempotent Cancellation
+    
+    While not explicitly required, proper error handling for attempting
+    to cancel an already-canceled task indicates good implementation quality.
+    
+    Status: Optional quality validation for idempotency handling
     """
     params = {"id": created_task_id}
     # First cancel

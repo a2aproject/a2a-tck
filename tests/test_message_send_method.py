@@ -5,6 +5,7 @@ import pytest
 
 from tck import agent_card_utils, message_utils
 from tck.sut_client import SUTClient
+from tests.markers import mandatory_protocol, optional_capability
 
 logger = logging.getLogger(__name__)
 
@@ -86,11 +87,15 @@ def has_modality_support(agent_card_data, modality):
     
     return supported
 
-@pytest.mark.core
+@mandatory_protocol
 def test_message_send_valid_text(sut_client, valid_text_message_params, agent_card_data):
     """
-    A2A JSON-RPC Spec: message/send
-    Test sending a valid message with a TextPart. Expect a Task or Message object in result.
+    MANDATORY: A2A Specification §5.1 - Core Message Protocol
+    
+    The A2A specification requires all implementations to support
+    message/send with text content as the fundamental communication method.
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     # Text modality is considered fundamental, but check anyway
     if not has_modality_support(agent_card_data, "text"):
@@ -111,28 +116,35 @@ def test_message_send_valid_text(sut_client, valid_text_message_params, agent_ca
         assert result.get("role") == "agent"
         assert "parts" in result
 
-@pytest.mark.core
+@mandatory_protocol
 def test_message_send_invalid_params(sut_client):
     """
-    A2A JSON-RPC Spec: message/send
-    Test sending a message with missing required fields. Expect InvalidParamsError (-32602).
+    MANDATORY: A2A Specification §5.1 - Parameter Validation
+    
+    The A2A specification requires proper validation of message/send parameters.
+    Missing required fields MUST result in InvalidParamsError (-32602).
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     invalid_params = {"message": {}}  # missing parts
     req = message_utils.make_json_rpc_request("message/send", params=invalid_params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
     assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
 
+@optional_capability
 def test_message_send_valid_file_part(sut_client, valid_file_message_params, agent_card_data):
     """
-    A2A JSON-RPC Spec: message/send
-    Test sending a valid message with a FilePart. Expect a Task object in result.
+    CONDITIONAL MANDATORY: A2A Specification §5.1 - File Modality Support
+    
+    Status: MANDATORY if file modality declared in Agent Card
+            SKIP if file modality not declared
+            
+    If an agent declares file modality support, it MUST properly
+    handle message/send with FilePart.
     """
     # Skip if file modality is not supported
     if not has_modality_support(agent_card_data, "file"):
         pytest.skip("File modality not supported by SUT according to Agent Card")
-    
-    # Mark as core since we've confirmed file modality is supported
-    pytestmark = pytest.mark.core
     
     req = message_utils.make_json_rpc_request("message/send", params=valid_file_message_params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
@@ -141,17 +153,20 @@ def test_message_send_valid_file_part(sut_client, valid_file_message_params, age
 
     assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
 
+@optional_capability
 def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params, valid_file_message_params, agent_card_data):
     """
-    A2A JSON-RPC Spec: message/send
-    Test sending a valid message with multiple parts. Expect a Task object in result.
+    CONDITIONAL MANDATORY: A2A Specification §5.1 - Multiple Parts Support
+    
+    Status: MANDATORY if multiple modalities declared
+            SKIP if file modality not declared
+            
+    If an agent supports multiple modalities, it MUST handle
+    messages with multiple part types.
     """
     # Skip if file modality is not supported (we already assume text is supported)
     if not has_modality_support(agent_card_data, "file"):
         pytest.skip("File modality not supported by SUT according to Agent Card")
-    
-    # Mark as core since we've confirmed support for both modalities
-    pytestmark = pytest.mark.core
     
     combined_parts = {
         "message": {
@@ -167,11 +182,15 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
 
     assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
 
-@pytest.mark.core
+@mandatory_protocol
 def test_message_send_continue_task(sut_client, valid_text_message_params):
     """
-    A2A JSON-RPC Spec: message/send
-    Test continuing an existing task. Expect a Task or Message object in result with the provided taskId.
+    MANDATORY: A2A Specification §5.1 - Task Continuation
+    
+    The A2A specification requires support for continuing existing tasks
+    via message/send with taskId parameter.
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     # First, create a task with an explicit taskId
     task_id = "test-continue-task-" + str(uuid.uuid4())
@@ -212,11 +231,15 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
         assert result.get("role") == "agent"
         assert "parts" in result
 
-@pytest.mark.core
+@mandatory_protocol
 def test_message_send_continue_nonexistent_task(sut_client):
     """
-    A2A JSON-RPC Spec: message/send
-    Test continuing a non-existent task. Expect TaskNotFoundError or similar.
+    MANDATORY: A2A Specification §5.1 - Task Not Found Error Handling
+    
+    The A2A specification requires proper error handling when attempting
+    to continue a non-existent task. MUST return TaskNotFoundError.
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     continuation_params = {
         "message": {
@@ -236,10 +259,15 @@ def test_message_send_continue_nonexistent_task(sut_client):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
     # Error code might be implementation-specific, but should be an error
 
+@optional_capability
 def test_message_send_continue_with_contextid(sut_client, valid_text_message_params):
     """
-    A2A JSON-RPC Spec: message/send with contextId
-    Test continuing an existing task with contextId. Expect a Task object with the same taskId.
+    OPTIONAL: A2A Specification §5.1 - Context ID Support
+    
+    Context IDs are optional but recommended for maintaining conversation context.
+    This validates proper handling if supported.
+    
+    Status: Optional context management feature
     """
     # First, create a task
     first_req = message_utils.make_json_rpc_request("message/send", params=valid_text_message_params)
@@ -279,10 +307,16 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     assert result["id"] == task_id  # Should be the same task ID
     assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
 
+@optional_capability
 def test_message_send_valid_data_part(sut_client, valid_data_message_params, agent_card_data):
     """
-    A2A JSON-RPC Spec: message/send with DataPart
-    Test sending a valid message with a DataPart. Expect a Task object in result.
+    CONDITIONAL MANDATORY: A2A Specification §5.1 - Data Modality Support
+    
+    Status: MANDATORY if data modality declared in Agent Card
+            SKIP if data modality not declared
+            
+    If an agent declares data modality support, it MUST properly
+    handle message/send with DataPart.
     """
     # Skip if data modality is not supported
     if not has_modality_support(agent_card_data, "data"):
@@ -295,10 +329,15 @@ def test_message_send_valid_data_part(sut_client, valid_data_message_params, age
 
     assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
 
+@optional_capability
 def test_message_send_data_part_array(sut_client, agent_card_data):
     """
-    A2A JSON-RPC Spec: message/send with DataPart (array)
-    Test sending a DataPart with an array. Expect a Task object in result.
+    CONDITIONAL MANDATORY: A2A Specification §5.1 - Data Array Support
+    
+    Status: MANDATORY if data modality declared in Agent Card
+            SKIP if data modality not declared
+            
+    If data modality is supported, MUST handle DataPart with arrays.
     """
     # Skip if data modality is not supported
     if not has_modality_support(agent_card_data, "data"):

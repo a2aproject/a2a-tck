@@ -12,6 +12,7 @@ import pytest
 
 from tck import agent_card_utils
 from tck.sut_client import SUTClient
+from tests.markers import mandatory_protocol, optional_capability
 
 logger = logging.getLogger(__name__)
 
@@ -40,23 +41,29 @@ def fetched_agent_card(sut_client, agent_card_data):
     
     return agent_card
 
+@mandatory_protocol
 def test_agent_card_available(fetched_agent_card):
     """
-    Test that the Agent Card is available and is a well-formed JSON object.
+    MANDATORY: A2A Specification §2.1 - Agent Card Availability
     
-    This basic test ensures we can access the Agent Card, which is a prerequisite
-    for all other tests in this suite.
+    "A2A Servers MUST make an Agent Card available"
+    
+    This validates that the Agent Card is accessible and is well-formed JSON.
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     assert fetched_agent_card is not None, "Agent Card should be available"
     assert isinstance(fetched_agent_card, dict), "Agent Card should be a JSON object"
 
+@mandatory_protocol
 def test_mandatory_fields_present(fetched_agent_card):
     """
-    A2A Protocol Specification: Structure of the Agent Card
-    https://google.github.io/A2A/specification/#structure-of-the-agent-card
+    MANDATORY: A2A Specification §2.1 - Agent Card Structure
     
-    Test that the Agent Card contains all mandatory fields.
-    Based on investigation of a2a_schema.json, these are the actual required fields.
+    The A2A JSON Schema defines required fields in AgentCard.
+    These fields are MANDATORY for A2A compliance.
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     # Based on the A2A JSON schema, these fields are actually required
     mandatory_fields = [
@@ -86,13 +93,15 @@ def test_mandatory_fields_present(fetched_agent_card):
             # This is expected - these fields are not in the specification
             pass
 
+@mandatory_protocol
 def test_mandatory_field_types(fetched_agent_card):
     """
-    A2A Protocol Specification: Structure of the Agent Card
-    https://google.github.io/A2A/specification/#structure-of-the-agent-card
+    MANDATORY: A2A Specification §2.1 - Agent Card Field Types
     
-    Test that the mandatory fields have the correct data types.
-    Based on investigation of a2a_schema.json.
+    The A2A JSON Schema defines required types for mandatory fields.
+    Incorrect types violate the A2A specification.
+    
+    Failure Impact: Implementation is not A2A compliant
     """
     # Check types of required fields according to A2A specification
     assert isinstance(fetched_agent_card.get("name"), str), "name must be a string"
@@ -111,12 +120,16 @@ def test_mandatory_field_types(fetched_agent_card):
     
     # Note: protocolVersion and id are NOT in A2A specification
 
+@optional_capability  
 def test_capabilities_structure(fetched_agent_card):
     """
-    A2A Protocol Specification: Capabilities
-    https://google.github.io/A2A/specification/#capabilities
+    OPTIONAL: A2A Specification §2.1 - Capabilities Structure
     
-    Test that the capabilities object in the Agent Card has a valid structure, if present.
+    While the capabilities field itself is MANDATORY, the specific
+    capabilities (streaming, pushNotifications, etc.) are optional.
+    This validates their structure if present.
+    
+    Status: Optional validation of capability structure
     """
     # Skip if capabilities is not present (it's optional)
     if "capabilities" not in fetched_agent_card:
@@ -152,12 +165,15 @@ def test_capabilities_structure(fetched_agent_card):
                 for mode in modes:
                     assert isinstance(mode, str), f"mode in skill {skill['id']} must be a string"
 
+@optional_capability
 def test_authentication_structure(fetched_agent_card):
     """
-    A2A Protocol Specification: Authentication
-    https://google.github.io/A2A/specification/#authentication
+    OPTIONAL: A2A Specification §4.1 - Authentication Structure
     
-    Test that the authentication array in the Agent Card has a valid structure, if present.
+    Authentication schemes are optional capabilities. This validates
+    their structure if present, but does not require them.
+    
+    Status: Optional validation of authentication structure
     """
     # Skip if authentication is not present (it's optional)
     if "authentication" not in fetched_agent_card:

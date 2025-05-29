@@ -5,6 +5,7 @@ import pytest
 
 from tck import message_utils
 from tck.sut_client import SUTClient
+from tests.markers import mandatory_protocol, quality_basic
 
 
 @pytest.fixture(scope="module")
@@ -43,13 +44,15 @@ def follow_up_message_params(text_message_params):
         }
     }
 
-@pytest.mark.core
+@quality_basic
 def test_task_state_transitions(sut_client, text_message_params, follow_up_message_params):
     """
-    A2A JSON-RPC Spec: Task State Transitions
-    Test that a task transitions through expected states and maintains its history correctly.
+    OPTIONAL QUALITY: A2A Specification §6.3 - Task State Management
     
-    This tests sends multiple messages to a task and verifies its state transitions using tasks/get.
+    While not explicitly mandated, proper task state transitions indicate
+    good implementation quality and adherence to the state model.
+    
+    Status: Optional quality validation for state management
     """
     # Step 1: Create a new task with an explicit taskId
     task_id = "test-state-task-" + str(uuid.uuid4())
@@ -109,15 +112,15 @@ def test_task_state_transitions(sut_client, text_message_params, follow_up_messa
     current_state = get_resp2["result"]["status"]["state"]
     assert current_state in {"working", "input_required", "completed"}, f"Unexpected state: {current_state}"
 
-@pytest.mark.core
+@mandatory_protocol
 def test_task_history_length(sut_client, text_message_params):
     """
-    MANDATORY: A2A Specification Section 7.3 - historyLength parameter
+    MANDATORY: A2A Specification §7.3 - historyLength Parameter
     
-    The A2A specification states that tasks/get MUST support the historyLength parameter
-    to limit the number of history entries returned.
+    The A2A specification states that tasks/get MUST support the historyLength 
+    parameter to limit the number of history entries returned.
     
-    Test that the historyLength parameter in tasks/get properly limits the history entries returned.
+    Failure Impact: Implementation is not A2A compliant
     """
     # Step 1: Create a new task with an explicit taskId
     task_id = "test-history-task-" + str(uuid.uuid4())

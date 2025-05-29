@@ -50,6 +50,18 @@ asyncio_mode = "auto"
 markers = [
     "core: mark test as a core test (always runs)",
     "all: mark test as an optional test (only runs with --test-scope all)",
+    # Mandatory markers - MUST requirements
+    "mandatory: Blocks SDK compliance",
+    "mandatory_jsonrpc: JSON-RPC 2.0 compliance",
+    "mandatory_protocol: A2A protocol requirements",
+    # Optional markers - SHOULD/MAY requirements
+    "optional_recommended: SHOULD requirements",
+    "optional_feature: MAY requirements",
+    "optional_capability: Capability-dependent",
+    # Quality markers
+    "quality_basic: Basic implementation quality",
+    "quality_production: Production-ready quality",
+    "quality_advanced: Advanced features",
 ]
 
 [tool.black]
