@@ -120,8 +120,7 @@ def test_message_send_invalid_params(sut_client):
     invalid_params = {"message": {}}  # missing parts
     req = message_utils.make_json_rpc_request("message/send", params=invalid_params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    #assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-    assert resp["error"]["code"] == -32602
+    assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
 
 def test_message_send_valid_file_part(sut_client, valid_file_message_params, agent_card_data):
     """

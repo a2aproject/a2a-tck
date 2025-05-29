@@ -22,7 +22,7 @@ def text_message_params():
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Hello from protocol violation test!"
                 }
             ]
@@ -91,7 +91,7 @@ def test_invalid_jsonrpc_version(sut_client, text_message_params):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
         f"SUT MUST reject requests with invalid jsonrpc version per JSON-RPC 2.0 spec, but got: {resp}"
     assert resp["error"]["code"] == -32600, \
-        f"Expected InvalidRequest error code -32600, but got: {resp['error']['code']}"
+        f"Expected InvalidRequest error code -32600, but got: {resp['error']['code']} (Spec: InvalidRequestError)"
 
 # Protocol Violation: Missing Required Field
 @pytest.mark.all  # Not a core test
@@ -115,7 +115,7 @@ def test_missing_method_field(sut_client, text_message_params):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
         f"SUT MUST reject requests missing required 'method' field per JSON-RPC 2.0 spec, but got: {resp}"
     assert resp["error"]["code"] == -32600, \
-        f"Expected InvalidRequest error code -32600, but got: {resp['error']['code']}"
+        f"Expected InvalidRequest error code -32600, but got: {resp['error']['code']} (Spec: InvalidRequestError)"
 
 # Protocol Violation: Send raw invalid JSON
 @pytest.mark.all  # Not a core test
@@ -143,7 +143,8 @@ def test_raw_invalid_json(sut_client):
         try:
             resp = json.loads(response_text)
             assert "error" in resp
-            assert resp["error"]["code"] == -32700  # Parse error
+            assert resp["error"]["code"] == -32700, \
+                f"Expected JSONParseError error code -32700, but got: {resp['error']['code']} (Spec: JSONParseError)"
         except json.JSONDecodeError:
             # If the response is not valid JSON, that's an issue
             pytest.fail("SUT response to invalid JSON is not a valid JSON or HTTP error")

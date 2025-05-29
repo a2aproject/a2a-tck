@@ -25,7 +25,7 @@ def text_message_params():
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Hello from resilience test!"
                 }
             ]
@@ -194,7 +194,7 @@ def test_partial_update_recovery(sut_client, text_message_params):
                 "taskId": task_id,
                 "parts": [
                     {
-                        "type": "text",
+                        "kind": "text",
                         "text": text
                     }
                 ]

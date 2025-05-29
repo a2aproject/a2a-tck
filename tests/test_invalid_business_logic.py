@@ -35,7 +35,7 @@ def test_unsupported_part_kind(sut_client):
     # Expect either an error response or a task with failed state
     if message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]):
         # Check if it's an InvalidParamsError or other error
-        assert resp["error"]["code"] in {-32602, -32603}, "Expected InvalidParamsError or InternalError"
+        assert resp["error"]["code"] in {-32602, -32603}, "Expected InvalidParamsError or InternalError (Spec: InvalidParamsError/-32602, InternalError/-32603)"
     else:
         # If not an error response, the task might be created but in a failed state
         assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
@@ -55,7 +55,7 @@ def test_invalid_file_part(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "file",
+                    "kind": "file",
                     "file": {
                         "name": "test.txt",
                         "mimeType": "text/plain",
@@ -105,7 +105,7 @@ def test_empty_message_parts(sut_client):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
         f"SUT MUST reject messages with empty parts array per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
-        f"Expected InvalidParams error code -32602 for empty parts, but got: {resp['error']['code']}"
+        f"Expected InvalidParams error code -32602 for empty parts, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
 
 @pytest.mark.all  # Not a core test as per requirements
 def test_very_large_message(sut_client):
@@ -121,7 +121,7 @@ def test_very_large_message(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": large_text
                 }
             ]
@@ -158,7 +158,7 @@ def test_missing_required_message_fields(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Message without messageId"
                 }
             ]
@@ -172,7 +172,7 @@ def test_missing_required_message_fields(sut_client):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
         f"SUT MUST reject messages missing required 'messageId' field per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
-        f"Expected InvalidParams error code -32602 for missing messageId, but got: {resp['error']['code']}"
+        f"Expected InvalidParams error code -32602 for missing messageId, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
     
     # Test 2: Missing role (MUST requirement violation)
     params_no_role = {
@@ -181,7 +181,7 @@ def test_missing_required_message_fields(sut_client):
             # role is missing - violates A2A MUST requirement
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Message without role"
                 }
             ]
@@ -195,7 +195,7 @@ def test_missing_required_message_fields(sut_client):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
         f"SUT MUST reject messages missing required 'role' field per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
-        f"Expected InvalidParams error code -32602 for missing role, but got: {resp['error']['code']}"
+        f"Expected InvalidParams error code -32602 for missing role, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
     
     # Test 3: Missing parts (MUST requirement violation)  
     params_no_parts = {
@@ -213,4 +213,4 @@ def test_missing_required_message_fields(sut_client):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
         f"SUT MUST reject messages missing required 'parts' field per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
-        f"Expected InvalidParams error code -32602 for missing parts, but got: {resp['error']['code']}" 
+        f"Expected InvalidParams error code -32602 for missing parts, but got: {resp['error']['code']} (Spec: InvalidParamsError)" 

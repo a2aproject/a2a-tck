@@ -81,10 +81,19 @@ async def test_message_stream_basic(async_http_client, agent_card_data):
     A2A JSON-RPC Spec: message/stream
     Test the SUT's ability to stream responses using Server-Sent Events (SSE).
     Expect HTTP 200 and Content-Type: text/event-stream.
+    
+    A2A Specification Compliance: If the agent supports streaming functionality,
+    it MUST declare streaming capability in the Agent Card. This test will FAIL
+    (not skip) if the capability is missing but the agent actually supports streaming.
     """
-    # Skip if streaming is not supported
+    # A2A Specification Compliance Check
     if not has_streaming_support(agent_card_data):
-        pytest.skip("Streaming not supported by SUT according to Agent Card")
+        pytest.fail(
+            "Agent doesn't declare streaming capability in Agent Card. "
+            "A2A specification requires agents to declare all supported capabilities. "
+            "If the agent supports streaming, add 'capabilities.streaming: true' to Agent Card. "
+            "If the agent doesn't support streaming, this test should return HTTP 501 or MethodNotFound."
+        )
     
     # Mark as core since we've confirmed streaming is supported
     pytestmark = pytest.mark.core
@@ -96,7 +105,7 @@ async def test_message_stream_basic(async_http_client, agent_card_data):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Stream test message"
                 }
             ]
@@ -190,10 +199,18 @@ async def test_message_stream_invalid_params(async_http_client, agent_card_data)
     A2A JSON-RPC Spec: message/stream
     Test sending a message/stream request with invalid params.
     Expect either an immediate JSON-RPC error or an error in the stream.
+    
+    A2A Specification Compliance: If the agent supports streaming functionality,
+    it MUST declare streaming capability in the Agent Card.
     """
-    # Skip if streaming is not supported
+    # A2A Specification Compliance Check
     if not has_streaming_support(agent_card_data):
-        pytest.skip("Streaming not supported by SUT according to Agent Card")
+        pytest.fail(
+            "Agent doesn't declare streaming capability in Agent Card. "
+            "A2A specification requires agents to declare all supported capabilities. "
+            "If the agent supports streaming, add 'capabilities.streaming: true' to Agent Card. "
+            "If the agent doesn't support streaming, this test should return HTTP 501 or MethodNotFound."
+        )
     
     # Mark as core since we've confirmed streaming is supported
     pytestmark = pytest.mark.core
@@ -226,7 +243,7 @@ async def test_message_stream_invalid_params(async_http_client, agent_card_data)
                 # Should have InvalidParams code or similar
                 assert "error" in json_response
                 assert "code" in json_response["error"]
-                assert json_response["error"]["code"] in [-32602, -32600]  # Invalid params or invalid request
+                assert json_response["error"]["code"] in [-32602, -32600]  # Spec: InvalidParamsError/-32602, InvalidRequestError/-32600
             except json.JSONDecodeError:
                 pytest.fail("Non-streaming response was not valid JSON")
             except AssertionError as e:
@@ -269,10 +286,18 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
     """
     A2A JSON-RPC Spec: tasks/resubscribe
     Test the SUT's ability to handle resubscribing to an existing task's SSE stream.
+    
+    A2A Specification Compliance: If the agent supports streaming functionality,
+    it MUST declare streaming capability in the Agent Card.
     """
-    # Skip if streaming is not supported
+    # A2A Specification Compliance Check
     if not has_streaming_support(agent_card_data):
-        pytest.skip("Streaming not supported by SUT according to Agent Card")
+        pytest.fail(
+            "Agent doesn't declare streaming capability in Agent Card. "
+            "A2A specification requires agents to declare all supported capabilities. "
+            "If the agent supports streaming, add 'capabilities.streaming: true' to Agent Card. "
+            "If the agent doesn't support streaming, this test should return HTTP 501 or MethodNotFound."
+        )
     
     # Mark as core since we've confirmed streaming is supported
     pytestmark = pytest.mark.core
@@ -285,7 +310,7 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Test message for resubscribe"
                 }
             ]
@@ -363,10 +388,18 @@ async def test_tasks_resubscribe_nonexistent(async_http_client, agent_card_data)
     A2A JSON-RPC Spec: tasks/resubscribe for non-existent task
     Test the SUT's handling of a resubscribe request for a task that doesn't exist.
     Expect a JSON-RPC error with TaskNotFoundError or similar.
+    
+    A2A Specification Compliance: If the agent supports streaming functionality,
+    it MUST declare streaming capability in the Agent Card.
     """
-    # Skip if streaming is not supported
+    # A2A Specification Compliance Check
     if not has_streaming_support(agent_card_data):
-        pytest.skip("Streaming not supported by SUT according to Agent Card")
+        pytest.fail(
+            "Agent doesn't declare streaming capability in Agent Card. "
+            "A2A specification requires agents to declare all supported capabilities. "
+            "If the agent supports streaming, add 'capabilities.streaming: true' to Agent Card. "
+            "If the agent doesn't support streaming, this test should return HTTP 501 or MethodNotFound."
+        )
     
     # Mark as core since we've confirmed streaming is supported
     pytestmark = pytest.mark.core

@@ -26,7 +26,7 @@ def test_very_long_string(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": long_text
                 }
             ]
@@ -65,7 +65,7 @@ def test_empty_arrays(sut_client):
     
     # The SUT should reject this with InvalidParams
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-    assert resp["error"]["code"] == -32602  # InvalidParams
+    assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
 
 # Edge Case: Null Values in Optional Fields
 @pytest.mark.all  # Not a core test
@@ -79,7 +79,7 @@ def test_null_optional_fields(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Hello with null fields"
                 }
             ],
@@ -101,7 +101,7 @@ def test_null_optional_fields(sut_client):
         assert "id" in resp["result"]
     else:
         # If error, should be InvalidParams
-        assert resp["error"]["code"] == -32602
+        assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
 
 # Edge Case: Unexpected JSON Types
 @pytest.mark.all  # Not a core test
@@ -137,7 +137,7 @@ def test_extra_fields(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Message with extra fields"
                 }
             ],
@@ -172,7 +172,7 @@ def test_unicode_and_special_chars(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Unicode: 你好, здравствуйте, مرحبا, こんにちは\nControl chars: \t\b\f\r\n"
                 }
             ]
@@ -238,7 +238,7 @@ def _create_simple_task(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": f"Simple task for edge case testing {uuid.uuid4()}"
                 }
             ]

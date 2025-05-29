@@ -1,0 +1,353 @@
+/home/maeste/project/a2a-workspace/.venv/lib/python3.13/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.13.2, pytest-8.3.5, pluggy-1.6.0 -- /home/maeste/project/a2a-workspace/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/maeste/project/a2a-workspace/a2a-tck
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.9.0, asyncio-1.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 74 items
+
+tests/test_agent_card.py::test_agent_card_available PASSED               [  1%]
+tests/test_agent_card.py::test_mandatory_fields_present PASSED           [  2%]
+tests/test_agent_card.py::test_mandatory_field_types PASSED              [  4%]
+tests/test_agent_card.py::test_capabilities_structure PASSED             [  5%]
+tests/test_agent_card.py::test_authentication_structure SKIPPED (Age...) [  6%]
+tests/test_agent_card_utils.py::test_fetch_agent_card_success PASSED     [  8%]
+tests/test_agent_card_utils.py::test_fetch_agent_card_not_found PASSED   [  9%]
+tests/test_agent_card_utils.py::test_fetch_agent_card_invalid_json PASSED [ 10%]
+tests/test_agent_card_utils.py::test_get_sut_rpc_endpoint PASSED         [ 12%]
+tests/test_agent_card_utils.py::test_get_capability_streaming PASSED     [ 13%]
+tests/test_agent_card_utils.py::test_get_capability_push_notifications PASSED [ 14%]
+tests/test_agent_card_utils.py::test_get_supported_modalities PASSED     [ 16%]
+tests/test_agent_card_utils.py::test_get_authentication_schemes PASSED   [ 17%]
+tests/test_authentication.py::test_auth_schemes_available SKIPPED (N...) [ 18%]
+tests/test_authentication.py::test_missing_authentication SKIPPED (N...) [ 20%]
+tests/test_authentication.py::test_invalid_authentication SKIPPED (N...) [ 21%]
+tests/test_concurrency.py::test_parallel_requests PASSED                 [ 22%]
+tests/test_concurrency.py::test_rapid_sequential_requests PASSED         [ 24%]
+tests/test_concurrency.py::test_concurrent_operations_same_task PASSED   [ 25%]
+tests/test_edge_cases.py::test_very_long_string PASSED                   [ 27%]
+tests/test_edge_cases.py::test_empty_arrays FAILED                       [ 28%]
+tests/test_edge_cases.py::test_null_optional_fields PASSED               [ 29%]
+tests/test_edge_cases.py::test_unexpected_json_types PASSED              [ 31%]
+tests/test_edge_cases.py::test_extra_fields PASSED                       [ 32%]
+tests/test_edge_cases.py::test_unicode_and_special_chars PASSED          [ 33%]
+tests/test_edge_cases.py::test_boundary_values FAILED                    [ 35%]
+tests/test_invalid_business_logic.py::test_unsupported_part_kind FAILED  [ 36%]
+tests/test_invalid_business_logic.py::test_invalid_file_part PASSED      [ 37%]
+tests/test_invalid_business_logic.py::test_empty_message_parts FAILED    [ 39%]
+tests/test_invalid_business_logic.py::test_very_large_message PASSED     [ 40%]
+tests/test_invalid_business_logic.py::test_missing_required_message_fields PASSED [ 41%]
+tests/test_json_rpc_compliance.py::test_rejects_malformed_json PASSED    [ 43%]
+tests/test_json_rpc_compliance.py::test_rejects_invalid_json_rpc_requests[invalid_request0--32600] PASSED [ 44%]
+tests/test_json_rpc_compliance.py::test_rejects_invalid_json_rpc_requests[invalid_request1--32601] PASSED [ 45%]
+tests/test_json_rpc_compliance.py::test_rejects_invalid_json_rpc_requests[invalid_request2--32600] PASSED [ 47%]
+tests/test_json_rpc_compliance.py::test_rejects_invalid_json_rpc_requests[invalid_request3--32602] PASSED [ 48%]
+tests/test_json_rpc_compliance.py::test_rejects_unknown_method PASSED    [ 50%]
+tests/test_json_rpc_compliance.py::test_rejects_invalid_params PASSED    [ 51%]
+tests/test_message_send_method.py::test_message_send_valid_text PASSED   [ 52%]
+tests/test_message_send_method.py::test_message_send_invalid_params PASSED [ 54%]
+tests/test_message_send_method.py::test_message_send_valid_file_part SKIPPED [ 55%]
+tests/test_message_send_method.py::test_message_send_valid_multiple_parts SKIPPED [ 56%]
+tests/test_message_send_method.py::test_message_send_continue_task PASSED [ 58%]
+tests/test_message_send_method.py::test_message_send_continue_nonexistent_task PASSED [ 59%]
+tests/test_message_send_method.py::test_message_send_continue_with_contextid PASSED [ 60%]
+tests/test_message_send_method.py::test_message_send_valid_data_part SKIPPED [ 62%]
+tests/test_message_send_method.py::test_message_send_data_part_array SKIPPED [ 63%]
+tests/test_protocol_violations.py::test_duplicate_request_ids PASSED     [ 64%]
+tests/test_protocol_violations.py::test_invalid_jsonrpc_version PASSED   [ 66%]
+tests/test_protocol_violations.py::test_missing_method_field FAILED      [ 67%]
+tests/test_protocol_violations.py::test_raw_invalid_json PASSED          [ 68%]
+tests/test_push_notification_config_methods.py::test_set_push_notification_config SKIPPED [ 70%]
+tests/test_push_notification_config_methods.py::test_get_push_notification_config SKIPPED [ 71%]
+tests/test_push_notification_config_methods.py::test_set_push_notification_config_nonexistent SKIPPED [ 72%]
+tests/test_push_notification_config_methods.py::test_get_push_notification_config_nonexistent SKIPPED [ 74%]
+tests/test_reference_task_ids.py::test_reference_task_ids_valid SKIPPED  [ 75%]
+tests/test_reference_task_ids.py::test_reference_task_ids_invalid PASSED [ 77%]
+tests/test_resilience.py::test_streaming_reconnection_simulation PASSED  [ 78%]
+tests/test_resilience.py::test_partial_update_recovery PASSED            [ 79%]
+tests/test_state_transitions.py::test_task_state_transitions PASSED      [ 81%]
+tests/test_state_transitions.py::test_task_history_length PASSED         [ 82%]
+tests/test_streaming_methods.py::test_message_stream_basic PASSED        [ 83%]
+tests/test_streaming_methods.py::test_message_stream_invalid_params PASSED [ 85%]
+tests/test_streaming_methods.py::test_tasks_resubscribe PASSED           [ 86%]
+tests/test_streaming_methods.py::test_tasks_resubscribe_nonexistent FAILED [ 87%]
+tests/test_tasks_cancel_method.py::test_tasks_cancel_valid PASSED        [ 89%]
+tests/test_tasks_cancel_method.py::test_tasks_cancel_nonexistent PASSED  [ 90%]
+tests/test_tasks_cancel_method.py::test_tasks_cancel_already_canceled PASSED [ 91%]
+tests/test_tasks_get_method.py::test_tasks_get_valid PASSED              [ 93%]
+tests/test_tasks_get_method.py::test_tasks_get_with_history_length PASSED [ 94%]
+tests/test_tasks_get_method.py::test_tasks_get_nonexistent PASSED        [ 95%]
+tests/test_transport_security.py::test_sut_uses_https PASSED             [ 97%]
+tests/test_transport_security.py::test_http_to_https_redirect SKIPPED    [ 98%]
+tests/test_transport_security.py::test_https_url_in_agent_card FAILED    [100%]
+
+=================================== FAILURES ===================================
+______________________________ test_empty_arrays _______________________________
+
+sut_client = <tck.sut_client.SUTClient object at 0x7f6a0bb95810>
+
+    @pytest.mark.all  # Not a core test
+    def test_empty_arrays(sut_client):
+        """
+        Test SUT's handling of empty arrays in parameters.
+        """
+        # Empty parts array (should be rejected)
+        params = {
+            "message": {
+                "messageId": "test-empty-array-message-id-" + str(uuid.uuid4()),
+                "role": "user",
+                "parts": []
+            }
+        }
+    
+        req = message_utils.make_json_rpc_request("message/send", params=params)
+        resp = sut_client.send_json_rpc(**req)
+    
+        # The SUT should reject this with InvalidParams
+>       assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
+E       AssertionError: assert False
+E        +  where False = <function is_json_rpc_error_response at 0x7f6a0b908400>({'id': 'da02b015-0b2c-497c-bdec-50875d6dcf1d', 'jsonrpc': '2.0', 'result': {'artifacts': [{'artifactId': '5f1bb8b7-d067-4e10-80b7-b4d75e411088', 'description': 'Agent response to user message.', 'name': 'response', 'parts': [{'kind': 'text', 'text': 'Hello! Please provide a message for me to respond to.'}]}], 'contextId': 'f026d90c-a09e-4b8d-8d69-d6e616fa699b', 'history': [{'contextId': 'f026d90c-a09e-4b8d-8d69-d6e616fa699b', 'kind': 'message', 'messageId': 'test-empty-array-message-id-00070be1-4d63-4bd6-a3dc-42346e7983ed', 'parts': [], ...}], 'id': 'e1feb867-4c24-4d48-a369-a4babdb8323a', ...}}, expected_id='da02b015-0b2c-497c-bdec-50875d6dcf1d')
+E        +    where <function is_json_rpc_error_response at 0x7f6a0b908400> = message_utils.is_json_rpc_error_response
+
+tests/test_edge_cases.py:67: AssertionError
+_____________________________ test_boundary_values _____________________________
+
+sut_client = <tck.sut_client.SUTClient object at 0x7f6a0bb95810>
+
+    @pytest.mark.all  # Not a core test
+    def test_boundary_values(sut_client):
+        """
+        Test SUT's handling of boundary values in parameters.
+        """
+        # Test with minimum/maximum values for historyLength
+        task_id = _create_simple_task(sut_client)
+    
+        # Very large historyLength (e.g., int32 max)
+        large_history_req = message_utils.make_json_rpc_request(
+            "tasks/get",
+            params={"id": task_id, "historyLength": 2147483647}
+        )
+        large_history_resp = sut_client.send_json_rpc(**large_history_req)
+    
+        # Very small historyLength (e.g., 0)
+        zero_history_req = message_utils.make_json_rpc_request(
+            "tasks/get",
+            params={"id": task_id, "historyLength": 0}
+        )
+        zero_history_resp = sut_client.send_json_rpc(**zero_history_req)
+    
+        # Negative historyLength (invalid)
+        neg_history_req = message_utils.make_json_rpc_request(
+            "tasks/get",
+            params={"id": task_id, "historyLength": -1}
+        )
+        neg_history_resp = sut_client.send_json_rpc(**neg_history_req)
+    
+        # Check that positive values are accepted
+        assert message_utils.is_json_rpc_success_response(large_history_resp, expected_id=large_history_req["id"])
+        assert message_utils.is_json_rpc_success_response(zero_history_resp, expected_id=zero_history_req["id"])
+    
+        # Negative should be rejected
+>       assert message_utils.is_json_rpc_error_response(neg_history_resp, expected_id=neg_history_req["id"])
+E       assert False
+E        +  where False = <function is_json_rpc_error_response at 0x7f6a0b908400>({'id': 'b41cd1dd-0792-4e3d-a2b6-2ef2e76f0ac9', 'jsonrpc': '2.0', 'result': {'artifacts': [{'artifactId': 'afd6575e-b83a-46a2-a003-148c9a9c69a1', 'description': 'Agent response to user message.', 'name': 'response', 'parts': [{'kind': 'text', 'text': "Hello World! You said: 'Simple task for edge case testing c989e62b-ad8a-434f-a231-a2bc4998f09e'. Thanks for your message!"}]}], 'contextId': 'fc31abbe-879a-49d5-aca9-5b57f7f5bd5d', 'history': [], 'id': 'd1dfa928-8679-46bb-a581-9ca460e0f852', ...}}, expected_id='b41cd1dd-0792-4e3d-a2b6-2ef2e76f0ac9')
+E        +    where <function is_json_rpc_error_response at 0x7f6a0b908400> = message_utils.is_json_rpc_error_response
+
+tests/test_edge_cases.py:230: AssertionError
+__________________________ test_unsupported_part_kind __________________________
+
+sut_client = <tck.sut_client.SUTClient object at 0x7f6a0baf68b0>
+
+    @pytest.mark.all  # Not a core test as per requirements
+    def test_unsupported_part_kind(sut_client):
+        """
+        A2A JSON-RPC Spec: Business Logic Validation
+        Test that the SUT properly rejects a message with an unsupported part type.
+        """
+        # Create a message with an unsupported part type
+        params = {
+            "message": {
+                "messageId": "test-unsupported-part-message-id-" + str(uuid.uuid4()),
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "unsupported_type",  # Invalid/unsupported type
+                        "text": "This should be rejected"
+                    }
+                ]
+            }
+        }
+    
+        req = message_utils.make_json_rpc_request("message/send", params=params)
+        resp = sut_client.send_json_rpc(**req)
+    
+        # Expect either an error response or a task with failed state
+        if message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]):
+            # Check if it's an InvalidParamsError or other error
+            assert resp["error"]["code"] in {-32602, -32603}, "Expected InvalidParamsError or InternalError"
+        else:
+            # If not an error response, the task might be created but in a failed state
+            assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+            task = resp["result"]
+>           assert task["status"].get("state") in {"failed", "error"}, "Task should be in failed state"
+E           AssertionError: Task should be in failed state
+E           assert 'completed' in {'error', 'failed'}
+E            +  where 'completed' = <built-in method get of dict object at 0x7f6a0b935fc0>('state')
+E            +    where <built-in method get of dict object at 0x7f6a0b935fc0> = {'message': {'contextId': '3b0b1861-5ddd-4b61-a128-6576d6c5ad9b', 'kind': 'message', 'messageId': 'c310f519-4ee6-4e6e-970d-c5f57543189f', 'parts': [{'kind': 'text', 'text': 'Hello World! Nice to meet you!'}], ...}, 'state': 'completed'}.get
+
+tests/test_invalid_business_logic.py:43: AssertionError
+___________________________ test_empty_message_parts ___________________________
+
+sut_client = <tck.sut_client.SUTClient object at 0x7f6a0baf68b0>
+
+    @pytest.mark.all  # Not a core test as per requirements
+    def test_empty_message_parts(sut_client):
+        """
+        A2A JSON-RPC Spec: Business Logic Validation
+        Test that the SUT properly handles a message with empty parts array.
+    
+        Per A2A specification, a message MUST contain at least one part.
+        The SUT MUST reject messages with empty parts arrays.
+        """
+        # Create a message with empty parts array (violates A2A MUST requirement)
+        params = {
+            "message": {
+                "messageId": "test-empty-parts-message-id-" + str(uuid.uuid4()),
+                "role": "user",
+                "parts": []
+            }
+        }
+    
+        req = message_utils.make_json_rpc_request("message/send", params=params)
+        resp = sut_client.send_json_rpc(**req)
+    
+        # Per A2A spec, this MUST be rejected with InvalidParams error
+>       assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+            f"SUT MUST reject messages with empty parts array per A2A spec, but got: {resp}"
+E       AssertionError: SUT MUST reject messages with empty parts array per A2A spec, but got: {'id': '23136234-2db5-46be-88ce-433c7a66cc86', 'jsonrpc': '2.0', 'result': {'artifacts': [{'artifactId': '806e3f08-2c79-42fe-9d2a-342d3d3c67f4', 'description': 'Agent response to user message.', 'name': 'response', 'parts': [{'kind': 'text', 'text': 'Hello! Please provide a message for me to respond to.'}]}], 'contextId': '3871f298-4169-4d97-b25d-a047c81cc329', 'history': [{'contextId': '3871f298-4169-4d97-b25d-a047c81cc329', 'kind': 'message', 'messageId': 'test-empty-parts-message-id-9a419a46-18c2-485a-87b6-99878c2e53d2', 'parts': [], 'role': 'user', 'taskId': '999fadec-d960-43f5-bd2b-adf95f6b068b'}], 'id': '999fadec-d960-43f5-bd2b-adf95f6b068b', 'kind': 'task', 'status': {'message': {'contextId': '3871f298-4169-4d97-b25d-a047c81cc329', 'kind': 'message', 'messageId': 'd12b535d-f5d7-479e-ba91-fcd973a6c198', 'parts': [{'kind': 'text', 'text': 'Hello! Please provide a message for me to respond to.'}], 'role': 'agent', 'taskId': '999fadec-d960-43f5-bd2b-adf95f6b068b'}, 'state': 'completed'}}}
+E       assert False
+E        +  where False = <function is_json_rpc_error_response at 0x7f6a0b908400>({'id': '23136234-2db5-46be-88ce-433c7a66cc86', 'jsonrpc': '2.0', 'result': {'artifacts': [{'artifactId': '806e3f08-2c79-42fe-9d2a-342d3d3c67f4', 'description': 'Agent response to user message.', 'name': 'response', 'parts': [{'kind': 'text', 'text': 'Hello! Please provide a message for me to respond to.'}]}], 'contextId': '3871f298-4169-4d97-b25d-a047c81cc329', 'history': [{'contextId': '3871f298-4169-4d97-b25d-a047c81cc329', 'kind': 'message', 'messageId': 'test-empty-parts-message-id-9a419a46-18c2-485a-87b6-99878c2e53d2', 'parts': [], ...}], 'id': '999fadec-d960-43f5-bd2b-adf95f6b068b', ...}}, expected_id='23136234-2db5-46be-88ce-433c7a66cc86')
+E        +    where <function is_json_rpc_error_response at 0x7f6a0b908400> = message_utils.is_json_rpc_error_response
+
+tests/test_invalid_business_logic.py:105: AssertionError
+__________________________ test_missing_method_field ___________________________
+
+sut_client = <tck.sut_client.SUTClient object at 0x7f6a0b8d9260>
+text_message_params = {'message': {'messageId': 'test-protocol-message-id-fb63ecb5-860a-454f-afd3-eb8d735b56e7', 'parts': [{'kind': 'text', 'text': 'Hello from protocol violation test!'}], 'role': 'user'}}
+
+    @pytest.mark.all  # Not a core test
+    def test_missing_method_field(sut_client, text_message_params):
+        """
+        Test SUT's response to a request missing the method field.
+    
+        Per JSON-RPC 2.0 specification, the method field is REQUIRED.
+        The SUT MUST reject requests missing required fields.
+        """
+        # Create a valid request first
+        req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
+    
+        # Remove the method field (violates JSON-RPC 2.0 MUST requirement)
+        req.pop("method")
+    
+        # Send the malformed request using raw JSON-RPC method
+        resp = sut_client.send_raw_json_rpc(req)
+    
+        # Per JSON-RPC 2.0 spec, this MUST be rejected with InvalidRequest error
+>       assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+            f"SUT MUST reject requests missing required 'method' field per JSON-RPC 2.0 spec, but got: {resp}"
+E       AssertionError: SUT MUST reject requests missing required 'method' field per JSON-RPC 2.0 spec, but got: {'id': '1e24195c-9418-416d-9498-934730b9bc58', 'jsonrpc': '2.0', 'result': {'artifacts': [{'artifactId': 'd0bfff5a-3a24-433e-865e-332d020a200c', 'description': 'Agent response to user message.', 'name': 'response', 'parts': [{'kind': 'text', 'text': 'Hello World! Nice to meet you!'}]}], 'contextId': '470780be-a52d-4120-990a-b86b4054d7a2', 'history': [{'contextId': '470780be-a52d-4120-990a-b86b4054d7a2', 'kind': 'message', 'messageId': 'test-protocol-message-id-fb63ecb5-860a-454f-afd3-eb8d735b56e7', 'parts': [{'kind': 'text', 'text': 'Hello from protocol violation test!'}], 'role': 'user', 'taskId': 'c993d7c3-ad97-4b51-8827-ec4eb454cbc8'}], 'id': 'c993d7c3-ad97-4b51-8827-ec4eb454cbc8', 'kind': 'task', 'status': {'message': {'contextId': '470780be-a52d-4120-990a-b86b4054d7a2', 'kind': 'message', 'messageId': 'c6706f02-1b66-4531-bc2f-2b3429120eca', 'parts': [{'kind': 'text', 'text': 'Hello World! Nice to meet you!'}], 'role': 'agent', 'taskId': 'c993d7c3-ad97-4b51-8827-ec4eb454cbc8'}, 'state': 'completed'}}}
+E       assert False
+E        +  where False = <function is_json_rpc_error_response at 0x7f6a0b908400>({'id': '1e24195c-9418-416d-9498-934730b9bc58', 'jsonrpc': '2.0', 'result': {'artifacts': [{'artifactId': 'd0bfff5a-3a24-433e-865e-332d020a200c', 'description': 'Agent response to user message.', 'name': 'response', 'parts': [{'kind': 'text', 'text': 'Hello World! Nice to meet you!'}]}], 'contextId': '470780be-a52d-4120-990a-b86b4054d7a2', 'history': [{'contextId': '470780be-a52d-4120-990a-b86b4054d7a2', 'kind': 'message', 'messageId': 'test-protocol-message-id-fb63ecb5-860a-454f-afd3-eb8d735b56e7', 'parts': [{'kind': 'text', 'text': 'Hello from protocol violation test!'}], ...}], 'id': 'c993d7c3-ad97-4b51-8827-ec4eb454cbc8', ...}}, expected_id='1e24195c-9418-416d-9498-934730b9bc58')
+E        +    where <function is_json_rpc_error_response at 0x7f6a0b908400> = message_utils.is_json_rpc_error_response
+
+tests/test_protocol_violations.py:115: AssertionError
+______________________ test_tasks_resubscribe_nonexistent ______________________
+
+async_http_client = <httpx.AsyncClient object at 0x7f6a0974dba0>
+agent_card_data = {'capabilities': {'streaming': True}, 'defaultInputModes': ['text'], 'defaultOutputModes': ['text'], 'description': 'A...plete A2A agent implementation designed specifically for testing with the A2A Technology Compatibility Kit (TCK)', ...}
+
+    @pytest.mark.asyncio
+    async def test_tasks_resubscribe_nonexistent(async_http_client, agent_card_data):
+        """
+        A2A JSON-RPC Spec: tasks/resubscribe for non-existent task
+        Test the SUT's handling of a resubscribe request for a task that doesn't exist.
+        Expect a JSON-RPC error with TaskNotFoundError or similar.
+        """
+        # Skip if streaming is not supported
+        if not has_streaming_support(agent_card_data):
+            pytest.skip("Streaming not supported by SUT according to Agent Card")
+    
+        # Mark as core since we've confirmed streaming is supported
+        pytestmark = pytest.mark.core
+    
+        # Use a random, non-existent task ID
+        task_id = "non-existent-task-id-" + message_utils.generate_request_id()
+    
+        resubscribe_params = {"id": task_id}
+        req_id = message_utils.generate_request_id()
+        json_rpc_request = message_utils.make_json_rpc_request("tasks/resubscribe", params=resubscribe_params, id=req_id)
+    
+        sut_url = config.get_sut_url()
+        headers = {"Content-Type": "application/json"}
+    
+        try:
+            response = await async_http_client.post(
+                sut_url,
+                json=json_rpc_request,
+                headers=headers,
+                timeout=10  # Use timeout here since we expect an error
+            )
+    
+            # We expect a JSON-RPC error for a non-existent task, not a stream
+>           assert not response.headers.get("content-type", "").startswith("text/event-stream")
+E           AssertionError: assert not True
+E            +  where True = <built-in method startswith of str object at 0x7f6a097766a0>('text/event-stream')
+E            +    where <built-in method startswith of str object at 0x7f6a097766a0> = 'text/event-stream; charset=utf-8'.startswith
+E            +      where 'text/event-stream; charset=utf-8' = get('content-type', '')
+E            +        where get = Headers({'date': 'Thu, 29 May 2025 06:37:47 GMT', 'server': 'uvicorn', 'cache-control': 'no-store', 'connection': 'keep-alive', 'x-accel-buffering': 'no', 'content-type': 'text/event-stream; charset=utf-8', 'transfer-encoding': 'chunked'}).get
+E            +          where Headers({'date': 'Thu, 29 May 2025 06:37:47 GMT', 'server': 'uvicorn', 'cache-control': 'no-store', 'connection': 'keep-alive', 'x-accel-buffering': 'no', 'content-type': 'text/event-stream; charset=utf-8', 'transfer-encoding': 'chunked'}) = <Response [200 OK]>.headers
+
+tests/test_streaming_methods.py:393: AssertionError
+_________________________ test_https_url_in_agent_card _________________________
+
+sut_client = <tck.sut_client.SUTClient object at 0x7f6a0b84b4d0>
+agent_card_data = {'capabilities': {'streaming': True}, 'defaultInputModes': ['text'], 'defaultOutputModes': ['text'], 'description': 'A...plete A2A agent implementation designed specifically for testing with the A2A Technology Compatibility Kit (TCK)', ...}
+
+    def test_https_url_in_agent_card(sut_client, agent_card_data):
+        """
+        A2A Protocol Specification: Transport Security and Agent Card
+    
+        Test that the URLs in the Agent Card use HTTPS.
+    
+        This validates that the agent's self-reported URLs in the Agent Card
+        follow security best practices by using HTTPS.
+        """
+        if agent_card_data is None:
+            pytest.skip("Agent Card data is not available")
+    
+        # Check URL field if present
+        if "url" in agent_card_data:
+            url = agent_card_data["url"]
+>           assert url.startswith("https://"), f"Agent Card URL should use HTTPS: {url}"
+E           AssertionError: Agent Card URL should use HTTPS: http://localhost:9999/
+E           assert False
+E            +  where False = <built-in method startswith of str object at 0x7f6a0b820a30>('https://')
+E            +    where <built-in method startswith of str object at 0x7f6a0b820a30> = 'http://localhost:9999/'.startswith
+
+tests/test_transport_security.py:115: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_edge_cases.py::test_empty_arrays - AssertionError: assert F...
+FAILED tests/test_edge_cases.py::test_boundary_values - assert False
+FAILED tests/test_invalid_business_logic.py::test_unsupported_part_kind - Ass...
+FAILED tests/test_invalid_business_logic.py::test_empty_message_parts - Asser...
+FAILED tests/test_protocol_violations.py::test_missing_method_field - Asserti...
+FAILED tests/test_streaming_methods.py::test_tasks_resubscribe_nonexistent - ...
+FAILED tests/test_transport_security.py::test_https_url_in_agent_card - Asser...
+============= 7 failed, 53 passed, 14 skipped in 60.38s (0:01:00) ==============
+Running command: pytest --sut-url http://localhost:9999 --test-scope all -v

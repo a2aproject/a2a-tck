@@ -19,7 +19,7 @@ def created_task_id(sut_client):
             "role": "user",
             "taskId": task_id,  # Provide the task ID explicitly
             "parts": [
-                {"type": "text", "text": "Task for get test"}
+                {"kind": "text", "text": "Task for get test"}
             ]
         }
     }

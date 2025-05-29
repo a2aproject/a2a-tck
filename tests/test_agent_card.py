@@ -56,13 +56,35 @@ def test_mandatory_fields_present(fetched_agent_card):
     https://google.github.io/A2A/specification/#structure-of-the-agent-card
     
     Test that the Agent Card contains all mandatory fields.
+    Based on investigation of a2a_schema.json, these are the actual required fields.
     """
-    # Based on the A2A specification, these fields are required
-    mandatory_fields = ["name", "description", "protocolVersion", "id"]
+    # Based on the A2A JSON schema, these fields are actually required
+    mandatory_fields = [
+        "capabilities", 
+        "defaultInputModes", 
+        "defaultOutputModes", 
+        "description", 
+        "name", 
+        "skills", 
+        "url", 
+        "version"
+    ]
+    
+    # Fields that were previously expected but are NOT in the specification
+    non_spec_fields = ["protocolVersion", "id"]
     
     # Check each mandatory field is present
     for field in mandatory_fields:
-        assert field in fetched_agent_card, f"Agent Card missing mandatory field: {field}"
+        assert field in fetched_agent_card, f"Agent Card missing required field: {field} (A2A spec requirement)"
+    
+    # Document that these fields are NOT in the specification
+    for field in non_spec_fields:
+        if field in fetched_agent_card:
+            # If SDK provides them, that's fine but not required
+            pass
+        else:
+            # This is expected - these fields are not in the specification
+            pass
 
 def test_mandatory_field_types(fetched_agent_card):
     """
@@ -70,20 +92,24 @@ def test_mandatory_field_types(fetched_agent_card):
     https://google.github.io/A2A/specification/#structure-of-the-agent-card
     
     Test that the mandatory fields have the correct data types.
+    Based on investigation of a2a_schema.json.
     """
-    # Check types of required fields
+    # Check types of required fields according to A2A specification
     assert isinstance(fetched_agent_card.get("name"), str), "name must be a string"
     assert isinstance(fetched_agent_card.get("description"), str), "description must be a string"
-    assert isinstance(fetched_agent_card.get("protocolVersion"), str), "protocolVersion must be a string"
-    assert isinstance(fetched_agent_card.get("id"), str), "id must be a string"
+    assert isinstance(fetched_agent_card.get("version"), str), "version must be a string"
+    assert isinstance(fetched_agent_card.get("url"), str), "url must be a string"
+    assert isinstance(fetched_agent_card.get("capabilities"), dict), "capabilities must be an object"
+    assert isinstance(fetched_agent_card.get("defaultInputModes"), list), "defaultInputModes must be an array"
+    assert isinstance(fetched_agent_card.get("defaultOutputModes"), list), "defaultOutputModes must be an array"
+    assert isinstance(fetched_agent_card.get("skills"), list), "skills must be an array"
     
-    # If url is present, it should be a string and a valid URL
-    if "url" in fetched_agent_card:
-        url = fetched_agent_card["url"]
-        assert isinstance(url, str), "url must be a string"
-        # Simple regex to check for a valid URL format
-        url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
-        assert re.match(url_pattern, url), f"url is not a valid URL: {url}"
+    # Simple regex to check for a valid URL format
+    url = fetched_agent_card["url"]
+    url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+    assert re.match(url_pattern, url), f"url is not a valid URL: {url}"
+    
+    # Note: protocolVersion and id are NOT in A2A specification
 
 def test_capabilities_structure(fetched_agent_card):
     """
