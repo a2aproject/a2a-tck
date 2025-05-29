@@ -22,7 +22,7 @@ def text_message_params():
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Hello from protocol violation test!"
                 }
             ]

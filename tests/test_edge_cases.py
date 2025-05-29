@@ -26,7 +26,7 @@ def test_very_long_string(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": long_text
                 }
             ]
@@ -79,7 +79,7 @@ def test_null_optional_fields(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Hello with null fields"
                 }
             ],
@@ -137,7 +137,7 @@ def test_extra_fields(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Message with extra fields"
                 }
             ],
@@ -172,7 +172,7 @@ def test_unicode_and_special_chars(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Unicode: 你好, здравствуйте, مرحبا, こんにちは\nControl chars: \t\b\f\r\n"
                 }
             ]
@@ -238,7 +238,7 @@ def _create_simple_task(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": f"Simple task for edge case testing {uuid.uuid4()}"
                 }
             ]

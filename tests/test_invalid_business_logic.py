@@ -55,7 +55,7 @@ def test_invalid_file_part(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "file",
+                    "kind": "file",
                     "file": {
                         "name": "test.txt",
                         "mimeType": "text/plain",
@@ -121,7 +121,7 @@ def test_very_large_message(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": large_text
                 }
             ]
@@ -158,7 +158,7 @@ def test_missing_required_message_fields(sut_client):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Message without messageId"
                 }
             ]
@@ -181,7 +181,7 @@ def test_missing_required_message_fields(sut_client):
             # role is missing - violates A2A MUST requirement
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Message without role"
                 }
             ]

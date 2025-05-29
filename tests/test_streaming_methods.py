@@ -96,7 +96,7 @@ async def test_message_stream_basic(async_http_client, agent_card_data):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Stream test message"
                 }
             ]
@@ -285,7 +285,7 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
             "role": "user",
             "parts": [
                 {
-                    "type": "text",
+                    "kind": "text",
                     "text": "Test message for resubscribe"
                 }
             ]
