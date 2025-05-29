@@ -1,0 +1,82 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.2, pytest-8.3.5, pluggy-1.6.0 -- /home/maeste/project/a2a-workspace/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/maeste/project/a2a-workspace/a2a-tck
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.9.0, asyncio-1.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 74 items
+
+tests/test_agent_card.py::test_agent_card_available PASSED               [  1%]
+tests/test_agent_card.py::test_mandatory_fields_present FAILED           [  2%]
+tests/test_agent_card.py::test_mandatory_field_types FAILED              [  4%]
+tests/test_agent_card.py::test_capabilities_structure PASSED             [  5%]
+tests/test_agent_card.py::test_authentication_structure SKIPPED (Age...) [  6%]
+tests/test_agent_card_utils.py::test_fetch_agent_card_success PASSED     [  8%]
+tests/test_agent_card_utils.py::test_fetch_agent_card_not_found PASSED   [  9%]
+tests/test_agent_card_utils.py::test_fetch_agent_card_invalid_json PASSED [ 10%]
+tests/test_agent_card_utils.py::test_get_sut_rpc_endpoint PASSED         [ 12%]
+tests/test_agent_card_utils.py::test_get_capability_streaming PASSED     [ 13%]
+tests/test_agent_card_utils.py::test_get_capability_push_notifications PASSED [ 14%]
+tests/test_agent_card_utils.py::test_get_supported_modalities PASSED     [ 16%]
+tests/test_agent_card_utils.py::test_get_authentication_schemes PASSED   [ 17%]
+tests/test_authentication.py::test_auth_schemes_available SKIPPED (N...) [ 18%]
+tests/test_authentication.py::test_missing_authentication SKIPPED (N...) [ 20%]
+tests/test_authentication.py::test_invalid_authentication SKIPPED (N...) [ 21%]
+tests/test_concurrency.py::test_parallel_requests PASSED                 [ 22%]
+tests/test_concurrency.py::test_rapid_sequential_requests PASSED         [ 24%]
+tests/test_concurrency.py::test_concurrent_operations_same_task 
+
+=================================== FAILURES ===================================
+________________________ test_mandatory_fields_present _________________________
+
+fetched_agent_card = {'capabilities': {'streaming': True}, 'defaultInputModes': ['text'], 'defaultOutputModes': ['text'], 'description': 'A...plete A2A agent implementation designed specifically for testing with the A2A Technology Compatibility Kit (TCK)', ...}
+
+    def test_mandatory_fields_present(fetched_agent_card):
+        """
+        A2A Protocol Specification: Structure of the Agent Card
+        https://google.github.io/A2A/specification/#structure-of-the-agent-card
+    
+        Test that the Agent Card contains all mandatory fields.
+        """
+        # Based on the A2A specification, these fields are required
+        mandatory_fields = ["name", "description", "protocolVersion", "id"]
+    
+        # Check each mandatory field is present
+        for field in mandatory_fields:
+>           assert field in fetched_agent_card, f"Agent Card missing mandatory field: {field}"
+E           AssertionError: Agent Card missing mandatory field: protocolVersion
+E           assert 'protocolVersion' in {'capabilities': {'streaming': True}, 'defaultInputModes': ['text'], 'defaultOutputModes': ['text'], 'description': 'A complete A2A agent implementation designed specifically for testing with the A2A Technology Compatibility Kit (TCK)', ...}
+
+tests/test_agent_card.py:65: AssertionError
+__________________________ test_mandatory_field_types __________________________
+
+fetched_agent_card = {'capabilities': {'streaming': True}, 'defaultInputModes': ['text'], 'defaultOutputModes': ['text'], 'description': 'A...plete A2A agent implementation designed specifically for testing with the A2A Technology Compatibility Kit (TCK)', ...}
+
+    def test_mandatory_field_types(fetched_agent_card):
+        """
+        A2A Protocol Specification: Structure of the Agent Card
+        https://google.github.io/A2A/specification/#structure-of-the-agent-card
+    
+        Test that the mandatory fields have the correct data types.
+        """
+        # Check types of required fields
+        assert isinstance(fetched_agent_card.get("name"), str), "name must be a string"
+        assert isinstance(fetched_agent_card.get("description"), str), "description must be a string"
+>       assert isinstance(fetched_agent_card.get("protocolVersion"), str), "protocolVersion must be a string"
+E       AssertionError: protocolVersion must be a string
+E       assert False
+E        +  where False = isinstance(None, str)
+E        +    where None = <built-in method get of dict object at 0x7f5eedd91e00>('protocolVersion')
+E        +      where <built-in method get of dict object at 0x7f5eedd91e00> = {'capabilities': {'streaming': True}, 'defaultInputModes': ['text'], 'defaultOutputModes': ['text'], 'description': 'A complete A2A agent implementation designed specifically for testing with the A2A Technology Compatibility Kit (TCK)', ...}.get
+
+tests/test_agent_card.py:77: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_agent_card.py::test_mandatory_fields_present - AssertionErr...
+FAILED tests/test_agent_card.py::test_mandatory_field_types - AssertionError:...
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/home/linuxbrew/.linuxbrew/opt/python@3.13/lib/python3.13/socket.py:719: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+=================== 2 failed, 12 passed, 4 skipped in 13.72s ===================
+Running command: pytest --sut-url http://localhost:9999 --test-scope all -v
