@@ -112,7 +112,11 @@ def test_task_state_transitions(sut_client, text_message_params, follow_up_messa
 @pytest.mark.core
 def test_task_history_length(sut_client, text_message_params):
     """
-    A2A JSON-RPC Spec: Task History Length Parameter
+    MANDATORY: A2A Specification Section 7.3 - historyLength parameter
+    
+    The A2A specification states that tasks/get MUST support the historyLength parameter
+    to limit the number of history entries returned.
+    
     Test that the historyLength parameter in tasks/get properly limits the history entries returned.
     """
     # Step 1: Create a new task with an explicit taskId

@@ -46,7 +46,11 @@ def test_tasks_get_valid(sut_client, created_task_id):
 @pytest.mark.core
 def test_tasks_get_with_history_length(sut_client, created_task_id):
     """
-    A2A JSON-RPC Spec: tasks/get
+    MANDATORY: A2A Specification Section 7.3 - historyLength parameter
+    
+    The A2A specification states that tasks/get MUST support the historyLength parameter
+    to limit the number of history entries returned.
+    
     Test retrieving a task with historyLength param. Expect a Task object in result.
     """
     params = {"id": created_task_id, "historyLength": 1}
