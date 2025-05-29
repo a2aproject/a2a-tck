@@ -1,6 +1,6 @@
 # Working Notes - TCK Specification Alignment
 
-## Current Status: Phase 2 Complete ✅
+## Current Status: Phase 3 Verified ✅, Starting Phase 4
 
 ### Setup Completed:
 - ✅ Created branch: fix/tck-specification-alignment
@@ -33,7 +33,27 @@
   - Removed TckA2AStarletteApplication custom class
   - Changed to use standard A2AStarletteApplication
   - No more injection of protocolVersion/id fields
-  - SUT restart required to test
+  - Verified: Agent Card tests still pass, SUT provides only spec fields
+
+### Phase 3: Authentication Test Improvements ✅ VERIFIED
+- ✅ Task 3.1: Research Specification Authentication
+  - Documented A2A specification section 4: Authentication and Authorization
+  - Servers MUST authenticate every request (section 4.4)
+  - Should use HTTP 401/403 for auth failures (before JSON-RPC layer)
+  - Security schemes declared via securitySchemes field in Agent Card
+- ✅ Task 3.2: Remove SUT Authentication Middleware
+  - Deleted AuthenticationMiddleware class entirely
+  - Removed all auth enforcement from SUT
+  - Documents SDK limitation: no built-in authentication support
+- ✅ Task 3.3: Update Authentication Tests
+  - Added pytest.xfail for SDK limitations with clear reasons
+  - Tests now document specification requirements vs SDK reality
+  - test_missing_authentication and test_invalid_authentication updated
+- ✅ **VERIFICATION**: SUT restarted and tested
+  - Authentication tests properly SKIP (not fail) due to SDK limitation
+  - SDK creates securitySchemes but doesn't include them in Agent Card JSON output
+  - This demonstrates another SDK gap: security fields filtered out
+  - Full test suite: **7 failed, 53 passed, 14 skipped** (same as Phase 2 - no regressions)
 
 ### Key Findings from Validation:
 
@@ -54,8 +74,25 @@
    - NOT in spec: protocolVersion, id (tests updated to not expect these)
    - SUT workaround removed
 
-3. **Error Codes**: All well-defined in specification (-32001 to -32006 for A2A, standard JSON-RPC codes)
+3. **Authentication SDK LIMITATION CONFIRMED**:
+   - Specification requires HTTP 401/403 for auth failures
+   - SDK doesn't provide authentication enforcement
+   - **NEW FINDING**: SDK creates securitySchemes but filters them out of Agent Card JSON response
+   - Tests correctly SKIP when no authentication schemes detected
+   - This is a more severe SDK limitation than initially understood
+
+4. **Error Codes**: All well-defined in specification (-32001 to -32006 for A2A, standard JSON-RPC codes)
+
+## Test Results Summary:
+- **Before changes**: 9 failed, 51 passed, 14 skipped  
+- **After Phases 1-2**: 7 failed, 53 passed, 14 skipped
+- **After Phase 3**: 7 failed, 53 passed, 14 skipped (no regressions!)
 
 ## Next Steps:
-- ⏳ WAITING: SUT restart to test Task 2.3 changes
-- 📋 TODO: Phase 3 - Authentication Test Improvements
+- 📋 NOW: Phase 4 - Fix History Length Parameter
+
+## SDK Gaps Discovered:
+1. Agent Card missing protocolVersion/id fields (but these aren't in spec anyway)
+2. No authentication middleware support
+3. **securitySchemes and security fields filtered out of Agent Card JSON response**
+4. All message part field names use "kind" (but some tests incorrectly expected "type")

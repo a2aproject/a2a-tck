@@ -43,7 +43,33 @@
 - The specification includes 'security' and 'securitySchemes' fields
 - 'supportsAuthenticatedExtendedCard' is available but not required
 
-### 3. Error Codes Found
+### 3. Authentication Requirements
+
+**From A2A Specification Section 4: Authentication and Authorization**
+
+#### Expected HTTP Behavior:
+- **Missing auth**: Server MUST return 401 Unauthorized with WWW-Authenticate header
+- **Invalid auth**: Server SHOULD return 401 Unauthorized or 403 Forbidden
+- **Before JSON-RPC layer**: Yes - HTTP-level authentication required
+
+#### Security Scheme Declaration:
+- **Field name**: `securitySchemes` (in Agent Card root)
+- **Format**: OpenAPI 3.x Security Scheme objects
+- **Supported types**: APIKey, HTTPAuth (Bearer/Basic), OAuth2, OpenIdConnect
+
+#### Server Responsibilities:
+According to specification section 4.4:
+- **MUST** authenticate every incoming request based on Agent Card requirements
+- **SHOULD** use HTTP 401/403 for authentication failures
+- **SHOULD** include WWW-Authenticate header with 401 responses
+
+#### Current SUT Implementation:
+- ✅ Declares `securitySchemes` in Agent Card
+- ✅ Includes `security` array with required schemes
+- ❌ **Authentication middleware currently disabled** (line 125: "Remove middleware temporarily")
+- ❌ SDK doesn't provide built-in authentication enforcement
+
+### 4. Error Codes Found
 
 | Code | Error Type | Description |
 |------|------------|-------------|
@@ -63,5 +89,6 @@
 
 Based on these findings:
 1. **Field Name Issue**: ✅ FIXED - Updated all tests to use "kind" instead of "type"
-2. **Agent Card Issue**: Need to update tests to NOT expect 'protocolVersion' or 'id'
-3. **Error Codes**: All error codes are properly defined in the specification 
+2. **Agent Card Issue**: ✅ FIXED - Updated tests to NOT expect 'protocolVersion' or 'id'
+3. **Authentication Issue**: Need to address SDK limitation - no built-in auth enforcement
+4. **Error Codes**: All error codes are properly defined in the specification 
