@@ -23,7 +23,7 @@ def test_rejects_malformed_json(sut_client):
     # If the SUT returns a JSON-RPC error, check for code -32700
 
     resp_json = response.json()
-    assert resp_json.get("error", {}).get("code") == -32700
+    assert resp_json.get("error", {}).get("code") == -32700  # Spec: JSONParseError
     
 @pytest.mark.core
 @pytest.mark.parametrize("invalid_request,expected_code", [
@@ -53,7 +53,7 @@ def test_rejects_unknown_method(sut_client):
     """
     req = message_utils.make_json_rpc_request("nonexistent/method", params={})
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert resp["error"]["code"] == -32601
+    assert resp["error"]["code"] == -32601  # Spec: MethodNotFoundError
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
 
 @pytest.mark.core
@@ -64,4 +64,4 @@ def test_rejects_invalid_params(sut_client):
     """
     req = message_utils.make_json_rpc_request("message/send", params={"message": {"parts": "invalid"}})
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert resp["error"]["code"] == -32602
+    assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError

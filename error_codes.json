@@ -1,0 +1,65 @@
+{
+  "name": "A2AError",
+  "code": null,
+  "message": null
+}
+{
+  "name": "ContentTypeNotSupportedError",
+  "code": -32005,
+  "message": "Incompatible content types"
+}
+{
+  "name": "InternalError",
+  "code": -32603,
+  "message": "Internal error"
+}
+{
+  "name": "InvalidAgentResponseError",
+  "code": -32006,
+  "message": "Invalid agent response"
+}
+{
+  "name": "InvalidParamsError",
+  "code": -32602,
+  "message": "Invalid parameters"
+}
+{
+  "name": "InvalidRequestError",
+  "code": -32600,
+  "message": "Request payload validation error"
+}
+{
+  "name": "JSONParseError",
+  "code": -32700,
+  "message": "Invalid JSON payload"
+}
+{
+  "name": "JSONRPCError",
+  "code": null,
+  "message": null
+}
+{
+  "name": "MethodNotFoundError",
+  "code": -32601,
+  "message": "Method not found"
+}
+{
+  "name": "PushNotificationNotSupportedError",
+  "code": -32003,
+  "message": "Push Notification is not supported"
+}
+{
+  "name": "TaskNotCancelableError",
+  "code": -32002,
+  "message": "Task cannot be canceled"
+}
+{
+  "name": "TaskNotFoundError",
+  "code": -32001,
+  "message": "Task not found"
+}
+{
+  "name": "UnsupportedOperationError",
+  "code": -32004,
+  "message": "This operation is not supported"
+}

@@ -142,25 +142,100 @@ Keep the SUT workaround because:
 2. This is needed for proper A2A specification compliance testing
 3. Test suite documents the SDK limitation clearly
 
-## Error Codes Finding
+## A2A Error Codes
 
-### A2A-Specific Error Codes
+### Standard JSON-RPC Errors
 | Code | Name | SDK Constant | Description |
 |------|------|--------------|-------------|
-| -32001 | TaskNotFoundError | TaskNotFoundError | Task ID not found |
-| -32002 | TaskNotCancelableError | TaskNotCancelableError | Task not in cancelable state |
-| -32003 | PushNotificationNotSupportedError | PushNotificationNotSupportedError | Push notifications not supported |
-| -32004 | UnsupportedOperationError | UnsupportedOperationError | Operation not supported |
-| -32005 | ContentTypeNotSupportedError | ContentTypeNotSupportedError | MIME type not supported |
-| -32006 | InvalidAgentResponseError | InvalidAgentResponseError | Invalid agent response |
+| -32700 | Parse error | JSONParseError | Invalid JSON payload |
+| -32600 | Invalid Request | InvalidRequestError | Request payload validation error |
+| -32601 | Method not found | MethodNotFoundError | Method doesn't exist |
+| -32602 | Invalid params | InvalidParamsError | Invalid parameters |
+| -32603 | Internal error | InternalError | Internal JSON-RPC error |
 
-### Standard JSON-RPC Error Codes
-| Code | Name | Description |
-|------|------|-------------|
-| -32700 | Parse error | Invalid JSON |
-| -32600 | Invalid Request | Not a valid Request object |
-| -32601 | Method not found | Method doesn't exist |
-| -32602 | Invalid params | Invalid parameters |
-| -32603 | Internal error | Internal server error |
+### A2A-Specific Errors
+| Code | Name | SDK Constant | Description |
+|------|------|--------------|-------------|
+| -32001 | Task Not Found | TaskNotFoundError | Task not found |
+| -32002 | Task Not Cancelable | TaskNotCancelableError | Task cannot be canceled |
+| -32003 | Push Notification Not Supported | PushNotificationNotSupportedError | Push Notification is not supported |
+| -32004 | Unsupported Operation | UnsupportedOperationError | This operation is not supported |
+| -32005 | Content Type Not Supported | ContentTypeNotSupportedError | Incompatible content types |
+| -32006 | Invalid Agent Response | InvalidAgentResponseError | Invalid agent response |
 
-✅ All error codes are properly defined in the specification and SDK. 
+### Complete Schema Definition
+From `error_codes.json`:
+```json
+{
+  "name": "A2AError",
+  "code": null,
+  "message": null
+}
+{
+  "name": "ContentTypeNotSupportedError",
+  "code": -32005,
+  "message": "Incompatible content types"
+}
+{
+  "name": "InternalError",
+  "code": -32603,
+  "message": "Internal error"
+}
+{
+  "name": "InvalidAgentResponseError",
+  "code": -32006,
+  "message": "Invalid agent response"
+}
+{
+  "name": "InvalidParamsError",
+  "code": -32602,
+  "message": "Invalid parameters"
+}
+{
+  "name": "InvalidRequestError",
+  "code": -32600,
+  "message": "Request payload validation error"
+}
+{
+  "name": "JSONParseError",
+  "code": -32700,
+  "message": "Invalid JSON payload"
+}
+{
+  "name": "JSONRPCError",
+  "code": null,
+  "message": null
+}
+{
+  "name": "MethodNotFoundError",
+  "code": -32601,
+  "message": "Method not found"
+}
+{
+  "name": "PushNotificationNotSupportedError",
+  "code": -32003,
+  "message": "Push Notification is not supported"
+}
+{
+  "name": "TaskNotCancelableError",
+  "code": -32002,
+  "message": "Task cannot be canceled"
+}
+{
+  "name": "TaskNotFoundError",
+  "code": -32001,
+  "message": "Task not found"
+}
+{
+  "name": "UnsupportedOperationError",
+  "code": -32004,
+  "message": "This operation is not supported"
+}
+```
+
+### Error Code Tools
+- **check_error_code.sh**: Script to lookup specific error codes in schema
+- **error_codes_table.md**: Formatted table of all error codes
+- **error_codes.json**: Raw error definitions from schema
+
+✅ **All error codes are properly defined in the specification.** The error code validation shows that both standard JSON-RPC codes (-32700 to -32603) and A2A-specific codes (-32001 to -32006) are correctly documented. 

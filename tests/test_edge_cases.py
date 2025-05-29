@@ -65,7 +65,7 @@ def test_empty_arrays(sut_client):
     
     # The SUT should reject this with InvalidParams
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-    assert resp["error"]["code"] == -32602  # InvalidParams
+    assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
 
 # Edge Case: Null Values in Optional Fields
 @pytest.mark.all  # Not a core test
@@ -101,7 +101,7 @@ def test_null_optional_fields(sut_client):
         assert "id" in resp["result"]
     else:
         # If error, should be InvalidParams
-        assert resp["error"]["code"] == -32602
+        assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
 
 # Edge Case: Unexpected JSON Types
 @pytest.mark.all  # Not a core test

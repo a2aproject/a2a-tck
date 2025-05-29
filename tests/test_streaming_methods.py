@@ -243,7 +243,7 @@ async def test_message_stream_invalid_params(async_http_client, agent_card_data)
                 # Should have InvalidParams code or similar
                 assert "error" in json_response
                 assert "code" in json_response["error"]
-                assert json_response["error"]["code"] in [-32602, -32600]  # Invalid params or invalid request
+                assert json_response["error"]["code"] in [-32602, -32600]  # Spec: InvalidParamsError/-32602, InvalidRequestError/-32600
             except json.JSONDecodeError:
                 pytest.fail("Non-streaming response was not valid JSON")
             except AssertionError as e:

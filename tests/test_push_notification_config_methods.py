@@ -89,7 +89,7 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
     else:
         # If not supported, expect UnsupportedOperationError or MethodNotFound
         assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-        assert resp["error"]["code"] in (-32002, -32601)  # -32002: unsupported, -32601: method not found
+        assert resp["error"]["code"] in (-32003, -32004, -32601)  # Spec: PushNotificationNotSupportedError/-32003, UnsupportedOperationError/-32004, MethodNotFoundError/-32601
         
         # Log a warning if Agent Card contradicts this
         if push_supported:
@@ -137,7 +137,7 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
     else:
         # If not supported, expect UnsupportedOperationError or MethodNotFound
         assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-        assert resp["error"]["code"] in (-32002, -32601)
+        assert resp["error"]["code"] in (-32003, -32004, -32601)  # Spec: PushNotificationNotSupportedError/-32003, UnsupportedOperationError/-32004, MethodNotFoundError/-32601
         
         # Log a warning if Agent Card contradicts this
         if push_supported:
@@ -184,7 +184,7 @@ def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
     
     # Error code could be TaskNotFound, Unsupported, or MethodNotFound
-    assert resp["error"]["code"] in (-32001, -32002, -32601)
+    assert resp["error"]["code"] in (-32001, -32003, -32004, -32601)  # Spec: TaskNotFoundError/-32001, PushNotificationNotSupportedError/-32003, UnsupportedOperationError/-32004, MethodNotFoundError/-32601
     
     # If push notifications are supported, it should be a TaskNotFoundError
     if push_supported:
@@ -229,7 +229,7 @@ def test_get_push_notification_config_nonexistent(sut_client, agent_card_data):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
     
     # Error code could be TaskNotFound, Unsupported, or MethodNotFound
-    assert resp["error"]["code"] in (-32001, -32002, -32601)
+    assert resp["error"]["code"] in (-32001, -32003, -32004, -32601)  # Spec: TaskNotFoundError/-32001, PushNotificationNotSupportedError/-32003, UnsupportedOperationError/-32004, MethodNotFoundError/-32601
     
     # If push notifications are supported, it should be a TaskNotFoundError
     if push_supported:
