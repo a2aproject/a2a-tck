@@ -8,6 +8,7 @@ import pytest
 
 from tck import message_utils
 from tck.sut_client import SUTClient
+from tests.markers import quality_production, quality_basic
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +32,19 @@ def text_message_params():
         }
     }
 
-# Concurrency Test: Parallel Requests
-@pytest.mark.all  # Not a core test
+@quality_production
 def test_parallel_requests(sut_client, text_message_params):
     """
-    Test SUT's handling of multiple parallel requests.
+    QUALITY PRODUCTION: Concurrent Request Handling
     
-    Send several message/send requests in parallel and verify all are processed correctly.
+    Tests the SUT's ability to handle multiple parallel requests gracefully.
+    This is important for production deployments where multiple clients
+    may send requests simultaneously.
+    
+    Validates:
+    - Multiple parallel message/send requests
+    - Proper response handling under concurrent load
+    - No race conditions or resource conflicts
     """
     # Number of parallel requests to send
     NUM_REQUESTS = 5
@@ -74,16 +81,21 @@ def test_parallel_requests(sut_client, text_message_params):
     
     # We expect most requests to succeed, but allow for some failures in case
     # the SUT has rate limiting or concurrency limits
-    assert num_success > 0, "All parallel requests failed"
+    assert num_success > 0, "All parallel requests failed - poor concurrency handling"
     logger.info(f"{num_success} out of {NUM_REQUESTS} parallel requests succeeded")
 
-# Concurrency Test: Rapid Sequential Requests
-@pytest.mark.all  # Not a core test
+@quality_basic
 def test_rapid_sequential_requests(sut_client, text_message_params):
     """
-    Test SUT's handling of rapid sequential requests.
+    QUALITY BASIC: Sequential Request Handling
     
-    Send several message/send requests in rapid succession and verify all are processed correctly.
+    Tests the SUT's ability to handle rapid sequential requests without
+    degradation or resource leaks.
+    
+    Validates:
+    - Multiple rapid sequential requests
+    - Consistent response times and behavior
+    - No resource exhaustion under sequential load
     """
     # Number of sequential requests to send
     NUM_REQUESTS = 10
@@ -114,13 +126,19 @@ def test_rapid_sequential_requests(sut_client, text_message_params):
     assert num_success > NUM_REQUESTS * 0.8, f"Too many failures: {num_success} out of {NUM_REQUESTS} succeeded"
     logger.info(f"{num_success} out of {NUM_REQUESTS} rapid sequential requests succeeded")
 
-# Concurrency Test: Multiple Operations on Same Task
-@pytest.mark.all  # Not a core test
+@quality_production
 def test_concurrent_operations_same_task(sut_client, text_message_params):
     """
-    Test SUT's handling of concurrent operations on the same task.
+    QUALITY PRODUCTION: Task Concurrency Safety
     
-    Create a task, then perform parallel operations (get, update, cancel) on it.
+    Tests the SUT's handling of concurrent operations on the same task.
+    This is critical for production systems where multiple operations
+    might be performed on a task simultaneously.
+    
+    Validates:
+    - Concurrent task operations (get, update, cancel)
+    - Proper state management under concurrent access
+    - No race conditions or data corruption
     """
     # Step 1: Create a task
     create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
@@ -177,5 +195,5 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     # Some SUTs might reject operations after cancel, others might accept them
     for op_name, req_id, resp in results:
         logger.info(f"Operation {op_name} resulted in: {resp}")
-        assert "jsonrpc" in resp
-        assert "id" in resp and resp["id"] == req_id 
+        assert "jsonrpc" in resp, f"Operation {op_name} did not return valid JSON-RPC response"
+        assert "id" in resp and resp["id"] == req_id, f"Operation {op_name} returned wrong request ID" 

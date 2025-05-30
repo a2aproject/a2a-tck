@@ -5,6 +5,8 @@ import pytest
 
 from tck import agent_card_utils, message_utils
 from tck.sut_client import SUTClient
+from tests.markers import optional_capability
+from tests.capability_validator import CapabilityValidator
 
 logger = logging.getLogger(__name__)
 
@@ -38,33 +40,21 @@ def has_push_notification_support(agent_card_data):
     
     return agent_card_utils.get_capability_push_notifications(agent_card_data)
 
+@optional_capability
 def test_set_push_notification_config(sut_client, created_task_id, agent_card_data):
     """
-    A2A JSON-RPC Spec: tasks/pushNotificationConfig/set
-    Test setting push notification config for a valid task. 
-    Expect echoed config in result or UnsupportedOperationError if not supported.
+    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Configuration
     
-    A2A Specification Compliance: If the agent supports push notification functionality,
-    it MUST declare pushNotifications capability in the Agent Card. This test will FAIL
-    (not skip) if the capability is missing but the agent actually supports push notifications.
+    Status: MANDATORY if capabilities.pushNotifications = true
+            SKIP if capabilities.pushNotifications = false/missing
+            
+    Test validates the tasks/pushNotificationConfig/set method for setting
+    push notification configurations on tasks.
     """
-    # Check if push notifications are supported
-    push_supported = has_push_notification_support(agent_card_data)
+    validator = CapabilityValidator(agent_card_data)
     
-    # A2A Specification Compliance Check
-    if agent_card_data is not None and not push_supported:
-        pytest.fail(
-            "Agent doesn't declare pushNotifications capability in Agent Card. "
-            "A2A specification requires agents to declare all supported capabilities. "
-            "If the agent supports push notifications, add 'capabilities.pushNotifications: true' to Agent Card. "
-            "If the agent doesn't support push notifications, this test should return PushNotificationNotSupportedError."
-        )
-    
-    # Apply appropriate marker based on capability
-    if push_supported:
-        pytestmark = pytest.mark.core
-    else:
-        pytestmark = pytest.mark.all
+    if not validator.is_capability_declared('pushNotifications'):
+        pytest.skip("Push notifications capability not declared - test not applicable")
     
     config_params = {
         "taskId": created_task_id,
@@ -76,99 +66,56 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/set", params=config_params)
     resp = sut_client.send_json_rpc(**req)
     
-    if message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]):
-        # If we get a success response, push notifications are supported
-        # (regardless of what Agent Card says)
-        result = resp["result"]
-        assert result["type"] == "webhook"
-        assert result["url"] == "https://example.com/webhook"
-        
-        # Log a warning if Agent Card contradicts this
-        if agent_card_data is not None and not push_supported:
-            logger.warning("Agent Card claims push notifications aren't supported, but SUT accepted the request")
-    else:
-        # If not supported, expect UnsupportedOperationError or MethodNotFound
-        assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-        assert resp["error"]["code"] in (-32003, -32004, -32601)  # Spec: PushNotificationNotSupportedError/-32003, UnsupportedOperationError/-32004, MethodNotFoundError/-32601
-        
-        # Log a warning if Agent Card contradicts this
-        if push_supported:
-            logger.warning("Agent Card claims push notifications are supported, but SUT rejected the request")
+    # Since push notifications capability is declared, this MUST work
+    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]), \
+        "Push notifications capability declared but set config failed"
+    
+    result = resp["result"]
+    assert result["type"] == "webhook", "Push notification config type not echoed correctly"
+    assert result["url"] == "https://example.com/webhook", "Push notification config URL not echoed correctly"
 
+@optional_capability
 def test_get_push_notification_config(sut_client, created_task_id, agent_card_data):
     """
-    A2A JSON-RPC Spec: tasks/pushNotificationConfig/get
-    Test getting push notification config for a valid task. 
-    Expect config in result or UnsupportedOperationError if not supported.
+    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Configuration Retrieval
     
-    A2A Specification Compliance: If the agent supports push notification functionality,
-    it MUST declare pushNotifications capability in the Agent Card.
+    Status: MANDATORY if capabilities.pushNotifications = true
+            SKIP if capabilities.pushNotifications = false/missing
+            
+    Test validates the tasks/pushNotificationConfig/get method for retrieving
+    push notification configurations from tasks.
     """
-    # Check if push notifications are supported
-    push_supported = has_push_notification_support(agent_card_data)
+    validator = CapabilityValidator(agent_card_data)
     
-    # A2A Specification Compliance Check
-    if agent_card_data is not None and not push_supported:
-        pytest.fail(
-            "Agent doesn't declare pushNotifications capability in Agent Card. "
-            "A2A specification requires agents to declare all supported capabilities. "
-            "If the agent supports push notifications, add 'capabilities.pushNotifications: true' to Agent Card. "
-            "If the agent doesn't support push notifications, this test should return PushNotificationNotSupportedError."
-        )
-    
-    # Apply appropriate marker based on capability
-    if push_supported:
-        pytestmark = pytest.mark.core
-    else:
-        pytestmark = pytest.mark.all
+    if not validator.is_capability_declared('pushNotifications'):
+        pytest.skip("Push notifications capability not declared - test not applicable")
     
     params = {"taskId": created_task_id}
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/get", params=params)
     resp = sut_client.send_json_rpc(**req)
     
-    if message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]):
-        # If we get a success response, push notifications are supported
-        result = resp["result"]
-        assert "type" in result
-        
-        # Log a warning if Agent Card contradicts this
-        if agent_card_data is not None and not push_supported:
-            logger.warning("Agent Card claims push notifications aren't supported, but SUT accepted the request")
-    else:
-        # If not supported, expect UnsupportedOperationError or MethodNotFound
-        assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-        assert resp["error"]["code"] in (-32003, -32004, -32601)  # Spec: PushNotificationNotSupportedError/-32003, UnsupportedOperationError/-32004, MethodNotFoundError/-32601
-        
-        # Log a warning if Agent Card contradicts this
-        if push_supported:
-            logger.warning("Agent Card claims push notifications are supported, but SUT rejected the request")
+    # Since push notifications capability is declared, this MUST work
+    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]), \
+        "Push notifications capability declared but get config failed"
+    
+    result = resp["result"]
+    assert "type" in result, "Push notification config must have type field"
 
+@optional_capability
 def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
     """
-    A2A JSON-RPC Spec: tasks/pushNotificationConfig/set
-    Test setting push notification config for a non-existent task. 
-    Expect TaskNotFoundError or UnsupportedOperationError.
+    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Error Handling
     
-    A2A Specification Compliance: If the agent supports push notification functionality,
-    it MUST declare pushNotifications capability in the Agent Card.
+    Status: MANDATORY if capabilities.pushNotifications = true
+            SKIP if capabilities.pushNotifications = false/missing
+            
+    Test validates proper error handling for push notification config operations
+    on non-existent tasks.
     """
-    # Check if push notifications are supported
-    push_supported = has_push_notification_support(agent_card_data)
+    validator = CapabilityValidator(agent_card_data)
     
-    # A2A Specification Compliance Check
-    if agent_card_data is not None and not push_supported:
-        pytest.fail(
-            "Agent doesn't declare pushNotifications capability in Agent Card. "
-            "A2A specification requires agents to declare all supported capabilities. "
-            "If the agent supports push notifications, add 'capabilities.pushNotifications: true' to Agent Card. "
-            "If the agent doesn't support push notifications, this test should return PushNotificationNotSupportedError."
-        )
-    
-    # Apply appropriate marker based on capability
-    if push_supported:
-        pytestmark = pytest.mark.core
-    else:
-        pytestmark = pytest.mark.all
+    if not validator.is_capability_declared('pushNotifications'):
+        pytest.skip("Push notifications capability not declared - test not applicable")
     
     config_params = {
         "taskId": "nonexistent-task-id",
@@ -180,59 +127,40 @@ def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/set", params=config_params)
     resp = sut_client.send_json_rpc(**req)
     
-    # Should be an error response regardless
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
+    # Should return proper JSON-RPC error for non-existent task
+    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+        "Push notifications capability declared but invalid task ID not properly rejected"
     
-    # Error code could be TaskNotFound, Unsupported, or MethodNotFound
-    assert resp["error"]["code"] in (-32001, -32003, -32004, -32601)  # Spec: TaskNotFoundError/-32001, PushNotificationNotSupportedError/-32003, UnsupportedOperationError/-32004, MethodNotFoundError/-32601
-    
-    # If push notifications are supported, it should be a TaskNotFoundError
-    if push_supported:
-        # Ideally we'd check for a specific error code for TaskNotFoundError,
-        # but different SUTs might use different codes
-        error_message = resp["error"]["message"].lower()
-        if "not found" not in error_message and "task" not in error_message:
-            logger.warning("Expected TaskNotFoundError but got a different error message")
+    # Should indicate task not found
+    error_message = resp["error"]["message"].lower()
+    assert "not found" in error_message or "task" in error_message, \
+        "Error message should indicate task was not found"
 
+@optional_capability
 def test_get_push_notification_config_nonexistent(sut_client, agent_card_data):
     """
-    A2A JSON-RPC Spec: tasks/pushNotificationConfig/get
-    Test getting push notification config for a non-existent task. 
-    Expect TaskNotFoundError or UnsupportedOperationError.
+    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Error Handling
     
-    A2A Specification Compliance: If the agent supports push notification functionality,
-    it MUST declare pushNotifications capability in the Agent Card.
+    Status: MANDATORY if capabilities.pushNotifications = true
+            SKIP if capabilities.pushNotifications = false/missing
+            
+    Test validates proper error handling for push notification config retrieval
+    on non-existent tasks.
     """
-    # Check if push notifications are supported
-    push_supported = has_push_notification_support(agent_card_data)
+    validator = CapabilityValidator(agent_card_data)
     
-    # A2A Specification Compliance Check
-    if agent_card_data is not None and not push_supported:
-        pytest.fail(
-            "Agent doesn't declare pushNotifications capability in Agent Card. "
-            "A2A specification requires agents to declare all supported capabilities. "
-            "If the agent supports push notifications, add 'capabilities.pushNotifications: true' to Agent Card. "
-            "If the agent doesn't support push notifications, this test should return PushNotificationNotSupportedError."
-        )
-    
-    # Apply appropriate marker based on capability
-    if push_supported:
-        pytestmark = pytest.mark.core
-    else:
-        pytestmark = pytest.mark.all
-    
+    if not validator.is_capability_declared('pushNotifications'):
+        pytest.skip("Push notifications capability not declared - test not applicable")
+
     params = {"taskId": "nonexistent-task-id"}
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/get", params=params)
     resp = sut_client.send_json_rpc(**req)
     
-    # Should be an error response regardless
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
+    # Should return proper JSON-RPC error for non-existent task
+    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+        "Push notifications capability declared but invalid task ID not properly rejected"
     
-    # Error code could be TaskNotFound, Unsupported, or MethodNotFound
-    assert resp["error"]["code"] in (-32001, -32003, -32004, -32601)  # Spec: TaskNotFoundError/-32001, PushNotificationNotSupportedError/-32003, UnsupportedOperationError/-32004, MethodNotFoundError/-32601
-    
-    # If push notifications are supported, it should be a TaskNotFoundError
-    if push_supported:
-        error_message = resp["error"]["message"].lower()
-        if "not found" not in error_message and "task" not in error_message:
-            logger.warning("Expected TaskNotFoundError but got a different error message")
+    # Should indicate task not found
+    error_message = resp["error"]["message"].lower()
+    assert "not found" in error_message or "task" in error_message, \
+        "Error message should indicate task was not found"

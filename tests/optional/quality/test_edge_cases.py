@@ -5,6 +5,7 @@ import pytest
 
 from tck import message_utils
 from tck.sut_client import SUTClient
+from tests.markers import quality_production, quality_basic
 
 logger = logging.getLogger(__name__)
 
@@ -12,11 +13,19 @@ logger = logging.getLogger(__name__)
 def sut_client():
     return SUTClient()
 
-# Edge Case: Very Long String
-@pytest.mark.all  # Not a core test
+@quality_basic
 def test_very_long_string(sut_client):
     """
-    Test SUT's handling of a message with a very long text string.
+    QUALITY BASIC: Large Payload Handling
+    
+    Tests the SUT's ability to handle very large text payloads gracefully.
+    Production systems should either process large payloads or reject them
+    with appropriate error messages.
+    
+    Validates:
+    - Large text string handling (1MB payload)
+    - Proper error responses for oversized requests
+    - No system crashes or hangs
     """
     # Create a message with a very long text (1MB)
     long_text = "A" * (1024 * 1024)  # 1MB string
@@ -37,19 +46,27 @@ def test_very_long_string(sut_client):
     resp = sut_client.send_json_rpc(**req)
     
     # The SUT may handle this in different ways:
-    # 1. Accept and process it (unlikely but possible)
+    # 1. Accept and process it (good for large content handling)
     # 2. Reject with an HTTP error (413 Payload Too Large)
     # 3. Reject with a JSON-RPC InvalidParams error
     
-    # We just verify we got a response of some kind
-    assert "jsonrpc" in resp
-    assert "id" in resp and resp["id"] == req["id"]
+    # We just verify we got a response of some kind (no crash/hang)
+    assert "jsonrpc" in resp, "Large payload caused SUT to return invalid response"
+    assert "id" in resp and resp["id"] == req["id"], "Large payload caused ID mismatch"
 
-# Edge Case: Empty Arrays
-@pytest.mark.all  # Not a core test
+@quality_basic
 def test_empty_arrays(sut_client):
     """
-    Test SUT's handling of empty arrays in parameters.
+    QUALITY BASIC: Empty Array Validation
+    
+    Tests proper validation of empty arrays where they shouldn't be allowed.
+    Good implementations should validate required array fields and reject
+    empty arrays with clear error messages.
+    
+    Validates:
+    - Proper validation of parts array (must not be empty)
+    - Clear InvalidParams error responses
+    - Specification compliance for array requirements
     """
     # Empty parts array (should be rejected)
     params = {
@@ -64,14 +81,23 @@ def test_empty_arrays(sut_client):
     resp = sut_client.send_json_rpc(**req)
     
     # The SUT should reject this with InvalidParams
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-    assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
+    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+        "Empty parts array should be rejected"
+    assert resp["error"]["code"] == -32602, "Should return InvalidParams error code"
 
-# Edge Case: Null Values in Optional Fields
-@pytest.mark.all  # Not a core test
+@quality_basic
 def test_null_optional_fields(sut_client):
     """
-    Test SUT's handling of null values in optional fields.
+    QUALITY BASIC: Null Value Handling
+    
+    Tests handling of explicit null values in optional fields.
+    Good implementations should treat nulls consistently - either
+    as missing fields or reject them with clear errors.
+    
+    Validates:
+    - Handling of null values in optional fields
+    - Consistent behavior for null vs missing fields
+    - Proper error messages if nulls are rejected
     """
     params = {
         "message": {
@@ -98,18 +124,25 @@ def test_null_optional_fields(sut_client):
     
     if message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]):
         # If success, should create a new task
-        assert "id" in resp["result"]
+        assert "id" in resp["result"], "Successful response should include task ID"
     else:
         # If error, should be InvalidParams
-        assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
+        assert resp["error"]["code"] == -32602, "Null value rejection should use InvalidParams error"
 
-# Edge Case: Unexpected JSON Types
-@pytest.mark.all  # Not a core test
+@quality_basic
 def test_unexpected_json_types(sut_client):
     """
-    Test SUT's handling of unexpected but valid JSON types in parameters.
+    QUALITY BASIC: Type Coercion Handling
+    
+    Tests handling of unexpected but valid JSON types in parameters.
+    Good implementations should either gracefully coerce types or
+    reject them with clear error messages.
+    
+    Validates:
+    - Type handling for mismatched but coercible types
+    - Clear error messages for type mismatches
+    - Robust input validation
     """
-
     params = {
         "taskId": 12345  # Integer instead of expected string
     }
@@ -122,14 +155,22 @@ def test_unexpected_json_types(sut_client):
     # 2. Reject with InvalidParams (strict but acceptable)
     
     # Just verify we got a valid response
-    assert "jsonrpc" in resp
-    assert "id" in resp and resp["id"] == req["id"]
+    assert "jsonrpc" in resp, "Type mismatch caused invalid JSON-RPC response"
+    assert "id" in resp and resp["id"] == req["id"], "Type mismatch caused ID corruption"
 
-# Edge Case: Extra Fields
-@pytest.mark.all  # Not a core test
+@quality_production
 def test_extra_fields(sut_client):
     """
-    Test SUT's handling of extra, unexpected fields in parameters.
+    QUALITY PRODUCTION: Forward Compatibility
+    
+    Tests handling of extra, unexpected fields in parameters.
+    Production systems should be forward-compatible and ignore
+    unknown fields gracefully to support future specification extensions.
+    
+    Validates:
+    - Graceful handling of unknown fields
+    - Forward compatibility with future spec versions
+    - No rejection of valid requests with extra data
     """
     params = {
         "message": {
@@ -153,18 +194,26 @@ def test_extra_fields(sut_client):
     resp = sut_client.send_json_rpc(**req)
     
     # The SUT should either:
-    # 1. Ignore the extra fields and process normally (good behavior)
+    # 1. Ignore the extra fields and process normally (preferred for production)
     # 2. Reject with InvalidParams (strict but acceptable)
     
     # Just verify we got a valid response of some kind
-    assert "jsonrpc" in resp
-    assert "id" in resp and resp["id"] == req["id"]
+    assert "jsonrpc" in resp, "Extra fields caused invalid JSON-RPC response"
+    assert "id" in resp and resp["id"] == req["id"], "Extra fields caused ID corruption"
 
-# Edge Case: Unicode and Special Characters
-@pytest.mark.all  # Not a core test
+@quality_basic
 def test_unicode_and_special_chars(sut_client):
     """
-    Test SUT's handling of Unicode and special characters in parameters.
+    QUALITY BASIC: Unicode and Character Handling
+    
+    Tests proper handling of Unicode and special characters.
+    Modern systems must support international characters and
+    control characters without corruption or errors.
+    
+    Validates:
+    - Unicode character support (Chinese, Russian, Arabic, Japanese)
+    - Control character handling (tabs, newlines, etc.)
+    - Character encoding preservation through the system
     """
     params = {
         "message": {
@@ -183,20 +232,30 @@ def test_unicode_and_special_chars(sut_client):
     resp = sut_client.send_json_rpc(**req)
     
     # The SUT should handle Unicode correctly
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]), \
+        "Unicode characters should not cause message/send to fail"
     
     # Get the task to verify it was stored correctly
     task_id = resp["result"]["id"]
     get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
     get_resp = sut_client.send_json_rpc(**get_req)
     
-    assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])
+    assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"]), \
+        "Unicode characters should be preserved in task storage"
 
-# Edge Case: Boundary Values
-@pytest.mark.all  # Not a core test
+@quality_production
 def test_boundary_values(sut_client):
     """
-    Test SUT's handling of boundary values in parameters.
+    QUALITY PRODUCTION: Boundary Value Handling
+    
+    Tests handling of boundary values in parameters.
+    Production systems should handle boundary values correctly
+    to prevent system crashes or unexpected behavior.
+    
+    Validates:
+    - Proper handling of minimum and maximum values
+    - Robust input validation for boundary conditions
+    - No system crashes or unexpected behavior
     """
     # Test with minimum/maximum values for historyLength
     task_id = _create_simple_task(sut_client)
@@ -223,11 +282,14 @@ def test_boundary_values(sut_client):
     neg_history_resp = sut_client.send_json_rpc(**neg_history_req)
     
     # Check that positive values are accepted
-    assert message_utils.is_json_rpc_success_response(large_history_resp, expected_id=large_history_req["id"])
-    assert message_utils.is_json_rpc_success_response(zero_history_resp, expected_id=zero_history_req["id"])
+    assert message_utils.is_json_rpc_success_response(large_history_resp, expected_id=large_history_req["id"]), \
+        "Large historyLength should be accepted"
+    assert message_utils.is_json_rpc_success_response(zero_history_resp, expected_id=zero_history_req["id"]), \
+        "Zero historyLength should be accepted"
     
     # Negative should be rejected
-    assert message_utils.is_json_rpc_error_response(neg_history_resp, expected_id=neg_history_req["id"])
+    assert message_utils.is_json_rpc_error_response(neg_history_resp, expected_id=neg_history_req["id"]), \
+        "Negative historyLength should be rejected"
 
 # Helper function to create a simple task for testing
 def _create_simple_task(sut_client):
