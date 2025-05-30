@@ -5,7 +5,7 @@ import pytest
 
 from tck import message_utils
 from tck.sut_client import SUTClient
-from tests.markers import mandatory_protocol, quality_basic
+from tests.markers import mandatory_protocol
 
 
 @pytest.fixture(scope="module")
@@ -43,74 +43,6 @@ def follow_up_message_params(text_message_params):
             ]
         }
     }
-
-@quality_basic
-def test_task_state_transitions(sut_client, text_message_params, follow_up_message_params):
-    """
-    OPTIONAL QUALITY: A2A Specification §6.3 - Task State Management
-    
-    While not explicitly mandated, proper task state transitions indicate
-    good implementation quality and adherence to the state model.
-    
-    Status: Optional quality validation for state management
-    """
-    # Step 1: Create a new task with an explicit taskId
-    task_id = "test-state-task-" + str(uuid.uuid4())
-    create_params = text_message_params.copy()
-    create_params["message"]["taskId"] = task_id
-    # Add non-blocking configuration to help get intermediate states
-    create_params["configuration"] = {
-        "blocking": False,
-        "acceptedOutputModes": ["text"]
-    }
-    
-    create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
-    create_resp = sut_client.send_json_rpc(method=create_req["method"], params=create_req["params"], id=create_req["id"])
-    assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
-    
-    # Verify the response (can be Task or Message)
-    result = create_resp["result"]
-    if "status" in result:
-        # This is a Task object
-        initial_state = result["status"]["state"]
-        assert initial_state in {"submitted", "working"}, f"Unexpected initial state: {initial_state}"
-    
-    # Step 2: Get task to verify state and history
-    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
-    get_resp = sut_client.send_json_rpc(method=get_req["method"], params=get_req["params"], id=get_req["id"])
-    assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])
-    
-    # Verify history exists and contains the initial message
-    history = get_resp["result"].get("history", [])
-    assert len(history) >= 1, "Task history should contain at least the initial message"
-    
-    # Step 3: Send a follow-up message to the task
-    follow_up_params = follow_up_message_params.copy()
-    follow_up_params["message"]["taskId"] = task_id
-    # Add non-blocking configuration for follow-up message too
-    follow_up_params["configuration"] = {
-        "blocking": False,
-        "acceptedOutputModes": ["text"]
-    }
-    update_req = message_utils.make_json_rpc_request("message/send", params=follow_up_params)
-    update_resp = sut_client.send_json_rpc(method=update_req["method"], params=update_req["params"], id=update_req["id"])
-    assert message_utils.is_json_rpc_success_response(update_resp, expected_id=update_req["id"])
-    
-    # Allow some time for the SUT to process the message
-    time.sleep(1)
-    
-    # Step 4: Get task again to verify updated state and history
-    get_req2 = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
-    get_resp2 = sut_client.send_json_rpc(method=get_req2["method"], params=get_req2["params"], id=get_req2["id"])
-    assert message_utils.is_json_rpc_success_response(get_resp2, expected_id=get_req2["id"])
-    
-    # Verify updated history contains the follow-up message
-    updated_history = get_resp2["result"].get("history", [])
-    assert len(updated_history) >= 2, "Task history should contain the initial and follow-up messages"
-    
-    # Verify the state transitions - simple check that it's in an expected state
-    current_state = get_resp2["result"]["status"]["state"]
-    assert current_state in {"working", "input_required", "completed"}, f"Unexpected state: {current_state}"
 
 @mandatory_protocol
 def test_task_history_length(sut_client, text_message_params):

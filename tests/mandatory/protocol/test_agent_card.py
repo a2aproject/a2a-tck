@@ -1,7 +1,7 @@
 """
-A2A Protocol Specification: Agent Card validation tests.
+A2A Protocol Specification: Agent Card mandatory validation tests.
 
-This test suite validates the structure and content of the SUT's Agent Card
+This test suite validates the mandatory structure and content of the SUT's Agent Card
 according to the A2A specification: https://google.github.io/A2A/specification/#agent-card
 """
 
@@ -12,7 +12,7 @@ import pytest
 
 from tck import agent_card_utils
 from tck.sut_client import SUTClient
-from tests.markers import mandatory_protocol, optional_capability
+from tests.markers import mandatory_protocol
 
 logger = logging.getLogger(__name__)
 
@@ -118,96 +118,4 @@ def test_mandatory_field_types(fetched_agent_card):
     url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
     assert re.match(url_pattern, url), f"url is not a valid URL: {url}"
     
-    # Note: protocolVersion and id are NOT in A2A specification
-
-@optional_capability  
-def test_capabilities_structure(fetched_agent_card):
-    """
-    OPTIONAL: A2A Specification §2.1 - Capabilities Structure
-    
-    While the capabilities field itself is MANDATORY, the specific
-    capabilities (streaming, pushNotifications, etc.) are optional.
-    This validates their structure if present.
-    
-    Status: Optional validation of capability structure
-    """
-    # Skip if capabilities is not present (it's optional)
-    if "capabilities" not in fetched_agent_card:
-        pytest.skip("Agent Card does not have a capabilities section")
-    
-    capabilities = fetched_agent_card["capabilities"]
-    assert isinstance(capabilities, dict), "capabilities must be an object"
-    
-    # Check streaming capability if present
-    if "streaming" in capabilities:
-        assert isinstance(capabilities["streaming"], bool), "streaming capability must be a boolean"
-    
-    # Check pushNotifications capability if present
-    if "pushNotifications" in capabilities:
-        assert isinstance(capabilities["pushNotifications"], bool), "pushNotifications capability must be a boolean"
-    
-    # Check skills if present
-    if "skills" in capabilities:
-        skills = capabilities["skills"]
-        assert isinstance(skills, list), "skills must be an array"
-        
-        # Validate each skill
-        for i, skill in enumerate(skills):
-            assert isinstance(skill, dict), f"skill at index {i} must be an object"
-            assert "id" in skill, f"skill at index {i} missing id"
-            assert "name" in skill, f"skill at index {i} missing name"
-            assert "description" in skill, f"skill at index {i} missing description"
-            
-            # Check input/output modes if present
-            if "inputOutputModes" in skill:
-                modes = skill["inputOutputModes"]
-                assert isinstance(modes, list), f"inputOutputModes in skill {skill['id']} must be an array"
-                for mode in modes:
-                    assert isinstance(mode, str), f"mode in skill {skill['id']} must be a string"
-
-@optional_capability
-def test_authentication_structure(fetched_agent_card):
-    """
-    OPTIONAL: A2A Specification §4.1 - Authentication Structure
-    
-    Authentication schemes are optional capabilities. This validates
-    their structure if present, but does not require them.
-    
-    Status: Optional validation of authentication structure
-    """
-    # Skip if authentication is not present (it's optional)
-    if "authentication" not in fetched_agent_card:
-        pytest.skip("Agent Card does not have an authentication section")
-    
-    auth = fetched_agent_card["authentication"]
-    assert isinstance(auth, list), "authentication must be an array"
-    
-    # Validate each authentication scheme
-    for i, scheme in enumerate(auth):
-        assert isinstance(scheme, dict), f"authentication scheme at index {i} must be an object"
-        assert "scheme" in scheme, f"authentication scheme at index {i} missing scheme property"
-        assert isinstance(scheme["scheme"], str), f"scheme property in authentication scheme at index {i} must be a string"
-        
-        # Check known schemes and their required properties
-        scheme_type = scheme["scheme"].lower()
-        
-        if scheme_type == "bearer":
-            # Bearer token might have optional tokenUrl
-            if "tokenUrl" in scheme:
-                assert isinstance(scheme["tokenUrl"], str), "tokenUrl must be a string"
-        
-        elif scheme_type == "basic":
-            # Basic auth typically doesn't require additional fields
-            pass
-        
-        elif scheme_type == "apikey":
-            # API key auth might specify name and location
-            if "name" in scheme:
-                assert isinstance(scheme["name"], str), "name in apikey scheme must be a string"
-            if "in" in scheme:
-                assert scheme["in"] in ["header", "query", "cookie"], "in property must be one of: header, query, cookie"
-
-# Additional tests will be added for the structure and content of the Agent Card:
-# - EXT-2.2: Validate Mandatory Agent Card Fields
-# - EXT-2.3: Validate Agent Card capabilities Structure
-# - EXT-2.4: Validate Agent Card authentication Structure 
+    # Note: protocolVersion and id are NOT in A2A specification 

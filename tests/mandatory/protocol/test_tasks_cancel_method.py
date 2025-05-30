@@ -3,7 +3,7 @@ import uuid
 
 from tck import message_utils
 from tck.sut_client import SUTClient
-from tests.markers import mandatory_protocol, quality_basic
+from tests.markers import mandatory_protocol
 
 
 @pytest.fixture(scope="module")
@@ -67,24 +67,3 @@ def test_tasks_cancel_nonexistent(sut_client):
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
     assert resp["error"]["code"] == -32001  # TaskNotFoundError
-
-@quality_basic
-def test_tasks_cancel_already_canceled(sut_client, created_task_id):
-    """
-    OPTIONAL QUALITY: A2A Specification §7.4 - Idempotent Cancellation
-    
-    While not explicitly required, proper error handling for attempting
-    to cancel an already-canceled task indicates good implementation quality.
-    
-    Status: Optional quality validation for idempotency handling
-    """
-    params = {"id": created_task_id}
-    # First cancel
-    req1 = message_utils.make_json_rpc_request("tasks/cancel", params=params)
-    resp1 = sut_client.send_json_rpc(method=req1["method"], params=req1["params"], id=req1["id"])
-    assert message_utils.is_json_rpc_success_response(resp1, expected_id=req1["id"])
-    # Second cancel (should fail)
-    req2 = message_utils.make_json_rpc_request("tasks/cancel", params=params)
-    resp2 = sut_client.send_json_rpc(method=req2["method"], params=req2["params"], id=req2["id"])
-    assert message_utils.is_json_rpc_error_response(resp2, expected_id=req2["id"])
-    # Error code for TaskNotCancelableError is implementation-specific, so just check error presence

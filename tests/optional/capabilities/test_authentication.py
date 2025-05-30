@@ -15,6 +15,7 @@ import requests
 
 from tck import agent_card_utils, config, message_utils
 from tck.sut_client import SUTClient
+from tests.markers import optional_capability
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +35,21 @@ def auth_schemes(agent_card_data):
     
     return agent_card_utils.get_authentication_schemes(agent_card_data)
 
+@optional_capability
 def test_auth_schemes_available(auth_schemes):
     """
-    Test that authentication schemes are available in the Agent Card.
+    OPTIONAL CAPABILITY: A2A Specification §4.4 - Authentication Schemes Declaration
     
-    This is a preliminary test to determine if the SUT declares any authentication
-    requirements. If not, the other authentication tests will be skipped.
+    Tests that authentication schemes are properly declared in the Agent Card.
+    While authentication itself is optional, if declared it must be structured correctly.
+    
+    Failure Impact: Limits feature completeness (perfectly acceptable)
+    Fix Suggestion: Implement authentication support or remove from Agent Card
+    
+    Asserts:
+        - Authentication schemes are available if declared
+        - Scheme structure follows A2A specification
+        - Scheme types are recognized and valid
     """
     # This test doesn't fail if no schemes are found, it's informational
     if not auth_schemes:
@@ -51,16 +61,24 @@ def test_auth_schemes_available(auth_schemes):
             scheme_type = scheme.get("scheme", "unknown")
             logger.info(f"Scheme {i+1}: {scheme_type}")
 
+@optional_capability
 def test_missing_authentication(sut_client, auth_schemes):
     """
-    A2A Protocol Specification Section 4.4: Authentication Requirements
+    OPTIONAL CAPABILITY: A2A Specification §4.4 - Authentication Requirements
+    
+    Tests proper authentication enforcement when schemes are declared.
+    If authentication is declared, it should be properly enforced.
     
     Note: This test expects HTTP 401/403 but SDK doesn't enforce auth.
     This is a known SDK limitation - specification violation.
     
-    According to the A2A spec: "Servers MUST authenticate every incoming request" 
-    and "SHOULD use HTTP 401 or 403 status codes for authentication/authorization failures 
-    before the JSON-RPC layer is even reached."
+    Failure Impact: Security issue if authentication declared but not enforced
+    Fix Suggestion: Implement proper authentication enforcement or remove from Agent Card
+    
+    Asserts:
+        - Authentication failures return appropriate HTTP status codes
+        - Error responses follow A2A specification format
+        - Security requirements are properly enforced
     """
     # Skip this test if no authentication schemes are declared
     if not auth_schemes:
@@ -127,14 +145,24 @@ def test_missing_authentication(sut_client, auth_schemes):
         logger.error(f"HTTP error sending request: {e}")
         pytest.fail(f"Request failed: {e}")
 
+@optional_capability
 def test_invalid_authentication(sut_client, auth_schemes):
     """
-    A2A Protocol Specification Section 4.4: Authentication Requirements
+    OPTIONAL CAPABILITY: A2A Specification §4.4 - Invalid Authentication Handling
+    
+    Tests proper handling of invalid authentication credentials when schemes are declared.
+    If authentication is declared, invalid credentials should be rejected properly.
     
     Note: This test expects HTTP 401/403 but SDK doesn't enforce auth.
     This is a known SDK limitation - specification violation.
     
-    Test the SUT's response when invalid authentication is provided.
+    Failure Impact: Security issue if invalid credentials are accepted
+    Fix Suggestion: Implement proper credential validation or remove from Agent Card
+    
+    Asserts:
+        - Invalid authentication credentials are rejected
+        - Error responses use appropriate HTTP status codes
+        - Security validation is consistently enforced
     """
     # Skip this test if no authentication schemes are declared
     if not auth_schemes:

@@ -22,13 +22,23 @@ def text_message_params():
         }
     }
 
-@pytest.mark.all  # Not a core test as per requirements
+@optional_feature
 def test_reference_task_ids_valid(sut_client, text_message_params):
     """
-    A2A JSON-RPC Spec: Reference Task IDs
-    Test that the SUT properly handles valid referenceTaskIds in a message.
+    OPTIONAL FEATURE: A2A Reference Task IDs Support
     
-    This test is contingent on the SUT supporting referenceTaskIds.
+    Tests optional implementation that enhances user experience
+    but is not required for A2A compliance.
+    
+    Test validates handling of valid referenceTaskIds in messages.
+    
+    Failure Impact: Limits feature completeness (perfectly acceptable)
+    Fix Suggestion: Implement referenceTaskIds support to enable task relationships
+    
+    Asserts:
+        - Valid referenceTaskIds are processed without error
+        - Response format is valid regardless of feature support
+        - Task references are handled appropriately by implementation
     """
     # Step 1: Create a reference task
     create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
@@ -65,13 +75,23 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
     assert "jsonrpc" in ref_resp
     assert "id" in ref_resp and ref_resp["id"] == ref_req["id"]
 
-@pytest.mark.all  # Not a core test as per requirements
+@optional_feature
 def test_reference_task_ids_invalid(sut_client):
     """
-    A2A JSON-RPC Spec: Reference Task IDs
-    Test that the SUT properly handles invalid referenceTaskIds in a message.
+    OPTIONAL FEATURE: A2A Reference Task IDs Invalid Handling
     
-    This test is contingent on the SUT supporting referenceTaskIds.
+    Tests optional implementation that enhances user experience
+    but is not required for A2A compliance.
+    
+    Test validates handling of invalid referenceTaskIds in messages.
+    
+    Failure Impact: Limits feature completeness (perfectly acceptable)
+    Fix Suggestion: Implement proper validation and error handling for invalid task references
+    
+    Asserts:
+        - Invalid referenceTaskIds are handled gracefully
+        - Error responses (if any) use appropriate error codes
+        - Implementation behavior is consistent and predictable
     """
     # Create a message with an invalid/non-existent reference task ID
     params = {

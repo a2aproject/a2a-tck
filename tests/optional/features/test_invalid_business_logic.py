@@ -4,16 +4,31 @@ import uuid
 from tck import message_utils
 from tck.sut_client import SUTClient
 
+# Import markers
+mandatory_protocol = pytest.mark.mandatory_protocol
+optional_feature = pytest.mark.optional_feature
 
 @pytest.fixture(scope="module")
 def sut_client():
     return SUTClient()
 
-@pytest.mark.all  # Not a core test as per requirements
+@optional_feature
 def test_unsupported_part_kind(sut_client):
     """
-    A2A JSON-RPC Spec: Business Logic Validation
-    Test that the SUT properly rejects a message with an unsupported part type.
+    OPTIONAL FEATURE: A2A Unsupported Part Type Handling
+    
+    Tests optional implementation that enhances user experience
+    but is not required for A2A compliance.
+    
+    Test validates handling of unsupported message part types.
+    
+    Failure Impact: Limits feature completeness (perfectly acceptable)
+    Fix Suggestion: Implement proper validation and error handling for unsupported part types
+    
+    Asserts:
+        - Unsupported part types are handled gracefully
+        - Error responses use appropriate error codes (InvalidParams/InternalError)
+        - Tasks may be created in failed state if not rejected outright
     """
     # Create a message with an unsupported part type
     params = {
@@ -42,11 +57,23 @@ def test_unsupported_part_kind(sut_client):
         task = resp["result"]
         assert task["status"].get("state") in {"failed", "error"}, "Task should be in failed state"
 
-@pytest.mark.all  # Not a core test as per requirements
+@optional_feature
 def test_invalid_file_part(sut_client):
     """
-    A2A JSON-RPC Spec: Business Logic Validation
-    Test that the SUT properly handles a file part with invalid URL or metadata.
+    OPTIONAL FEATURE: A2A Invalid File Part Handling
+    
+    Tests optional implementation that enhances user experience
+    but is not required for A2A compliance.
+    
+    Test validates handling of file parts with invalid URLs or metadata.
+    
+    Failure Impact: Limits feature completeness (perfectly acceptable)
+    Fix Suggestion: Implement robust file validation and error handling
+    
+    Asserts:
+        - Invalid file parts are processed without crashing
+        - Error responses are provided for invalid file references
+        - Implementation behavior is consistent and predictable
     """
     # Create a message with a file part containing an invalid URL
     params = {
@@ -80,14 +107,22 @@ def test_invalid_file_part(sut_client):
         task = resp["result"]
         # Don't assert on the state here as it might be implementation-specific
 
-@pytest.mark.all  # Not a core test as per requirements
+@mandatory_protocol
 def test_empty_message_parts(sut_client):
     """
-    A2A JSON-RPC Spec: Business Logic Validation
-    Test that the SUT properly handles a message with empty parts array.
+    MANDATORY: A2A Specification §5.1 - Message Structure Requirements
     
-    Per A2A specification, a message MUST contain at least one part.
-    The SUT MUST reject messages with empty parts arrays.
+    The specification states: "A message MUST contain at least one part."
+    
+    Test validates core A2A compliance requirement for non-empty parts arrays.
+    
+    Failure Impact: SDK is NOT A2A compliant
+    Fix Suggestion: Implement proper message validation to reject empty parts arrays
+    
+    Asserts:
+        - Empty parts array is rejected with InvalidParams error (-32602)
+        - Error response follows JSON-RPC 2.0 format
+        - Implementation correctly validates required message structure
     """
     # Create a message with empty parts array (violates A2A MUST requirement)
     params = {
@@ -107,11 +142,23 @@ def test_empty_message_parts(sut_client):
     assert resp["error"]["code"] == -32602, \
         f"Expected InvalidParams error code -32602 for empty parts, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
 
-@pytest.mark.all  # Not a core test as per requirements
+@optional_feature
 def test_very_large_message(sut_client):
     """
-    A2A JSON-RPC Spec: Business Logic Validation
-    Test that the SUT properly handles a message with very large text content.
+    OPTIONAL FEATURE: A2A Large Message Handling
+    
+    Tests optional implementation that enhances user experience
+    but is not required for A2A compliance.
+    
+    Test validates handling of very large text content in messages.
+    
+    Failure Impact: Limits feature completeness (perfectly acceptable)
+    Fix Suggestion: Implement large message handling or appropriate size limits
+    
+    Asserts:
+        - Large messages are processed without crashing
+        - Valid JSON-RPC response is returned regardless of size limits
+        - Implementation behavior is consistent and predictable
     """
     # Create a message with a very large text part
     large_text = "A" * 100000  # 100KB of text
@@ -141,14 +188,23 @@ def test_very_large_message(sut_client):
     assert "jsonrpc" in resp
     assert "id" in resp and resp["id"] == req["id"]
 
-@pytest.mark.all  # Not a core test as per requirements
+@mandatory_protocol
 def test_missing_required_message_fields(sut_client):
     """
-    A2A JSON-RPC Spec: Business Logic Validation
-    Test that the SUT properly rejects messages missing required fields.
+    MANDATORY: A2A Specification §5.1 - Required Message Fields
     
-    Per A2A specification, a Message MUST have messageId, role, and parts fields.
-    The SUT MUST reject messages missing these required fields.
+    The specification states: "A Message MUST have messageId, role, and parts fields."
+    
+    Test validates core A2A compliance requirement for required message fields.
+    
+    Failure Impact: SDK is NOT A2A compliant
+    Fix Suggestion: Implement proper message validation to ensure all required fields are present
+    
+    Asserts:
+        - Missing messageId field is rejected with InvalidParams error (-32602)
+        - Missing role field is rejected with InvalidParams error (-32602)
+        - Missing parts field is rejected with InvalidParams error (-32602)
+        - All error responses follow JSON-RPC 2.0 format
     """
     
     # Test 1: Missing messageId (MUST requirement violation)

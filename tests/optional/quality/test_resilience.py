@@ -10,6 +10,9 @@ import pytest
 from tck import message_utils
 from tck.sut_client import SUTClient
 
+# Import markers
+quality_production = pytest.mark.quality_production
+
 logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="module")
@@ -103,12 +106,27 @@ class InterruptibleSSEClient:
             self.connection_thread.join(timeout=2)
 
 # Resilience Test: Streaming Reconnection
-@pytest.mark.all  # Not a core test
+@quality_production
 def test_streaming_reconnection_simulation(sut_client, text_message_params):
     """
-    Test simulates reconnection after a streaming connection is interrupted.
+    QUALITY PRODUCTION: Streaming Connection Resilience
     
-    This test simulates:
+    Tests implementation robustness for production environments where
+    streaming connections may be interrupted and require reconnection.
+    While not required for A2A compliance, failures indicate
+    areas for improvement before production deployment.
+    
+    Test validates streaming connection recovery and reconnection handling.
+    
+    Failure Impact: Affects production readiness for streaming deployments
+    Fix Suggestion: Implement robust reconnection logic and connection state management
+    
+    Asserts:
+        - Streaming connection can be interrupted gracefully
+        - Reconnection after interruption is possible
+        - Event continuity is maintained across reconnections
+    
+    Test simulates:
     1. Starting a streaming connection
     2. Receiving some events
     3. Connection interruption
@@ -160,13 +178,30 @@ def test_streaming_reconnection_simulation(sut_client, text_message_params):
     assert True, "Streaming reconnection simulation completed"
 
 # Resilience Test: Partial Update Recovery
-@pytest.mark.all  # Not a core test
+@quality_production
 def test_partial_update_recovery(sut_client, text_message_params):
     """
-    Test SUT's recovery from partial task updates.
+    QUALITY PRODUCTION: Task State Consistency Under Network Stress
     
-    Send a series of updates to a task with intentional delays to simulate
-    network latency or interruptions, and verify the SUT maintains task integrity.
+    Tests implementation robustness for production environments where
+    task updates may experience network latency or partial transmission.
+    While not required for A2A compliance, failures indicate
+    areas for improvement before production deployment.
+    
+    Test validates task state integrity during delayed/interrupted updates.
+    
+    Failure Impact: Affects production readiness for high-latency environments
+    Fix Suggestion: Implement robust task state management and update queuing
+    
+    Asserts:
+        - Task updates succeed despite network delays
+        - Task state remains consistent across multiple updates
+        - Final task state reflects all updates correctly
+        
+    Test process:
+    1. Creates a task
+    2. Sends series of updates with varying delays
+    3. Verifies task state integrity
     """
     # Step 1: Create a task
     create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)

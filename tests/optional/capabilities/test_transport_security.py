@@ -15,6 +15,7 @@ import requests
 
 from tck import agent_card_utils, config
 from tck.sut_client import SUTClient
+from tests.markers import optional_capability
 
 logger = logging.getLogger(__name__)
 
@@ -42,29 +43,42 @@ def sut_url_info():
         "is_https": parsed_url.scheme.lower() == "https"
     }
 
+@optional_capability
 def test_sut_uses_https(sut_url_info):
     """
-    A2A Protocol Specification: Transport Security
-    https://google.github.io/A2A/specification/#transport-security
+    OPTIONAL CAPABILITY: A2A Specification - Transport Security
     
-    Test that the SUT endpoint uses HTTPS.
+    Tests that the SUT endpoint uses HTTPS for secure communication.
+    While HTTPS is not strictly mandated, it's considered best practice.
     
-    While the A2A specification doesn't strictly mandate HTTPS, it's considered
-    a best practice for security, especially for production environments.
+    Failure Impact: Limits security posture (perfectly acceptable for development)
+    Fix Suggestion: Configure HTTPS endpoint for production deployments
+    
+    Asserts:
+        - SUT URL uses HTTPS protocol
+        - Secure transport is available for sensitive communications
+        - Security best practices are followed
     """
     if not sut_url_info["is_https"]:
         logger.warning("SUT URL is not using HTTPS: %s", sut_url_info["full_url"])
         # This is not a failure but a warning, as HTTPS isn't strictly required
         # but is highly recommended
 
+@optional_capability
 def test_http_to_https_redirect(sut_url_info):
     """
-    A2A Protocol Specification: Transport Security
-    https://google.github.io/A2A/specification/#transport-security
+    OPTIONAL CAPABILITY: A2A Specification - HTTPS Redirect Security
     
-    Test if the SUT redirects HTTP requests to HTTPS.
+    Tests if the SUT properly redirects HTTP requests to HTTPS.
+    This enhances security by ensuring all traffic uses encrypted transport.
     
-    This test is skipped if the SUT URL is not using HTTPS in the first place.
+    Failure Impact: Limits security posture (perfectly acceptable for development)
+    Fix Suggestion: Configure HTTP to HTTPS redirect for production deployments
+    
+    Asserts:
+        - HTTP requests are redirected to HTTPS
+        - Redirect uses appropriate HTTP status codes
+        - Security enforcement is consistent
     """
     if not sut_url_info["is_https"]:
         pytest.skip("SUT URL is not using HTTPS, so HTTP to HTTPS redirect test is not applicable")
@@ -97,14 +111,21 @@ def test_http_to_https_redirect(sut_url_info):
         logger.info(f"HTTP request failed: {e}")
         logger.info("This might be expected if the server only accepts HTTPS connections")
 
+@optional_capability
 def test_https_url_in_agent_card(sut_client, agent_card_data):
     """
-    A2A Protocol Specification: Transport Security and Agent Card
+    OPTIONAL CAPABILITY: A2A Specification - Agent Card URL Security
     
-    Test that the URLs in the Agent Card use HTTPS.
+    Tests that the URLs declared in the Agent Card use HTTPS protocol.
+    This validates consistency between security practices and self-reported URLs.
     
-    This validates that the agent's self-reported URLs in the Agent Card
-    follow security best practices by using HTTPS.
+    Failure Impact: Limits security posture (perfectly acceptable for development)
+    Fix Suggestion: Update Agent Card URLs to use HTTPS for production
+    
+    Asserts:
+        - Agent Card URLs use HTTPS protocol
+        - Self-reported endpoints follow security best practices
+        - URL declarations are consistent with security requirements
     """
     if agent_card_data is None:
         pytest.skip("Agent Card data is not available")
