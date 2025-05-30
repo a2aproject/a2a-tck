@@ -52,6 +52,7 @@ import sys
 import argparse
 from pathlib import Path
 from typing import Dict
+import json
 
 def explain_test_categories():
     """Explain all test categories in detail."""
@@ -114,7 +115,7 @@ def explain_test_categories():
     print()
     print("=" * 80)
 
-def run_test_category(category: str, sut_url: str, verbose: bool = False, generate_report: bool = False):
+def run_test_category(category: str, sut_url: str, verbose: bool = False, generate_report: bool = False, json_report: str = None):
     """Run a specific test category."""
     
     # Map categories to pytest commands
@@ -163,6 +164,10 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, genera
         "--tb=short",
     ]
     
+    # Add JSON report if requested
+    if json_report:
+        cmd.extend(["--json-report", f"--json-report-file={json_report}"])
+    
     # Only add marker filtering if markers are specified
     if config["markers"]:
         cmd.extend(["-m", config["markers"]])
@@ -200,12 +205,17 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
         print(f"📍 STEP {i}/4: Running {category} tests...")
         print()
         
-        exit_code = run_test_category(category, sut_url, verbose, generate_report)
+        # Generate JSON report for this category if compliance report requested
+        json_report_file = None
+        if compliance_report:
+            json_report_file = f"{category}_results.json"
+        
+        exit_code = run_test_category(category, sut_url, verbose, generate_report, json_report_file)
         results[category] = exit_code
         
         # Collect detailed results for compliance report
-        if compliance_report:
-            detailed_results[category] = collect_test_results(category, exit_code)
+        if compliance_report and json_report_file:
+            detailed_results[category] = collect_test_results_from_json(json_report_file, category)
         
         print()
         print(f"✅ {category.upper()} TESTS COMPLETED")
@@ -242,7 +252,6 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
             report = generator.generate_report()
             
             # Save compliance report
-            import json
             with open(compliance_report, 'w') as f:
                 json.dump(report, f, indent=2)
             
@@ -250,6 +259,12 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
             print(f"🏆 Compliance level: {compliance_summary['current_level']['badge']}")
             print(f"📈 Overall score: {compliance_summary['overall_score']:.1f}%")
             print()
+            
+            # Clean up temporary JSON files
+            for category in categories:
+                json_file = f"{category}_results.json"
+                if Path(json_file).exists():
+                    Path(json_file).unlink()
             
         except Exception as e:
             print(f"⚠️  Warning: Could not generate compliance report: {e}")
@@ -308,12 +323,63 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
     
     return results
 
+def collect_test_results_from_json(json_file: str, category: str) -> Dict:
+    """Collect detailed test results from pytest JSON report."""
+    try:
+        if not Path(json_file).exists():
+            print(f"Warning: JSON report file {json_file} not found")
+            return {'total': 0, 'passed': 0, 'failed': 0, 'skipped': 0, 'xfailed': 0, 'tests': {}}
+        
+        with open(json_file, 'r') as f:
+            report_data = json.load(f)
+        
+        # Parse pytest-json-report format
+        summary = report_data.get('summary', {})
+        tests = report_data.get('tests', [])
+        
+        # Extract summary statistics
+        total = summary.get('total', 0)
+        passed = summary.get('passed', 0)
+        failed = summary.get('failed', 0)
+        skipped = summary.get('skipped', 0)
+        xfailed = summary.get('xfailed', 0)
+        
+        # Parse individual test results
+        test_details = {}
+        for test in tests:
+            test_name = test.get('nodeid', '').split('::')[-1]  # Get just the test function name
+            outcome = test.get('outcome', 'unknown').upper()
+            
+            test_details[test_name] = {
+                'outcome': outcome,
+                'duration': test.get('duration', 0),
+                'error_message': test.get('call', {}).get('longrepr', '') if outcome == 'FAILED' else None,
+                'markers': [marker.get('name', '') for marker in test.get('markers', [])]
+            }
+        
+        return {
+            'total': total,
+            'passed': passed,
+            'failed': failed,
+            'skipped': skipped,
+            'xfailed': xfailed,
+            'tests': test_details
+        }
+        
+    except Exception as e:
+        print(f"Warning: Could not parse JSON report {json_file}: {e}")
+        # Fallback to basic data based on file existence
+        return {
+            'total': 1, 'passed': 0, 'failed': 1, 'skipped': 0, 'xfailed': 0,
+            'tests': {'parse_error': {'outcome': 'FAILED', 'error_message': str(e)}}
+        }
+
 def collect_test_results(category: str, exit_code: int) -> Dict:
     """Collect detailed test results for a category."""
-    # This is a simplified implementation
-    # In a real implementation, this would parse pytest output or use pytest hooks
+    # This is a fallback implementation when JSON reports aren't available
+    # Used for single category runs without compliance reporting
     
-    # Mock data based on exit code for now
+    # Estimate based on exit code for now
     if exit_code == 0:
         return {
             'total': 10, 'passed': 10, 'failed': 0, 'skipped': 0, 'xfailed': 0,
@@ -448,7 +514,7 @@ Categories:
         if results["mandatory"] != 0 or results["capabilities"] != 0:
             sys.exit(1)
     else:
-        exit_code = run_test_category(args.category, args.sut_url, args.verbose, args.report)
+        exit_code = run_test_category(args.category, args.sut_url, args.verbose, args.report, None)
         sys.exit(exit_code)
 
 if __name__ == "__main__":
