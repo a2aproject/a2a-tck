@@ -1,318 +1,360 @@
 # A2A Protocol Technology Compatibility Kit (TCK)
 
-A test suite for verifying compliance with the A2A (Application-to-Application) JSON-RPC protocol specification.
+A comprehensive test suite for validating A2A (Application-to-Application) JSON-RPC protocol specification compliance with progressive validation and detailed compliance reporting.
 
 ## Overview
 
-The A2A Protocol TCK is a comprehensive test suite designed to validate that an implementation of the A2A protocol adheres to the A2A JSON-RPC specification. It exercises various aspects of the protocol through a series of tests that verify both normal operation and error handling.
+The A2A Protocol TCK is a sophisticated validation framework that provides:
+- **📋 Categorized Testing**: Clear separation of mandatory vs. optional requirements  
+- **🎯 Capability-Based Validation**: Smart test execution based on Agent Card declarations
+- **📊 Compliance Reporting**: Detailed assessment with actionable recommendations
+- **🚀 Progressive Enhancement**: Four-tier compliance levels for informed deployment decisions
 
-The TCK acts as a client, sending requests to a running A2A implementation (the System Under Test, or SUT) and validating the responses against the specification.
+The TCK transforms A2A specification compliance from guesswork into a clear, structured validation process.
 
-## Features
+## ✨ Key Features
 
-- **Comprehensive Coverage**: Tests all core A2A JSON-RPC methods.
-- **Protocol Validation**: Ensures proper message structure, error codes, and response formats.
-- **Conditional Testing**: Adapts to the capabilities of the SUT (e.g., streaming, push notifications).
-- **Detailed Logging**: Provides clear logs of all interactions and test results.
-- **HTML Reports**: Optional HTML report generation for easy interpretation of results.
+### 🔍 **Intelligent Test Categorization**
+- **🔴 MANDATORY**: Must pass for A2A compliance (JSON-RPC 2.0 + A2A core)
+- **🔄 CAPABILITIES**: Conditional mandatory based on Agent Card declarations  
+- **🛡️ QUALITY**: Production readiness indicators (optional)
+- **🎨 FEATURES**: Optional implementation completeness (informational)
+
+### 🧠 **Capability-Based Test Logic**
+- **Smart Execution**: Tests skip when capabilities not declared, become mandatory when declared
+- **False Advertising Detection**: Catches capabilities declared but not implemented
+- **Honest Validation**: Only tests what's actually claimed to be supported
+
+### 📈 **Compliance Levels & Scoring**
+- **🔴 NON_COMPLIANT**: Any mandatory failure (Not A2A Compliant)
+- **🟡 MANDATORY**: Basic compliance (A2A Core Compliant)  
+- **🟢 RECOMMENDED**: Production-ready (A2A Recommended Compliant)
+- **🏆 FULL_FEATURED**: Complete implementation (A2A Fully Compliant)
+
+### 📋 **Comprehensive Reporting**
+- Weighted compliance scoring
+- Specification reference citations
+- Actionable fix recommendations
+- Deployment readiness guidance
 
 ## Requirements
 
-- uv (recommended for environment management and dependency installation)
-- Python 3.8+
-- A running A2A implementation (SUT) with an accessible HTTP/HTTPS endpoint
+- **Python**: 3.8+
+- **uv**: Recommended for environment management
+- **SUT**: Running A2A implementation with accessible HTTP/HTTPS endpoint
 
 ## Installation
 
-1. Install uv:
+1. **Install uv**:
    ```bash
    # Install uv (see https://github.com/astral-sh/uv#installation)
    curl -LsSf https://astral.sh/uv/install.sh | sh
-   # Or using pipx: pipx install uv
-   # Or using brew: brew install uv
+   # Or: pipx install uv
+   # Or: brew install uv
    ```
 
-2. Clone this repository:
+2. **Clone and setup**:
    ```bash
    git clone https://github.com/maeste/a2a-tck.git
    cd a2a-tck
-   ```
-
-3. Create and activate a virtual environment using uv:
-   ```bash
+   
+   # Create virtual environment
    uv venv
    source .venv/bin/activate  # Linux/macOS
    # .venv\\Scripts\\activate   # Windows
-   ```
-
-4. Install the required dependencies using uv:
-   ```bash
-   # Install using requirements.txt (basic installation)
-   uv pip install -r requirements.txt
-
-   # Or install using uv with the package (development mode)
+   
+   # Install dependencies
    uv pip install -e .
-
-   # For development with additional tools (linting, formatting)
-   uv pip install -e ".[dev]"
    ```
-5. Run the SUT (here the example to run the local python based on python sdk https://github.com/google/a2a-python to run core tests)
+
+3. **Start your A2A implementation** (System Under Test):
    ```bash
-   cd a2a-tck/python-sut/tck_core_agent
+   # Example using the included Python SUT
+   cd python-sut/tck_core_agent
    uv run .
+   ```
 
-## Usage
+## 🚀 Quick Start
 
-### Basic Usage
+### 1. **Check A2A Compliance** (Start Here!)
+```bash
+./run_tck.py --sut-url http://localhost:8000 --category mandatory
+```
+**Result**: ✅ Pass = A2A compliant, ❌ Fail = NOT A2A compliant
 
-Run the TCK against your A2A implementation using the included runner script:
+### 2. **Validate Capability Honesty**
+```bash
+./run_tck.py --sut-url http://localhost:8000 --category capabilities
+```
+**Result**: Ensures declared capabilities actually work (prevents false advertising)
+
+### 3. **Assess Production Readiness**  
+```bash
+./run_tck.py --sut-url http://localhost:8000 --category quality
+```
+**Result**: Identifies issues that may affect production deployment
+
+### 4. **Generate Comprehensive Report**
+```bash
+./run_tck.py --sut-url http://localhost:8000 --category all --compliance-report compliance.json
+```
+**Result**: Complete assessment with compliance level and recommendations
+
+## 📖 Command Reference
+
+### **Core Commands**
 
 ```bash
-./run_tck.py --sut-url http://your-sut-host:port/api
+# Get help and understand test categories
+./run_tck.py --explain
+
+# Test specific category
+./run_tck.py --sut-url URL --category CATEGORY
+
+# Available categories:
+#   mandatory    - A2A compliance validation (MUST pass)  
+#   capabilities - Capability honesty check (conditional mandatory)
+#   quality      - Production readiness assessment
+#   features     - Optional feature completeness
+#   all          - Complete validation workflow
 ```
 
-This will execute all core tests against the specified SUT endpoint.
-
-### Command-Line Options
-
-The runner script supports several options:
-
-```
---sut-url URL          URL of the SUT's A2A JSON-RPC endpoint (required)
---test-scope SCOPE     Test scope: 'core' (default) or 'all'
---log-level LEVEL      Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
---test-pattern PATTERN Only run tests matching the pattern (e.g., 'test_message_send')
---verbose, -v          Enable verbose output
---report               Generate an HTML test report
---skip-agent-card      Skip fetching and validating the Agent Card, useful for SUTs without Agent Card support
-```
-
-### Examples
-
-Run only core tests with verbose output:
-```bash
-./run_tck.py --sut-url http://localhost:9999 --verbose
-```
-
-Run all tests and generate an HTML report:
-```bash
-./run_tck.py --sut-url http://localhost:9999 --test-scope all --report
-```
-
-Run only streaming tests:
-```bash
-./run_tck.py --sut-url http://localhost:9999 --test-pattern "test_message_stream"
-```
-
-Run without fetching the Agent Card (for SUTs that don't expose one):
-```bash
-./run_tck.py --sut-url http://localhost:9999 --skip-agent-card
-```
-
-### Running Without the Runner Script
-
-You can also run pytest directly:
+### **Advanced Options**
 
 ```bash
-pytest --sut-url http://localhost:9999 -m core
+# Generate detailed compliance report
+./run_tck.py --sut-url URL --category all --compliance-report report.json
+
+# Verbose output with detailed logging
+./run_tck.py --sut-url URL --category mandatory --verbose
+
+# Generate HTML report (additional)
+./run_tck.py --sut-url URL --category all --report
+
+# Skip Agent Card fetching (for non-standard implementations)  
+./run_tck.py --sut-url URL --category mandatory --skip-agent-card
 ```
 
-## Test Categories and Compliance Levels
+## 🎯 Understanding Test Categories
 
-The TCK uses a marker-based system to categorize tests by A2A specification compliance requirements:
+### 🔴 **MANDATORY Tests** - Core A2A Compliance
+**Purpose**: Validate core A2A specification requirements  
+**Impact**: Failure = NOT A2A compliant  
+**Location**: `tests/mandatory/`
 
-### Mandatory Tests (MUST Requirements)
-These tests **MUST** pass for A2A compliance. Any failure indicates the implementation is not A2A compliant.
+**Includes**:
+- JSON-RPC 2.0 compliance (`tests/mandatory/jsonrpc/`)
+- A2A protocol core methods (`tests/mandatory/protocol/`)
+- Agent Card required fields
+- Core message/send functionality
+- Task management (get/cancel)
 
-- **`mandatory_jsonrpc`** - JSON-RPC 2.0 compliance tests
-  - Parse error handling (-32700)
-  - Invalid request validation (-32600)
-  - Method not found handling (-32601)
-  - Invalid parameters handling (-32602)
+**Example Failures**:
+- `test_task_history_length` → SDK doesn't implement historyLength parameter
+- `test_mandatory_fields_present` → Agent Card missing required fields
 
-- **`mandatory_protocol`** - Core A2A protocol requirements
-  - Agent Card availability and mandatory fields
-  - Core message/send functionality with text
-  - Task management (tasks/get, tasks/cancel)
-  - Required parameter support (e.g., historyLength)
-  - Error handling for non-existent resources
+### 🔄 **CAPABILITY Tests** - Conditional Mandatory  
+**Purpose**: Validate declared capabilities work correctly  
+**Impact**: Failure = False advertising  
+**Logic**: Skip if not declared, mandatory if declared  
+**Location**: `tests/optional/capabilities/`
 
-### Optional Tests (SHOULD/MAY Requirements)
-These tests validate optional features and implementation quality.
+**Capability Validation**:
+```json
+{
+  "capabilities": {
+    "streaming": true,         ← Must pass streaming tests
+    "pushNotifications": false ← Streaming tests will skip
+  }
+}
+```
 
-- **`optional_capability`** - Capability-dependent tests
-  - File/data modality support (if declared in Agent Card)
-  - Streaming capabilities (if declared)
-  - Push notifications (if declared)
-  - Multiple message parts (if modalities supported)
+**Includes**:
+- Streaming support (`message/stream`, `tasks/resubscribe`)
+- Push notification configuration
+- File/data modality support
+- Authentication methods
 
-- **`quality_basic`** - Implementation quality indicators
-  - State transition handling
-  - Idempotent operations
-  - Edge case robustness
+### 🛡️ **QUALITY Tests** - Production Readiness
+**Purpose**: Assess implementation robustness  
+**Impact**: Never blocks compliance, indicates production issues  
+**Location**: `tests/optional/quality/`
 
-### Legacy Test Categories
-For backward compatibility, the following legacy markers are still supported:
+**Quality Areas**:
+- Concurrent request handling
+- Edge case robustness  
+- Unicode/special character support
+- Boundary value handling
+- Error recovery and resilience
 
-- **`core`** - Essential tests (mix of mandatory and core optional)
-- **`all`** - All tests including advanced features
+### 🎨 **FEATURE Tests** - Optional Implementation
+**Purpose**: Measure optional feature completeness  
+**Impact**: Purely informational  
+**Location**: `tests/optional/features/`
 
-## Test Selection Examples
+**Includes**:
+- Convenience features
+- Enhanced error messages
+- SDK-specific capabilities
+- Optional protocol extensions
 
-### Run Mandatory Tests Only (Compliance Validation)
+## 📊 Compliance Levels
+
+### 🔴 **NON_COMPLIANT** - Not A2A Compliant
+- **Criteria**: Any mandatory test failure
+- **Business Impact**: Cannot be used for A2A integrations
+- **Action**: Fix mandatory failures immediately
+
+### 🟡 **MANDATORY** - A2A Core Compliant  
+- **Criteria**: 100% mandatory test pass rate
+- **Business Impact**: Basic A2A integration support
+- **Suitable For**: Development and testing environments
+- **Next Step**: Address capability validation
+
+### 🟢 **RECOMMENDED** - A2A Recommended Compliant
+- **Criteria**: Mandatory (100%) + Capability (≥85%) + Quality (≥75%)
+- **Business Impact**: Production-ready with confidence
+- **Suitable For**: Staging and careful production deployment
+- **Next Step**: Enhance feature completeness
+
+### 🏆 **FULL_FEATURED** - A2A Fully Compliant
+- **Criteria**: Capability (≥95%) + Quality (≥90%) + Feature (≥80%)
+- **Business Impact**: Complete A2A implementation
+- **Suitable For**: Full production deployment with confidence
+
+## 📋 Compliance Report
+
+When you run with `--compliance-report`, you get a JSON report containing:
+
+```json
+{
+  "summary": {
+    "compliance_level": "RECOMMENDED",
+    "overall_score": 87.5,
+    "mandatory_score": 100.0,
+    "capability_score": 90.0,
+    "quality_score": 75.0,
+    "feature_score": 60.0
+  },
+  "recommendations": [
+    "✅ Ready for staging deployment",
+    "⚠️ Address 2 quality issues before production",
+    "💡 Consider implementing 3 additional features"
+  ],
+  "next_steps": [
+    "Fix Unicode handling in task storage",
+    "Improve concurrent request performance",
+    "Consider implementing authentication capability"
+  ]
+}
+```
+
+## 🔄 CI/CD Integration
+
+### **Basic CI Pipeline** (Compliance Gate)
 ```bash
-# Run all mandatory tests (JSON-RPC + A2A protocol)
-./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc or mandatory_protocol"
-
-# Run only JSON-RPC compliance tests
-./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc"
-
-# Run only A2A protocol mandatory tests
-./run_tck.py --sut-url http://localhost:9999 -m "mandatory_protocol"
+#!/bin/bash
+# Block deployment if not A2A compliant
+./run_tck.py --sut-url $SUT_URL --category mandatory
+if [ $? -ne 0 ]; then
+    echo "❌ NOT A2A compliant - blocking deployment"
+    exit 1
+fi
+echo "✅ A2A compliant - deployment approved"
 ```
 
-### Run Capability-Based Tests
+### **Advanced CI Pipeline** (Environment-Aware)
 ```bash
-# Run tests for declared capabilities (file, data, streaming, etc.)
-./run_tck.py --sut-url http://localhost:9999 -m "optional_capability"
+#!/bin/bash
+# Generate compliance report and make environment-specific decisions
+./run_tck.py --sut-url $SUT_URL --category all --compliance-report compliance.json
 
-# Run mandatory tests + capability tests (recommended for full validation)
-./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc or mandatory_protocol or optional_capability"
+COMPLIANCE_LEVEL=$(jq -r '.summary.compliance_level' compliance.json)
+
+case $COMPLIANCE_LEVEL in
+    "NON_COMPLIANT")
+        echo "❌ Not A2A compliant - blocking all deployments"
+        exit 1
+        ;;
+    "MANDATORY")
+        echo "🟡 Basic compliance - dev/test only"
+        [[ "$ENVIRONMENT" == "production" ]] && exit 1
+        ;;
+    "RECOMMENDED")
+        echo "🟢 Recommended - staging approved"
+        ;;
+    "FULL_FEATURED")
+        echo "🏆 Full compliance - production approved"
+        ;;
+esac
 ```
 
-### Run Quality Tests
+## 🛠️ Troubleshooting
+
+### **Common Issues**
+
+**Streaming tests skipping**:
 ```bash
-# Run implementation quality tests
-./run_tck.py --sut-url http://localhost:9999 -m "quality_basic"
-
-# Run everything except quality tests (focus on compliance)
-./run_tck.py --sut-url http://localhost:9999 -m "not quality_basic"
+# Check Agent Card capabilities
+curl $SUT_URL/agent | jq .capabilities
+# If streaming: false, tests will skip (this is correct!)
 ```
 
-### Generate Compliance Reports
+**Quality tests failing but compliance achieved**:
 ```bash
-# Generate HTML report focusing on mandatory compliance
-./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc or mandatory_protocol" --report
-
-# Generate comprehensive report with all test categories
-./run_tck.py --sut-url http://localhost:9999 --test-scope all --report
+# This is expected - quality tests don't block compliance
+# Address quality issues for production readiness
 ```
 
-## Understanding Test Results
-
-### Compliance Interpretation
-- **Mandatory test failures** = Implementation is **NOT A2A compliant**
-- **Optional test failures** = Implementation may be compliant but missing recommended features
-- **Quality test failures** = Implementation works but may have robustness/performance issues
-
-Test results are displayed in the console by default. Each test will be marked as:
-
-- **PASSED**: The SUT behaved as expected
-- **FAILED**: The SUT did not behave as expected (check if mandatory vs optional)
-- **SKIPPED**: The test was skipped (e.g., capability not declared in Agent Card)
-- **ERROR**: An unexpected error occurred during the test
-
-If you generate an HTML report (using the `--report` option), a file named `tck_report.html` will be created with detailed test results including marker information.
-
-**Note**: Pytest markers are used for test selection but do not appear in standard HTML reports by default. To see which tests belong to which categories, use the marker selection commands shown above.
-
-## Current Test Suite Statistics
-
-The TCK contains **75 total tests** categorized as follows:
-
-- **24 mandatory tests** (MUST pass for A2A compliance)
-  - 11 JSON-RPC 2.0 compliance tests (`mandatory_jsonrpc`)
-  - 13 A2A protocol requirements (`mandatory_protocol`)
-- **7 optional capability tests** (`optional_capability`)
-- **2 quality tests** (`quality_basic`)
-- **42 additional tests** (legacy categories and utilities)
-
-### Verification Commands
+**Tests not discovering**:
 ```bash
-# Count mandatory tests
-pytest -m "mandatory_jsonrpc or mandatory_protocol" --collect-only -q | grep "collected"
+# Ensure proper installation
+pip install -e .
 
-# Count capability tests  
-pytest -m "optional_capability" --collect-only -q | grep "collected"
-
-# Count quality tests
-pytest -m "quality_basic" --collect-only -q | grep "collected"
+# Check test discovery
+pytest --collect-only tests/mandatory/
 ```
 
-## Advanced Configuration
+## 📚 Documentation
 
-### Environment Variables
+- **[SDK Validation Guide](SDK_VALIDATION_GUIDE.md)** - Detailed usage guide for SDK developers
+- **[Test Documentation Standards](TEST_DOCUMENTATION_STANDARDS.md)** - Standards for test contributors
+- **[Migration Guide](MIGRATION_GUIDE.md)** - Transition from previous TCK versions
 
-- `TCK_LOG_LEVEL`: Sets the logging level (equivalent to the `--log-level` option)
+## 🤝 Contributing
 
-### Test Selection
+1. Fork the repository
+2. Follow [Test Documentation Standards](TEST_DOCUMENTATION_STANDARDS.md)
+3. Add tests with proper categorization and specification references
+4. Submit pull request with clear specification citations
 
-You can combine markers with pytest's `-k` option for fine-grained control:
+## 📝 License
 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## 🎯 Quick Decision Guide
+
+**Just want A2A compliance?**
 ```bash
-# Run mandatory tests for message/send only
-./run_tck.py --sut-url http://localhost:9999 -m "mandatory_protocol" -k "message_send"
-
-# Run all tests except streaming tests
-./run_tck.py --sut-url http://localhost:9999 -k "not streaming"
-
-# Run mandatory tests and generate detailed logs
-./run_tck.py --sut-url http://localhost:9999 -m "mandatory_jsonrpc or mandatory_protocol" --log-level DEBUG
+./run_tck.py --sut-url URL --category mandatory
 ```
 
-## Debugging
-
-For detailed debugging information, increase the log level:
-
+**Planning production deployment?**  
 ```bash
-./run_tck.py --sut-url http://localhost:9999 --log-level DEBUG
+./run_tck.py --sut-url URL --category all --compliance-report report.json
 ```
 
-This will show:
-- Full JSON-RPC request and response bodies
-- HTTP status codes
-- Parsing and validation details
-
-## Development
-
-### Dependencies
-
-The project uses the following dependencies:
-- `pytest`: Testing framework
-- `pytest-asyncio`: Async testing support for pytest
-- `httpx`: HTTP client with async support
-- `requests`: HTTP client for sync requests
-- `responses`: Mocking library for HTTP responses
-- `pytest-html`: HTML report generation
-- `types-requests`: Type stubs for the requests library (for mypy type checking)
-
-Development dependencies:
-- `black`: Code formatter
-- `isort`: Import sorter
-- `mypy`: Type checking
-- `flake8`: Linting
-
-### Project Structure
-
-The project is structured as follows:
-- `tck/`: Core TCK modules
-- `tests/`: Test modules
-- `run_tck.py`: Script to run the TCK
-- `requirements.txt`: Dependencies list
-- `pyproject.toml`: Project configuration
-
-### Type Checking
-
-The project uses mypy for static type checking. You can run mypy with:
-
+**Debugging capability issues?**
 ```bash
-mypy .
+./run_tck.py --sut-url URL --category capabilities --verbose
 ```
 
-## License
+**Want comprehensive assessment?**
+```bash
+./run_tck.py --sut-url URL --explain  # Learn about categories first
+./run_tck.py --sut-url URL --category all --compliance-report full_report.json
+```
 
-[Add your license information here]
-
-## Contributing
-
-[Add contribution guidelines if applicable]
+The A2A TCK transforms specification compliance from confusion into clarity. 🚀
