@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 """
-A2A Protocol Technology Compatibility Kit (TCK) - Test Runner
+Run A2A TCK tests - comprehensive test suite runner.
 
-This script provides a comprehensive interface to run A2A TCK tests organized by categories.
+This script provides a single entry point to understand and run all A2A TCK test categories.
 It explains the differences between test types and helps you choose what to run.
 
 === A2A TCK TEST CATEGORIES EXPLAINED ===
 
-🔴 MANDATORY TESTS
+🔴 MANDATORY TESTS (./run_mandatory.py)
    - JSON-RPC 2.0 compliance + A2A protocol requirements  
    - MUST pass for A2A compliance
    - Failure = NOT A2A compliant
 
-🔄 CAPABILITY TESTS
+🔄 CAPABILITY TESTS (./run_capabilities.py)
    - Validate declared capabilities work correctly
    - SKIP if not declared, MANDATORY if declared
    - Failure = False advertising (capability claimed but broken)
 
-🛡️  QUALITY TESTS
+🛡️  QUALITY TESTS (./run_quality.py)
    - Production readiness and robustness
    - ALWAYS optional (never block compliance)
    - Failure = Areas for production improvement
 
-🎨 FEATURE TESTS
+🎨 FEATURE TESTS (./run_features.py)
    - Optional behaviors and convenience features
    - ALWAYS optional and informational
    - Failure = Missing optional features (perfectly fine)
@@ -42,9 +42,9 @@ It explains the differences between test types and helps you choose what to run.
    → Purely informational, no action required
 
 Usage:
-    ./run_tck.py --sut-url http://localhost:9999 --category mandatory
-    ./run_tck.py --sut-url http://localhost:9999 --category all
-    ./run_tck.py --sut-url http://localhost:9999 --explain
+    ./run_all.py --sut-url http://localhost:9999 --category mandatory
+    ./run_all.py --sut-url http://localhost:9999 --category all
+    ./run_all.py --sut-url http://localhost:9999 --explain
 """
 
 import subprocess
@@ -64,8 +64,7 @@ def explain_test_categories():
     print("   Script:  ./run_mandatory.py")
     print("   Impact:  MUST pass for A2A compliance")
     print("   Tests:   24 tests (JSON-RPC + A2A protocol)")
-    print("   Files:   tests/mandatory/jsonrpc/, tests/mandatory/protocol/")
-    print("   Example: ./run_tck.py --sut-url http://localhost:9999 --category mandatory")
+    print("   Example: ./run_mandatory.py --sut-url http://localhost:9999")
     print()
     
     print("🔄 CAPABILITY TESTS")  
@@ -73,8 +72,7 @@ def explain_test_categories():
     print("   Script:  ./run_capabilities.py")
     print("   Impact:  Conditional mandatory (if capability declared)")
     print("   Tests:   7 tests (streaming, push notifications, auth, etc.)")
-    print("   Files:   tests/optional/capabilities/")
-    print("   Example: ./run_tck.py --sut-url http://localhost:9999 --category capabilities")
+    print("   Example: ./run_capabilities.py --sut-url http://localhost:9999")
     print()
     
     print("🛡️  QUALITY TESTS")
@@ -82,8 +80,7 @@ def explain_test_categories():
     print("   Script:  ./run_quality.py")
     print("   Impact:  Always optional (improvement suggestions)")
     print("   Tests:   3 tests (concurrency, resilience, edge cases)")
-    print("   Files:   tests/optional/quality/")
-    print("   Example: ./run_tck.py --sut-url http://localhost:9999 --category quality")
+    print("   Example: ./run_quality.py --sut-url http://localhost:9999")
     print()
     
     print("🎨 FEATURE TESTS")
@@ -91,8 +88,7 @@ def explain_test_categories():
     print("   Script:  ./run_features.py") 
     print("   Impact:  Always optional (informational only)")
     print("   Tests:   4 tests (business logic, utilities, SDK features)")
-    print("   Files:   tests/optional/features/")
-    print("   Example: ./run_tck.py --sut-url http://localhost:9999 --category features")
+    print("   Example: ./run_features.py --sut-url http://localhost:9999")
     print()
     
     print("=" * 80)
@@ -100,85 +96,50 @@ def explain_test_categories():
     print("=" * 80)
     print()
     print("❓ Just want to check A2A compliance?")
-    print("   → Run: ./run_tck.py --category mandatory")
+    print("   → Run: ./run_mandatory.py")
     print()
     print("❓ Want to validate your Agent Card claims?")  
-    print("   → Run: ./run_tck.py --category mandatory && ./run_tck.py --category capabilities")
+    print("   → Run: ./run_mandatory.py && ./run_capabilities.py")
     print()
     print("❓ Preparing for production deployment?")
-    print("   → Run: ./run_tck.py --category mandatory && ./run_tck.py --category capabilities && ./run_tck.py --category quality")
+    print("   → Run: ./run_mandatory.py && ./run_capabilities.py && ./run_quality.py")
     print()
     print("❓ Want comprehensive implementation assessment?")
-    print("   → Run: ./run_tck.py --category all")
+    print("   → Run: ./run_all.py --category all")
     print()
     print("=" * 80)
 
 def run_test_category(category: str, sut_url: str, verbose: bool = False, generate_report: bool = False):
     """Run a specific test category."""
     
-    # Map categories to pytest commands
-    category_configs = {
-        "mandatory": {
-            "path": "tests/mandatory/",
-            "markers": "mandatory_jsonrpc or mandatory_protocol",
-            "description": "Mandatory A2A compliance tests"
-        },
-        "capabilities": {
-            "path": "tests/optional/capabilities/", 
-            "markers": None,  # Run all tests in this directory for now
-            "description": "Capability declaration validation tests"
-        },
-        "quality": {
-            "path": "tests/optional/quality/",
-            "markers": None,  # Run all tests in this directory for now
-            "description": "Implementation quality and robustness tests"
-        },
-        "features": {
-            "path": "tests/optional/features/",
-            "markers": None,  # Run all tests in this directory for now
-            "description": "Optional feature and utility tests"
-        }
+    scripts = {
+        "mandatory": "./run_mandatory.py",
+        "capabilities": "./run_capabilities.py", 
+        "quality": "./run_quality.py",
+        "features": "./run_features.py"
     }
     
-    if category not in category_configs:
+    if category not in scripts:
         print(f"❌ Unknown category: {category}")
-        print(f"Available: {', '.join(category_configs.keys())}")
+        print(f"Available: {', '.join(scripts.keys())}")
         return 1
     
-    config = category_configs[category]
+    script = scripts[category]
     
-    print("=" * 70)
-    print(f"🚀 Running {category.upper()} tests")
-    print(f"Description: {config['description']}")
-    print("=" * 70)
-    print()
-    
-    # Build pytest command
-    cmd = [
-        sys.executable, "-m", "pytest",
-        config["path"],
-        f"--sut-url={sut_url}",
-        "--test-scope=all",  # Bypass old core marking system
-        "--tb=short",
-    ]
-    
-    # Only add marker filtering if markers are specified
-    if config["markers"]:
-        cmd.extend(["-m", config["markers"]])
+    # Build command
+    cmd = [script, f"--sut-url={sut_url}"]
     
     if verbose:
-        cmd.append("-v")
-    else:
-        cmd.append("-q")
+        cmd.append("--verbose")
     
     if generate_report:
-        report_name = f"{category}_test_report.html"
-        cmd.extend([f"--html={report_name}", "--self-contained-html"])
+        cmd.append("--report")
     
+    print(f"🚀 Running {category} tests...")
     print(f"Command: {' '.join(cmd)}")
     print()
     
-    # Run the tests
+    # Run the script
     result = subprocess.run(cmd)
     return result.returncode
 
@@ -267,31 +228,28 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="A2A Protocol Technology Compatibility Kit (TCK) - Test Runner",
+        description="Run A2A TCK comprehensive test suite",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Explain all test categories
-  ./run_tck.py --explain
+  ./run_all.py --explain
   
   # Run only mandatory compliance tests
-  ./run_tck.py --sut-url http://localhost:9999 --category mandatory
+  ./run_all.py --sut-url http://localhost:9999 --category mandatory
   
   # Run all test categories with reports
-  ./run_tck.py --sut-url http://localhost:9999 --category all --report
+  ./run_all.py --sut-url http://localhost:9999 --category all --report
   
-  # Quick compliance check with verbose output
-  ./run_tck.py --sut-url http://localhost:9999 --category mandatory --verbose
-  
-  # Run compliance + quality tests (good for production assessment)
-  ./run_tck.py --sut-url http://localhost:9999 --category quality
+  # Quick compliance check
+  ./run_all.py --sut-url http://localhost:9999 --category mandatory --verbose
 
 Categories:
-  mandatory             - Core A2A compliance (MUST pass)
-  capabilities          - Declared capability validation (conditional mandatory)
-  quality               - Production readiness assessment (optional)
-  features              - Optional feature validation (informational)
-  all                   - All categories in recommended order
+  mandatory     - Core A2A compliance (MUST pass)
+  capabilities  - Declared capability validation (conditional mandatory)
+  quality       - Production readiness assessment (optional)
+  features      - Optional feature validation (informational)
+  all           - All categories in recommended order
         """
     )
     
@@ -357,4 +315,4 @@ Categories:
         sys.exit(exit_code)
 
 if __name__ == "__main__":
-    main()
+    main() 
