@@ -1,0 +1,69 @@
+# Current Test Categorization Status
+
+## Summary
+- Total tests: 69
+- Core tests: 0
+- Tests with MUST: 9
+- Tests with SHOULD: 1
+
+## Tests Needing Categorization
+- test_tasks_cancel_method.py: test_tasks_cancel_valid
+- test_tasks_cancel_method.py: test_tasks_cancel_nonexistent
+- test_tasks_cancel_method.py: test_tasks_cancel_already_canceled
+- test_state_transitions.py: test_task_state_transitions
+- test_state_transitions.py: test_task_history_length
+- test_reference_task_ids.py: test_reference_task_ids_valid
+- test_reference_task_ids.py: test_reference_task_ids_invalid
+- test_agent_card_utils.py: test_fetch_agent_card_success
+- test_agent_card_utils.py: test_fetch_agent_card_not_found
+- test_agent_card_utils.py: test_fetch_agent_card_invalid_json
+- test_agent_card_utils.py: test_get_sut_rpc_endpoint
+- test_agent_card_utils.py: test_get_capability_streaming
+- test_agent_card_utils.py: test_get_capability_push_notifications
+- test_agent_card_utils.py: test_get_supported_modalities
+- test_agent_card_utils.py: test_get_authentication_schemes
+- test_transport_security.py: test_sut_uses_https
+- test_transport_security.py: test_http_to_https_redirect
+- test_transport_security.py: test_https_url_in_agent_card
+- test_agent_card.py: test_agent_card_available
+- test_agent_card.py: test_mandatory_fields_present
+- test_agent_card.py: test_mandatory_field_types
+- test_agent_card.py: test_capabilities_structure
+- test_agent_card.py: test_authentication_structure
+- test_authentication.py: test_auth_schemes_available
+- test_authentication.py: test_invalid_authentication
+- test_concurrency.py: test_parallel_requests
+- test_concurrency.py: test_rapid_sequential_requests
+- test_concurrency.py: test_concurrent_operations_same_task
+- test_edge_cases.py: test_very_long_string
+- test_edge_cases.py: test_empty_arrays
+- test_edge_cases.py: test_null_optional_fields
+- test_edge_cases.py: test_unexpected_json_types
+- test_edge_cases.py: test_extra_fields
+- test_edge_cases.py: test_unicode_and_special_chars
+- test_edge_cases.py: test_boundary_values
+- test_invalid_business_logic.py: test_unsupported_part_kind
+- test_invalid_business_logic.py: test_invalid_file_part
+- test_invalid_business_logic.py: test_very_large_message
+- test_json_rpc_compliance.py: test_rejects_malformed_json
+- test_json_rpc_compliance.py: test_rejects_invalid_json_rpc_requests
+- test_json_rpc_compliance.py: test_rejects_unknown_method
+- test_json_rpc_compliance.py: test_rejects_invalid_params
+- test_message_send_method.py: test_message_send_valid_text
+- test_message_send_method.py: test_message_send_invalid_params
+- test_message_send_method.py: test_message_send_valid_file_part
+- test_message_send_method.py: test_message_send_valid_multiple_parts
+- test_message_send_method.py: test_message_send_continue_task
+- test_message_send_method.py: test_message_send_continue_nonexistent_task
+- test_message_send_method.py: test_message_send_continue_with_contextid
+- test_message_send_method.py: test_message_send_valid_data_part
+- test_message_send_method.py: test_message_send_data_part_array
+- test_protocol_violations.py: test_duplicate_request_ids
+- test_protocol_violations.py: test_raw_invalid_json
+- test_resilience.py: test_streaming_reconnection_simulation
+- test_resilience.py: test_partial_update_recovery
+- test_sdk_limitations.py: test_sdk_default_handler_history_length_bug
+- test_sdk_limitations.py: test_sut_workaround_implements_history_length_correctly
+- test_tasks_get_method.py: test_tasks_get_valid
+- test_tasks_get_method.py: test_tasks_get_with_history_length
+- test_tasks_get_method.py: test_tasks_get_nonexistent

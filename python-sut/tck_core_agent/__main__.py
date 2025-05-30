@@ -1,11 +1,9 @@
 from agent_executor import (
     TckCoreAgentExecutor,  # type: ignore[import-untyped]
 )
-from custom_request_handler import (
-    TckCoreRequestHandler,  # type: ignore[import-untyped]
-)
 
 from a2a.server.apps import A2AStarletteApplication
+from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import (
     AgentCapabilities,
@@ -74,9 +72,10 @@ def main() -> None:
     
     # Create the application using standard SDK class (no authentication enforcement)
     # Note: SDK doesn't provide built-in authentication middleware
+    # Using SDK DefaultRequestHandler - historyLength parameter not implemented (SDK limitation)
     app = A2AStarletteApplication(
         agent_card=agent_card,
-        http_handler=TckCoreRequestHandler(agent_executor=agent_executor, task_store=task_store),
+        http_handler=DefaultRequestHandler(agent_executor=agent_executor, task_store=task_store),
     )
     
     # Build the Starlette app without authentication middleware

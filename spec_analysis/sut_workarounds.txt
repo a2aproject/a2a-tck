@@ -1,0 +1,319 @@
+python-sut/tck_core_agent/agent_executor.py:class TckCoreAgent:
+python-sut/tck_core_agent/agent_executor.py:class TckCoreAgentExecutor(AgentExecutor):
+python-sut/tck_core_agent/agent_executor.py:        self.agent = TckCoreAgent()
+python-sut/tck_core_agent/custom_request_handler.py:class TckCoreRequestHandler(DefaultRequestHandler):
+python-sut/tck_core_agent/.venv/bin/activate.nu:# To customize the overlay name, you can call `overlay use activate.nu as foo`,
+python-sut/tck_core_agent/.venv/bin/activate.ps1:        # Add the custom prefix to the existing prompt
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/typing_extensions.py:    # Inherits from list as a workaround for Callable checks in Python < 3.9.2.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/typing_extensions.py:    # Inherits from list as a workaround for Callable checks in Python < 3.9.2.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/typing_extensions.py:        The arguments to this decorator can be used to customize this behavior:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/metrics/_internal/view.py:       stream can be customized by certain attributes of the corresponding view.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/metrics/_internal/view.py:        name: This is a metric stream customizing attribute: the name of the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/metrics/_internal/view.py:        description: This is a metric stream customizing attribute: the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/metrics/_internal/view.py:        attribute_keys: This is a metric stream customizing attribute: this is
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/metrics/_internal/view.py:        aggregation: This is a metric stream customizing attribute: the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/metrics/_internal/view.py:        exemplar_reservoir_factory: This is a metric stream customizing attribute:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/trace/sampling.py:Samplers are able to modify the `opentelemetry.trace.span.TraceState` of the parent of the span being created. For custom samplers, it is suggested to implement `Sampler.should_sample` to utilize the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/trace/sampling.py:When utilizing a configurator, you can configure a custom sampler. In order to create a configurable custom sampler, create an entry point for the custom sampler
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/trace/sampling.py:factory method or function under the entry point group, ``opentelemetry_traces_sampler``. The custom sampler factory method must be of type ``Callable[[str], Sampler]``, taking a single string argument and
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/trace/sampling.py:                "custom_sampler_name = path.to.sampler.factory.method:CustomSamplerFactory.get_sampler"
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/trace/sampling.py:In order to configure you application with a custom sampler's entry point, set the ``OTEL_TRACES_SAMPLER`` environment variable to the key name of the entry point. For example, to configured the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/sdk/trace/sampling.py:above sampler, set ``OTEL_TRACES_SAMPLER=custom_sampler_name`` and ``OTEL_TRACES_SAMPLER_ARG=0.5``.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/gcp_attributes.py:The hostname of a GCE instance. This is the full value of the default or [custom hostname](https://cloud.google.com/compute/docs/instances/custom-hostname-vm).
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/gen_ai_attributes.py:For custom model, a custom friendly name SHOULD be used.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/messaging_attributes.py:Note: If a custom value is used, it MUST be of low cardinality.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/process_attributes.py:An additional description about the runtime of the process, for example a specific vendor customization of the runtime environment.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/rpc_attributes.py:For example, a property `my-custom-key` with value `["1.2.3.4", "1.2.3.5"]` SHOULD be recorded as
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/rpc_attributes.py:the `rpc.connect_rpc.request.metadata.my-custom-key` attribute with value `["1.2.3.4", "1.2.3.5"]`.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/rpc_attributes.py:For example, a property `my-custom-key` with value `"attribute_value"` SHOULD be recorded as
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/rpc_attributes.py:the `rpc.connect_rpc.response.metadata.my-custom-key` attribute with value `["attribute_value"]`.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/rpc_attributes.py:For example, a property `my-custom-key` with value `["1.2.3.4", "1.2.3.5"]` SHOULD be recorded as
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/rpc_attributes.py:`rpc.grpc.request.metadata.my-custom-key` attribute with value `["1.2.3.4", "1.2.3.5"]`.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/rpc_attributes.py:For example, a property `my-custom-key` with value `["attribute_value"]` SHOULD be recorded as
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/_incubating/attributes/rpc_attributes.py:the `rpc.grpc.response.metadata.my-custom-key` attribute with value `["attribute_value"]`.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/attributes/error_attributes.py:    """A fallback error value to be used when the instrumentation doesn't define a custom value."""
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/attributes/http_attributes.py:- A header `My-custom-header: abc, def` header SHOULD be recorded as the `http.response.header.my-custom-header`
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/attributes/telemetry_attributes.py:All custom identifiers SHOULD be stable across different versions of an implementation.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/resource/__init__.py:    The hostname of a GCE instance. This is the full value of the default or [custom hostname](https://cloud.google.com/compute/docs/instances/custom-hostname-vm).
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/resource/__init__.py:    An additional description about the runtime of the process, for example a specific vendor customization of the runtime environment.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/resource/__init__.py:    All custom identifiers SHOULD be stable across different versions of an implementation.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry/semconv/trace/__init__.py:    Note: If a custom value is used, it MUST be of low cardinality.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/zipp/__init__.py:    # workaround python/cpython#106763
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py:    # a workaround we have to look at the previous ones in __context__ too for a
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py:            custom_task_constructor = closure[0].cell_contents
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py:            task = custom_task_constructor(coro, loop=loop, name=name)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:        To quickly customize the formatter class used without overriding
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:                        its deprecation in --help. The message can be customized
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:        ``deprecated`` can be set to a string as well to customize the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:        To quickly customize the context class used without overriding
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:    #: subcommands use a custom command class.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:    #: subgroups use a custom group class.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:    #: default class. This makes a custom group class continue to make
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:    #: custom groups.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:        To customize the command class used, set the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:        To customize the group class used, set the :attr:`group_class`
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:    :param shell_complete: A function that returns custom shell
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:                        its deprecation in --help. The message can be customized
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:        self._custom_shell_complete = shell_complete
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:        if self._custom_shell_complete is not None:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:            results = self._custom_shell_complete(ctx, self, incomplete)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/core.py:        ``True`` to customize the message.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/exceptions.py:                       where custom validation should happen.  If it is
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/shell_completion.py:        don't use this, but custom type completions paired with custom
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/termui.py:# functions to customize how they work.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/termui.py:        value. Can be set to a string instead of ``True`` to customize
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/termui.py:        ``confirmation_prompt`` can be a custom string.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/termui.py:    together with ``item_show_func`` to customize the output for each
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/types.py:    To implement a custom type, subclass and implement at least the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/click/types.py:        some do, and this allows custom types to provide custom
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/httpx/_api.py:    `ssl.SSLContext` to use a custom context.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/httpx/_auth.py:    To implement a custom authentication scheme, subclass `Auth` and override
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/httpx/_client.py:    `ssl.SSLContext` to use a custom context.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/httpx/_client.py:    `ssl.SSLContext` to use a custom context.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/httpx/_transports/asgi.py:    A custom AsyncTransport that handles sending requests directly to an ASGI app.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/httpx/_transports/wsgi.py:    A custom transport that handles sending requests directly to an WSGI app.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/deprecated/classic.py:    :exc:`PendingDeprecationWarning` or a custom subclass.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/uvicorn/logging.py:    A custom log formatter class that:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/uvicorn/main.py:    help="Specify custom default HTTP response headers as a Name:Value pair",
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/uvicorn/supervisors/basereload.py:            # This is a workaround to ensure the Ctrl+C event is processed
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/annotated_types/__init__.py:    checking for `str.isdigit` and using its presence to both call custom logic to
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/annotated_types/__init__.py:    enforce digit-only strings, and customise some generated external schema.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/annotated_types/test_cases.py:    # custom GroupedMetadata
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/httpcore/_backends/sync.py:        # in addition to any other custom socket options.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/sniffio/_impl.py:    # a default for a value, a custom class with a class attribute is used
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/importlib_metadata/__init__.py:        This mechanism gives a custom provider a means to
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/importlib_metadata/__init__.py:        custom provider to only include distributions from that
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/sse_starlette/sse.py:            # https://trio.readthedocs.io/en/latest/reference-core.html#custom-supervisors
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_migration.py:    'pydantic.json:custom_pydantic_encoder': 'pydantic.deprecated.json:custom_pydantic_encoder',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/config.py:    typically used for custom descriptors (classes that behave like `property`). If an attribute is set on a
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/config.py:    A `dict` of custom JSON encoders for specific types. Defaults to `None`.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/config.py:    You can customize this behavior using the `protected_namespaces` setting:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/errors.py:    'custom-json-schema',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/fields.py:            """This function improves compatibility with custom descriptors by ensuring delegation happens
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/functional_serializers.py:    This is particularly helpful when you want to customize the serialization for annotated types.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/functional_serializers.py:        # further custom serialization in case it's a subclass.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/functional_serializers.py:    """Decorator that enables custom field serialization.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/functional_serializers.py:    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/functional_serializers.py:    """Decorator that enables custom model serialization.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/functional_serializers.py:    This is useful when a model need to be serialized in a customized manner, allowing for flexibility beyond just specific fields.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/functional_serializers.py:        See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:is generated to be customized.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:        [Customizing the JSON Schema Generation Process](../concepts/json_schema.md#customizing-the-json-schema-generation-process)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:        """Override this method to customize the sorting of the JSON schema (e.g., don't sort at all, sort all keys unconditionally, etc.)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:        # we reflect the application of custom plain, no-info serializers to defaults for
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:                        # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:    def custom_error_schema(self, schema: core_schema.CustomErrorSchema) -> JsonSchemaValue:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:        """Generates a JSON schema that matches a schema that defines a custom error.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:        # Note: 'multi-host-uri' is a custom/pydantic-specific format, not part of the JSON Schema spec
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/json_schema.py:    custom subclass of pydantic.json_schema.GenerateJsonSchema.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/main.py:        __pydantic_custom_init__: Whether the model has a custom `__init__` function.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/main.py:    __pydantic_custom_init__: ClassVar[bool]
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/main.py:    """Whether the model has a custom `__init__` method."""
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/main.py:                'A custom validator is returning a value other than `self`.\n'
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/main.py:        This method can be overridden to achieve a custom naming scheme for generic BaseModels.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/mypy.py:                            # the Any causes issues with --disallow-any-explicit. As a workaround, change
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/mypy.py:        # As a workaround, we give this argument a name that will
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/networks.py:                    custom_error_type='name_email_type',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/networks.py:                    custom_error_message='Input is not a valid NameEmail',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/root_model.py:        [`RootModel` and Custom Root Types](../concepts/models.md#rootmodel-and-custom-root-types)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/root_model.py:            even be something different, in the case of a custom serializer.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/type_adapter.py:        Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:"""The types module contains custom types used by pydantic."""
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:                    custom_error_type=cls._error_kind,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:                custom_error_type='byte_size',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:                custom_error_message='could not parse value and unit from byte string',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    A convenience class for creating an annotation that provides pydantic custom type hooks.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    This class is intended to eliminate the need to create a custom "marker" which defines the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:     `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__` custom hook methods.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    Provides a way to use a custom callable as the way to extract the value of a union discriminator.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    Finally, this allows you to use a custom callable as the way to identify which member of a union a value
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    custom_error_type: str | None = None
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    """Type to use in [custom errors](../errors/errors.md) replacing the standard discriminated union
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    custom_error_message: str | None = None
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    """Message to use in custom errors."""
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    custom_error_context: dict[str, int | str | float] | None = None
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:    """Context to use in custom errors."""
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:        custom_error_type = self.custom_error_type
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:        if custom_error_type is None:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:            custom_error_type = original_schema.get('custom_error_type')
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:        custom_error_message = self.custom_error_message
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:        if custom_error_message is None:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:            custom_error_message = original_schema.get('custom_error_message')
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:        custom_error_context = self.custom_error_context
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:        if custom_error_context is None:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:            custom_error_context = original_schema.get('custom_error_context')
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:        custom_error_type = original_schema.get('custom_error_type') if custom_error_type is None else custom_error_type
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:            custom_error_type=custom_error_type,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:            custom_error_message=custom_error_message,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:            custom_error_context=custom_error_context,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:                custom_error_type='invalid-json-value',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/types.py:                custom_error_message='input was not a valid JSON value',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_core_metadata.py:            custom validation function. Only applies to before, plain, and wrap validators.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_core_metadata.py:        pydantic_js_extra: WIP, either key/value pair updates to apply to the JSON schema, or a custom callable.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_core_utils.py:            elif k in ('custom_init', 'root_model') and not v:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_core_utils.py:            attributes will be stripped (but custom attributes are kept). Defaults to `True`.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_discriminated_union.py:            custom_error_type=schema.get('custom_error_type'),
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_discriminated_union.py:            custom_error_message=schema.get('custom_error_message'),
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_discriminated_union.py:            custom_error_context=schema.get('custom_error_context'),
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_docs_extraction.py:        # in a function as a workaround.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_docs_extraction.py:        dedent_source = f'def dedent_workaround():\n{dedent_source}'
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_docs_extraction.py:                    if isinstance(stmt, ast.FunctionDef) and stmt.name == 'dedent_workaround':
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_docs_extraction.py:                        # `_dedent_source_lines` wrapped the class around the workaround function
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:def _add_custom_serialization_from_json_encoders(
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:            f'`json_encoders` is deprecated. See https://docs.pydantic.dev/{version_short()}/concepts/serialization/#custom-serializers for alternatives',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:                custom_error_type='path_type',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:                custom_error_message=f'Input is not a valid path for {tp}',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:        schema = _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, obj, schema)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:                        custom_init=getattr(cls, '__pydantic_custom_init__', None),
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:                        custom_init=getattr(cls, '__pydantic_custom_init__', None),
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:        return core_schema.custom_error_schema(
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:            custom_error_type='is_type',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:            custom_error_message='Input should be a type',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:        return core_schema.custom_error_schema(
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:            custom_error_type='is_hashable',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:            custom_error_message='Input should be hashable',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:                    # we don't use a custom __setattr__ for dataclasses, so we must
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:        return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:        has_custom_v2_modify_js_func = (
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:        if not has_custom_v2_modify_js_func:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:                code='custom-json-schema',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:            cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:                            # challenging because we are using a custom `__class_getitem__` to parametrize generic models,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_namespace_utils.py:                # compatibility workaround that allows for `Sub` to be able to resolve `'Model'`
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_namespace_utils.py:            #     # Hacky workarounds, see class docstring:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_namespace_utils.py:        # Hacky workarounds, see class docstring:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_signature.py:        Parameter: The custom processed parameter
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_signature.py:    if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_typing_extra.py:    For older versions of python, we have a custom implementation of `get_type_hints` which is a close as possible to
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/_internal/_validators.py:        # best guess at how to re-create the original type, more custom construction logic might be required
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/deprecated/decorator.py:                'Setting the "alias_generator" property on custom Config for '
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/deprecated/json.py:__all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/deprecated/json.py:# TODO: Add a suggested migration path once there is a way to use custom encoders
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/deprecated/json.py:    '`custom_pydantic_encoder` is deprecated, use `BaseModel.model_dump` instead.',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/deprecated/json.py:def custom_pydantic_encoder(type_encoders: dict[Any, Callable[[type[Any]], Any]], obj: Any) -> Any:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/deprecated/json.py:        '`custom_pydantic_encoder` is deprecated, use `BaseModel.model_dump` instead.',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/_hypothesis_plugin.py:Register Hypothesis strategies for Pydantic custom types.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/_hypothesis_plugin.py:# conlist() and conset() are unsupported for now, because the workarounds for
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/decorator.py:                'Setting the "fields" and "alias_generator" property on custom Config for '
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/env_settings.py:        sources = self.__config__.customise_sources(
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/env_settings.py:        def customise_sources(
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/generics.py:        This method can be overridden to achieve a custom naming scheme for GenericModels.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/json.py:__all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/json.py:def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:from pydantic.v1.json import custom_pydantic_encoder, pydantic_encoder
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:        _custom_root_type = ROOT_KEY in fields
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:        if _custom_root_type:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:            validate_custom_root_type(fields)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:            json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:            '__custom_root_type__': _custom_root_type,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:        __custom_root_type__: ClassVar[bool] = False
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:        # This allows users to write custom JSON encoders for given `BaseModel` classes.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:        if self.__custom_root_type__:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:        if cls.__custom_root_type__ and (
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/main.py:        obj = {ROOT_KEY: obj} if cls.__custom_root_type__ else cls._decompose_class(obj)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/schema.py:# this is used only for standard library types, custom types should use __modify_schema__ instead
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/typing.py:# workaround for https://github.com/python/mypy/issues/9496
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/typing.py:        custom generic classes like `ConstrainedList`
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/typing.py:    # this is an ugly workaround for class vars that contain forward references and are therefore themselves
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/utils.py:    if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/utils.py:    is_root_model = getattr(tp, '__custom_root_type__', False)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic/v1/validators.py:    # (and other std lib modules like xml) use `int()` and are likely called before this, the best workaround is to
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/annotated_types-0.7.0.dist-info/METADATA:for example by checking for `str.isdigit` and using its presence to both call custom
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/annotated_types-0.7.0.dist-info/METADATA:logic to enforce digit-only strings, and customise some generated external schema.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/sse_starlette-2.3.5.dist-info/METADATA:By default, the server sends a ping every 15 seconds. You can customize this by:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/sse_starlette-2.3.5.dist-info/METADATA:A workaround to fix this error is to use the following fixture on all tests that use SSE:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    # the config options are used to customise serialization to JSON
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    Returns a schema for serialization with a custom type.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_type: str
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_message: str
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_context: dict[str, Union[str, int, float]]
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_type: str | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_message: str | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_context: dict[str, str | int] | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_type: The custom error type to use if the validation fails
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_message: The custom error message to use if the validation fails
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_context: The custom error context to use if the validation fails
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_type=custom_error_type,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_message=custom_error_message,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_context=custom_error_context,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_type: str
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_message: str
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_context: dict[str, Union[str, int, float]]
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_type: str | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_message: str | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_context: dict[str, int | str | float] | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_type: The custom error type to use if the validation fails
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_message: The custom error message to use if the validation fails
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_context: The custom error context to use if the validation fails
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_type=custom_error_type,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_message=custom_error_message,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_context=custom_error_context,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_init: bool
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_init: bool | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_init: Whether the model has a custom init method
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_init=custom_init,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    type: Required[Literal['custom-error']]
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_type: Required[str]
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_message: str
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_context: dict[str, Union[str, int, float]]
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:def custom_error_schema(
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_type: str,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_message: str | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    custom_error_context: dict[str, Any] | None = None,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    Returns a schema that matches a custom error value, e.g.:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    schema = core_schema.custom_error_schema(
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_type='MyError',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_message='Error msg',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        schema: The schema to use for the custom error schema
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_type: The custom error type to use for the custom error schema
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_message: The custom error message to use for the custom error schema
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_context: The custom error context to use for the custom error schema
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        type='custom-error',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_type=custom_error_type,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_message=custom_error_message,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:        custom_error_context=custom_error_context,
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/core_schema.py:    'custom-error',
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:    """A custom exception providing flexible error handling for Pydantic validators.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:    You can raise this error in custom validators when you'd like flexibility in regards to the error type, message, and context.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:        def custom_validator(v) -> None:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:                raise PydanticCustomError('custom_value_error', 'Value must be greater than {value}', {'value': 10, 'extra_context': 'extra_data'})
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:        def custom_validator(v) -> None:
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:    Upcoming: more robust support for using PydanticOmit in custom serializers is still in development.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:    For a more in depth example / explanation, see the [customizing JSON schema](../concepts/json_schema.md#customizing-the-json-schema-generation-process) docs.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:    This warning can be raised in custom valiation functions to redirect the flow of validation.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:    In custom serializers, this error can be used to indicate that serialization has failed.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/_pydantic_core.pyi:    but it can also be used by users in custom serializers, as seen above.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/__init__.py:    `type` is unique for each error message, and can hence be used as an identifier to build custom error messages.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/__init__.py:    Values which are required to render the error message, and could hence be useful in rendering custom error messages.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/__init__.py:    Also useful for passing custom error data forward.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/__init__.py:    Values which are required to render the error message, and could hence be useful in rendering custom error messages.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic_core/__init__.py:    Also useful for passing custom error data forward.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/importlib_metadata-8.6.1.dist-info/LICENSE:      except as required for reasonable and customary use in describing the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/importlib_metadata-8.6.1.dist-info/METADATA:also add support for custom package installers.  See the above documentation
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/sniffio-1.3.1.dist-info/LICENSE.APACHE2:      except as required for reasonable and customary use in describing the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/wrapt/importer.py:# A custom module import finder. This intercepts attempts to import
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/wrapt/importer.py:        # to Python 3.3, the __loader__ attribute was only set if a custom
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/wrapt/decorators.py:    # arguments are supplied to customise the behaviour of the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/wrapt/decorators.py:    # The 'proxy' argument provides a way of passing a custom version of
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/wrapt/decorators.py:    # extensible anyway as it allows custom synchronization mechanisms.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry_sdk-1.33.1.dist-info/licenses/LICENSE:      except as required for reasonable and customary use in describing the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry_api-1.33.1.dist-info/licenses/LICENSE:      except as required for reasonable and customary use in describing the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic-2.11.5.dist-info/METADATA:* Remove generics cache workaround by [@Viicos](https://github.com/Viicos) in [#11755](https://github.com/pydantic/pydantic/pull/11755)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic-2.11.5.dist-info/METADATA:* Simplify customization of default value inclusion in JSON Schema generation by [@Viicos](https://github.com/Viicos) in [#11634](https://github.com/pydantic/pydantic/pull/11634)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic-2.11.5.dist-info/METADATA:* Move `Mapping` schema gen to `GenerateSchema` to complete removal of `prepare_annotations_for_known_type` workaround by [@sydney-runkle](https://github.com/sydney-runkle) in [#11247](https://github.com/pydantic/pydantic/pull/11247)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic-2.11.5.dist-info/METADATA:* Remove custom MRO implementation of Pydantic models by [@Viicos](https://github.com/Viicos) in [#11184](https://github.com/pydantic/pydantic/pull/11184)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/pydantic-2.11.5.dist-info/METADATA:* Don't allow customization of `SchemaGenerator` until interface is more stable by [@sydney-runkle](https://github.com/sydney-runkle) in [#10303](https://github.com/pydantic/pydantic/pull/10303)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/opentelemetry_semantic_conventions-0.54b1.dist-info/licenses/LICENSE:      except as required for reasonable and customary use in describing the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a/utils/helpers.py:        error_message: An optional custom error message for the `UnsupportedOperationError`.
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a/utils/telemetry.py:    @trace_function(span_name='custom.op', kind=SpanKind.CLIENT)
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a/utils/telemetry.py:    2. As a decorator factory to provide arguments: `@trace_function(span_name="custom.name")`
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a_sdk-0.0.0.post111.dev0+ae3bb10.dist-info/licenses/LICENSE:      except as required for reasonable and customary use in describing the
+python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a_sdk-0.0.0.post111.dev0+ae3bb10.dist-info/METADATA:              except as required for reasonable and customary use in describing the
+python-sut/tck_core_agent/__main__.py:    TckCoreAgentExecutor,  # type: ignore[import-untyped]
+python-sut/tck_core_agent/__main__.py:from custom_request_handler import (
+python-sut/tck_core_agent/__main__.py:    TckCoreRequestHandler,  # type: ignore[import-untyped]
+python-sut/tck_core_agent/__main__.py:    agent_executor = TckCoreAgentExecutor()
+python-sut/tck_core_agent/__main__.py:        http_handler=TckCoreRequestHandler(agent_executor=agent_executor, task_store=task_store),
