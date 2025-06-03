@@ -91,4 +91,29 @@
 - [x] Classify documentation changes
 - Status: Complete
 - Date: 2024-12-19
-- Notes: Implemented impact classification with scoring system (breaking: 10pts, behavioral: 5pts, additions: 2pts, docs: 1pt). Test shows correct detection of 0 changes for identical specs, and proper classification of simulated changes (1 behavioral, 1 non-breaking addition, total score: 7) 
+- Notes: Implemented impact classification with scoring system (breaking: 10pts, behavioral: 5pts, additions: 2pts, docs: 1pt). Test shows correct detection of 0 changes for identical specs, and proper classification of simulated changes (1 behavioral, 1 non-breaking addition, total score: 7)
+
+## Phase 5: Test Impact Analyzer
+### Task 5.1: Build Test Registry
+- [x] Create test_impact_analyzer.py with TestImpactAnalyzer class
+- [x] Implement _build_test_registry method using AST parsing
+- [x] Extract test functions and their docstrings from all test files
+- Status: Complete
+- Date: 2024-12-19
+- Notes: Implemented comprehensive test registry with AST parsing, extracts 68 test functions from 21 files
+
+### Task 5.2: Implement Impact Mapping
+- [x] Add analyze_impact method to map spec changes to affected tests
+- [x] Implement _find_tests_for_requirement method
+- [x] Categorize impact: directly_affected, possibly_affected, new_coverage_needed, obsolete_tests
+- Status: Complete
+- Date: 2024-12-19
+- Notes: Added impact analysis with intelligent matching based on requirement text, section names, and key terms
+
+### Task 5.3: Create Coverage Analysis
+- [x] Add methods to identify gaps in test coverage
+- [x] Find requirements without tests and tests without valid spec references
+- [x] Calculate coverage percentages
+- Status: Complete
+- Date: 2024-12-19
+- Notes: Implemented coverage analysis showing 97.1% test documentation coverage, 100% requirement coverage (optimistic due to broad matching), 66/68 tests have spec refs. Found 2 tests without spec refs. Test shows 62 impacted tests for simulated changes with MEDIUM priority recommendation 
