@@ -19,7 +19,7 @@ def main():
         
         # Test with current spec files
         print("\n📄 Testing Markdown Parser...")
-        with open('spec_analysis/A2A_SPECIFICATION.md', 'r') as f:
+        with open('current_spec/A2A_SPECIFICATION.md', 'r') as f:
             md_content = f.read()
             
         md_result = parser.parse_markdown(md_content)
@@ -38,7 +38,7 @@ def main():
         
         # Test with current JSON schema
         print("\n🔧 Testing JSON Schema Parser...")
-        with open('spec_analysis/a2a_schema.json', 'r') as f:
+        with open('current_spec/a2a_schema.json', 'r') as f:
             json_schema = json.load(f)
             
         json_result = parser.parse_json_schema(json_schema)

@@ -1,5 +1,6 @@
 import pytest
 import uuid
+import logging
 
 from tck import message_utils
 from tck.sut_client import SUTClient
@@ -7,6 +8,8 @@ from tck.sut_client import SUTClient
 # Import markers
 mandatory_protocol = pytest.mark.mandatory_protocol
 optional_feature = pytest.mark.optional_feature
+
+logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="module")
 def sut_client():
@@ -85,7 +88,7 @@ def test_invalid_file_part(sut_client):
                     "kind": "file",
                     "file": {
                         "name": "test.txt",
-                        "mimeType": "text/plain",
+                        "mimeType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
                         "uri": "invalid://url.com/file.txt",  # Invalid URL (note: uri, not url)
                         "sizeInBytes": 1024
                     }
@@ -269,4 +272,52 @@ def test_missing_required_message_fields(sut_client):
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
         f"SUT MUST reject messages missing required 'parts' field per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
-        f"Expected InvalidParams error code -32602 for missing parts, but got: {resp['error']['code']} (Spec: InvalidParamsError)" 
+        f"Expected InvalidParams error code -32602 for missing parts, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
+
+@optional_feature
+def test_file_part_without_mimetype(sut_client):
+    """
+    OPTIONAL FEATURE: A2A Specification §6.6.2 - FileWithUri mimeType Handling
+    
+    Tests handling of FileWithUri objects without the RECOMMENDED mimeType field.
+    Per the updated specification, mimeType is RECOMMENDED (not required) and 
+    should reference Media Type standards.
+    
+    Failure Impact: Limits feature completeness (perfectly acceptable)
+    Fix Suggestion: Handle files gracefully even without explicit mimeType
+    
+    Asserts:
+        - File parts without mimeType are processed without crashing
+        - Implementation handles missing RECOMMENDED fields appropriately
+        - Behavior is consistent and predictable
+    """
+    # Create a message with a file part missing the RECOMMENDED mimeType field
+    params = {
+        "message": {
+            "messageId": "test-no-mimetype-message-id-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [
+                {
+                    "kind": "file",
+                    "file": {
+                        "name": "test.txt",
+                        # mimeType is RECOMMENDED but not required per A2A Spec §6.6.2
+                        "url": "https://example.com/test.txt",
+                        "sizeInBytes": 1024
+                    }
+                }
+            ]
+        }
+    }
+    
+    req = message_utils.make_json_rpc_request("message/send", params=params)
+    resp = sut_client.send_json_rpc(**req)
+    
+    # The SUT should handle this gracefully since mimeType is RECOMMENDED, not required
+    if message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]):
+        # If rejected, should be for business logic reasons, not spec violations
+        logger.info("SUT rejected file without mimeType - this is acceptable behavior")
+    else:
+        # If accepted, should create a valid task
+        assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+        logger.info("SUT accepted file without mimeType - this demonstrates good flexibility") 

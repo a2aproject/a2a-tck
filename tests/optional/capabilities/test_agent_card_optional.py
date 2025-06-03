@@ -44,7 +44,7 @@ def fetched_agent_card(sut_client, agent_card_data):
 @optional_capability  
 def test_capabilities_structure(fetched_agent_card):
     """
-    OPTIONAL CAPABILITY: A2A Specification §2.1 - Capabilities Structure
+    OPTIONAL CAPABILITY: A2A Specification §5.5 - Capabilities Structure
     
     While the capabilities field itself is MANDATORY, the specific
     capabilities (streaming, pushNotifications, etc.) are optional.
@@ -95,7 +95,7 @@ def test_capabilities_structure(fetched_agent_card):
 @optional_capability
 def test_authentication_structure(fetched_agent_card):
     """
-    OPTIONAL CAPABILITY: A2A Specification §4.1 - Authentication Structure
+    OPTIONAL CAPABILITY: A2A Specification §5.5.4 - Authentication Structure
     
     Authentication schemes are optional capabilities. This validates
     their structure if present, but does not require them.

@@ -16,6 +16,7 @@ def created_task_id(sut_client):
     task_id = "test-get-task-" + str(uuid.uuid4())
     params = {
         "message": {
+            "kind": "message",
             "messageId": "test-get-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "taskId": task_id,  # Provide the task ID explicitly

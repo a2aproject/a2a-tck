@@ -65,7 +65,7 @@ class TckCoreAgentExecutor(AgentExecutor):
         # Create task if it doesn't exist (this handles both new tasks and tasks with provided IDs)
         if not task:
             task = new_task(context.message)
-            event_queue.enqueue_event(task)
+            await event_queue.enqueue_event(task)
 
         # Check if task is already completed or canceled
         if task.status and task.status.state in [TaskState.completed, TaskState.canceled]:
@@ -77,7 +77,7 @@ class TckCoreAgentExecutor(AgentExecutor):
 
         try:
             # Update task status to submitted first
-            event_queue.enqueue_event(
+            await event_queue.enqueue_event(
                 TaskStatusUpdateEvent(
                     status=TaskStatus(state=TaskState.submitted),
                     final=False,
@@ -94,7 +94,7 @@ class TckCoreAgentExecutor(AgentExecutor):
                 return  # Task was canceled
 
             # Update task status to working
-            event_queue.enqueue_event(
+            await event_queue.enqueue_event(
                 TaskStatusUpdateEvent(
                     status=TaskStatus(state=TaskState.working),
                     final=False,
@@ -119,7 +119,7 @@ class TckCoreAgentExecutor(AgentExecutor):
                 return  # Task was canceled
             
             # Create an artifact with the result
-            event_queue.enqueue_event(
+            await event_queue.enqueue_event(
                 TaskArtifactUpdateEvent(
                     append=False,
                     contextId=task.contextId,
@@ -134,7 +134,7 @@ class TckCoreAgentExecutor(AgentExecutor):
             )
 
             # Mark task as completed
-            event_queue.enqueue_event(
+            await event_queue.enqueue_event(
                 TaskStatusUpdateEvent(
                     status=TaskStatus(
                         state=TaskState.completed,
@@ -153,7 +153,7 @@ class TckCoreAgentExecutor(AgentExecutor):
         except Exception as e:
             # Handle errors by marking task as failed
             error_message = f"Error processing request: {str(e)}"
-            event_queue.enqueue_event(
+            await event_queue.enqueue_event(
                 TaskStatusUpdateEvent(
                     status=TaskStatus(
                         state=TaskState.failed,
@@ -192,7 +192,7 @@ class TckCoreAgentExecutor(AgentExecutor):
         self._running_tasks.discard(task.id)
         
         # Cancel the task
-        event_queue.enqueue_event(
+        await event_queue.enqueue_event(
             TaskStatusUpdateEvent(
                 status=TaskStatus(state=TaskState.canceled),
                 final=True,

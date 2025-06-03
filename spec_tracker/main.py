@@ -67,13 +67,13 @@ Examples:
     )
     parser.add_argument(
         '--current-md',
-        help='Path to current markdown spec file (default: spec_analysis/A2A_SPECIFICATION.md)',
-        default='spec_analysis/A2A_SPECIFICATION.md'
+        help='Path to current markdown spec file (default: current_spec/A2A_SPECIFICATION.md)',
+        default='current_spec/A2A_SPECIFICATION.md'
     )
     parser.add_argument(
         '--current-json',
-        help='Path to current JSON schema file (default: spec_analysis/a2a_schema.json)',
-        default='spec_analysis/a2a_schema.json'
+        help='Path to current JSON schema file (default: current_spec/a2a_schema.json)',
+        default='current_spec/a2a_schema.json'
     )
     parser.add_argument(
         '--verbose',

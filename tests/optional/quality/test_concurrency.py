@@ -87,15 +87,20 @@ def test_parallel_requests(sut_client, text_message_params):
 @quality_basic
 def test_rapid_sequential_requests(sut_client, text_message_params):
     """
-    QUALITY BASIC: Sequential Request Handling
+    QUALITY BASIC: A2A Specification §5.1 - Sequential Request Handling
     
-    Tests the SUT's ability to handle rapid sequential requests without
+    Tests A2A Specification requirement for robust message processing.
+    The SUT should handle rapid sequential requests without
     degradation or resource leaks.
     
+    Failure Impact: Limits production reliability (acceptable for basic quality)
+    Fix Suggestion: Implement proper request queuing and resource management
+    
     Validates:
-    - Multiple rapid sequential requests
+    - Multiple rapid sequential requests per A2A message/send method
     - Consistent response times and behavior
     - No resource exhaustion under sequential load
+    - Specification compliance for sustained operation
     """
     # Number of sequential requests to send
     NUM_REQUESTS = 10

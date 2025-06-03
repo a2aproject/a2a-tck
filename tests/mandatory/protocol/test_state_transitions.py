@@ -17,6 +17,7 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
+            "kind": "message",
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -33,6 +34,7 @@ def follow_up_message_params(text_message_params):
     """Create a follow-up message params object"""
     return {
         "message": {
+            "kind": "message",
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -67,6 +69,7 @@ def test_task_history_length(sut_client, text_message_params):
     for i in range(3):
         follow_up_params = {
             "message": {
+                "kind": "message",
                 "taskId": task_id,
                 "messageId": f"test-history-message-{i+1}-" + str(uuid.uuid4()),
                 "role": "user",
