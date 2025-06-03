@@ -1,0 +1,248 @@
+{
+  "timestamp": "2025-06-03T13:17:49.178157",
+  "summary": {
+    "total_changes": 2,
+    "breaking_changes": 0,
+    "total_impacted_tests": 47,
+    "requirement_coverage": 100.0,
+    "test_documentation": 97.05882352941177
+  },
+  "spec_changes": {
+    "markdown_changes": {
+      "requirements": {
+        "added": [
+          {
+            "requirement": "<__main__.MockReq object at 0x7efd5ba78830>",
+            "section": "Agent Communication",
+            "level": "MUST"
+          },
+          {
+            "requirement": "<__main__.MockReq object at 0x7efd5ba786e0>",
+            "section": "Message Format",
+            "level": "SHOULD"
+          }
+        ],
+        "removed": [],
+        "modified": []
+      },
+      "sections": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      }
+    },
+    "json_changes": {
+      "definitions": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "error_codes": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "methods": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "required_fields": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      }
+    },
+    "summary": {
+      "total_changes": 2,
+      "requirement_changes": {
+        "added": 2,
+        "removed": 0,
+        "modified": 0
+      },
+      "section_changes": {
+        "added": 0,
+        "removed": 0,
+        "modified": 0
+      },
+      "definition_changes": {
+        "added": 0,
+        "removed": 0,
+        "modified": 0
+      },
+      "method_changes": {
+        "added": 0,
+        "removed": 0,
+        "modified": 0
+      }
+    },
+    "impact_classification": {
+      "breaking_changes": [],
+      "non_breaking_additions": [],
+      "documentation_changes": [
+        {
+          "type": "recommendation_added",
+          "requirement": "Messages SHOULD include timestamp metadata",
+          "section": "Message Format",
+          "impact": "New recommended practice"
+        }
+      ],
+      "behavioral_changes": [
+        {
+          "type": "mandatory_requirement_added",
+          "requirement": "Agents MUST support new authentication protocol",
+          "section": "Agent Communication",
+          "impact": "New mandatory behavior required"
+        }
+      ],
+      "impact_score": {
+        "breaking_score": 0,
+        "behavioral_score": 5,
+        "addition_score": 0,
+        "documentation_score": 1,
+        "total_impact": 6
+      }
+    }
+  },
+  "test_impacts": {
+    "directly_affected": [],
+    "possibly_affected": [],
+    "new_coverage_needed": [
+      "test_agent_card_optional::test_authentication_structure",
+      "test_authentication::test_auth_schemes_available",
+      "test_authentication::test_missing_authentication",
+      "test_authentication::test_invalid_authentication",
+      "test_message_send_capabilities::test_message_send_valid_file_part",
+      "test_message_send_capabilities::test_message_send_valid_multiple_parts",
+      "test_message_send_capabilities::test_message_send_continue_with_contextid",
+      "test_message_send_capabilities::test_message_send_valid_data_part",
+      "test_message_send_capabilities::test_message_send_data_part_array",
+      "test_transport_security::test_sut_uses_https",
+      "test_transport_security::test_https_url_in_agent_card",
+      "test_edge_cases::test_empty_arrays",
+      "test_edge_cases::test_extra_fields",
+      "test_edge_cases::test_unicode_and_special_chars",
+      "test_agent_card_utils::test_get_supported_modalities",
+      "test_agent_card_utils::test_get_authentication_schemes",
+      "test_invalid_business_logic::test_unsupported_part_kind",
+      "test_invalid_business_logic::test_empty_message_parts",
+      "test_invalid_business_logic::test_missing_required_message_fields",
+      "test_reference_task_ids::test_reference_task_ids_valid",
+      "test_sdk_limitations::test_history_length_parameter_compliance",
+      "test_json_rpc_compliance::test_rejects_malformed_json",
+      "test_json_rpc_compliance::test_rejects_invalid_json_rpc_requests",
+      "test_json_rpc_compliance::test_rejects_unknown_method",
+      "test_json_rpc_compliance::test_rejects_invalid_params",
+      "test_protocol_violations::test_invalid_jsonrpc_version",
+      "test_protocol_violations::test_missing_method_field",
+      "test_agent_card::test_agent_card_available",
+      "test_message_send_method::test_message_send_valid_text",
+      "test_message_send_method::test_message_send_invalid_params",
+      "test_message_send_method::test_message_send_continue_task",
+      "test_message_send_method::test_message_send_continue_nonexistent_task",
+      "test_state_transitions::test_task_history_length",
+      "test_tasks_cancel_method::test_tasks_cancel_valid",
+      "test_tasks_cancel_method::test_tasks_cancel_nonexistent",
+      "test_tasks_get_method::test_tasks_get_valid",
+      "test_tasks_get_method::test_tasks_get_with_history_length",
+      "test_tasks_get_method::test_tasks_get_nonexistent",
+      "test_edge_cases::test_very_long_string",
+      "test_edge_cases::test_null_optional_fields",
+      "test_edge_cases::test_unexpected_json_types",
+      "test_edge_cases::test_boundary_values",
+      "test_task_state_quality::test_task_state_transitions",
+      "test_invalid_business_logic::test_invalid_file_part",
+      "test_invalid_business_logic::test_very_large_message",
+      "test_reference_task_ids::test_reference_task_ids_invalid",
+      "test_protocol_violations::test_duplicate_request_ids"
+    ],
+    "obsolete_tests": []
+  },
+  "coverage_analysis": {
+    "requirements_without_tests": [],
+    "tests_without_spec_refs": [
+      {
+        "file": "tests/optional/quality/test_concurrency.py",
+        "name": "test_rapid_sequential_requests",
+        "docstring": "QUALITY BASIC: Sequential Request Handling\n\nTests the SUT's ability to handle rapid sequential requests without\ndegradation or resource leaks.\n\nValidates:\n- Multiple rapid sequential requests\n- Consistent response times and behavior\n- No resource exhaustion under sequential load",
+        "spec_refs": [],
+        "category": "optional_quality",
+        "line_number": 88,
+        "is_async": false,
+        "markers": []
+      },
+      {
+        "file": "tests/mandatory/jsonrpc/test_protocol_violations.py",
+        "name": "test_raw_invalid_json",
+        "docstring": "MANDATORY: JSON-RPC 2.0 Specification \u00a74.2 - JSON Parse Error Handling\n\nThe JSON-RPC 2.0 specification requires servers to reject\nsyntactically invalid JSON with Parse Error (-32700).\n\nFailure Impact: Implementation is not JSON-RPC 2.0 compliant",
+        "spec_refs": [],
+        "category": "mandatory_jsonrpc",
+        "line_number": 127,
+        "is_async": false,
+        "markers": []
+      }
+    ],
+    "coverage_by_category": {
+      "optional_capabilities": {
+        "total_tests": 17,
+        "tests_with_refs": 17,
+        "coverage_percentage": 100.0
+      },
+      "optional_quality": {
+        "total_tests": 14,
+        "tests_with_refs": 13,
+        "coverage_percentage": 92.85714285714286
+      },
+      "optional_features": {
+        "total_tests": 16,
+        "tests_with_refs": 16,
+        "coverage_percentage": 100.0
+      },
+      "mandatory_jsonrpc": {
+        "total_tests": 8,
+        "tests_with_refs": 7,
+        "coverage_percentage": 87.5
+      },
+      "mandatory_protocol": {
+        "total_tests": 13,
+        "tests_with_refs": 13,
+        "coverage_percentage": 100.0
+      }
+    },
+    "coverage_by_requirement_level": {
+      "MAY": {
+        "total_requirements": 50,
+        "covered_requirements": 50,
+        "coverage_percentage": 100.0
+      },
+      "MUST": {
+        "total_requirements": 90,
+        "covered_requirements": 90,
+        "coverage_percentage": 100.0
+      },
+      "SHOULD": {
+        "total_requirements": 39,
+        "covered_requirements": 39,
+        "coverage_percentage": 100.0
+      },
+      "RECOMMENDED": {
+        "total_requirements": 29,
+        "covered_requirements": 29,
+        "coverage_percentage": 100.0
+      },
+      "REQUIRED": {
+        "total_requirements": 125,
+        "covered_requirements": 125,
+        "coverage_percentage": 100.0
+      }
+    },
+    "overall_coverage": {
+      "total_requirements": 333,
+      "covered_requirements": 333,
+      "requirement_coverage_percentage": 100.0,
+      "total_tests": 68,
+      "tests_with_spec_refs": 66,
+      "test_documentation_percentage": 97.05882352941177
+    }
+  }
+}
