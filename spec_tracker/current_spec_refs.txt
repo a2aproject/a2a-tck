@@ -1,0 +1,55 @@
+tests/mandatory/jsonrpc/test_json_rpc_compliance.py:    MANDATORY: JSON-RPC 2.0 Specification §4.2 - Parse Error
+tests/mandatory/jsonrpc/test_json_rpc_compliance.py:    MANDATORY: JSON-RPC 2.0 Specification §4.1 & §4.3 - Request Structure
+tests/mandatory/jsonrpc/test_json_rpc_compliance.py:    MANDATORY: JSON-RPC 2.0 Specification §4.3 - Method Not Found
+tests/mandatory/jsonrpc/test_json_rpc_compliance.py:    MANDATORY: JSON-RPC 2.0 Specification §4.3 - Invalid Parameters
+tests/mandatory/jsonrpc/test_protocol_violations.py:    MANDATORY: JSON-RPC 2.0 Specification §4.1 - Request ID Uniqueness
+tests/mandatory/jsonrpc/test_protocol_violations.py:    MANDATORY: JSON-RPC 2.0 Specification §4.1 - Version Field Validation
+tests/mandatory/jsonrpc/test_protocol_violations.py:    MANDATORY: JSON-RPC 2.0 Specification §4.1 - Required Method Field
+tests/mandatory/jsonrpc/test_protocol_violations.py:    MANDATORY: JSON-RPC 2.0 Specification §4.2 - JSON Parse Error Handling
+tests/mandatory/protocol/test_agent_card.py:A2A Protocol Specification: Agent Card mandatory validation tests.
+tests/mandatory/protocol/test_agent_card.py:    MANDATORY: A2A Specification §2.1 - Agent Card Availability
+tests/mandatory/protocol/test_agent_card.py:    MANDATORY: A2A Specification §2.1 - Agent Card Structure
+tests/mandatory/protocol/test_agent_card.py:    MANDATORY: A2A Specification §2.1 - Agent Card Field Types
+tests/mandatory/protocol/test_message_send_method.py:    MANDATORY: A2A Specification §5.1 - Core Message Protocol
+tests/mandatory/protocol/test_message_send_method.py:    MANDATORY: A2A Specification §5.1 - Parameter Validation
+tests/mandatory/protocol/test_message_send_method.py:    MANDATORY: A2A Specification §5.1 - Task Continuation
+tests/mandatory/protocol/test_message_send_method.py:    MANDATORY: A2A Specification §5.1 - Task Not Found Error Handling
+tests/mandatory/protocol/test_state_transitions.py:    MANDATORY: A2A Specification §7.3 - historyLength Parameter
+tests/mandatory/protocol/test_tasks_cancel_method.py:    MANDATORY: A2A Specification §7.4 - Task Cancellation
+tests/mandatory/protocol/test_tasks_cancel_method.py:    MANDATORY: A2A Specification §7.4 - Task Not Found Error Handling
+tests/mandatory/protocol/test_tasks_get_method.py:    MANDATORY: A2A Specification §7.3 - Task Retrieval
+tests/mandatory/protocol/test_tasks_get_method.py:    MANDATORY: A2A Specification §7.3 - historyLength Parameter
+tests/mandatory/protocol/test_tasks_get_method.py:    MANDATORY: A2A Specification §7.3 - Task Not Found Error Handling
+tests/optional/capabilities/test_agent_card_optional.py:A2A Protocol Specification: Agent Card optional capabilities validation tests.
+tests/optional/capabilities/test_agent_card_optional.py:    OPTIONAL CAPABILITY: A2A Specification §2.1 - Capabilities Structure
+tests/optional/capabilities/test_agent_card_optional.py:    OPTIONAL CAPABILITY: A2A Specification §4.1 - Authentication Structure
+tests/optional/capabilities/test_authentication.py:A2A Protocol Specification: Authentication protocol tests.
+tests/optional/capabilities/test_authentication.py:    OPTIONAL CAPABILITY: A2A Specification §4.4 - Authentication Schemes Declaration
+tests/optional/capabilities/test_authentication.py:    OPTIONAL CAPABILITY: A2A Specification §4.4 - Authentication Requirements
+tests/optional/capabilities/test_authentication.py:    OPTIONAL CAPABILITY: A2A Specification §4.4 - Invalid Authentication Handling
+tests/optional/capabilities/test_message_send_capabilities.py:A2A Protocol Specification: Message send capability-dependent tests.
+tests/optional/capabilities/test_message_send_capabilities.py:    CONDITIONAL MANDATORY: A2A Specification §5.1 - File Modality Support
+tests/optional/capabilities/test_message_send_capabilities.py:    CONDITIONAL MANDATORY: A2A Specification §5.1 - Multiple Parts Support
+tests/optional/capabilities/test_message_send_capabilities.py:    OPTIONAL CAPABILITY: A2A Specification §5.1 - Context ID Support
+tests/optional/capabilities/test_message_send_capabilities.py:    CONDITIONAL MANDATORY: A2A Specification §5.1 - Data Modality Support
+tests/optional/capabilities/test_message_send_capabilities.py:    CONDITIONAL MANDATORY: A2A Specification §5.1 - Data Array Support
+tests/optional/capabilities/test_push_notification_config_methods.py:    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Configuration
+tests/optional/capabilities/test_push_notification_config_methods.py:    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Configuration Retrieval
+tests/optional/capabilities/test_push_notification_config_methods.py:    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Error Handling
+tests/optional/capabilities/test_push_notification_config_methods.py:    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Error Handling
+tests/optional/capabilities/test_streaming_methods.py:    CONDITIONAL MANDATORY: A2A Specification §8.1 - Streaming Support
+tests/optional/capabilities/test_streaming_methods.py:    CONDITIONAL MANDATORY: A2A Specification §8.1 - Streaming Parameter Validation
+tests/optional/capabilities/test_streaming_methods.py:    CONDITIONAL MANDATORY: A2A Specification §8.2 - Task Resubscription
+tests/optional/capabilities/test_streaming_methods.py:    CONDITIONAL MANDATORY: A2A Specification §8.2 - Resubscribe Error Handling
+tests/optional/capabilities/test_transport_security.py:A2A Protocol Specification: Transport Security tests.
+tests/optional/capabilities/test_transport_security.py:    OPTIONAL CAPABILITY: A2A Specification - Transport Security
+tests/optional/capabilities/test_transport_security.py:    OPTIONAL CAPABILITY: A2A Specification - HTTPS Redirect Security
+tests/optional/capabilities/test_transport_security.py:    OPTIONAL CAPABILITY: A2A Specification - Agent Card URL Security
+tests/optional/quality/test_edge_cases.py:    - Specification compliance for array requirements
+tests/optional/quality/test_task_state_quality.py:A2A Protocol Specification: Task state management quality tests.
+tests/optional/quality/test_task_state_quality.py:    QUALITY BASIC: A2A Specification §6.3 - Task State Management
+tests/optional/quality/test_task_state_quality.py:    QUALITY BASIC: A2A Specification §7.4 - Idempotent Cancellation
+tests/optional/features/test_invalid_business_logic.py:    MANDATORY: A2A Specification §5.1 - Message Structure Requirements
+tests/optional/features/test_invalid_business_logic.py:    MANDATORY: A2A Specification §5.1 - Required Message Fields
+tests/optional/features/test_sdk_limitations.py:    OPTIONAL FEATURE: A2A Specification Section 7.3 - historyLength Parameter Support
+tests/optional/features/test_sdk_limitations.py:    - Specification compliance for this advanced feature
