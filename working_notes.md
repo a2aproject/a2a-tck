@@ -27,18 +27,18 @@
 
 ## Phase 2: Specification Downloader
 ### Task 2.1: Implement Basic Downloader
-- [ ] Create spec_downloader.py with SpecDownloader class
-- [ ] Implement download_spec method
-- [ ] Add error handling and logging
-- Status: Not Started
-- Date: 
-- Notes: 
+- [x] Create spec_downloader.py with SpecDownloader class
+- [x] Implement download_spec method
+- [x] Add error handling and logging
+- Status: Complete
+- Date: 2024-12-19
+- Notes: Implemented SpecDownloader class with GitHub URLs for A2A specs
 
 ### Task 2.2: Add Caching and Error Handling  
-- [ ] Implement _cache_specs method
-- [ ] Add load from cache functionality
-- [ ] Add retry logic with exponential backoff
-- [ ] Test the downloader
-- Status: Not Started
-- Date: 
-- Notes: 
+- [x] Implement _cache_specs method
+- [x] Add load from cache functionality
+- [x] Add retry logic with exponential backoff
+- [x] Test the downloader
+- Status: Complete
+- Date: 2024-12-19
+- Notes: Added exponential backoff retry, timestamp-based caching, and fallback to cache. Test successful: downloaded 75 JSON definitions and 85KB markdown content. 
