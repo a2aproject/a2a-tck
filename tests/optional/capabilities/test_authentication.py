@@ -38,7 +38,7 @@ def auth_schemes(agent_card_data):
 @optional_capability
 def test_auth_schemes_available(auth_schemes):
     """
-    OPTIONAL CAPABILITY: A2A Specification §4.4 - Authentication Schemes Declaration
+    OPTIONAL CAPABILITY: A2A Specification §5.5.4 - Authentication Schemes Declaration
     
     Tests that authentication schemes are properly declared in the Agent Card.
     While authentication itself is optional, if declared it must be structured correctly.
@@ -64,7 +64,7 @@ def test_auth_schemes_available(auth_schemes):
 @optional_capability
 def test_missing_authentication(sut_client, auth_schemes):
     """
-    OPTIONAL CAPABILITY: A2A Specification §4.4 - Authentication Requirements
+    OPTIONAL CAPABILITY: A2A Specification §5.5.4 - Authentication Requirements
     
     Tests proper authentication enforcement when schemes are declared.
     If authentication is declared, it should be properly enforced.
@@ -148,7 +148,7 @@ def test_missing_authentication(sut_client, auth_schemes):
 @optional_capability
 def test_invalid_authentication(sut_client, auth_schemes):
     """
-    OPTIONAL CAPABILITY: A2A Specification §4.4 - Invalid Authentication Handling
+    OPTIONAL CAPABILITY: A2A Specification §5.5.4 - Invalid Authentication Handling
     
     Tests proper handling of invalid authentication credentials when schemes are declared.
     If authentication is declared, invalid credentials should be rejected properly.

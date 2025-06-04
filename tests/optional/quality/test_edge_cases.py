@@ -16,7 +16,7 @@ def sut_client():
 @quality_basic
 def test_very_long_string(sut_client):
     """
-    QUALITY BASIC: Large Payload Handling
+    QUALITY BASIC: A2A Specification §5.1 - Large Payload Handling
     
     Tests the SUT's ability to handle very large text payloads gracefully.
     Production systems should either process large payloads or reject them
@@ -26,6 +26,7 @@ def test_very_long_string(sut_client):
     - Large text string handling (1MB payload)
     - Proper error responses for oversized requests
     - No system crashes or hangs
+    - Specification compliance for array requirements
     """
     # Create a message with a very long text (1MB)
     long_text = "A" * (1024 * 1024)  # 1MB string
@@ -132,7 +133,7 @@ def test_null_optional_fields(sut_client):
 @quality_basic
 def test_unexpected_json_types(sut_client):
     """
-    QUALITY BASIC: Type Coercion Handling
+    QUALITY BASIC: A2A Specification §4.1 - Type Coercion Handling
     
     Tests handling of unexpected but valid JSON types in parameters.
     Good implementations should either gracefully coerce types or
@@ -142,6 +143,7 @@ def test_unexpected_json_types(sut_client):
     - Type handling for mismatched but coercible types
     - Clear error messages for type mismatches
     - Robust input validation
+    - Specification compliance for type requirements
     """
     params = {
         "taskId": 12345  # Integer instead of expected string

@@ -46,7 +46,7 @@ def sut_url_info():
 @optional_capability
 def test_sut_uses_https(sut_url_info):
     """
-    OPTIONAL CAPABILITY: A2A Specification - Transport Security
+    OPTIONAL CAPABILITY: A2A Specification §4.2 - Transport Security
     
     Tests that the SUT endpoint uses HTTPS for secure communication.
     While HTTPS is not strictly mandated, it's considered best practice.
@@ -67,7 +67,7 @@ def test_sut_uses_https(sut_url_info):
 @optional_capability
 def test_http_to_https_redirect(sut_url_info):
     """
-    OPTIONAL CAPABILITY: A2A Specification - HTTPS Redirect Security
+    OPTIONAL CAPABILITY: A2A Specification §4.2 - HTTPS Redirect Security
     
     Tests if the SUT properly redirects HTTP requests to HTTPS.
     This enhances security by ensuring all traffic uses encrypted transport.
@@ -114,7 +114,7 @@ def test_http_to_https_redirect(sut_url_info):
 @optional_capability
 def test_https_url_in_agent_card(sut_client, agent_card_data):
     """
-    OPTIONAL CAPABILITY: A2A Specification - Agent Card URL Security
+    OPTIONAL CAPABILITY: A2A Specification §5.6 - Agent Card URL Security
     
     Tests that the URLs declared in the Agent Card use HTTPS protocol.
     This validates consistency between security practices and self-reported URLs.

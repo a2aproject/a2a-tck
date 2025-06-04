@@ -78,25 +78,25 @@ The TCK transforms A2A specification compliance from guesswork into a clear, str
 
 ### 1. **Check A2A Compliance** (Start Here!)
 ```bash
-./run_tck.py --sut-url http://localhost:8000 --category mandatory
+./run_tck.py --sut-url http://localhost:9999 --category mandatory
 ```
 **Result**: ✅ Pass = A2A compliant, ❌ Fail = NOT A2A compliant
 
 ### 2. **Validate Capability Honesty**
 ```bash
-./run_tck.py --sut-url http://localhost:8000 --category capabilities
+./run_tck.py --sut-url http://localhost:9999 --category capabilities
 ```
 **Result**: Ensures declared capabilities actually work (prevents false advertising)
 
 ### 3. **Assess Production Readiness**  
 ```bash
-./run_tck.py --sut-url http://localhost:8000 --category quality
+./run_tck.py --sut-url http://localhost:9999 --category quality
 ```
 **Result**: Identifies issues that may affect production deployment
 
 ### 4. **Generate Comprehensive Report**
 ```bash
-./run_tck.py --sut-url http://localhost:8000 --category all --compliance-report compliance.json
+./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report compliance.json
 ```
 **Result**: Complete assessment with compliance level and recommendations
 

@@ -24,13 +24,13 @@ def sut_client():
 @optional_capability
 def test_message_send_valid_file_part(sut_client, valid_file_message_params, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §5.1 - File Modality Support
+    CONDITIONAL MANDATORY: A2A Specification §6.6.2 - File Modality Support
     
     Status: MANDATORY if file modality declared in Agent Card
             SKIP if file modality not declared
             
     If an agent declares file modality support, it MUST properly
-    handle message/send with FilePart.
+    handle message/send with FilePart containing FileWithUri objects.
     
     Failure Impact: False advertising if declared but not implemented
     Fix Suggestion: Either implement file support or remove from Agent Card
@@ -54,7 +54,7 @@ def test_message_send_valid_file_part(sut_client, valid_file_message_params, age
 @optional_capability
 def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params, valid_file_message_params, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §5.1 - Multiple Parts Support
+    CONDITIONAL MANDATORY: A2A Specification §6.6 - Multiple Parts Support
     
     Status: MANDATORY if multiple modalities declared
             SKIP if file modality not declared
@@ -91,18 +91,19 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
 @optional_capability
 def test_message_send_continue_with_contextid(sut_client, valid_text_message_params):
     """
-    OPTIONAL CAPABILITY: A2A Specification §5.1 - Context ID Support
+    OPTIONAL CAPABILITY: A2A Specification §6.5 - Context Management
     
-    Context IDs are optional but recommended for maintaining conversation context.
-    This validates proper handling if supported.
+    Tests optional context ID parameter for message continuation.
+    Context management allows agents to maintain conversation context
+    across multiple task interactions.
     
-    Failure Impact: Limits feature completeness (perfectly acceptable)
-    Fix Suggestion: Implement contextId support for better conversation management
+    Failure Impact: Limits conversation continuity (perfectly acceptable)
+    Fix Suggestion: Implement context management for enhanced user experience
     
     Asserts:
-        - Context IDs are handled without errors when provided
-        - Task continuation works with contextId parameter
-        - Response maintains task consistency
+        - Context ID parameter is accepted when provided
+        - Context is properly maintained across messages
+        - Valid JSON-RPC response is returned
     """
     # First, create a task
     first_req = message_utils.make_json_rpc_request("message/send", params=valid_text_message_params)
@@ -145,7 +146,7 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
 @optional_capability
 def test_message_send_valid_data_part(sut_client, valid_data_message_params, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §5.1 - Data Modality Support
+    CONDITIONAL MANDATORY: A2A Specification §6.6.3 - Data Modality Support
     
     Status: MANDATORY if data modality declared in Agent Card
             SKIP if data modality not declared

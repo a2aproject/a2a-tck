@@ -19,6 +19,7 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
+            "kind": "message",
             "messageId": "test-protocol-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -110,9 +111,11 @@ def test_missing_method_field(sut_client, text_message_params):
     """
     # Create a valid request first
     req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
+    print(f"req: {req}")
     
     # Remove the method field (violates JSON-RPC 2.0 MUST requirement)
     req.pop("method")
+    print(f"req: {req}")
     
     # Send the malformed request using raw JSON-RPC method
     resp = sut_client.send_raw_json_rpc(req)
@@ -126,12 +129,19 @@ def test_missing_method_field(sut_client, text_message_params):
 @mandatory_jsonrpc
 def test_raw_invalid_json(sut_client):
     """
-    MANDATORY: JSON-RPC 2.0 Specification §4.2 - JSON Parse Error Handling
+    MANDATORY: A2A Specification §4.1 JSON-RPC 2.0 Compliance - Parse Error Handling
     
+    Tests A2A Specification requirement that implementations MUST use JSON-RPC 2.0.
     The JSON-RPC 2.0 specification requires servers to reject
     syntactically invalid JSON with Parse Error (-32700).
     
-    Failure Impact: Implementation is not JSON-RPC 2.0 compliant
+    Failure Impact: Implementation is not A2A compliant
+    Fix Suggestion: Implement proper JSON parsing and error handling per JSON-RPC 2.0
+    
+    Asserts:
+        - Invalid JSON is rejected with appropriate error codes
+        - Error responses follow JSON-RPC 2.0 specification
+        - Implementation maintains A2A compliance requirements
     """
     # Create an intentionally invalid JSON string
     invalid_json = """{"jsonrpc": "2.0", "method": "message/send", "params": {"unclosed_object": true"""

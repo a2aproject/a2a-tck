@@ -17,6 +17,7 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
+            "kind": "message",
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -33,6 +34,7 @@ def follow_up_message_params(text_message_params):
     """Create a follow-up message params object"""
     return {
         "message": {
+            "kind": "message",
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -67,6 +69,7 @@ def test_task_history_length(sut_client, text_message_params):
     for i in range(3):
         follow_up_params = {
             "message": {
+                "kind": "message",
                 "taskId": task_id,
                 "messageId": f"test-history-message-{i+1}-" + str(uuid.uuid4()),
                 "role": "user",
@@ -95,9 +98,11 @@ def test_task_history_length(sut_client, text_message_params):
     assert message_utils.is_json_rpc_success_response(get_limited_resp, expected_id=get_limited_req["id"])
     limited_history = get_limited_resp["result"].get("history", [])
     
+# Verify that full history contains more entries than limited history (if available)
+    if len(full_history) > 2:
+        assert len(full_history) > len(limited_history), "Full history should contain more entries than limited history" 
+
     # Verify that limited history contains at most 2 entries
     assert len(limited_history) <= 2, f"Limited history should have at most 2 entries, but has {len(limited_history)}"
     
-    # Verify that full history contains more entries than limited history (if available)
-    if len(full_history) > 2:
-        assert len(full_history) > len(limited_history), "Full history should contain more entries than limited history" 
+    

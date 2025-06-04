@@ -18,6 +18,7 @@ def valid_text_message_params():
     # Minimal valid params for message/send (TextPart)
     return {
         "message": {
+            "kind": "message",
             "messageId": "test-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -32,8 +33,10 @@ def valid_text_message_params():
 @pytest.fixture
 def valid_file_message_params():
     # Valid params for message/send with FilePart
+    # Note: mimeType is RECOMMENDED per A2A Specification §6.6.2 FileWithUri Object
     return {
         "message": {
+            "kind": "message",
             "messageId": "test-file-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -41,7 +44,7 @@ def valid_file_message_params():
                     "kind": "file",
                     "file": {
                         "name": "test.txt",
-                        "mimeType": "text/plain",
+                        "mimeType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
                         "url": "https://example.com/test.txt",
                         "sizeInBytes": 1024
                     }
@@ -55,6 +58,7 @@ def valid_data_message_params():
     # Valid params for message/send with DataPart
     return {
         "message": {
+            "kind": "message",
             "messageId": "test-data-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -126,7 +130,7 @@ def test_message_send_invalid_params(sut_client):
     
     Failure Impact: Implementation is not A2A compliant
     """
-    invalid_params = {"message": {}}  # missing parts
+    invalid_params = {"message": {"kind": "message"}}  # missing required fields (messageId, role, parts)
     req = message_utils.make_json_rpc_request("message/send", params=invalid_params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
     assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
@@ -153,6 +157,7 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
     # Now, send a follow-up message to continue the task
     continuation_params = {
         "message": {
+            "kind": "message",
             "taskId": task_id,
             "messageId": "test-continuation-message-id-" + str(uuid.uuid4()),
             "role": "user",
@@ -192,6 +197,7 @@ def test_message_send_continue_nonexistent_task(sut_client):
     """
     continuation_params = {
         "message": {
+            "kind": "message",
             "taskId": "non-existent-task-id",
             "messageId": "test-nonexistent-message-id-" + str(uuid.uuid4()),
             "role": "user",
