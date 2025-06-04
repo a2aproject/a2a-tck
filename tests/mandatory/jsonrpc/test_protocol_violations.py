@@ -111,9 +111,11 @@ def test_missing_method_field(sut_client, text_message_params):
     """
     # Create a valid request first
     req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
+    print(f"req: {req}")
     
     # Remove the method field (violates JSON-RPC 2.0 MUST requirement)
     req.pop("method")
+    print(f"req: {req}")
     
     # Send the malformed request using raw JSON-RPC method
     resp = sut_client.send_raw_json_rpc(req)
