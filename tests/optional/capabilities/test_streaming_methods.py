@@ -98,6 +98,7 @@ async def test_message_stream_basic(async_http_client, agent_card_data):
     # Prepare the streaming request payload
     params = {
         "message": {
+            "kind": "message",
             "messageId": "test-stream-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
@@ -259,6 +260,7 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
     sut_client = SUTClient()
     message_params = {
         "message": {
+            "kind": "message",
             "messageId": "test-resubscribe-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
