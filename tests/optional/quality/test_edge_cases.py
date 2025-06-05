@@ -39,7 +39,8 @@ def test_very_long_string(sut_client):
                     "kind": "text",
                     "text": long_text
                 }
-            ]
+            ],
+            "kind": "message"
         }
     }
     
@@ -74,7 +75,8 @@ def test_empty_arrays(sut_client):
         "message": {
             "messageId": "test-empty-array-message-id-" + str(uuid.uuid4()),
             "role": "user",
-            "parts": []
+            "parts": [],
+            "kind": "message"
         }
     }
     
@@ -112,7 +114,8 @@ def test_null_optional_fields(sut_client):
             ],
             "taskId": None,       # Explicitly null
             "contextId": None,    # Explicitly null
-            "metadata": None      # Explicitly null
+            "metadata": None,      # Explicitly null
+            "kind": "message"
         }
     }
     
@@ -188,7 +191,8 @@ def test_extra_fields(sut_client):
             "_debug_info": {
                 "client_version": "1.0.0",
                 "timestamp": 1234567890
-            }
+            },
+            "kind": "message"
         }
     }
     
@@ -226,7 +230,8 @@ def test_unicode_and_special_chars(sut_client):
                     "kind": "text",
                     "text": "Unicode: 你好, здравствуйте, مرحبا, こんにちは\nControl chars: \t\b\f\r\n"
                 }
-            ]
+            ],
+            "kind": "message"
         }
     }
     
@@ -305,7 +310,8 @@ def _create_simple_task(sut_client):
                     "kind": "text",
                     "text": f"Simple task for edge case testing {uuid.uuid4()}"
                 }
-            ]
+            ],
+            "kind": "message"
         }
     }
     
