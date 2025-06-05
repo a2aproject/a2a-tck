@@ -89,7 +89,20 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
     if not validator.is_capability_declared('pushNotifications'):
         pytest.skip("Push notifications capability not declared - test not applicable")
     
-    params = {"taskId": created_task_id}
+    # First, set a push notification config
+    config_params = {
+        "taskId": created_task_id,
+        "pushNotificationConfig": {
+            "url": "https://example.com/webhook"
+        }
+    }
+    set_req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/set", params=config_params)
+    set_resp = sut_client.send_json_rpc(**set_req)
+    assert message_utils.is_json_rpc_success_response(set_resp, expected_id=set_req["id"]), \
+        "Failed to set push notification config before testing get"
+    
+    # Now, get the config we just set
+    params = {"id": created_task_id}
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/get", params=params)
     resp = sut_client.send_json_rpc(**req)
     
@@ -98,7 +111,9 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
         "Push notifications capability declared but get config failed"
     
     result = resp["result"]
-    assert "url" in result, "Push notification config must have url field"
+    assert "pushNotificationConfig" in result, "Result must contain pushNotificationConfig"
+    assert "url" in result["pushNotificationConfig"], "Push notification config must have url field"
+    assert result["pushNotificationConfig"]["url"] == "https://example.com/webhook", "Retrieved URL should match what was set"
 
 @optional_capability
 def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
@@ -150,7 +165,7 @@ def test_get_push_notification_config_nonexistent(sut_client, agent_card_data):
     if not validator.is_capability_declared('pushNotifications'):
         pytest.skip("Push notifications capability not declared - test not applicable")
 
-    params = {"taskId": "nonexistent-task-id"}
+    params = {"id": "nonexistent-task-id"}
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/get", params=params)
     resp = sut_client.send_json_rpc(**req)
     
