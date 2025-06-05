@@ -76,6 +76,7 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
     
     combined_parts = {
         "message": {
+            "kind": "message",
             "messageId": "test-multiple-parts-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": valid_text_message_params["message"]["parts"] + valid_file_message_params["message"]["parts"]
@@ -124,6 +125,7 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     # Send a follow-up message with both taskId and contextId
     continuation_params = {
         "message": {
+            "kind": "message",
             "taskId": task_id,
             "contextId": context_id,
             "messageId": "test-contextid-message-id-" + str(uuid.uuid4()),
@@ -199,6 +201,7 @@ def test_message_send_data_part_array(sut_client, agent_card_data):
     # Create a message with data part containing an array
     data_array_params = {
         "message": {
+            "kind": "message",
             "messageId": "test-data-array-message-id-" + str(uuid.uuid4()),
             "role": "user", 
             "parts": [
