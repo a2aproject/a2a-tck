@@ -59,8 +59,7 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
     
     config_params = {
         "taskId": created_task_id,
-        "config": {
-            "type": "webhook",
+        "pushNotificationConfig": {
             "url": "https://example.com/webhook"
         }
     }
@@ -72,8 +71,7 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
         "Push notifications capability declared but set config failed"
     
     result = resp["result"]
-    assert result["type"] == "webhook", "Push notification config type not echoed correctly"
-    assert result["url"] == "https://example.com/webhook", "Push notification config URL not echoed correctly"
+    assert result["pushNotificationConfig"]["url"] == "https://example.com/webhook", "Push notification config URL not echoed correctly"
 
 @optional_capability
 def test_get_push_notification_config(sut_client, created_task_id, agent_card_data):
@@ -100,7 +98,7 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
         "Push notifications capability declared but get config failed"
     
     result = resp["result"]
-    assert "type" in result, "Push notification config must have type field"
+    assert "url" in result, "Push notification config must have url field"
 
 @optional_capability
 def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
@@ -120,8 +118,7 @@ def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
     
     config_params = {
         "taskId": "nonexistent-task-id",
-        "config": {
-            "type": "webhook",
+        "pushNotificationConfig": {
             "url": "https://example.com/webhook"
         }
     }
