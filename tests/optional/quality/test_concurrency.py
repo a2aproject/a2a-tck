@@ -28,7 +28,8 @@ def text_message_params():
                     "kind": "text",
                     "text": "Hello from concurrency test!"
                 }
-            ]
+            ],
+            "kind": "message"
         }
     }
 
@@ -171,7 +172,8 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
                         "kind": "text",
                         "text": f"Concurrent update {uuid.uuid4()}"
                     }
-                ]
+                ],
+                "kind": "message"
             }
         }
         req = message_utils.make_json_rpc_request("message/send", params=params)
