@@ -2,6 +2,7 @@ import pytest
 
 from tck import message_utils
 from tck.sut_client import SUTClient
+from tests.markers import optional_feature
 
 
 @pytest.fixture(scope="module")
