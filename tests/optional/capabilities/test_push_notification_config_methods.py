@@ -23,7 +23,8 @@ def created_task_id(sut_client):
             "role": "user",
             "parts": [
                 {"kind": "text", "text": "Task for push notification config test"}
-            ]
+            ],
+            "kind": "message"
         }
     }
     req = message_utils.make_json_rpc_request("message/send", params=params)
