@@ -7,4 +7,5 @@ responses>=0.23.0
 pytest-html>=3.0.0
 types-requests>=2.30.0
 deepdiff>=6.7.1
-jsonschema>=4.20.0 
+jsonschema>=4.20.0
+packaging>=21.0 

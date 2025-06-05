@@ -204,6 +204,21 @@ def skip_if_capability_not_declared(capability: str):
     return decorator
 
 
+def has_modality_support(agent_card: Dict, modality: str) -> bool:
+    """
+    Helper function to check if a modality is supported by the agent.
+    
+    Args:
+        agent_card: The agent card dictionary from the SUT
+        modality: The modality to check (e.g., 'text', 'file', 'data')
+        
+    Returns:
+        True if the modality is supported, False otherwise
+    """
+    validator = CapabilityValidator(agent_card)
+    return validator.validate_modality_support(modality)
+
+
 def requires_modality(modality: str):
     """
     Decorator to skip tests if a specific modality is not supported.
