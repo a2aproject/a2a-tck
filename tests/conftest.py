@@ -53,10 +53,12 @@ def pytest_generate_tests(metafunc):
 def pytest_collection_modifyitems(config, items):
     # Apply markers based on --test-scope
     if config.getoption("--test-scope") == "core":
-        # Keep only items marked with 'core'
+        # Keep only items marked with 'core' or mandatory markers
         skip_all = pytest.mark.skip(reason="requires --test-scope all")
+        core_markers = {"core", "mandatory", "mandatory_jsonrpc", "mandatory_protocol"}
         for item in items:
-            if "core" not in item.keywords:
+            # Check if item has any core markers
+            if not any(marker in item.keywords for marker in core_markers):
                 item.add_marker(skip_all)
 
     if config.getoption("--skip-agent-card"):
