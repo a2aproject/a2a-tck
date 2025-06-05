@@ -2,6 +2,7 @@ import os
 import pytest
 import tck.config
 import requests
+import uuid
 from tck import agent_card_utils
 
 def pytest_addoption(parser):
@@ -68,3 +69,66 @@ def pytest_collection_modifyitems(config, items):
                  item.add_marker(skip_agent_card_tests)
 
     # Note: 'all' scope implicitly runs all tests not explicitly marked to be skipped
+
+@pytest.fixture
+def valid_text_message_params():
+    # Minimal valid params for message/send (TextPart)
+    return {
+        "message": {
+            "kind": "message",
+            "messageId": "test-message-id-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [
+                {
+                    "kind": "text",
+                    "text": "Hello from TCK!"
+                }
+            ]
+        }
+    }
+
+@pytest.fixture
+def valid_file_message_params():
+    # Valid params for message/send with FilePart
+    # Note: mimeType is RECOMMENDED per A2A Specification §6.6.2 FileWithUri Object
+    return {
+        "message": {
+            "kind": "message",
+            "messageId": "test-file-message-id-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [
+                {
+                    "kind": "file",
+                    "file": {
+                        "name": "test.txt",
+                        "mimeType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
+                        "url": "https://example.com/test.txt",
+                        "sizeInBytes": 1024
+                    }
+                }
+            ]
+        }
+    }
+
+@pytest.fixture
+def valid_data_message_params():
+    # Valid params for message/send with DataPart
+    return {
+        "message": {
+            "kind": "message",
+            "messageId": "test-data-message-id-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [
+                {
+                    "kind": "data",
+                    "data": {
+                        "key": "value",
+                        "number": 123,
+                        "nested": {
+                            "array": [1, 2, 3]
+                        }
+                    }
+                }
+            ]
+        }
+    }
