@@ -30,7 +30,8 @@ def text_message_params():
                     "kind": "text",
                     "text": "Hello from TCK state transition test!"
                 }
-            ]
+            ],
+            "kind": "message"
         }
     }
 
@@ -46,7 +47,8 @@ def follow_up_message_params(text_message_params):
                     "kind": "text",
                     "text": "Follow-up message for state transition test"
                 }
-            ]
+            ],
+            "kind": "message"
         }
     }
 
@@ -153,7 +155,8 @@ def test_tasks_cancel_already_canceled(sut_client):
             "taskId": task_id,
             "parts": [
                 {"kind": "text", "text": "Task for cancel test"}
-            ]
+            ],
+            "kind": "message"
         },
         "configuration": {
             "blocking": False,
