@@ -33,7 +33,8 @@ def test_rejects_malformed_json(sut_client):
 @mandatory_jsonrpc
 @pytest.mark.parametrize("invalid_request,expected_code", [
     ({"method": "message/send", "params": {}}, -32600),  # missing jsonrpc
-    ({"jsonrpc": "2.0", "params": {},}, -32601),         # missing method
+    ({"jsonrpc": "2.0", "params": {},}, -32600),         # missing method
+    ({"jsonrpc": "2.0",  "method": "message/ssend", "params": {},}, -32601),         # wrong method
     ({"jsonrpc": "2.0", "method": "message/send", "params": {}, "id": {"bad": "type"}}, -32600),  # invalid id type
     ({"jsonrpc": "2.0", "method": "message/send", "params": "not_a_dict"}, -32602),  # invalid params type
 ])
