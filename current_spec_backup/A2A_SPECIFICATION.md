@@ -162,13 +162,14 @@ Agent Cards themselves might contain information that is considered sensitive.
 | `description`                       | `string`                                                           | Yes      | Human-readable description. [CommonMark](https://commonmark.org/) MAY be used.                                                              |
 | `url`                               | `string`                                                           | Yes      | Base URL for the agent's A2A service. Must be absolute. HTTPS for production.                                                               |
 | `provider`                          | [`AgentProvider`](#551-agentprovider-object)                       | No       | Information about the agent's provider.                                                                                                     |
+| `iconUrl`                           | `string`                                                           | No       | A URL to an icon for the agent.                                                                                                             |
 | `version`                           | `string`                                                           | Yes      | Agent or A2A implementation version string.                                                                                                 |
 | `documentationUrl`                  | `string`                                                           | No       | URL to human-readable documentation for the agent.                                                                                          |
 | `capabilities`                      | [`AgentCapabilities`](#552-agentcapabilities-object)               | Yes      | Specifies optional A2A protocol features supported (e.g., streaming, push notifications).                                                   |
 | `securitySchemes`                   | { [scheme: string]: [SecurityScheme](#553-securityscheme-object) } | No       | Security scheme details used for authenticating with this agent. undefined implies no A2A-advertised auth (not recommended for production). |
 | `security`                          | `{ [scheme: string]: string[]; }[]`                                | No       | Security requirements for contacting the agent.                                                                                             |
-| `defaultInputModes`                 | `string[]`                                                         | Yes      | Input MIME types accepted by the agent.                                                                                                     |
-| `defaultOutputModes`                | `string[]`                                                         | Yes      | Output MIME types produced by the agent.                                                                                                    |
+| `defaultInputModes`                 | `string[]`                                                         | Yes      | Input Media Types accepted by the agent.                                                                                                    |
+| `defaultOutputModes`                | `string[]`                                                         | Yes      | Output Media Types produced by the agent.                                                                                                   |
 | `skills`                            | [`AgentSkill[]`](#554-agentskill-object)                           | Yes      | Array of skills. Must have at least one if the agent performs actions.                                                                      |
 | `supportsAuthenticatedExtendedCard` | `boolean`                                                          | No       | Indicates support for retrieving a more detailed Agent Card via an authenticated endpoint.                                                  |
 
@@ -222,8 +223,8 @@ Describes a specific capability, function, or area of expertise the agent can pe
 | `description` | `string`   | Yes      | Detailed skill description. [CommonMark](https://commonmark.org/) MAY be used. |
 | `tags`        | `string[]` | Yes      | Keywords/categories for discoverability.                                       |
 | `examples`    | `string[]` | No       | Example prompts or use cases demonstrating skill usage.                        |
-| `inputModes`  | `string[]` | No       | Overrides `defaultInputModes` for this specific skill. Accepted MIME types.    |
-| `outputModes` | `string[]` | No       | Overrides `defaultOutputModes` for this specific skill. Produced MIME types.   |
+| `inputModes`  | `string[]` | No       | Overrides `defaultInputModes` for this specific skill. Accepted Media Types.    |
+| `outputModes` | `string[]` | No       | Overrides `defaultOutputModes` for this specific skill. Produced Media Types.   |
 
 ### 5.6. Sample Agent Card
 
@@ -236,6 +237,7 @@ Describes a specific capability, function, or area of expertise the agent can pe
     "organization": "Example Geo Services Inc.",
     "url": "https://www.examplegeoservices.com"
   },
+  "iconUrl": "https://georoute-agent.example.com/icon.png",
   "version": "1.2.0",
   "documentationUrl": "https://docs.examplegeoservices.com/georoute-agent/api",
   "capabilities": {
@@ -428,7 +430,7 @@ Represents the data for a file, used within a `FilePart`.
 | Field Name | Type     | Required | Description                                                                                                                         |
 | :--------- | :------- | :------- | :---------------------------------------------------------------------------------------------------------------------------------- |
 | `name`     | `string` | No       | Original filename (e.g., "report.pdf").                                                                                             |
-| `mimeType` | `string` | No       | [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) (e.g., `image/png`). Strongly recommended. |
+| `mimeType` | `string` | No       | [Media Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) (e.g., `image/png`). Strongly recommended. |
 | `bytes`    | `string` | Yes      | Base64 encoded file content.                                                                                                        |
 
 ### 6.6.2 `FileWithUri` Object
@@ -442,7 +444,7 @@ Represents the URI for a file, used within a `FilePart`.
 | Field Name | Type     | Required | Description                                                                                                                         |
 | :--------- | :------- | :------- | :---------------------------------------------------------------------------------------------------------------------------------- |
 | `name`     | `string` | No       | Original filename (e.g., "report.pdf").                                                                                             |
-| `mimeType` | `string` | No       | [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) (e.g., `image/png`). Strongly recommended. |
+| `mimeType` | `string` | No       | [Media Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) (e.g., `image/png`). Strongly recommended. |
 | `uri`      | `string` | Yes      | URI (absolute URL strongly recommended) to file content. Accessibility is context-dependent.                                        |
 
 ### 6.7. `Artifact` Object
@@ -758,7 +760,7 @@ These are custom error codes defined within the JSON-RPC server error range (`-3
 | `-32002` | `TaskNotCancelableError`            | Task cannot be canceled            | An attempt was made to cancel a task that is not in a cancelable state (e.g., it has already reached a terminal state like `completed`, `failed`, or `canceled`).                                                                    |
 | `-32003` | `PushNotificationNotSupportedError` | Push Notification is not supported | Client attempted to use push notification features (e.g., `tasks/pushNotificationConfig/set`) but the server agent does not support them (i.e., `AgentCard.capabilities.pushNotifications` is `false`).                              |
 | `-32004` | `UnsupportedOperationError`         | This operation is not supported    | The requested operation or a specific aspect of it (perhaps implied by parameters) is not supported by this server agent implementation. Broader than just method not found.                                                         |
-| `-32005` | `ContentTypeNotSupportedError`      | Incompatible content types         | A [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) provided in the request's `message.parts` (or implied for an artifact) is not supported by the agent or the specific skill being invoked. |
+| `-32005` | `ContentTypeNotSupportedError`      | Incompatible content types         | A [Media Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) provided in the request's `message.parts` (or implied for an artifact) is not supported by the agent or the specific skill being invoked. |
 | `-32006` | `InvalidAgentResponseError`         | Invalid agent response type        | Agent generated an invalid response for the requested method                                                                                                                                                                         |
 
 Servers MAY define additional error codes within the `-32000` to `-32099` range for more specific scenarios not covered above, but they **SHOULD** document these clearly. The `data` field of the `JSONRPCError` object can be used to provide more structured details for any error.
@@ -810,7 +812,7 @@ This section provides illustrative JSON examples of common A2A interactions. Tim
          "role": "user",
          "parts": [
            {
-             "type": "text",
+             "kind": "text",
              "text": "tell me a joke"
            }
          ],
@@ -839,7 +841,7 @@ This section provides illustrative JSON examples of common A2A interactions. Tim
            "name": "joke",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "Why did the chicken cross the road? To get to the other side!"
              }
            ]
@@ -850,7 +852,7 @@ This section provides illustrative JSON examples of common A2A interactions. Tim
            "role": "user",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "tell me a joke"
              }
            ],
@@ -879,7 +881,7 @@ This section provides illustrative JSON examples of common A2A interactions. Tim
          "role": "user",
          "parts": [
            {
-             "type": "text",
+             "kind": "text",
              "text": "tell me a joke"
            }
          ],
@@ -901,7 +903,7 @@ This section provides illustrative JSON examples of common A2A interactions. Tim
        "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
        "parts": [
          {
-           "type": "text",
+           "kind": "text",
            "text": "Why did the chicken cross the road? To get to the other side!"
          }
        ],
@@ -927,11 +929,11 @@ _If the task were longer-running, the server might initially respond with `statu
          "role": "user",
          "parts": [
            {
-             "type": "text",
+             "kind": "text",
              "text": "write a long paper describing the attached pictures"
            },
            {
-             "type": "file",
+             "kind": "file",
              "file": {
                "mimeType": "image/png",
                "data": "<base64-encoded-content>"
@@ -965,11 +967,11 @@ _If the task were longer-running, the server might initially respond with `statu
            "role": "user",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "write a long paper describing the attached pictures"
              },
              {
-               "type": "file",
+               "kind": "file",
                "file": {
                  "mimeType": "image/png",
                  "data": "<base64-encoded-content>"
@@ -1063,7 +1065,7 @@ _If the task were longer-running, the server might initially respond with `statu
 
 **Scenario:** Client wants to book a flight, and the agent needs more information.
 
-1. **Client `message/send` (initial request):**
+1. **Client sends a message using `message/send`:**
 
    ```json
    {
@@ -1073,7 +1075,7 @@ _If the task were longer-running, the server might initially respond with `statu
      "params": {
        "message": {
          "role": "user",
-         "parts": [{ "type": "text", "text": "I'd like to book a flight." }]
+         "parts": [{ "kind": "text", "text": "I'd like to book a flight." }]
        },
        "messageId": "c53ba666-3f97-433c-a87b-6084276babe2"
      }
@@ -1095,7 +1097,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "role": "agent",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "Sure, I can help with that! Where would you like to fly to, and from where? Also, what are your preferred travel dates?"
              }
            ],
@@ -1110,7 +1112,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "role": "user",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "I'd like to book a flight."
              }
            ],
@@ -1136,7 +1138,7 @@ _If the task were longer-running, the server might initially respond with `statu
          "role": "user",
          "parts": [
            {
-             "type": "text",
+             "kind": "text",
              "text": "I want to fly from New York (JFK) to London (LHR) around October 10th, returning October 17th."
            }
          ],
@@ -1166,7 +1168,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "role": "agent",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "Okay, I've found a flight for you. Confirmation XYZ123. Details are in the artifact."
              }
            ]
@@ -1178,7 +1180,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "name": "FlightItinerary.json",
            "parts": [
              {
-               "type": "data",
+               "kind": "data",
                "data": {
                  "confirmationId": "XYZ123",
                  "from": "JFK",
@@ -1196,7 +1198,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "role": "user",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "I'd like to book a flight."
              }
            ],
@@ -1208,7 +1210,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "role": "agent",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "Sure, I can help with that! Where would you like to fly to, and from where? Also, what are your preferred travel dates?"
              }
            ],
@@ -1220,7 +1222,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "role": "user",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "I want to fly from New York (JFK) to London (LHR) around October 10th, returning October 17th."
              }
            ],
@@ -1251,7 +1253,7 @@ _If the task were longer-running, the server might initially respond with `statu
          "role": "user",
          "parts": [
            {
-             "type": "text",
+             "kind": "text",
              "text": "Generate the Q1 sales report. This usually takes a while. Notify me when it's ready."
            }
          ],
@@ -1311,7 +1313,7 @@ _If the task were longer-running, the server might initially respond with `statu
    - Receives the POST.
    - Validates the `Authorization` header (if applicable).
    - Validates the `X-A2A-Notification-Token`.
-   - Internally processes the notification (e.g., updates application state, notifies end-user).
+   - Internally processes the notification (e.g., updates application state, notifies end user).
 
 ### 9.6. File Exchange (Upload and Download)
 
@@ -1329,11 +1331,11 @@ _If the task were longer-running, the server might initially respond with `statu
          "role": "user",
          "parts": [
            {
-             "type": "text",
+             "kind": "text",
              "text": "Analyze this image and highlight any faces."
            },
            {
-             "type": "file",
+             "kind": "file",
              "file": {
                "name": "input_image.png",
                "mimeType": "image/png",
@@ -1363,7 +1365,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "name": "processed_image_with_faces.png",
            "parts": [
              {
-               "type": "file",
+               "kind": "file",
                "file": {
                  "name": "output.png",
                  "mimeType": "image/png",
@@ -1385,7 +1387,7 @@ _If the task were longer-running, the server might initially respond with `statu
 
 **Scenario:** Client asks for a list of open support tickets in a specific JSON format.
 
-1. **Client `message/send`, `Part.metadata` hints at desired output schema/MIME type:**
+1. **Client `message/send`, `Part.metadata` hints at desired output schema/Media Type:**
    _(Note: A2A doesn't formally standardize schema negotiation in v0.2.0, but `metadata` can be used for such hints by convention between client/server)._
 
    ```json
@@ -1398,7 +1400,7 @@ _If the task were longer-running, the server might initially respond with `statu
          "role": "user",
          "parts": [
            {
-             "type": "text",
+             "kind": "text",
              "text": "Show me a list of my open IT tickets",
              "metadata": {
                "mimeType": "application/json",
@@ -1440,7 +1442,7 @@ _If the task were longer-running, the server might initially respond with `statu
            "artifactId": "c5e0382f-b57f-4da7-87d8-b85171fad17c",
            "parts": [
              {
-               "type": "text",
+               "kind": "text",
                "text": "[{\"ticketNumber\":\"REQ12312\",\"description\":\"request for VPN access\"},{\"ticketNumber\":\"REQ23422\",\"description\":\"Add to DL - team-gcp-onboarding\"}]"
              }
            ]

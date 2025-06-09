@@ -1,6 +1,6 @@
 # A2A Specification Change Analysis Report
 
-Generated: 2025-06-03T23:01:00.342258
+Generated: 2025-06-09T22:39:08.768069
 
 ## Version Comparison
 - **Current Version**: Current A2A Specification
@@ -28,11 +28,11 @@ Generated: 2025-06-03T23:01:00.342258
 
 ### Overall Coverage Statistics
 
-- **Total Requirements**: 333
-- **Covered Requirements**: 333
+- **Total Requirements**: 345
+- **Covered Requirements**: 345
 - **Requirement Coverage**: 100.0%
-- **Total Tests**: 69
-- **Tests with Spec References**: 69
+- **Total Tests**: 75
+- **Tests with Spec References**: 75
 - **Test Documentation**: 100.0%
 
 ### Coverage by Requirement Level
@@ -41,15 +41,15 @@ Generated: 2025-06-03T23:01:00.342258
 |-------|-------|---------|------------|
 | MAY | 50 | 50 | 100.0% |
 | MUST | 90 | 90 | 100.0% |
-| SHOULD | 39 | 39 | 100.0% |
+| SHOULD | 43 | 43 | 100.0% |
 | RECOMMENDED | 29 | 29 | 100.0% |
-| REQUIRED | 125 | 125 | 100.0% |
+| REQUIRED | 133 | 133 | 100.0% |
 
 ### Test Documentation by Category
 
 | Category | Total Tests | With Refs | Documentation % |
 |----------|-------------|-----------|-----------------|
-| optional_capabilities | 17 | 17 | 100.0% |
+| optional_capabilities | 23 | 23 | 100.0% |
 | optional_quality | 14 | 14 | 100.0% |
 | optional_features | 17 | 17 | 100.0% |
 | mandatory_jsonrpc | 8 | 8 | 100.0% |
