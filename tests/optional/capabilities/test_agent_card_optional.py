@@ -44,10 +44,10 @@ def fetched_agent_card(sut_client, agent_card_data):
 @optional_capability  
 def test_capabilities_structure(fetched_agent_card):
     """
-    OPTIONAL CAPABILITY: A2A Specification §5.5 - Capabilities Structure
+    OPTIONAL CAPABILITY: A2A Specification §5.5.2 - AgentCapabilities Structure
     
     While the capabilities field itself is MANDATORY, the specific
-    capabilities (streaming, pushNotifications, etc.) are optional.
+    capabilities (streaming, pushNotifications, extensions, etc.) are optional.
     This validates their structure if present.
     
     Failure Impact: Limits feature completeness (perfectly acceptable)
@@ -57,6 +57,7 @@ def test_capabilities_structure(fetched_agent_card):
         - Capabilities object structure is valid if present
         - Individual capability values have correct types
         - Skills structure is valid if present
+        - Extensions array structure is valid if present
     """
     # Skip if capabilities is not present (it's optional)
     if "capabilities" not in fetched_agent_card:
@@ -72,6 +73,31 @@ def test_capabilities_structure(fetched_agent_card):
     # Check pushNotifications capability if present
     if "pushNotifications" in capabilities:
         assert isinstance(capabilities["pushNotifications"], bool), "pushNotifications capability must be a boolean"
+    
+    # Check stateTransitionHistory capability if present
+    if "stateTransitionHistory" in capabilities:
+        assert isinstance(capabilities["stateTransitionHistory"], bool), "stateTransitionHistory capability must be a boolean"
+    
+    # Check extensions array if present (NEW from spec update)
+    if "extensions" in capabilities:
+        extensions = capabilities["extensions"]
+        assert isinstance(extensions, list), "extensions must be an array"
+        
+        # Validate each extension
+        for i, extension in enumerate(extensions):
+            assert isinstance(extension, dict), f"extension at index {i} must be an object"
+            assert "uri" in extension, f"extension at index {i} missing required 'uri' field"
+            assert isinstance(extension["uri"], str), f"extension uri at index {i} must be a string"
+            
+            # Check optional fields
+            if "description" in extension:
+                assert isinstance(extension["description"], str), f"extension description at index {i} must be a string"
+            
+            if "required" in extension:
+                assert isinstance(extension["required"], bool), f"extension required at index {i} must be a boolean"
+            
+            if "params" in extension:
+                assert isinstance(extension["params"], dict), f"extension params at index {i} must be an object"
     
     # Check skills if present
     if "skills" in capabilities:
@@ -91,6 +117,72 @@ def test_capabilities_structure(fetched_agent_card):
                 assert isinstance(modes, list), f"inputOutputModes in skill {skill['id']} must be an array"
                 for mode in modes:
                     assert isinstance(mode, str), f"mode in skill {skill['id']} must be a string"
+
+@optional_capability
+def test_agent_extensions_structure(fetched_agent_card):
+    """
+    OPTIONAL CAPABILITY: A2A Specification §5.5.2.1 - AgentExtension Objects
+    
+    Tests the new AgentExtension capability structure introduced in the latest spec.
+    Extensions allow agents to declare additional capabilities beyond the core protocol.
+    
+    Failure Impact: Limits extensibility features (perfectly acceptable)
+    Fix Suggestion: Implement extension support to enable advanced capabilities
+    
+    Asserts:
+        - Extensions array follows AgentExtension schema
+        - Required 'uri' field is present and valid
+        - Optional fields have correct types when present
+        - Extension URIs are well-formed
+    """
+    # Skip if capabilities is not present
+    if "capabilities" not in fetched_agent_card:
+        pytest.skip("Agent Card does not have a capabilities section")
+    
+    capabilities = fetched_agent_card["capabilities"]
+    
+    # Skip if extensions is not present (it's optional)
+    if "extensions" not in capabilities:
+        pytest.skip("Agent Card capabilities do not include extensions")
+    
+    extensions = capabilities["extensions"]
+    assert isinstance(extensions, list), "extensions must be an array"
+    
+    if not extensions:
+        logger.info("Extensions array is empty (valid)")
+        return
+    
+    # Validate each extension follows AgentExtension schema
+    for i, extension in enumerate(extensions):
+        assert isinstance(extension, dict), f"extension at index {i} must be an object"
+        
+        # Required field: uri
+        assert "uri" in extension, f"extension at index {i} missing required 'uri' field"
+        uri = extension["uri"]
+        assert isinstance(uri, str), f"extension uri at index {i} must be a string"
+        assert uri.strip(), f"extension uri at index {i} cannot be empty"
+        
+        # Optional field: description
+        if "description" in extension:
+            description = extension["description"]
+            assert isinstance(description, str), f"extension description at index {i} must be a string"
+        
+        # Optional field: required
+        if "required" in extension:
+            required = extension["required"]
+            assert isinstance(required, bool), f"extension required at index {i} must be a boolean"
+            
+            # Log information about required extensions for debugging
+            if required:
+                logger.info(f"Extension {uri} is marked as required by the agent")
+        
+        # Optional field: params
+        if "params" in extension:
+            params = extension["params"]
+            assert isinstance(params, dict), f"extension params at index {i} must be an object"
+            # params can contain any configuration, so we don't validate specific content
+        
+        logger.info(f"Validated extension {i}: {uri}")
 
 @optional_capability
 def test_authentication_structure(fetched_agent_card):
