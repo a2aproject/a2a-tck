@@ -63,7 +63,6 @@ def explain_test_categories():
     
     print("🔴 MANDATORY TESTS")
     print("   Purpose: Validate core A2A specification compliance")
-    print("   Script:  ./run_mandatory.py")
     print("   Impact:  MUST pass for A2A compliance")
     print("   Tests:   24 tests (JSON-RPC + A2A protocol)")
     print("   Files:   tests/mandatory/jsonrpc/, tests/mandatory/protocol/")
@@ -72,7 +71,6 @@ def explain_test_categories():
     
     print("🔄 CAPABILITY TESTS")  
     print("   Purpose: Validate declared capabilities actually work")
-    print("   Script:  ./run_capabilities.py")
     print("   Impact:  Conditional mandatory (if capability declared)")
     print("   Tests:   7 tests (streaming, push notifications, auth, etc.)")
     print("   Files:   tests/optional/capabilities/")
@@ -81,7 +79,6 @@ def explain_test_categories():
     
     print("🛡️  QUALITY TESTS")
     print("   Purpose: Assess production readiness and robustness")  
-    print("   Script:  ./run_quality.py")
     print("   Impact:  Always optional (improvement suggestions)")
     print("   Tests:   3 tests (concurrency, resilience, edge cases)")
     print("   Files:   tests/optional/quality/")
@@ -90,7 +87,6 @@ def explain_test_categories():
     
     print("🎨 FEATURE TESTS")
     print("   Purpose: Validate optional behaviors and utilities")
-    print("   Script:  ./run_features.py") 
     print("   Impact:  Always optional (informational only)")
     print("   Tests:   4 tests (business logic, utilities, SDK features)")
     print("   Files:   tests/optional/features/")
