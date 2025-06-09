@@ -35,6 +35,9 @@ MANIFEST
 # pyenv
 .python-version
 
+# PyCharm
+.idea/
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
