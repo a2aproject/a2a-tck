@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import yaml
 import os
@@ -8,6 +9,33 @@ import shutil # Added for shutil.copytree and rmtree
 
 # --- Configuration ---
 SUT_BASE_DIR = "SUT"
+
+def print_help():
+    help_text = """
+Usage: run_sut.py [--help|--explain] config_file
+
+This script downloads, builds, and runs a System Under Test (SUT) based on a YAML configuration file.
+
+Required arguments:
+  config_file            Path to the SUT configuration YAML file
+
+Optional arguments:
+  --help, --explain      Show this help message and exit
+
+The configuration YAML file must contain:
+  - sut_name: Name of the SUT
+  - github_repo: GitHub repository URL or local path
+  - prerequisites_script: Script to run for prerequisites
+  - run_script: Script to run the SUT
+
+Optional YAML fields:
+  - prerequisites_interpreter: Interpreter for prerequisites script
+  - run_interpreter: Interpreter for run script
+  - git_ref: Git reference to checkout
+  - prerequisites_args: Arguments for prerequisites script
+  - run_args: Arguments for run script
+"""
+    print(help_text)
 
 def load_config(config_path):
     """Loads and validates the SUT configuration YAML file."""
@@ -79,9 +107,14 @@ def run_command(command, cwd=None, check=True, shell=False, capture_output_flag=
         sys.exit(1)
 
 def main():
-    parser = argparse.ArgumentParser(description="Download, build, and run a System Under Test (SUT).")
-    parser.add_argument("config_file", help="Path to the SUT configuration YAML file.")
+    parser = argparse.ArgumentParser(description="Download, build, and run a System Under Test (SUT).", add_help=False)
+    parser.add_argument("config_file", nargs="?", help="Path to the SUT configuration YAML file.")
+    parser.add_argument("--help", "--explain", action="store_true", help="Show help message and exit")
     args = parser.parse_args()
+
+    if args.help or not args.config_file:
+        print_help()
+        sys.exit(0)
 
     config = load_config(args.config_file)
     sut_name = config['sut_name']
