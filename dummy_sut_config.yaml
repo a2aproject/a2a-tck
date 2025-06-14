@@ -1,0 +1,20 @@
+# Configuration for the Local Dummy SUT
+
+sut_name: "local_dummy_sut"
+
+# Use the local path to the dummy SUT template.
+# run_sut.py will detect this is a local path and copy it.
+github_repo: "SUT_TEMPLATES/dummy_sut"
+
+# No git_ref needed for local paths, but can be included (will be ignored with a message).
+# git_ref: "main"
+
+prerequisites_script: "scripts/build.sh"
+prerequisites_interpreter: "bash"
+# No arguments needed for the dummy build script
+# prerequisites_args: ""
+
+run_script: "scripts/run.sh"
+run_interpreter: "bash"
+# No arguments needed for the dummy run script
+# run_args: ""
