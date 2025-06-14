@@ -32,6 +32,7 @@ dependencies = [
     "deepdiff>=6.7.1",
     "jsonschema>=4.20.0",
     "packaging>=21.0",
+    "PyYAML>=5.0.0",
 ]
 
 [project.optional-dependencies]

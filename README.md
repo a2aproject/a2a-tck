@@ -74,6 +74,68 @@ The TCK transforms A2A specification compliance from guesswork into a clear, str
    uv run .
    ```
 
+### Preparing and Running Your SUT (System Under Test) with `run_sut.py`
+
+**Note:** The `run_sut.py` script requires the `PyYAML` package. You can install it using `uv pip install pyyaml` or `pip install pyyaml`.
+
+To simplify the process of testing various A2A implementations, this TCK includes a utility script `run_sut.py`. This Python script automates the download (or update), build, and execution of a System Under Test (SUT) based on a configuration file.
+
+SUTs will be cloned or updated into a directory named `SUT/` created in the root of this TCK repository.
+
+#### Configuration (`sut_config.yaml`)
+
+You need to create a YAML configuration file (e.g., `my_sut_config.yaml`) to define how your SUT should be handled. A template is available at `sut_config_template.yaml`.
+
+The configuration file supports the following fields:
+
+*   `sut_name` (string, mandatory): A descriptive name for your SUT. This name will also be used as the directory name for the SUT within the `SUT/` folder (e.g., `SUT/my_agent`).
+*   `github_repo` (string, mandatory): The HTTPS or SSH URL of the git repository where the SUT source code is hosted.
+*   `git_ref` (string, optional): A specific git branch, tag, or commit hash to checkout after cloning/fetching. If omitted, the repository's default branch will be used.
+*   `prerequisites_script` (string, mandatory): Path to the script that handles prerequisite installation and building the SUT. This path is relative to the root of the SUT's cloned repository (e.g., `scripts/build.sh` or `setup/prepare_env.py`).
+*   `prerequisites_interpreter` (string, optional): The interpreter to use for the `prerequisites_script` (e.g., `bash`, `python3`, `powershell.exe`). If omitted, the script will be executed directly (e.g., `./scripts/build.sh`). Ensure the script is executable and has a valid shebang in this case.
+*   `prerequisites_args` (string, optional): A string of arguments to pass to the `prerequisites_script` (e.g., `"--version 1.2 --no-cache"`).
+*   `run_script` (string, mandatory): Path to the script that starts the SUT. This path is relative to the root of the SUT's cloned repository (e.g., `scripts/run.sh` or `app/start_server.py`).
+*   `run_interpreter` (string, optional): The interpreter to use for the `run_script`.
+*   `run_args` (string, optional): A string of arguments to pass to the `run_script` (e.g., `"--port 8080 --debug"`).
+
+**Example `sut_config.yaml`:**
+```yaml
+sut_name: "example_agent"
+github_repo: "https://github.com/your_org/example_agent_repo.git"
+git_ref: "v1.0.0" # Optional: checkout tag v1.0.0
+prerequisites_script: "bin/setup.sh"
+prerequisites_interpreter: "bash"
+prerequisites_args: "--fast"
+run_script: "bin/start.py"
+run_interpreter: "python3"
+run_args: "--host 0.0.0.0 --port 9000"
+```
+
+#### SUT Script Requirements
+
+*   **Prerequisites Script**: This script is responsible for all steps required to build your SUT and install its dependencies. It should exit with a status code of `0` on success and any non-zero status code on failure. If it fails, `run_sut.py` will terminate.
+*   **Run Script**: This script should start your SUT. Typically, it will launch a server or application that runs in the foreground. The `run_sut.py` script will wait for this script to terminate (e.g., by Ctrl+C or if the SUT exits itself).
+*   **Directly Executable Scripts**: If you omit the `*_interpreter` for a script, ensure the script file has execute permissions (e.g., `chmod +x your_script.sh`) and, for shell scripts on Unix-like systems, includes a valid shebang (e.g., `#!/bin/bash`).
+
+#### Usage
+
+Once you have your SUT configuration file ready, you can run your SUT using:
+
+```bash
+python run_sut.py path/to/your_sut_config.yaml
+```
+For example:
+```bash
+python run_sut.py sut_configs/my_python_agent_config.yaml
+```
+This will:
+1.  Clone the SUT from `github_repo` into `SUT/<sut_name>/` (or update if it already exists).
+2.  Checkout the specified `git_ref` (if any).
+3.  Execute the `prerequisites_script` within the SUT's directory.
+4.  Execute the `run_script` within the SUT's directory to start the SUT.
+
+You can then proceed to run the TCK tests against your SUT.
+
 ## 🚀 Quick Start
 
 ### 1. **Check A2A Compliance** (Start Here!)

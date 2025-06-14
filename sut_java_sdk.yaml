@@ -1,0 +1,35 @@
+# Configuration for the System Under Test (SUT)
+
+# A descriptive name for the SUT. This will also be used as the directory name under SUT/.
+sut_name: "java_sut/a2a-java-sdk"
+
+# The HTTPS or SSH URL of the git repository for the SUT.
+github_repo: "https://github.com/fjuma/a2a-java-sdk.git"
+
+# Path to the script that verifies prerequisites and/or builds the SUT.
+# This path is relative to the root of the SUT's repository.
+prerequisites_script: "../scripts/build.sh"
+
+# Interpreter to use for the prerequisites_script.
+# Examples: "bash", "python3", "powershell.exe".
+# If left empty or omitted, the script will be executed directly (e.g., ./scripts/build.sh).
+prerequisites_interpreter: "bash"
+
+# Path to the script that runs the SUT.
+# This path is relative to the root of the SUT's repository.
+run_script: "../scripts/run.sh"
+
+# Interpreter to use for the run_script.
+# Examples: "bash", "python3", "powershell.exe".
+# If left empty or omitted, the script will be executed directly (e.g., ./scripts/run.sh).
+run_interpreter: "bash"
+
+# Optional: Specify a specific branch, tag, or commit to checkout.
+# If omitted, the default branch of the repository will be used.
+# git_ref: "main"
+
+# Optional: Arguments to pass to the prerequisite script.
+# prerequisites_args: "--fast-build --no-cache"
+
+# Optional: Arguments to pass to the run script.
+# run_args: "--port 8080 --verbose"
