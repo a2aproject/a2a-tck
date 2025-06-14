@@ -319,7 +319,6 @@ pytest --collect-only tests/mandatory/
 
 - **[SDK Validation Guide](SDK_VALIDATION_GUIDE.md)** - Detailed usage guide for SDK developers
 - **[Test Documentation Standards](TEST_DOCUMENTATION_STANDARDS.md)** - Standards for test contributors
-- **[Migration Guide](MIGRATION_GUIDE.md)** - Transition from previous TCK versions
 
 ## 🤝 Contributing
 
