@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 """
-Main script for A2A specification change tracking.
+Main script for A2A specification change tracking and analysis.
 """
 
 import argparse
@@ -8,24 +9,31 @@ import sys
 import json
 from pathlib import Path
 
-try:
-    # Try relative imports first (when run as module)
-    from .spec_downloader import SpecDownloader
-    from .spec_parser import SpecParser
-    from .spec_comparator import SpecComparator
-    from .test_impact_analyzer import TestImpactAnalyzer
-    from .report_generator import ReportGenerator
-except ImportError:
-    # Fall back to absolute imports (when run as script)
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    
-    from spec_tracker.spec_downloader import SpecDownloader
-    from spec_tracker.spec_parser import SpecParser
-    from spec_tracker.spec_comparator import SpecComparator
-    from spec_tracker.test_impact_analyzer import TestImpactAnalyzer
-    from spec_tracker.report_generator import ReportGenerator
+# Add current directory to Python path for local imports
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from spec_tracker.spec_downloader import SpecDownloader
+from spec_tracker.spec_parser import SpecParser
+from spec_tracker.spec_comparator import SpecComparator
+from spec_tracker.test_impact_analyzer import TestImpactAnalyzer
+from spec_tracker.report_generator import ReportGenerator
+
+# Color codes for terminal output
+class Colors:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
+
+def build_github_urls(branch_or_tag: str = "main") -> tuple[str, str]:
+    """Build GitHub raw URLs for the specified branch or tag."""
+    base_url = f"https://raw.githubusercontent.com/google/A2A/{branch_or_tag}"
+    json_url = f"{base_url}/specification/json/a2a.json"
+    md_url = f"{base_url}/docs/specification.md"
+    return json_url, md_url
 
 def main():
     """Main entry point for spec change tracker."""
@@ -34,7 +42,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                                    # Check for changes with defaults
+  %(prog)s                                    # Check for changes with defaults (main branch)
+  %(prog)s --branch "v1.2.0"                 # Check against specific tag/branch
   %(prog)s --output report.md                 # Save to custom file
   %(prog)s --verbose                          # Enable detailed logging
   %(prog)s --json-export results.json        # Export JSON data
@@ -42,14 +51,18 @@ Examples:
         """
     )
     parser.add_argument(
+        '--branch',
+        '--ref',
+        dest='branch',
+        help='GitHub branch or tag to compare against (e.g., "main", "v1.2.0", "dev"). Defaults to main.'
+    )
+    parser.add_argument(
         '--json-url',
-        help='URL for JSON schema (default: GitHub main branch)',
-        default=SpecDownloader.DEFAULT_JSON_URL
+        help='URL for JSON schema (overrides --branch if specified)'
     )
     parser.add_argument(
         '--md-url', 
-        help='URL for Markdown spec (default: GitHub main branch)',
-        default=SpecDownloader.DEFAULT_MD_URL
+        help='URL for Markdown spec (overrides --branch if specified)'
     )
     parser.add_argument(
         '--output',
@@ -99,12 +112,32 @@ Examples:
     try:
         logger.info("🚀 Starting A2A Specification Change Analysis")
         
+        # Determine URLs to use
+        if args.json_url and args.md_url:
+            # Custom URLs provided
+            json_url = args.json_url
+            md_url = args.md_url
+            source_ref = "custom URLs"
+        elif args.branch:
+            # Branch/tag specified
+            json_url, md_url = build_github_urls(args.branch)
+            source_ref = args.branch
+            logger.info(f"📍 Comparing against branch/tag: {args.branch}")
+        else:
+            # Default to main branch
+            json_url, md_url = build_github_urls("main")
+            source_ref = "main"
+        
         # Step 1: Download latest specs
-        logger.info("📥 Downloading latest specifications...")
+        logger.info(f"📥 Downloading specifications from {source_ref}...")
+        if args.verbose:
+            logger.info(f"📄 JSON URL: {json_url}")
+            logger.info(f"📄 MD URL: {md_url}")
+        
         downloader = SpecDownloader()
         
         try:
-            new_json, new_md = downloader.download_spec(args.json_url, args.md_url)
+            new_json, new_md = downloader.download_spec(json_url, md_url)
             logger.info(f"✅ Downloaded specifications: {len(new_json)} JSON definitions, {len(new_md)} chars markdown")
         except Exception as e:
             logger.error(f"❌ Failed to download specifications: {e}")

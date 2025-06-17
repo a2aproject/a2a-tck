@@ -83,6 +83,13 @@ def update_current_specs(current_spec_dir: Path,
         logger.error(f"❌ Failed to update current specs: {e}")
         return False
 
+def build_github_urls(branch_or_tag: str = "main") -> tuple[str, str]:
+    """Build GitHub raw URLs for the specified branch or tag."""
+    base_url = f"https://raw.githubusercontent.com/google/A2A/{branch_or_tag}"
+    json_url = f"{base_url}/specification/json/a2a.json"
+    md_url = f"{base_url}/docs/specification.md"
+    return json_url, md_url
+
 def main():
     """Main entry point for updating current specifications."""
     parser = argparse.ArgumentParser(
@@ -90,21 +97,27 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                                    # Update with latest from GitHub
+  %(prog)s                                    # Update with latest from GitHub main
   %(prog)s --version "v1.2.0"                # Tag the update with version
-  %(prog)s --backup-dir custom_backup        # Use custom backup directory
+  %(prog)s --branch "v1.2.0"                 # Use specific branch/tag (auto-sets version)
+  %(prog)s --branch "dev" --version "dev-snapshot"  # Custom branch with custom version
+  %(prog)s --json-url URL --md-url URL       # Use custom URLs (advanced)
   %(prog)s --dry-run                         # Show what would be updated
         """
     )
     parser.add_argument(
+        '--branch',
+        '--ref',
+        dest='branch',
+        help='GitHub branch or tag to download from (e.g., "main", "v1.2.0", "dev"). Auto-sets version if --version not specified.'
+    )
+    parser.add_argument(
         '--json-url',
-        help='URL for JSON schema (default: GitHub main branch)',
-        default=SpecDownloader.DEFAULT_JSON_URL
+        help='URL for JSON schema (overrides --branch if specified)'
     )
     parser.add_argument(
         '--md-url', 
-        help='URL for Markdown spec (default: GitHub main branch)',
-        default=SpecDownloader.DEFAULT_MD_URL
+        help='URL for Markdown spec (overrides --branch if specified)'
     )
     parser.add_argument(
         '--current-spec-dir',
@@ -120,7 +133,7 @@ Examples:
     )
     parser.add_argument(
         '--version',
-        help='Version tag for this update (e.g., v1.2.0)'
+        help='Version tag for this update (default: auto-detected from --branch or "latest")'
     )
     parser.add_argument(
         '--old-version',
@@ -154,6 +167,33 @@ Examples:
     try:
         logger.info("🚀 Starting A2A Specification Update")
         
+        # Determine URLs to use
+        if args.json_url and args.md_url:
+            # Custom URLs provided
+            json_url = args.json_url
+            md_url = args.md_url
+            source_ref = "custom URLs"
+        elif args.branch:
+            # Branch/tag specified
+            json_url, md_url = build_github_urls(args.branch)
+            source_ref = args.branch
+            logger.info(f"📍 Using branch/tag: {args.branch}")
+        else:
+            # Default to main branch
+            json_url, md_url = build_github_urls("main")
+            source_ref = "main"
+        
+        # Auto-determine version if not explicitly set
+        if not args.version:
+            if args.branch and args.branch != "main":
+                # Use branch/tag name as version
+                auto_version = args.branch
+                logger.info(f"🏷️  Auto-detected version from branch: {auto_version}")
+            else:
+                auto_version = "latest"
+        else:
+            auto_version = args.version
+        
         # Read existing version info if available
         existing_version = None
         version_info_file = args.current_spec_dir / "version_info.json"
@@ -169,11 +209,14 @@ Examples:
         old_version = args.old_version or existing_version or "unknown"
         
         # Step 1: Download latest specifications
-        logger.info("📥 Downloading latest specifications...")
+        logger.info(f"📥 Downloading specifications from {source_ref}...")
+        logger.info(f"📄 JSON URL: {json_url}")
+        logger.info(f"📄 MD URL: {md_url}")
+        
         downloader = SpecDownloader()
         
         try:
-            new_json, new_md = downloader.download_spec(args.json_url, args.md_url)
+            new_json, new_md = downloader.download_spec(json_url, md_url)
             logger.info(f"✅ Downloaded: {len(new_json)} JSON definitions, {len(new_md)} chars markdown")
         except Exception as e:
             logger.error(f"❌ Failed to download specifications: {e}")
@@ -212,13 +255,15 @@ Examples:
                     return 0
         
         # Step 3: Create version info
-        version_info = create_version_info(old_version, args.version or "latest")
+        version_info = create_version_info(old_version, auto_version)
+        version_info["source"] = f"GitHub A2A {source_ref}"
         
         if args.dry_run:
             logger.info("🔍 DRY RUN - Would perform the following actions:")
             logger.info(f"  📦 Backup current specs to: {args.backup_dir}")
             logger.info(f"  📥 Update specifications in: {args.current_spec_dir}")
-            logger.info(f"  🏷️  Version: {old_version} → {args.version or 'latest'}")
+            logger.info(f"  🏷️  Version: {old_version} → {auto_version}")
+            logger.info(f"  📍 Source: {source_ref}")
             logger.info(f"  📋 JSON definitions: {len(new_json)}")
             logger.info(f"  📄 Markdown content: {len(new_md)} characters")
             return 0
@@ -237,16 +282,16 @@ Examples:
         
         # Step 6: Success summary
         logger.info("🎉 Specification update completed successfully!")
-        logger.info(f"📍 Version: {old_version} → {args.version or 'latest'}")
+        logger.info(f"📍 Source: {source_ref}")
+        logger.info(f"🏷️  Version: {old_version} → {auto_version}")
         logger.info(f"📂 Current specs: {args.current_spec_dir}")
         logger.info(f"💾 Backup saved: {args.backup_dir}")
         
-        if args.version:
-            logger.info(f"💡 Next steps:")
-            logger.info(f"  1. Review changes in {args.current_spec_dir}")
-            logger.info(f"  2. Run spec analysis to identify test impacts")
-            logger.info(f"  3. Update tests as needed")
-            logger.info(f"  4. Commit changes with version {args.version}")
+        logger.info(f"💡 Next steps:")
+        logger.info(f"  1. Review changes in {args.current_spec_dir}")
+        logger.info(f"  2. Run spec analysis: ./check_spec_changes.py")
+        logger.info(f"  3. Update tests as needed")
+        logger.info(f"  4. Commit changes with version {auto_version}")
         
         return 0
         
