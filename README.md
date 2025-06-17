@@ -12,6 +12,22 @@ The A2A Protocol TCK is a sophisticated validation framework that provides:
 
 The TCK transforms A2A specification compliance from guesswork into a clear, structured validation process.
 
+## 🔄 Two Main Workflows
+
+### 1. **Testing Your A2A Implementation** (You're likely here for this)
+Use the TCK to validate your A2A implementation:
+```bash
+./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report report.json
+```
+
+### 2. **Managing A2A Specification Updates** (Advanced/Maintainer workflow)
+Monitor and integrate A2A specification changes into the test suite:
+- 📖 **[Complete Specification Update Workflow](SPEC_UPDATE_WORKFLOW.md)**
+- 🔍 **Quick check**: `./check_spec_changes.py`
+- 📥 **Update baseline**: `./update_current_spec.py --version "v1.x"`
+
+---
+
 ## ✨ Key Features
 
 ### 🔍 **Intelligent Test Categorization**
@@ -380,6 +396,7 @@ pytest --collect-only tests/mandatory/
 ## 📚 Documentation
 
 - **[SDK Validation Guide](SDK_VALIDATION_GUIDE.md)** - Detailed usage guide for SDK developers
+- **[Specification Update Workflow](SPEC_UPDATE_WORKFLOW.md)** - Monitor and manage A2A specification changes
 - **[Test Documentation Standards](TEST_DOCUMENTATION_STANDARDS.md)** - Standards for test contributors
 
 ## 🤝 Contributing
