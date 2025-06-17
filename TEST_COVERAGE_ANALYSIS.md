@@ -2,6 +2,8 @@
 
 This guide documents the **Test Coverage Analysis** tool - a comprehensive system for analyzing how well the current test suite covers the A2A specification.
 
+## IT's BROKEN. IT SHOULD NOT BE USED
+
 ## 🎯 Purpose
 
 **`analyze_test_coverage.py`** analyzes the **current specification in isolation** to identify coverage gaps, missing tests, and quality issues. This is different from `check_spec_changes.py` which compares two specification versions.
