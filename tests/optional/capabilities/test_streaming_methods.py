@@ -376,18 +376,46 @@ async def test_tasks_resubscribe_nonexistent(async_http_client, agent_card_data)
             timeout=10  # Use timeout here since we expect an error
         )
         
-        # We expect a JSON-RPC error for a non-existent task, not a stream
-        assert not response.headers.get("content-type", "").startswith("text/event-stream"), \
-            "Non-existent task should return JSON-RPC error, not SSE stream"
+        # We expect a stream
         assert response.status_code == 200, "JSON-RPC errors should use HTTP 200"
-        
-        # Parse and validate the error
-        json_response = response.json()
-        assert message_utils.is_json_rpc_error_response(json_response, expected_id=req_id), \
-            "Streaming capability declared but invalid task ID not properly rejected"
-        
+        assert response.headers.get("content-type", "").startswith("text/event-stream"), \
+            "Streaming capability declared but Content-Type is not text/event-stream"
+
+        # Process the SSE stream
+        sse_client = SimpleSSEClient(response)
+        events = []
+        error = {}
+
+        # Collect events with a timeout to avoid hanging indefinitely
+        try:
+            async for event in sse_client:
+                if "data" in event:
+                    try:
+                        data = json.loads(event["data"])
+                        events.append(data)
+                        logger.info(f"Received SSE event: {data}")
+
+                        if "error" in data and isinstance(data["error"], dict):
+                            # Error code should indicate task not found
+                            error = data["error"]
+                            if error:
+                                break
+
+                        # Break after a reasonable number of events for testing
+                        if len(events) >= 5:
+                            logger.info("Collected 5 events, ending stream processing.")
+                            break
+                    except json.JSONDecodeError:
+                        logger.error(f"Failed to parse event data as JSON: {event['data']}")
+                        continue
+        except asyncio.TimeoutError:
+            logger.warning("Timeout while processing SSE stream")
+
+        # Validate the collected events
+        assert len(events) == 1, "Streaming capability declared but no events received from stream"
+        assert error
+
         # Error code should indicate task not found
-        error = json_response["error"]
         assert "code" in error
         
         # Check the error message to see if it indicates the task wasn't found
