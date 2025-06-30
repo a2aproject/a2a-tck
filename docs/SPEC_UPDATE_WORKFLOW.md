@@ -433,7 +433,7 @@ In addition to tracking specification changes, you can analyze how well your cur
 - **Regular quality reviews**: Maintain high test standards
 - **Gap analysis**: Find undertested areas
 
-**See [TEST_COVERAGE_ANALYSIS.md](TEST_COVERAGE_ANALYSIS.md) for complete documentation.**
+**See [Test Coverage Analysis](docs/TEST_COVERAGE_ANALYSIS.md) for complete documentation.**
 
 ---
 

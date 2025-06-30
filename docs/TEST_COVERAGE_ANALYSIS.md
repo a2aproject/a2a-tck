@@ -300,9 +300,9 @@ python -c "import json; json.load(open('current_spec/a2a_schema.json'))"
 
 ## 📖 Related Documentation
 
-- **[SPEC_UPDATE_WORKFLOW.md](SPEC_UPDATE_WORKFLOW.md)** - Specification update process
-- **[TEST_DOCUMENTATION_STANDARDS.md](TEST_DOCUMENTATION_STANDARDS.md)** - Test quality standards
-- **[README.md](README.md)** - General TCK overview
+- **[Specification Update Workflow](docs/SPEC_UPDATE_WORKFLOW.md)** - Specification update process
+- **[Test Documentation Standards](docs/TEST_DOCUMENTATION_STANDARDS.md)** - Test quality standards
+- **[README.md](../README.md)** - General TCK overview
 
 ---
 

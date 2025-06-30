@@ -21,8 +21,8 @@ Use the TCK to validate your A2A implementation:
 ```
 
 ### 2. **Managing A2A Specification Updates** (Advanced/Maintainer workflow)
-Monitor and integrate A2A specification changes into the test suite:
-- 📖 **[Complete Specification Update Workflow](SPEC_UPDATE_WORKFLOW.md)**
+Use the TCK to validate your A2A implementation:
+- 📖 **[Complete Specification Update Workflow](docs/SPEC_UPDATE_WORKFLOW.md)**
 - 🔍 **Check spec changes**: `./check_spec_changes.py`
 - 🧪 **Analyze test coverage**: `./analyze_test_coverage.py --summary-only`
 - 📥 **Update baseline**: `./update_current_spec.py --version "v1.x"`
@@ -396,15 +396,15 @@ pytest --collect-only tests/mandatory/
 
 ## 📚 Documentation
 
-- **[SDK Validation Guide](SDK_VALIDATION_GUIDE.md)** - Detailed usage guide for SDK developers
-- **[Specification Update Workflow](SPEC_UPDATE_WORKFLOW.md)** - Monitor and manage A2A specification changes
-- **[Test Coverage Analysis](TEST_COVERAGE_ANALYSIS.md)** - Analyze and improve test coverage
-- **[Test Documentation Standards](TEST_DOCUMENTATION_STANDARDS.md)** - Standards for test contributors
+- **[SDK Validation Guide](docs/SDK_VALIDATION_GUIDE.md)** - Detailed usage guide for SDK developers
+- **[Specification Update Workflow](docs/SPEC_UPDATE_WORKFLOW.md)** - Monitor and manage A2A specification changes
+- **[Test Coverage Analysis](docs/TEST_COVERAGE_ANALYSIS.md)** - Analyze and improve test coverage
+- **[Test Documentation Standards](docs/TEST_DOCUMENTATION_STANDARDS.md)** - Standards for test contributors
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Follow [Test Documentation Standards](TEST_DOCUMENTATION_STANDARDS.md)
+2. Follow [Test Documentation Standards](docs/TEST_DOCUMENTATION_STANDARDS.md)
 3. Add tests with proper categorization and specification references
 4. Submit pull request with clear specification citations
 
