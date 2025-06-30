@@ -66,8 +66,8 @@ Examples:
     )
     parser.add_argument(
         '--output',
-        help='Output file for report (default: spec_analysis_report.md)',
-        default='spec_analysis_report.md'
+        help='Output file for report (default: reports/spec_analysis_report.md)',
+        default='reports/spec_analysis_report.md'
     )
     parser.add_argument(
         '--json-export',
@@ -254,45 +254,34 @@ Examples:
                 )
                 report_type = "detailed"
                 
-            logger.info(f"✅ Generated {report_type} report: {len(report)} characters")
+            if not args.dry_run:
+                output_file = Path(args.output)
+                # Create parent directory if it doesn't exist
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write(report)
+                logger.info(f"✅ Successfully generated {report_type} report: {args.output}")
+
+                if args.json_export:
+                    json_output_file = Path(args.json_export)
+                    # Create parent directory if it doesn't exist
+                    json_output_file.parent.mkdir(parents=True, exist_ok=True)
+                    export_data = {
+                        "spec_changes": spec_changes,
+                        "test_impacts": test_impacts,
+                        "coverage_analysis": coverage_analysis
+                    }
+                    with open(json_output_file, 'w', encoding='utf-8') as f:
+                        json.dump(export_data, f, indent=2)
+                    logger.info(f"✅ Successfully exported JSON data to: {args.json_export}")
+            else:
+                logger.info("ξη Dry run complete, no reports were saved.")
             
         except Exception as e:
             logger.error(f"❌ Failed to generate report: {e}")
             return 1
         
-        # Step 6: Save outputs
-        if not args.dry_run:
-            try:
-                # Save main report
-                output_path = Path(args.output)
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-                
-                with open(output_path, 'w', encoding='utf-8') as f:
-                    f.write(report)
-                logger.info(f"💾 Report saved: {output_path}")
-                
-                # Export JSON if requested
-                if args.json_export:
-                    json_report = generator.export_json_report(
-                        spec_changes,
-                        test_impacts,
-                        coverage_analysis
-                    )
-                    
-                    json_path = Path(args.json_export)
-                    json_path.parent.mkdir(parents=True, exist_ok=True)
-                    
-                    with open(json_path, 'w', encoding='utf-8') as f:
-                        f.write(json_report)
-                    logger.info(f"💾 JSON export saved: {json_path}")
-                    
-            except Exception as e:
-                logger.error(f"❌ Failed to save outputs: {e}")
-                return 1
-        else:
-            logger.info("🔍 Dry run mode - reports not saved")
-        
-        # Step 7: Summary and recommendations
+        # Step 6: Summary and recommendations
         logger.info("🎯 Analysis Summary:")
         
         total_changes = spec_changes.get('summary', {}).get('total_changes', 0)

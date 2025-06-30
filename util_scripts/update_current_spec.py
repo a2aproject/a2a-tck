@@ -11,6 +11,16 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
+import sys
+import os
+
+# --- Path Correction ---
+# To run this script from anywhere, we need to adjust the Python path
+# to include the project root, so that imports like `spec_tracker` work correctly.
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+# --- End Path Correction ---
 
 from spec_tracker.spec_downloader import SpecDownloader
 
@@ -122,13 +132,13 @@ Examples:
     parser.add_argument(
         '--current-spec-dir',
         help='Directory containing current specifications (default: current_spec)',
-        default='current_spec',
+        default=os.path.join(project_root, 'current_spec'),
         type=Path
     )
     parser.add_argument(
         '--backup-dir',
         help='Directory for backing up old specs (default: current_spec_backup)',
-        default='current_spec_backup',
+        default=os.path.join(project_root, 'current_spec_backup'),
         type=Path
     )
     parser.add_argument(

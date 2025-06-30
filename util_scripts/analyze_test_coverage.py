@@ -18,6 +18,16 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
+import os
+
+# --- Path Correction ---
+# To run this script from anywhere, we need to adjust the Python path
+# and current working directory.
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+os.chdir(project_root)
+# --- End Path Correction ---
 
 from spec_tracker.spec_parser import SpecParser
 from spec_tracker.test_coverage_analyzer import TestCoverageAnalyzer
@@ -91,7 +101,7 @@ class CoverageReportGenerator:
 
 1. **Review uncovered requirements**: Focus on {len(req_coverage.get('uncovered_requirements', []))} missing requirement tests
 2. **Improve test documentation**: {len(quality.get('undocumented_tests', []))} tests need better documentation
-3. **Run detailed analysis**: Use `./analyze_test_coverage.py` (without --summary-only) for complete report
+3. **Run detailed analysis**: Use 'util_scripts/analyze_test_coverage.py' (without --summary-only) for complete report
 
 ---
 *Run with `--help` for more options*
@@ -380,8 +390,9 @@ Examples:
     )
     parser.add_argument(
         '--output',
-        help='Output file for report (default: test_coverage_report.md)',
-        default='test_coverage_report.md'
+        help='Output file for the coverage report (default: reports/test_coverage_report.md)',
+        default='reports/test_coverage_report.md',
+        type=Path
     )
     parser.add_argument(
         '--json-export',
@@ -415,17 +426,20 @@ Examples:
     try:
         logger.info("🔍 Starting A2A Test Coverage Analysis")
         
-        # Validate input files
-        if not Path(args.current_md).exists():
-            logger.error(f"❌ Current markdown spec not found: {args.current_md}")
-            logger.info("💡 Run './update_current_spec.py' to initialize baseline specifications")
+        # Use arguments to find spec files
+        current_md_path = Path(args.current_md)
+        current_json_path = Path(args.current_json)
+
+        if not current_md_path.exists():
+            logger.error(f"❌ Current markdown spec not found: {current_md_path}")
+            logger.info("💡 Run 'util_scripts/update_current_spec.py' to initialize baseline specifications")
             return 1
-            
-        if not Path(args.current_json).exists():
-            logger.error(f"❌ Current JSON schema not found: {args.current_json}")
-            logger.info("💡 Run './update_current_spec.py' to initialize baseline specifications")
+        
+        if not current_json_path.exists():
+            logger.error(f"❌ Current JSON schema not found: {current_json_path}")
+            logger.info("💡 Run 'util_scripts/update_current_spec.py' to initialize baseline specifications")
             return 1
-            
+        
         if not args.test_dir.exists():
             logger.error(f"❌ Test directory not found: {args.test_dir}")
             return 1
@@ -435,9 +449,9 @@ Examples:
         spec_parser = SpecParser()
         
         try:
-            with open(args.current_md, 'r', encoding='utf-8') as f:
+            with open(current_md_path, 'r', encoding='utf-8') as f:
                 md_content = f.read()
-            with open(args.current_json, 'r', encoding='utf-8') as f:
+            with open(current_json_path, 'r', encoding='utf-8') as f:
                 json_content = json.load(f)
                 
             spec_data = {
@@ -500,33 +514,23 @@ Examples:
             
         # Step 4: Save outputs
         if not args.dry_run:
-            # Save report
-            try:
-                with open(args.output, 'w', encoding='utf-8') as f:
-                    f.write(report)
-                logger.info(f"💾 Saved report to: {args.output}")
-            except Exception as e:
-                logger.error(f"❌ Failed to save report: {e}")
-                return 1
-                
-            # Export JSON if requested
+            output_file = Path(args.output)
+            # Create parent directory if it doesn't exist
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(report)
+            logger.info(f"✅ Report generated: {output_file}")
+            
+            # Save JSON export
             if args.json_export:
-                try:
-                    export_data = {
-                        'timestamp': datetime.now().isoformat(),
-                        'specification_info': spec_info,
-                        'summary_stats': summary_stats,
-                        'coverage_analysis': coverage_analysis
-                    }
-                    
-                    with open(args.json_export, 'w', encoding='utf-8') as f:
-                        json.dump(export_data, f, indent=2, default=str)
-                    logger.info(f"💾 Exported JSON data to: {args.json_export}")
-                except Exception as e:
-                    logger.error(f"❌ Failed to export JSON: {e}")
-                    
+                json_output_file = Path(args.json_export)
+                # Create parent directory if it doesn't exist
+                json_output_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(json_output_file, 'w') as f:
+                    json.dump(coverage_analysis, f, indent=2)
+                logger.info(f"✅ JSON data exported to {json_output_file}")
         else:
-            logger.info("🔍 DRY RUN - Report generated but not saved")
+            logger.info("ξη Dry run complete, no reports were saved.")
             
         # Step 5: Summary
         logger.info("🎉 Test coverage analysis completed!")
@@ -564,10 +568,7 @@ Examples:
         logger.info("🛑 Analysis cancelled by user")
         return 1
     except Exception as e:
-        logger.error(f"❌ Unexpected error: {e}")
-        if args.verbose:
-            import traceback
-            traceback.print_exc()
+        logger.error(f"❌ An error occurred: {e}", exc_info=args.verbose)
         return 1
 
 if __name__ == '__main__':
