@@ -54,6 +54,9 @@ from pathlib import Path
 from typing import Dict
 import json
 
+# Define the directory for all generated reports
+REPORTS_DIR = Path("reports")
+
 def explain_test_categories():
     """Explain all test categories in detail."""
     print("=" * 80)
@@ -160,9 +163,13 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, genera
         "--tb=short",
     ]
     
+    # Create reports directory if it doesn't exist
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    
     # Add JSON report if requested
     if json_report:
-        cmd.extend(["--json-report", f"--json-report-file={json_report}"])
+        json_report_path = REPORTS_DIR / json_report
+        cmd.extend(["--json-report", f"--json-report-file={json_report_path}"])
     
     # Only add marker filtering if markers are specified
     if config["markers"]:
@@ -174,8 +181,8 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, genera
         cmd.append("-q")
     
     if generate_report:
-        report_name = f"{category}_test_report.html"
-        cmd.extend([f"--html={report_name}", "--self-contained-html"])
+        report_path = REPORTS_DIR / f"{category}_test_report.html"
+        cmd.extend([f"--html={report_path}", "--self-contained-html"])
     
     print(f"Command: {' '.join(cmd)}")
     print()
@@ -211,7 +218,8 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
         
         # Collect detailed results for compliance report
         if compliance_report and json_report_file:
-            detailed_results[category] = collect_test_results_from_json(json_report_file, category)
+            json_report_path = REPORTS_DIR / json_report_file
+            detailed_results[category] = collect_test_results_from_json(json_report_path, category)
         
         print()
         print(f"✅ {category.upper()} TESTS COMPLETED")
@@ -226,8 +234,8 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
     # Generate compliance report if requested
     if compliance_report:
         try:
-            from generate_compliance_report import ComplianceReportGenerator
-            from compliance_levels import generate_compliance_summary
+            from util_scripts.generate_compliance_report import ComplianceReportGenerator
+            from util_scripts.compliance_levels import generate_compliance_summary
             
             # Get agent card data
             agent_card = get_agent_card_data(sut_url)
@@ -247,20 +255,24 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
             generator = ComplianceReportGenerator(detailed_results, agent_card)
             report = generator.generate_report()
             
+            # Ensure the reports directory exists for the final report
+            compliance_report_path = Path(compliance_report)
+            compliance_report_path.parent.mkdir(parents=True, exist_ok=True)
+
             # Save compliance report
-            with open(compliance_report, 'w') as f:
+            with open(compliance_report_path, 'w') as f:
                 json.dump(report, f, indent=2)
             
-            print(f"📊 Compliance report generated: {compliance_report}")
+            print(f"📊 Compliance report generated: {compliance_report_path}")
             print(f"🏆 Compliance level: {compliance_summary['current_level']['badge']}")
             print(f"📈 Overall score: {compliance_summary['overall_score']:.1f}%")
             print()
             
             # Clean up temporary JSON files
             for category in categories:
-                json_file = f"{category}_results.json"
-                if Path(json_file).exists():
-                    Path(json_file).unlink()
+                json_file = REPORTS_DIR / f"{category}_results.json"
+                if json_file.exists():
+                    json_file.unlink()
             
         except Exception as e:
             print(f"⚠️  Warning: Could not generate compliance report: {e}")
@@ -319,10 +331,10 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
     
     return results
 
-def collect_test_results_from_json(json_file: str, category: str) -> Dict:
+def collect_test_results_from_json(json_file: Path, category: str) -> Dict:
     """Collect detailed test results from pytest JSON report."""
     try:
-        if not Path(json_file).exists():
+        if not json_file.exists():
             print(f"Warning: JSON report file {json_file} not found")
             return {'total': 0, 'passed': 0, 'failed': 0, 'skipped': 0, 'xfailed': 0, 'tests': {}}
         
@@ -503,9 +515,14 @@ Categories:
         print("Make sure you're running from the TCK root directory")
         sys.exit(1)
     
+    # Determine the final compliance report path
+    compliance_report_path = None
+    if args.compliance_report:
+        compliance_report_path = REPORTS_DIR / args.compliance_report
+
     # Run tests
     if args.category == "all":
-        results = run_all_categories(args.sut_url, args.verbose, args.report, args.compliance_report)
+        results = run_all_categories(args.sut_url, args.verbose, args.report, compliance_report_path)
         # Exit with failure if mandatory or capabilities failed
         if results["mandatory"] != 0 or results["capabilities"] != 0:
             sys.exit(1)

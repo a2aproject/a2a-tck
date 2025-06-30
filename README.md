@@ -23,9 +23,9 @@ Use the TCK to validate your A2A implementation:
 ### 2. **Managing A2A Specification Updates** (Advanced/Maintainer workflow)
 Use the TCK to validate your A2A implementation:
 - 📖 **[Complete Specification Update Workflow](docs/SPEC_UPDATE_WORKFLOW.md)**
-- 🔍 **Check spec changes**: `./check_spec_changes.py`
-- 🧪 **Analyze test coverage**: `./analyze_test_coverage.py --summary-only`
-- 📥 **Update baseline**: `./update_current_spec.py --version "v1.x"`
+- 🔍 **Check spec changes**: `util_scripts/check_spec_changes.py`
+- 🧪 **Analyze test coverage**: `util_scripts/analyze_test_coverage.py --summary-only`
+- 📥 **Update baseline**: `util_scripts/update_current_spec.py --version "v1.x"`
 
 ---
 

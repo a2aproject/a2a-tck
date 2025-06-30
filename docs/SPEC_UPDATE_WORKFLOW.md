@@ -98,13 +98,13 @@ cat spec_analysis_report.md
 
 ```bash
 # Update to latest from main branch
-./update_current_spec.py --version "v1.3.0"
+util_scripts/update_current_spec.py --version "v1.3.0"
 
 # Update to specific tag (auto-detects version from tag name)
-./update_current_spec.py --branch "v1.3.0"
+util_scripts/update_current_spec.py --branch "v1.3.0"
 
 # Update to custom branch with custom version
-./update_current_spec.py --branch "dev" --version "dev-snapshot-2024"
+util_scripts/update_current_spec.py --branch "dev" --version "dev-snapshot-2024"
 ```
 
 **What this does:**
@@ -171,20 +171,20 @@ To compare against specific versions:
 
 To see what would change:
 ```bash
-./update_current_spec.py --dry-run --version "v1.3.0"
+util_scripts/update_current_spec.py --dry-run --version "v1.3.0"
 
 # Preview update from specific branch
-./update_current_spec.py --dry-run --branch "v1.3.0"
+util_scripts/update_current_spec.py --dry-run --branch "v1.3.0"
 ```
 
 ### Force Update (Even Without Changes)
 
 To update regardless of change detection:
 ```bash
-./update_current_spec.py --force --version "v1.3.0"
+util_scripts/update_current_spec.py --force --version "v1.3.0"
 
 # Force update from specific branch
-./update_current_spec.py --force --branch "v1.3.0"
+util_scripts/update_current_spec.py --force --branch "v1.3.0"
 ```
 
 ### Compare with Custom Specification URLs
@@ -202,13 +202,13 @@ To downgrade your baseline to an older specification version:
 
 ```bash
 # Roll back to a specific git tag (simplified)
-./update_current_spec.py --branch "v1.2.0"
+util_scripts/update_current_spec.py --branch "v1.2.0"
 
 # Roll back to a specific commit hash
-./update_current_spec.py --branch "abc123def" --version "rollback-abc123def"
+util_scripts/update_current_spec.py --branch "abc123def" --version "rollback-abc123def"
 
 # Advanced: Use custom URLs for non-standard repositories
-./update_current_spec.py \
+util_scripts/update_current_spec.py \
   --json-url https://raw.githubusercontent.com/fork/A2A/custom/specification/json/a2a.json \
   --md-url https://raw.githubusercontent.com/fork/A2A/custom/docs/specification.md \
   --version "custom-fork"
@@ -267,8 +267,8 @@ This will show you the differences between your rolled-back version and the late
 
 **Solution**: Initialize your baseline specifications:
 ```bash
-# Download and set current specifications as your baseline
-./update_current_spec.py --version "baseline"
+# Download and set initial baseline
+util_scripts/update_current_spec.py --version "baseline"
 ```
 
 **What this does:**
@@ -315,7 +315,7 @@ This should now show "No changes detected" since you just established the baseli
 cat current_spec_backup/version_info.json
 
 # Roll back to the previous version (example with v1.2.0)
-./update_current_spec.py \
+util_scripts/update_current_spec.py \
   --json-url https://raw.githubusercontent.com/google/A2A/v1.2.0/specification/json/a2a.json \
   --md-url https://raw.githubusercontent.com/google/A2A/v1.2.0/docs/specification.md \
   --version "v1.2.0"
@@ -376,8 +376,8 @@ if ./check_spec_changes.py --summary-only; then
     echo "✅ Specifications up to date"
 else
     echo "📥 Generating change analysis..."
-    ./check_spec_changes.py --output spec_changes_$(date +%Y%m%d).md
-    echo "📋 Review report and run ./update_current_spec.py when ready"
+    util_scripts/check_spec_changes.py --output spec_changes_$(date +%Y%m%d).md
+    echo "📋 Review report and run util_scripts/update_current_spec.py when ready"
 fi
 ```
 
@@ -388,13 +388,13 @@ fi
 | Command | Purpose |
 |---------|---------|
 | `./check_spec_changes.py` | Check for and analyze specification changes (main branch) |
-| `./check_spec_changes.py --branch "v1.x"` | Check against specific branch/tag |
-| `./check_spec_changes.py --summary-only` | Quick change overview |
-| `./analyze_test_coverage.py` | **Analyze current test coverage gaps** |
-| `./analyze_test_coverage.py --summary-only` | **Quick coverage summary** |
-| `./update_current_spec.py --version "v1.x"` | Update baseline specifications (main branch) |
-| `./update_current_spec.py --branch "v1.x"` | Update to specific branch/tag (auto-sets version) |
-| `./update_current_spec.py --dry-run` | Preview what would be updated |
+| `util_scripts/check_spec_changes.py --branch "v1.x"` | Check against specific branch/tag |
+| `util_scripts/check_spec_changes.py --summary-only` | Quick change overview |
+| `util_scripts/analyze_test_coverage.py` | **Analyze current test coverage gaps** |
+| `util_scripts/analyze_test_coverage.py --summary-only` | **Quick coverage summary** |
+| `util_scripts/update_current_spec.py` | **Update baseline to latest spec** |
+| `util_scripts/update_current_spec.py --version "v1.x"` | **Update baseline to specific version** |
+| `util_scripts/update_current_spec.py --dry-run` | Preview what would be updated |
 | `cp current_spec_backup/* current_spec/` | Restore from automatic backup |
 
 **File Locations:**
@@ -407,31 +407,19 @@ fi
 
 In addition to tracking specification changes, you can analyze how well your current test suite covers the specification:
 
-### Analyze Test Coverage Gaps
+### Post-Update Analysis
 
+After updating, run these analyses to understand the new state:
 ```bash
 # Quick coverage summary
-./analyze_test_coverage.py --summary-only
+util_scripts/analyze_test_coverage.py --summary-only
 
 # Detailed coverage analysis  
-./analyze_test_coverage.py
+util_scripts/analyze_test_coverage.py
 
 # Export data for automation
-./analyze_test_coverage.py --json-export coverage.json
+util_scripts/analyze_test_coverage.py --json-export coverage.json
 ```
-
-**What this analyzes:**
-- **Requirement Coverage**: Which spec requirements lack tests
-- **Method Coverage**: JSON-RPC methods without adequate testing
-- **Error Coverage**: Error scenarios not tested
-- **Test Quality**: Documentation and specification alignment
-- **Orphaned Tests**: Tests without clear specification references
-
-**Use cases:**
-- **Before releases**: Ensure adequate test coverage
-- **After spec updates**: Identify new testing needs  
-- **Regular quality reviews**: Maintain high test standards
-- **Gap analysis**: Find undertested areas
 
 **See [Test Coverage Analysis](docs/TEST_COVERAGE_ANALYSIS.md) for complete documentation.**
 

@@ -6,7 +6,7 @@ This guide documents the **Test Coverage Analysis** tool - a comprehensive syste
 
 ## 🎯 Purpose
 
-**`analyze_test_coverage.py`** analyzes the **current specification in isolation** to identify coverage gaps, missing tests, and quality issues. This is different from `check_spec_changes.py` which compares two specification versions.
+**`util_scripts/analyze_test_coverage.py`** analyzes the **current specification in isolation** to identify coverage gaps, missing tests, and quality issues. This script focuses on the relationship between implemented tests and specification requirements. It helps identify which requirements are covered by tests, which are not, and highlights potential test quality issues. This is different from `util_scripts/check_spec_changes.py` which compares two specification versions.
 
 ### Key Analysis Areas
 
@@ -21,8 +21,8 @@ This guide documents the **Test Coverage Analysis** tool - a comprehensive syste
 
 | Tool | Purpose | Analysis Type |
 |------|---------|---------------|
-| `check_spec_changes.py` | Compare two spec versions | **Change-based** - what changed between versions |
-| `analyze_test_coverage.py` | Analyze current test coverage | **Coverage-based** - gaps in current implementation |
+| `util_scripts/check_spec_changes.py` | Compare two spec versions | **Change-based** - what changed between versions |
+| `util_scripts/analyze_test_coverage.py` | Analyze current test coverage | **Coverage-based** - gaps in current implementation |
 
 ## 📊 Usage Examples
 
@@ -30,7 +30,7 @@ This guide documents the **Test Coverage Analysis** tool - a comprehensive syste
 
 ```bash
 # Basic coverage analysis
-./analyze_test_coverage.py --summary-only
+util_scripts/analyze_test_coverage.py --summary-only
 
 # View results
 cat test_coverage_report.md
@@ -40,28 +40,28 @@ cat test_coverage_report.md
 
 ```bash
 # Full detailed analysis
-./analyze_test_coverage.py --verbose
+util_scripts/analyze_test_coverage.py --verbose
 
 # Custom output location  
-./analyze_test_coverage.py --output reports/coverage_analysis.md
+util_scripts/analyze_test_coverage.py --output reports/coverage_analysis.md
 
 # Export data for automation
-./analyze_test_coverage.py --json-export coverage_data.json
+util_scripts/analyze_test_coverage.py --json-export coverage_data.json
 ```
 
 ### Advanced Options
 
 ```bash
 # Analyze custom test directory
-./analyze_test_coverage.py --test-dir custom_tests/
+util_scripts/analyze_test_coverage.py --test-dir custom_tests/
 
 # Use specific spec files
-./analyze_test_coverage.py \
+util_scripts/analyze_test_coverage.py \
   --current-md path/to/spec.md \
   --current-json path/to/schema.json
 
 # Dry run (analyze without saving)
-./analyze_test_coverage.py --dry-run --verbose
+util_scripts/analyze_test_coverage.py --dry-run --verbose
 ```
 
 ## 📋 Report Types
@@ -202,7 +202,7 @@ Each requirement gets a quality score based on:
 # GitHub Actions example
 - name: Test Coverage Analysis
   run: |
-    ./analyze_test_coverage.py --json-export coverage.json
+    util_scripts/analyze_test_coverage.py --json-export coverage.json
     # Process results, fail on critical gaps
     python scripts/check_coverage_thresholds.py coverage.json
 ```
@@ -240,29 +240,29 @@ Each requirement gets a quality score based on:
 
 ```bash
 # Weekly coverage review
-./analyze_test_coverage.py --summary-only
+util_scripts/analyze_test_coverage.py --summary-only
 
 # Before releases  
-./analyze_test_coverage.py --verbose
+util_scripts/analyze_test_coverage.py --verbose
 
 # After adding new features
-./analyze_test_coverage.py --json-export post_feature.json
+util_scripts/analyze_test_coverage.py --json-export post_feature.json
 ```
 
-### Continuous Improvement
+### Continuous Improvement Cycle
 
-1. **Target 95% MUST requirement coverage**
-2. **Maintain 90% overall test documentation**  
-3. **Link all tests to specification sections**
-4. **Regular orphaned test cleanup**
-5. **Comprehensive error scenario testing**
-
-### Development Workflow
-
-1. **After spec updates**: Run analysis to identify new requirements
-2. **During development**: Check method/feature coverage
-3. **Before commits**: Ensure new code has adequate tests
-4. **Sprint reviews**: Use summary reports for progress tracking
+1.  **Analyze**:
+    ```bash
+    # Get current state
+    util_scripts/analyze_test_coverage.py --summary-only
+    ```
+2.  **Develop**: Write new tests for uncovered areas.
+3.  **Update**: If specification is outdated, update it:
+    ```bash
+    # Update to latest specification
+    util_scripts/update_current_spec.py --version "latest"
+    ```
+4.  **Re-analyze**: Run coverage analysis again to confirm improvement.
 
 ## 🔧 Troubleshooting
 
@@ -271,39 +271,8 @@ Each requirement gets a quality score based on:
 **"Current spec not found"**
 ```bash
 # Initialize baseline specifications
-./update_current_spec.py --version "latest"
+util_scripts/update_current_spec.py --version "latest"
 ```
 
 **"No tests found"**
-```bash
-# Check test directory exists
-ls -la tests/
-# Use custom test directory
-./analyze_test_coverage.py --test-dir path/to/tests
 ```
-
-**"Failed to parse specification"**
-```bash
-# Validate specification files
-python -c "import json; json.load(open('current_spec/a2a_schema.json'))"
-```
-
-### Debug Mode
-
-```bash
-# Enable verbose logging
-./analyze_test_coverage.py --verbose
-
-# Dry run for testing
-./analyze_test_coverage.py --dry-run --verbose
-```
-
-## 📖 Related Documentation
-
-- **[Specification Update Workflow](docs/SPEC_UPDATE_WORKFLOW.md)** - Specification update process
-- **[Test Documentation Standards](docs/TEST_DOCUMENTATION_STANDARDS.md)** - Test quality standards
-- **[README.md](../README.md)** - General TCK overview
-
----
-
-*For questions or improvements, see the project's main documentation or create an issue.* 
