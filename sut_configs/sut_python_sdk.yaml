@@ -1,10 +1,10 @@
 # Configuration for the System Under Test (SUT)
 
 # A descriptive name for the SUT. This will also be used as the directory name under SUT/.
-sut_name: "java_sut/a2a-java-sdk"
+sut_name: "python-sut/a2a-python"
 
 # The HTTPS or SSH URL of the git repository for the SUT.
-github_repo: "https://github.com/a2aproject/a2a-java"
+github_repo: "https://github.com/a2aproject/a2a-python"
 
 # Path to the script that verifies prerequisites and/or builds the SUT.
 # This path is relative to the root of the SUT's repository.
@@ -26,7 +26,7 @@ run_interpreter: "bash"
 
 # Optional: Specify a specific branch, tag, or commit to checkout.
 # If omitted, the default branch of the repository will be used.
-git_ref: "0.2.3.Beta"
+git_ref: "v0.2.3"
 
 # Optional: Arguments to pass to the prerequisite script.
 # prerequisites_args: "--fast-build --no-cache"

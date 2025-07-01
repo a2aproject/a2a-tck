@@ -13,7 +13,7 @@ dependencies = [
 packages = ["."]
 
 [tool.uv.sources]
-a2a-sdk = { path="../../../a2a-python" }
+a2a-sdk = { path="../a2a-python" }
 
 [build-system]
 requires = ["hatchling"]
