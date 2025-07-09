@@ -13,13 +13,6 @@ Analyzes and reports the differences between the current baseline A2A specificat
 *   **Usage**: `util_scripts/check_spec_changes.py [options]`
 *   **Detailed Documentation**: See the [Specification Update Workflow](../docs/SPEC_UPDATE_WORKFLOW.md).
 
-### `analyze_test_coverage.py`
-
-Analyzes the existing test suite against the current baseline specification to identify coverage gaps, quality issues, and orphaned tests. This helps ensure that the TCK provides comprehensive validation.
-
-*   **Usage**: `util_scripts/analyze_test_coverage.py [options]`
-*   **Detailed Documentation**: See the [Test Coverage Analysis Guide](../docs/TEST_COVERAGE_ANALYSIS.md).
-
 ### `update_current_spec.py`
 
 Downloads and updates the local baseline specification files (`current_spec/`) to a newer version. This script is typically run after analyzing changes and updating the test suite accordingly.

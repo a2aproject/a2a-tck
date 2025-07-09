@@ -390,8 +390,7 @@ fi
 | `./check_spec_changes.py` | Check for and analyze specification changes (main branch) |
 | `util_scripts/check_spec_changes.py --branch "v1.x"` | Check against specific branch/tag |
 | `util_scripts/check_spec_changes.py --summary-only` | Quick change overview |
-| `util_scripts/analyze_test_coverage.py` | **Analyze current test coverage gaps** |
-| `util_scripts/analyze_test_coverage.py --summary-only` | **Quick coverage summary** |
+
 | `util_scripts/update_current_spec.py` | **Update baseline to latest spec** |
 | `util_scripts/update_current_spec.py --version "v1.x"` | **Update baseline to specific version** |
 | `util_scripts/update_current_spec.py --dry-run` | Preview what would be updated |
@@ -407,21 +406,7 @@ fi
 
 In addition to tracking specification changes, you can analyze how well your current test suite covers the specification:
 
-### Post-Update Analysis
 
-After updating, run these analyses to understand the new state:
-```bash
-# Quick coverage summary
-util_scripts/analyze_test_coverage.py --summary-only
-
-# Detailed coverage analysis  
-util_scripts/analyze_test_coverage.py
-
-# Export data for automation
-util_scripts/analyze_test_coverage.py --json-export coverage.json
-```
-
-**See [Test Coverage Analysis](docs/TEST_COVERAGE_ANALYSIS.md) for complete documentation.**
 
 ---
 
