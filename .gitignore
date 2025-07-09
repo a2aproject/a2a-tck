@@ -183,6 +183,7 @@ cython_debug/
 .local-documents/
 #ignore local SDK as SUT
 a2a-python
+a2a-java-sdk
 
 # Generated reports
 reports/
