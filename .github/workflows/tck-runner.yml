@@ -1,0 +1,116 @@
+name: Run TCK
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to run the TCK against'
+        required: true
+        type: string
+      java-version:
+        description: 'Java version to use for the TCK run'
+        required: false
+        type: string
+        default: '17'
+      sut-url:
+        description: 'The URL of the System Under Test (SUT) to run the TCK against. This will be used to check the server has started'
+        required: true
+        type: string
+env:
+  # Tells uv to not need a venv, and instead use system
+  UV_SYSTEM_PYTHON: 1
+
+jobs:
+  tck-runner:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the SUT artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sut-artifact
+          path: ~/sut
+
+      - name: Start SUT
+        run: |
+          # Start the SUT server in the background
+          cd ~/sut
+          echo "Current directory: $(pwd)"
+          ls -al
+          if [ ! -f start-sut.sh ]; then
+            echo "start-sut.sh not found in the sut/ directory."
+            exit 1
+          fi
+          chmod 775 start-sut.sh
+          
+          ./start-sut.sh &
+
+      - name: Checkout TCK
+        uses: actions/checkout@v4
+        with:
+          repository: 'a2aproject/a2a-tck'
+          ref: ${{ inputs.tag }}
+          path: tck
+#      - name: Check tck directory
+#        run: |
+#          echo "Current directory: $(pwd)"
+#          ls -al tck
+#          if [ ! -d tck/a2a-tck ]; then
+#              echo "tck/a2a-tck directory not found."
+#              exit 1
+#          fi
+#          ls -al tck
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "tck/pyproject.toml"
+
+      - name: Install uv and Python dependencies
+        run: |
+          pip install uv
+          uv pip install -e .
+        working-directory: tck
+
+      - name: Wait for SUT to start
+        run: |
+          URL="${{ inputs.sut-url }}"
+          EXPECTED_STATUS=200
+          TIMEOUT=120
+          RETRY_INTERVAL=2
+          START_TIME=$(date +%s)
+
+          while true; do
+            # Calculate elapsed time
+            CURRENT_TIME=$(date +%s)
+            ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+
+            # Check for timeout
+            if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
+                echo "❌ Timeout: Server did not respond with status $EXPECTED_STATUS within $TIMEOUT seconds."
+                exit 1
+            fi
+
+            # Get HTTP status code. || true is to reporting a failure to connect as an error
+            HTTP_STATUS=$(curl --output /dev/null --silent --write-out "%{http_code}" "$URL") || true
+            echo "STATUS: ${HTTP_STATUS}"
+
+            # Check if we got the correct status code
+            if [ "$HTTP_STATUS" -eq "$EXPECTED_STATUS" ]; then
+                echo "✅ Server is up! Received status $HTTP_STATUS after $ELAPSED_TIME seconds."
+                break;
+            fi
+
+            # Wait before retrying
+            echo "⏳ Server not ready (status: $HTTP_STATUS). Retrying in $RETRY_INTERVAL seconds..."
+            sleep "$RETRY_INTERVAL"
+          done
+
+      - name: Run TCK
+        run: |
+          ./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report report.json
+        working-directory: tck
