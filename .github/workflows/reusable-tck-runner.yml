@@ -1,3 +1,57 @@
+# A workflow that can be called by other workflows to run the TCK against a System Under Test (SUT).
+# It expects an artifact named `sut-artifact` to be downloaded, which contains:
+#  - A directory structure with what is needed to run the server with the A2A SDK enabled.
+#  - A `start-sut.sh` script that starts the SUT server, and is able to work on the above directory structure.
+#
+# The inputs to this workflow are:
+#  - `tag`: The tag of the TCK to run against the SUT.
+#   - `sut-url`: The URL of the SUT to run the TCK against. This will be used to check the server has started.
+# Then there are further optional inputs, each of which enabled a particular language setup step, so we can run the
+# SUT on its preferred language:
+#   - `java-version`: The Java version to use for the TCK run. If not provided, it will not set up Java.
+#
+# Example usage in a workflow:
+#
+# name: Build SUT
+# jobs:
+#  prepare-sut:
+#    name: Preparing SUT
+#    runs-on: ubuntu-latest
+#    outputs:
+#      # GitHub Actions don't allow use of env in the run-tck job calling the reusable workflow. Use an output instead
+#      tck_version: ${{ steps.set_vars.outputs.version }}
+#    steps:
+#      - name: Set TCK Version Output
+#        id: set_vars
+#        run: echo "version=${{ env.TCK_VERSION }}" >> $GITHUB_OUTPUT
+#      # Steps to checkout the server implementation and build it with its language- name: Checkout a2a-java
+#        uses: actions/checkout@v4
+#      - name: Create artifact directory
+#        run: |
+#          mkdir artifact-dir
+#          # Copy server files to artifact-dir
+#          cp .github/workflows/tck/start-sut.sh artifact-dir
+#          echo
+#      - name: Upload SUT artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          # The name of the artifact needs to be `sut-artifact` so that the reusable workflow can find it
+#          name: sut-artifact
+#          path: artifact-dir/
+#
+#  # Use the reusable workflow to run the TCK against the SUT
+#  run-tck:
+#    name: Running TCK
+#    uses: a2aproject/a2a-tck/.github/workflows/reusable-tck-runner.yml@main
+#    needs: prepare-sut
+#    with:
+#      tag: ${{ needs.prepare-sut.outputs.tck_version }}
+#      # `java-version` indicates that the SUT is a Java server, so we need to install Java.
+#      java-version: 17
+#      sut-url: http://localhost:9999/.well-known/agent.json
+#
+
+
 name: Run TCK
 on:
   workflow_call:
@@ -10,7 +64,8 @@ on:
         description: 'Java version to use for the TCK run'
         required: false
         type: string
-      # TODO input for other languages as needed. The presence of each input will determine if the setup-xxxx step is run
+      # TODO xxx-version input parameters for other languages as needed. The presence of each
+      #  parameter will determine if the setup-xxxx step is run
       sut-url:
         description: 'The URL of the System Under Test (SUT) to run the TCK against. This will be used to check the server has started'
         required: true
