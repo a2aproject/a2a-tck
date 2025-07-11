@@ -10,7 +10,7 @@ on:
         description: 'Java version to use for the TCK run'
         required: false
         type: string
-        default: '17'
+      # TODO input for other languages as needed. The presence of each input will determine if the setup-xxxx step is run
       sut-url:
         description: 'The URL of the System Under Test (SUT) to run the TCK against. This will be used to check the server has started'
         required: true
@@ -49,21 +49,15 @@ jobs:
           repository: 'a2aproject/a2a-tck'
           ref: ${{ inputs.tag }}
           path: tck
-#      - name: Check tck directory
-#        run: |
-#          echo "Current directory: $(pwd)"
-#          ls -al tck
-#          if [ ! -d tck/a2a-tck ]; then
-#              echo "tck/a2a-tck directory not found."
-#              exit 1
-#          fi
-#          ls -al tck
 
       - name: Set up JDK
         uses: actions/setup-java@v4
+        if: ${{ inputs.java-version != '' }}
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      # TODO set up other languages as needed
 
       - name: Set up Python
         uses: actions/setup-python@v5
