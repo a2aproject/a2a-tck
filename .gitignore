@@ -190,3 +190,6 @@ a2a-java-sdk
 
 # Generated reports
 reports/
+
+# spec cache
+spec_tracker/cache

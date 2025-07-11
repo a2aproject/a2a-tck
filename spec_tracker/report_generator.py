@@ -253,48 +253,40 @@ class ReportGenerator:
         if directly_affected:
             impacts.append(f"\n### Directly Affected Tests ({len(directly_affected)})")
             impacts.append("\n*Tests that reference changed specification sections:*")
-            for test_key in directly_affected[:10]:  # Limit to first 10
+            for test_key in directly_affected:
                 test_name = test_key.split('::')[-1] if '::' in test_key else test_key
                 test_file = test_key.split('::')[0] if '::' in test_key else 'unknown'
                 impacts.append(f"\n- `{test_name}` in `{test_file}`")
-            if len(directly_affected) > 10:
-                impacts.append(f"\n- ... and {len(directly_affected) - 10} more")
         
         # New coverage needed
         new_coverage = test_impacts.get('new_coverage_needed', [])
         if new_coverage:
             impacts.append(f"\n### New Test Coverage Needed ({len(new_coverage)})")
             impacts.append("\n*New requirements or features that may need test coverage:*")
-            for test_key in new_coverage[:10]:  # Limit to first 10
+            for test_key in new_coverage:
                 test_name = test_key.split('::')[-1] if '::' in test_key else test_key
                 test_file = test_key.split('::')[0] if '::' in test_key else 'unknown'
                 impacts.append(f"\n- `{test_name}` in `{test_file}`")
-            if len(new_coverage) > 10:
-                impacts.append(f"\n- ... and {len(new_coverage) - 10} more")
         
         # Obsolete tests
         obsolete_tests = test_impacts.get('obsolete_tests', [])
         if obsolete_tests:
             impacts.append(f"\n### Potentially Obsolete Tests ({len(obsolete_tests)})")
             impacts.append("\n*Tests that may be testing removed requirements:*")
-            for test_key in obsolete_tests[:10]:  # Limit to first 10
+            for test_key in obsolete_tests:
                 test_name = test_key.split('::')[-1] if '::' in test_key else test_key
                 test_file = test_key.split('::')[0] if '::' in test_key else 'unknown'
                 impacts.append(f"\n- `{test_name}` in `{test_file}`")
-            if len(obsolete_tests) > 10:
-                impacts.append(f"\n- ... and {len(obsolete_tests) - 10} more")
         
         # Possibly affected tests
         possibly_affected = test_impacts.get('possibly_affected', [])
         if possibly_affected:
             impacts.append(f"\n### Possibly Affected Tests ({len(possibly_affected)})")
             impacts.append("\n*Tests in the same category as changes that may need review:*")
-            for test_key in possibly_affected[:5]:  # Limit to first 5
+            for test_key in possibly_affected:
                 test_name = test_key.split('::')[-1] if '::' in test_key else test_key
                 test_file = test_key.split('::')[0] if '::' in test_key else 'unknown'
                 impacts.append(f"\n- `{test_name}` in `{test_file}`")
-            if len(possibly_affected) > 5:
-                impacts.append(f"\n- ... and {len(possibly_affected) - 5} more")
         
         return impacts
     
