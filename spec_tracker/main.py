@@ -30,7 +30,7 @@ class Colors:
 
 def build_github_urls(branch_or_tag: str = "main") -> tuple[str, str]:
     """Build GitHub raw URLs for the specified branch or tag."""
-    base_url = f"https://raw.githubusercontent.com/google/A2A/{branch_or_tag}"
+    base_url = f"https://raw.githubusercontent.com/a2aproject/A2A/{branch_or_tag}"
     json_url = f"{base_url}/specification/json/a2a.json"
     md_url = f"{base_url}/docs/specification.md"
     return json_url, md_url
