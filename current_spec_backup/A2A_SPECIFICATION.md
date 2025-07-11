@@ -7,8 +7,6 @@ hide:
 
 **Version:** `{{ a2a_version }}`
 
-See [Release Notes](https://github.com/a2aproject/A2A/releases) for changes made between versions.
-
 ## 1. Introduction
 
 The Agent2Agent (A2A) Protocol is an open standard designed to facilitate communication and interoperability between independent, potentially opaque AI agent systems. In an ecosystem where agents might be built using different frameworks, languages, or by different vendors, A2A provides a common language and interaction model.
@@ -85,7 +83,7 @@ For a comprehensive guide on enterprise security aspects, see [Enterprise-Ready 
 
 ### 4.1. Transport Security
 
-As stated in section 3.1, production deployments **MUST** use HTTPS. Implementations **SHOULD** use modern [TLS](https://datatracker.ietf.org/doc/html/rfc8446) configurations (TLS 1.3+ recommended) with strong cipher suites.
+As stated in section 3.1, production deployments **MUST** use HTTPS. Implementations **SHOULD** use modern [TLS](https://datatracker.ietf.org/doc/html/rfc8446) configurations (TLS 1.2+ recommended) with strong cipher suites.
 
 ### 4.2. Server Identity Verification
 
@@ -161,12 +159,9 @@ Agent Cards themselves might contain information that is considered sensitive.
 
 | Field Name                          | Type                                                               | Required | Description                                                                                                                                 |
 | :---------------------------------- | :----------------------------------------------------------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| `protocolVersion`                   | `string`                                                           | Yes      | The version of the A2A protocol this agent supports.                                                                                        |
 | `name`                              | `string`                                                           | Yes      | Human-readable name of the agent.                                                                                                           |
 | `description`                       | `string`                                                           | Yes      | Human-readable description. [CommonMark](https://commonmark.org/) MAY be used.                                                              |
 | `url`                               | `string`                                                           | Yes      | Base URL for the agent's A2A service. Must be absolute. HTTPS for production.                                                               |
-| `preferredTransport`                | `string`                                                           | No       | The transport of the preferred endpoint. Official transports supported are JSONRPC, GRPC or HTTP+JSON                                       |
-| `additionalInterfaces`              | [`AgentInterface[]`](#555-agentinterface-object)                   | No       | Additional transports supported by the service for clients to use.                                                                          |
 | `provider`                          | [`AgentProvider`](#551-agentprovider-object)                       | No       | Information about the agent's provider.                                                                                                     |
 | `iconUrl`                           | `string`                                                           | No       | A URL to an icon for the agent.                                                                                                             |
 | `version`                           | `string`                                                           | Yes      | Agent or A2A implementation version string.                                                                                                 |
@@ -245,36 +240,16 @@ Describes a specific capability, function, or area of expertise the agent can pe
 | `description` | `string`   | Yes      | Detailed skill description. [CommonMark](https://commonmark.org/) MAY be used. |
 | `tags`        | `string[]` | Yes      | Keywords/categories for discoverability.                                       |
 | `examples`    | `string[]` | No       | Example prompts or use cases demonstrating skill usage.                        |
-| `inputModes`  | `string[]` | No       | Overrides `defaultInputModes` for this specific skill. Accepted Media Types.   |
-| `outputModes` | `string[]` | No       | Overrides `defaultOutputModes` for this specific skill. Produced Media Types.  |
-
-#### 5.5.5. `AgentInterface` Object
-
-Provides a declaration of a combination of the target url and the supported transport to interact with the agent.
-
-```ts { .no-copy }
---8<-- "types/src/types.ts:AgentInterface"
-```
-
-| Field Name     | Type     | Required | Description                                                              |
-| :------------- | :------- | :------- | :----------------------------------------------------------------------- |
-| `url`          | `string` | Yes      | The url for this interface.                                              |
-| `transport`    | `string` | Yes      | The transport supported by this url (one of JSONRPC, GRPC or HTTP+JSON). |
+| `inputModes`  | `string[]` | No       | Overrides `defaultInputModes` for this specific skill. Accepted Media Types.    |
+| `outputModes` | `string[]` | No       | Overrides `defaultOutputModes` for this specific skill. Produced Media Types.   |
 
 ### 5.6. Sample Agent Card
 
 ```json
 {
-  "protocolVersion": "0.2.9",
   "name": "GeoSpatial Route Planner Agent",
   "description": "Provides advanced route planning, traffic analysis, and custom map generation services. This agent can calculate optimal routes, estimate travel times considering real-time traffic, and create personalized maps with points of interest.",
   "url": "https://georoute-agent.example.com/a2a/v1",
-  "preferredTransport": "JSONRPC",
-  "additionalInterfaces" : [
-    {"url": "https://georoute-agent.example.com/a2a/v1", "transport": "JSONRPC"},
-    {"url": "https://georoute-agent.example.com/a2a/grpc", "transport": "GRPC"},
-    {"url": "https://georoute-agent.example.com/a2a/json", "transport": "HTTP+JSON"}
-  ],
   "provider": {
     "organization": "Example Geo Services Inc.",
     "url": "https://www.examplegeoservices.com"
@@ -341,21 +316,20 @@ These objects define the structure of data exchanged within the JSON-RPC methods
 
 ### 6.1. `Task` Object
 
-Represents the stateful unit of work being processed by the A2A Server for an A2A Client. A task encapsulates the entire interaction related to a specific goal or request. A task which has reached a terminal state (completed, canceled, rejected, or failed) can't be restarted. For more information, refer to the [Life of a Task guide](./topics/life-of-a-task.md).
+Represents the stateful unit of work being processed by the A2A Server for an A2A Client. A task encapsulates the entire interaction related to a specific goal or request.
 
 ```ts { .no-copy }
 --8<-- "types/src/types.ts:Task"
 ```
 
 | Field Name  | Type                                  | Required | Description                                                                   |
-|:------------|:--------------------------------------| :------- | :---------------------------------------------------------------------------- |
+| :---------- | :------------------------------------ | :------- | :---------------------------------------------------------------------------- |
 | `id`        | `string`                              | Yes      | Server generated unique task identifier (e.g., UUID)                          |
 | `contextId` | `string`                              | Yes      | Server generated ID for contextual alignment across interactions              |
 | `status`    | [`TaskStatus`](#62-taskstatus-object) | Yes      | Current status of the task (state, message, timestamp).                       |
 | `artifacts` | [`Artifact[]`](#67-artifact-object)   | No       | Array of outputs generated by the agent for this task.                        |
 | `history`   | [`Message[]`](#64-message-object)     | No       | Optional array of recent messages exchanged, if requested by `historyLength`. |
 | `metadata`  | `Record<string, any>`                 | No       | Arbitrary key-value metadata associated with the task.                        |
-| `kind`      | `"task"`                              | Yes      | Type discriminator, literal value                                                |
 
 ### 6.2. `TaskStatus` Object
 
@@ -519,9 +493,8 @@ Configuration provided by the client to the server for sending asynchronous push
 | Field Name       | Type                                                                  | Required | Description                                                                                                                                                               |
 | :--------------- | :-------------------------------------------------------------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `url`            | `string`                                                              | Yes      | Absolute HTTPS webhook URL for the A2A Server to POST task updates to.                                                                                                    |
-| `id`             | `string`                                                              | No       | Optional server-generated identifier for the push notification configuration to support multiple callbacks.                                                               |
 | `token`          | `string`                                                              | No       | Optional client-generated opaque token for the client's webhook receiver to validate the notification (e.g., server includes it in an `X-A2A-Notification-Token` header). |
-| `authentication` | [`PushNotificationAuthenticationInfo`](#69-pushnotificationauthenticationinfo-object) | No       | Authentication details the A2A Server must use when calling the `url`. The client's webhook (receiver) defines these requirements.                        |
+| `authentication` | [`PushNotificationAuthenticationInfo`](#69-pushnotificationauthenticationinfo-object) | No       | Authentication details the A2A Server must use when calling the `url`. The client's webhook (receiver) defines these requirements.                                        |
 
 ### 6.9. `PushNotificationAuthenticationInfo` Object
 
@@ -594,7 +567,7 @@ The A2A Server's HTTP response body **MUST** be a `JSONRPCResponse` object (or, 
 
 ### 7.1. `message/send`
 
-Sends a message to an agent to initiate a new interaction or to continue an existing one. This method is suitable for synchronous request/response interactions or when client-side polling (using `tasks/get`) is acceptable for monitoring longer-running tasks. A task which has reached a terminal state (completed, canceled, rejected, or failed) can't be restarted. Sending a message to such a task will result in an error. For more information, refer to the [Life of a Task guide](./topics/life-of-a-task.md).
+Sends a message to an agent to initiate a new interaction or to continue an existing one. This method is suitable for synchronous request/response interactions or when client-side polling (using `tasks/get`) is acceptable for monitoring longer-running tasks.
 
 - **Request `params` type**: [`MessageSendParams`](#711-messagesendparams-object)
 - **Response `result` type (on success)**: [`Task` | `Message`](#61-task-object) (A message object or the current or final state of the task after processing the message).
@@ -616,7 +589,7 @@ Sends a message to an agent to initiate a new interaction or to continue an exis
 
 ### 7.2. `message/stream`
 
-Sends a message to an agent to initiate/continue a task AND subscribes the client to real-time updates for that task via Server-Sent Events (SSE). This method requires the server to have `AgentCard.capabilities.streaming: true`. Just like `message/send`, a task which has reached a terminal state (completed, canceled, rejected, or failed) can't be restarted. Sending a message to such a task will result in an error. For more information, refer to the [Life of a Task guide](./topics/life-of-a-task.md).
+Sends a message to an agent to initiate/continue a task AND subscribes the client to real-time updates for that task via Server-Sent Events (SSE). This method requires the server to have `AgentCard.capabilities.streaming: true`.
 
 - **Request `params` type**: [`MessageSendParams`](#711-messagesendparams-object) (same as `message/send`).
 - **Response (on successful subscription)**:
@@ -731,69 +704,11 @@ Sets or updates the push notification configuration for a specified task. This a
 
 Retrieves the current push notification configuration for a specified task. Requires the server to have `AgentCard.capabilities.pushNotifications: true`.
 
-- **Request `params` type**: [`GetTaskPushNotificationConfigParams`](#761-gettaskpushnotificationconfigparams-object-taskspushnotificationconfigget) | [`TaskIdParams`](#741-taskidparams-object-for-taskscancel-and-taskspushnotificationconfigget)
-_(Note: TaskIdParams type is deprecated for this method. Use GetTaskPushNotificationConfigParams instead.)_
+- **Request `params` type**: [`TaskIdParams`](#741-taskidparams-object-for-taskscancel-and-taskspushnotificationconfigget)
 - **Response `result` type (on success)**: [`TaskPushNotificationConfig`](#610-taskpushnotificationconfig-object) (The current push notification configuration for the task. Server may return an error if no push notification configuration is associated with the task).
 - **Response `error` type (on failure)**: [`JSONRPCError`](#612-jsonrpcerror-object) (e.g., [`PushNotificationNotSupportedError`](#82-a2a-specific-errors), [`TaskNotFoundError`](#82-a2a-specific-errors)).
 
-#### 7.6.1. `GetTaskPushNotificationConfigParams` Object (`tasks/pushNotificationConfig/get`)
-
-A object for fetching the push notification configuration for a task.
-
-```ts { .no-copy }
---8<-- "types/src/types.ts:GetTaskPushNotificationConfigParams"
-```
-
-| Field Name | Type                  | Required | Description                |
-| :--------- | :-------------------- | :------- | :------------------------- |
-| `id`       | `string`              | Yes      | The ID of the task.        |
-| `pushNotificationConfigId`       | `string` | No      | Push notification configuration id. Server will return one of the associated configurations if config id is not specified |
-| `metadata` | `Record<string, any>` | No       | Request-specific metadata. |
-
-### 7.7. `tasks/pushNotificationConfig/list`
-
-Retrieves the associated push notification configurations for a specified task. Requires the server to have `AgentCard.capabilities.pushNotifications: true`.
-
-- **Request `params` type**: [`ListTaskPushNotificationConfigParams`](#771-listtaskpushnotificationconfigparams-object-taskspushnotificationconfiglist)
-- **Response `result` type (on success)**: [`TaskPushNotificationConfig[]`](#610-taskpushnotificationconfig-object) (The push notification configurations associated with the task.).
-- **Response `error` type (on failure)**: [`JSONRPCError`](#612-jsonrpcerror-object) (e.g., [`PushNotificationNotSupportedError`](#82-a2a-specific-errors), [`TaskNotFoundError`](#82-a2a-specific-errors)).
-
-#### 7.7.1. `ListTaskPushNotificationConfigParams` Object (`tasks/pushNotificationConfig/list`)
-
-A object for fetching the push notification configurations for a task.
-
-```ts { .no-copy }
---8<-- "types/src/types.ts:ListTaskPushNotificationConfigRequest"
-```
-
-| Field Name | Type                  | Required | Description                |
-| :--------- | :-------------------- | :------- | :------------------------- |
-| `id`       | `string`              | Yes      | The ID of the task.        |
-| `metadata` | `Record<string, any>` | No       | Request-specific metadata. |
-
-### 7.8. `tasks/pushNotificationConfig/delete`
-
-Deletes an associated push notification configuration for a task. Requires the server to have `AgentCard.capabilities.pushNotifications: true`.
-
-- **Request `params` type**: [`DeleteTaskPushNotificationConfigParams`](#781-deletetaskpushnotificationconfigparams-object-taskspushnotificationconfigdelete)
-- **Response `result` type (on success)**: [`null`]
-- **Response `error` type (on failure)**: [`JSONRPCError`](#612-jsonrpcerror-object) (e.g., [`PushNotificationNotSupportedError`](#82-a2a-specific-errors), [`TaskNotFoundError`](#82-a2a-specific-errors)).
-
-#### 7.8.1. `DeleteTaskPushNotificationConfigParams` Object (`tasks/pushNotificationConfig/delete`)
-
-A object for deleting an associated push notification configuration for a task.
-
-```ts { .no-copy }
---8<-- "types/src/types.ts:DeleteTaskPushNotificationConfigParams"
-```
-
-| Field Name | Type                  | Required | Description                |
-| :--------- | :-------------------- | :------- | :------------------------- |
-| `id`       | `string`              | Yes      | The ID of the task.        |
-| `pushNotificationConfigId` | `string`   | Yes | Push notification configuration id |
-| `metadata` | `Record<string, any>` | No       | Request-specific metadata. |
-
-### 7.9. `tasks/resubscribe`
+### 7.7. `tasks/resubscribe`
 
 Allows a client to reconnect to an SSE stream for an ongoing task after a previous connection (from `message/stream` or an earlier `tasks/resubscribe`) was interrupted. Requires the server to have `AgentCard.capabilities.streaming: true`.
 
@@ -808,7 +723,7 @@ The purpose is to resume receiving _subsequent_ updates. The server's behavior r
     - Standard HTTP error code (e.g., 4xx, 5xx).
     - The HTTP body MAY contain a standard `JSONRPCResponse` with an `error` object. Failures can occur if the task is no longer active, doesn't exist, or streaming is not supported/enabled for it.
 
-### 7.10. `agent/authenticatedExtendedCard`
+### 7.8. `agent/authenticatedExtendedCard`
 
 Retrieves a potentially more detailed version of the Agent Card after the client has authenticated. This endpoint is available only if `AgentCard.supportsAuthenticatedExtendedCard` is `true`. This is an HTTP GET endpoint, not a JSON-RPC method.
 
@@ -825,11 +740,11 @@ Retrieves a potentially more detailed version of the Agent Card after the client
 
 Clients retrieving this authenticated card **SHOULD** replace their cached public Agent Card with the content received from this endpoint for the duration of their authenticated session or until the card's version changes.
 
-#### 7.10.1. `AuthenticatedExtendedCardParams` Object
+#### 7.8.1. `AuthenticatedExtendedCardParams` Object
 
 This endpoint does not use JSON-RPC `params`. Any parameters would be included as HTTP query parameters if needed (though none are defined by the standard).
 
-#### 7.10.2. `AuthenticatedExtendedCardResponse` Object
+#### 7.8.2. `AuthenticatedExtendedCardResponse` Object
 
 The successful response body is a JSON object conforming to the `AgentCard` interface.
 
@@ -1101,7 +1016,7 @@ _If the task were longer-running, the server might initially respond with `statu
        "artifact": {
          "artifactId": "9b6934dd-37e3-4eb1-8766-962efaab63a1",
          "parts": [
-           {"kind":"text", "text": "<section 1...>"}
+           {"type":"text", "text": "<section 1...>"}
          ]
        },
        "append": false,
@@ -1119,7 +1034,7 @@ _If the task were longer-running, the server might initially respond with `statu
        "artifact": {
          "artifactId": "9b6934dd-37e3-4eb1-8766-962efaab63a1",
          "parts": [
-           {"kind":"text", "text": "<section 2...>"}
+           {"type":"text", "text": "<section 2...>"}
          ],
        },
        "append": true,
@@ -1138,7 +1053,7 @@ _If the task were longer-running, the server might initially respond with `statu
        "artifact": {
          "artifactId": "9b6934dd-37e3-4eb1-8766-962efaab63a1",
          "parts": [
-           {"kind":"text", "text": "<section 3...>"}
+           {"type":"text", "text": "<section 3...>"}
          ]
        },
        "append": true,

@@ -188,8 +188,5 @@ cython_debug/
 a2a-python
 a2a-java-sdk
 
-# Generated reports
-reports/
-
 # spec cache
 spec_tracker/cache
