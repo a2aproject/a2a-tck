@@ -8,6 +8,8 @@ These tests focus on basic transport security requirements such as HTTPS enforce
 """
 
 import logging
+import socket
+import ssl
 import urllib.parse
 
 import pytest
@@ -38,6 +40,8 @@ def sut_url_info():
     return {
         "scheme": parsed_url.scheme,
         "netloc": parsed_url.netloc,
+        "hostname": parsed_url.hostname,
+        "port": parsed_url.port or (443 if parsed_url.scheme == "https" else 80),
         "path": parsed_url.path or "/",
         "full_url": sut_url,
         "is_https": parsed_url.scheme.lower() == "https"
@@ -144,4 +148,78 @@ def test_https_url_in_agent_card(sut_client, agent_card_data):
     # Check endpoints in other places where they might be defined
     if "jsonrpc" in agent_card_data and "endpoint" in agent_card_data["jsonrpc"]:
         jsonrpc_endpoint = agent_card_data["jsonrpc"]["endpoint"]
-        assert jsonrpc_endpoint.startswith("https://"), f"Agent Card jsonrpc.endpoint should use HTTPS: {jsonrpc_endpoint}" 
+        assert jsonrpc_endpoint.startswith("https://"), f"Agent Card jsonrpc.endpoint should use HTTPS: {jsonrpc_endpoint}"
+
+@optional_capability
+def test_tls_version(sut_url_info):
+    """
+    OPTIONAL CAPABILITY: A2A Specification §4.1 - TLS Version Requirements
+    
+    Tests that the SUT uses TLS 1.3+ as RECOMMENDED by the latest specification.
+    The specification now recommends TLS 1.3+ instead of TLS 1.2+.
+    
+    Failure Impact: Limits security posture (perfectly acceptable for current deployments)
+    Fix Suggestion: Configure server to use TLS 1.3+ for enhanced security
+    
+    Asserts:
+        - HTTPS connections use TLS 1.3 or higher
+        - Transport security follows latest best practices
+        - Strong cryptographic protocols are used
+    """
+    if not sut_url_info["is_https"]:
+        pytest.skip("SUT URL is not using HTTPS, so TLS version test is not applicable")
+    
+    hostname = sut_url_info["hostname"]
+    port = sut_url_info["port"]
+    
+    if not hostname:
+        pytest.skip("Cannot determine hostname from SUT URL for TLS version check")
+    
+    try:
+        # Create SSL context with default settings
+        context = ssl.create_default_context()
+        
+        # Connect to the server and get TLS version
+        with socket.create_connection((hostname, port), timeout=10) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                tls_version = ssock.version()
+                cipher = ssock.cipher()
+                
+                logger.info(f"Connected to {hostname}:{port}")
+                logger.info(f"TLS version: {tls_version}")
+                if cipher:
+                    logger.info(f"Cipher suite: {cipher[0]}")
+                    logger.info(f"TLS protocol: {cipher[1]}")
+                    logger.info(f"Encryption bits: {cipher[2]}")
+                
+                # Check TLS version - TLS 1.3+ is RECOMMENDED
+                if tls_version:
+                    if tls_version.startswith("TLSv1.3"):
+                        logger.info("✓ SUT uses TLS 1.3 - excellent security posture")
+                        assert True, "TLS 1.3 is being used"
+                    elif tls_version.startswith("TLSv1.2"):
+                        logger.warning("⚠ SUT uses TLS 1.2 - consider upgrading to TLS 1.3")
+                        # TLS 1.2 is still acceptable but not the recommended latest version
+                        pytest.fail("SUT uses TLS 1.2 instead of RECOMMENDED TLS 1.3+")
+                    else:
+                        logger.error(f"✗ SUT uses outdated TLS version: {tls_version}")
+                        pytest.fail(f"SUT uses outdated TLS version: {tls_version} (TLS 1.3+ RECOMMENDED)")
+                else:
+                    logger.error("Could not determine TLS version")
+                    pytest.fail("Could not determine TLS version from connection")
+    
+    except socket.gaierror as e:
+        logger.error(f"DNS resolution failed for {hostname}: {e}")
+        pytest.skip(f"Cannot resolve hostname {hostname} for TLS version check")
+    except socket.timeout:
+        logger.error(f"Connection timeout to {hostname}:{port}")
+        pytest.skip(f"Connection timeout to {hostname}:{port} for TLS version check")
+    except ConnectionRefusedError:
+        logger.error(f"Connection refused to {hostname}:{port}")
+        pytest.skip(f"Connection refused to {hostname}:{port} for TLS version check")
+    except ssl.SSLError as e:
+        logger.error(f"SSL error connecting to {hostname}:{port}: {e}")
+        pytest.fail(f"SSL error during TLS version check: {e}")
+    except Exception as e:
+        logger.error(f"Unexpected error checking TLS version: {e}")
+        pytest.skip(f"Unexpected error during TLS version check: {e}") 

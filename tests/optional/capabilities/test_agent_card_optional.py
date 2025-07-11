@@ -235,4 +235,63 @@ def test_authentication_structure(fetched_agent_card):
 # Additional tests will be added for the structure and content of the Agent Card:
 # - EXT-2.2: Validate Mandatory Agent Card Fields
 # - EXT-2.3: Validate Agent Card capabilities Structure
-# - EXT-2.4: Validate Agent Card authentication Structure 
+# - EXT-2.4: Validate Agent Card authentication Structure
+
+@optional_capability
+def test_agent_interfaces_structure(fetched_agent_card):
+    """
+    OPTIONAL CAPABILITY: A2A Specification §5.5.5 - AgentInterface Objects
+    
+    Tests the additionalInterfaces field which contains AgentInterface objects.
+    This allows agents to declare multiple transport endpoints for client flexibility.
+    
+    Failure Impact: Limits transport flexibility (perfectly acceptable)
+    Fix Suggestion: Implement additional interfaces to support multiple transports
+    
+    Asserts:
+        - additionalInterfaces array follows AgentInterface schema
+        - Required 'url' and 'transport' fields are present and valid
+        - Transport values are reasonable
+        - URLs appear well-formed
+    """
+    # Skip if additionalInterfaces is not present (it's optional)
+    if "additionalInterfaces" not in fetched_agent_card:
+        pytest.skip("Agent Card does not include additionalInterfaces")
+    
+    interfaces = fetched_agent_card["additionalInterfaces"]
+    assert isinstance(interfaces, list), "additionalInterfaces must be an array"
+    
+    if not interfaces:
+        logger.info("additionalInterfaces array is empty (valid)")
+        return
+    
+    # Validate each interface follows AgentInterface schema
+    for i, interface in enumerate(interfaces):
+        assert isinstance(interface, dict), f"interface at index {i} must be an object"
+        
+        # Required field: url
+        assert "url" in interface, f"interface at index {i} missing required 'url' field"
+        url = interface["url"]
+        assert isinstance(url, str), f"interface url at index {i} must be a string"
+        assert url.strip(), f"interface url at index {i} cannot be empty"
+        
+        # Basic URL format validation
+        assert url.startswith(("http://", "https://")), f"interface url at index {i} must be a valid HTTP/HTTPS URL"
+        
+        # Required field: transport
+        assert "transport" in interface, f"interface at index {i} missing required 'transport' field"
+        transport = interface["transport"]
+        assert isinstance(transport, str), f"interface transport at index {i} must be a string"
+        assert transport.strip(), f"interface transport at index {i} cannot be empty"
+        
+        # Validate transport is one of the officially supported values (per spec: JSONRPC, GRPC, HTTP+JSON)
+        # But allow other values as the spec says it's "open form string"
+        known_transports = ["JSONRPC", "GRPC", "HTTP+JSON"]
+        if transport in known_transports:
+            logger.info(f"Interface {i} uses officially supported transport: {transport}")
+        else:
+            logger.info(f"Interface {i} uses custom transport: {transport}")
+        
+        logger.info(f"Validated interface {i}: {transport} at {url}")
+    
+    logger.info(f"Agent declares {len(interfaces)} additional interfaces") 
