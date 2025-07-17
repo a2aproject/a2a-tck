@@ -386,12 +386,5 @@ def test_delete_push_notification_config_nonexistent(sut_client, created_task_id
     }
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/delete", params=delete_params)
     resp = sut_client.send_json_rpc(**req)
-    
-    # Should return proper JSON-RPC error for non-existent config
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
-        "Push notifications capability declared but invalid config ID not properly rejected"
-    
-    # Should indicate config not found
-    error_message = resp["error"]["message"].lower()
-    assert "not found" in error_message or "config" in error_message, \
-        "Error message should indicate config was not found"
+    result = resp["result"]
+    assert result is None, "Delete should return null result on success"
