@@ -126,7 +126,7 @@ def test_task_state_transitions(sut_client, text_message_params, follow_up_messa
     
     # Verify the state transitions - simple check that it's in an expected state
     current_state = get_resp2["result"]["status"]["state"]
-    assert current_state in {"working", "input_required", "completed"}, f"Unexpected state: {current_state}"
+    assert current_state in {"working", "input-required", "completed"}, f"Unexpected state: {current_state}"
 
 @quality_basic
 def test_tasks_cancel_already_canceled(sut_client):
