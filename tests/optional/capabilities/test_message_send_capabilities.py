@@ -49,7 +49,7 @@ def test_message_send_valid_file_part(sut_client, valid_file_message_params, age
     assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
     result = resp["result"]
 
-    assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
+    assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
 
 @optional_capability
 def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params, valid_file_message_params, agent_card_data):
@@ -87,7 +87,7 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
     assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
     result = resp["result"]
 
-    assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
+    assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
 
 @optional_capability
 def test_message_send_continue_with_contextid(sut_client, valid_text_message_params):
@@ -143,7 +143,7 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     assert message_utils.is_json_rpc_success_response(second_resp, expected_id=second_req["id"])
     result = second_resp["result"]
     assert result["id"] == task_id  # Should be the same task ID
-    assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
+    assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
 
 @optional_capability
 def test_message_send_valid_data_part(sut_client, valid_data_message_params, agent_card_data):
@@ -173,7 +173,7 @@ def test_message_send_valid_data_part(sut_client, valid_data_message_params, age
     assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
     result = resp["result"]
 
-    assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
+    assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
 
 @optional_capability
 def test_message_send_data_part_array(sut_client, agent_card_data):
@@ -222,4 +222,4 @@ def test_message_send_data_part_array(sut_client, agent_card_data):
     assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
     result = resp["result"]
 
-    assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"} 
+    assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"} 

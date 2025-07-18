@@ -113,7 +113,7 @@ def test_message_send_valid_text(sut_client, valid_text_message_params, agent_ca
     # According to A2A spec, message/send can return either Task or Message
     if "status" in result:
         # This is a Task object
-        assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
+        assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
     else:
         # This is a Message object - verify it has the expected structure
         assert result.get("kind") == "message"
@@ -178,7 +178,7 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
     if "status" in result:
         # This is a Task object
         assert result["id"] == task_id  # Should be the same task ID
-        assert result.get("status", {}).get("state") in {"submitted", "working", "input_required", "completed"}
+        assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
     else:
         # This is a Message object - verify it has the expected structure
         assert result.get("kind") == "message"
