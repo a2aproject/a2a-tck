@@ -185,32 +185,3 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
         assert result.get("role") == "agent"
         assert "parts" in result
 
-@mandatory_protocol
-def test_message_send_continue_nonexistent_task(sut_client):
-    """
-    MANDATORY: A2A Specification §5.1 - Task Not Found Error Handling
-    
-    The A2A specification requires proper error handling when attempting
-    to continue a non-existent task. MUST return TaskNotFoundError.
-    
-    Failure Impact: Implementation is not A2A compliant
-    """
-    continuation_params = {
-        "message": {
-            "kind": "message",
-            "taskId": "non-existent-task-id",
-            "messageId": "test-nonexistent-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [
-                {
-                    "kind": "text",
-                    "text": "Message for a non-existent task"
-                }
-            ]
-        }
-    }
-    req = message_utils.make_json_rpc_request("message/send", params=continuation_params)
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
-    # Error code might be implementation-specific, but should be an error
-

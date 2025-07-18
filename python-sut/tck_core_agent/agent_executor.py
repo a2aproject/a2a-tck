@@ -54,14 +54,6 @@ class TckCoreAgentExecutor(AgentExecutor):
         if not context.message:
             raise Exception('No message provided')
 
-        # Check if we're trying to continue a task that should exist but doesn't
-        # This happens when a taskId is provided that looks like it was previously created
-        # but is no longer available (e.g., "non-existent-task-id")
-        if context.message.taskId and not task and context.message.taskId.startswith(('non-existent', 'test-')):
-            # Only throw error for task IDs that look like they should have been created before
-            if 'non-existent' in context.message.taskId:
-                raise ServerError(TaskNotFoundError(message=f"Task with ID '{context.message.taskId}' not found"))
-
         # Create task if it doesn't exist (this handles both new tasks and tasks with provided IDs)
         if not task:
             task = new_task(context.message)
