@@ -44,7 +44,7 @@ def has_push_notification_support(agent_card_data):
 @optional_capability
 def test_set_push_notification_config(sut_client, created_task_id, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Configuration
+    CONDITIONAL MANDATORY: A2A Specification §7.5 - Push Notification Configuration
     
     Status: MANDATORY if capabilities.pushNotifications = true
             SKIP if capabilities.pushNotifications = false/missing
@@ -76,7 +76,7 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
 @optional_capability
 def test_get_push_notification_config(sut_client, created_task_id, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Configuration Retrieval
+    CONDITIONAL MANDATORY: A2A Specification §7.6 - Push Notification Configuration Retrieval
     
     Status: MANDATORY if capabilities.pushNotifications = true
             SKIP if capabilities.pushNotifications = false/missing
@@ -118,7 +118,7 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
 @optional_capability
 def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Error Handling
+    CONDITIONAL MANDATORY: A2A Specification §7.5 - Push Notification Error Handling
     
     Status: MANDATORY if capabilities.pushNotifications = true
             SKIP if capabilities.pushNotifications = false/missing
@@ -152,7 +152,7 @@ def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
 @optional_capability
 def test_get_push_notification_config_nonexistent(sut_client, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §9.1 - Push Notification Error Handling
+    CONDITIONAL MANDATORY: A2A Specification §7.6 - Push Notification Error Handling
     
     Status: MANDATORY if capabilities.pushNotifications = true
             SKIP if capabilities.pushNotifications = false/missing

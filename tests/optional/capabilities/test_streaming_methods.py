@@ -243,7 +243,7 @@ async def test_message_stream_invalid_params(async_http_client, agent_card_data)
 @pytest.mark.asyncio
 async def test_tasks_resubscribe(async_http_client, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §8.2 - Task Resubscription
+    CONDITIONAL MANDATORY: A2A Specification §7.9 - Task Resubscription
     
     Status: MANDATORY if capabilities.streaming = true
             SKIP if capabilities.streaming = false/missing
@@ -345,7 +345,7 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
 @pytest.mark.asyncio
 async def test_tasks_resubscribe_nonexistent(async_http_client, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §8.2 - Resubscribe Error Handling
+    CONDITIONAL MANDATORY: A2A Specification §7.9 - Resubscribe Error Handling
     
     Status: MANDATORY if capabilities.streaming = true
             SKIP if capabilities.streaming = false/missing
