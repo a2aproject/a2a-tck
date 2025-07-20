@@ -94,7 +94,7 @@ def has_modality_support(agent_card_data, modality):
 @mandatory_protocol
 def test_message_send_valid_text(sut_client, valid_text_message_params, agent_card_data):
     """
-    MANDATORY: A2A Specification §5.1 - Core Message Protocol
+    MANDATORY: A2A Specification §7.1 - Core Message Protocol
     
     The A2A specification requires all implementations to support
     message/send with text content as the fundamental communication method.
@@ -123,7 +123,7 @@ def test_message_send_valid_text(sut_client, valid_text_message_params, agent_ca
 @mandatory_protocol
 def test_message_send_invalid_params(sut_client):
     """
-    MANDATORY: A2A Specification §5.1 - Parameter Validation
+    MANDATORY: A2A Specification §7.1 - Parameter Validation
     
     The A2A specification requires proper validation of message/send parameters.
     Missing required fields MUST result in InvalidParamsError (-32602).
@@ -138,7 +138,7 @@ def test_message_send_invalid_params(sut_client):
 @mandatory_protocol
 def test_message_send_continue_task(sut_client, valid_text_message_params):
     """
-    MANDATORY: A2A Specification §5.1 - Task Continuation
+    MANDATORY: A2A Specification §7.1 - Task Continuation
     
     The A2A specification requires support for continuing existing tasks
     via message/send with taskId parameter.
