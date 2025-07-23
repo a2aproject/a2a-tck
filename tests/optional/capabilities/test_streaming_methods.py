@@ -271,18 +271,97 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
             ]
         }
     }
+    req_id = message_utils.generate_request_id()
+    json_rpc_request = message_utils.make_json_rpc_request("message/stream", params=message_params, id=req_id)
+     
+
+    # Send the request and expect a streaming response
+    sut_url = config.get_sut_url()
+    headers = {"Content-Type": "application/json"}
     
-    send_response = sut_client.send_json_rpc("message/send", params=message_params)
-    assert message_utils.is_json_rpc_success_response(send_response)
-    
-    # Extract the task ID from the response
-    task = send_response["result"]
-    assert isinstance(task, dict)
-    assert "id" in task
-    task_id = task["id"]
+    try:
+        response = await async_http_client.post(
+            sut_url,
+            json=json_rpc_request,
+            headers=headers,
+            timeout=None  # No timeout for streaming
+        )
+        
+        assert response.status_code == 200, "Streaming capability declared but HTTP 200 not returned"
+        assert response.headers.get("content-type", "").startswith("text/event-stream"), \
+            "Streaming capability declared but Content-Type is not text/event-stream"
+        # Process the SSE stream
+        sse_client = SimpleSSEClient(response)
+        events = []
+        
+        # Collect events with a timeout to avoid hanging indefinitely
+        try:
+            async for event in sse_client:
+                if "data" in event:
+                    try:
+                        data = json.loads(event["data"])
+                        events.append(data)
+                        logger.info(f"Received SSE event: {data}")
+                        
+                        # Check if this is a terminal event to break the loop
+                        if "result" in data and isinstance(data["result"], dict):
+                            status = data["result"].get("status", {})
+                            if isinstance(status, dict) and status.get("state") in ["completed", "failed", "canceled"]:
+                                logger.info("Detected terminal event, ending stream processing.")
+                                break
+                                
+                        # Break after a reasonable number of events for testing
+                        if len(events) >= 5:
+                            logger.info("Collected 5 events, ending stream processing.")
+                            break
+                    except json.JSONDecodeError:
+                        logger.error(f"Failed to parse event data as JSON: {event['data']}")
+                        continue
+        except asyncio.TimeoutError:
+            logger.warning("Timeout while processing SSE stream")
+        
+        # Validate the collected events
+        assert len(events) > 0, "Streaming capability declared but no events received from stream"
+        
+        
+        # Check that the received events match our expectations
+        for event in events:
+            assert message_utils.is_json_rpc_success_response(event, expected_id=req_id) or \
+                   message_utils.is_json_rpc_error_response(event, expected_id=req_id), \
+                   "Streaming capability declared but invalid JSON-RPC responses received"
+            
+            if message_utils.is_json_rpc_success_response(event, expected_id=req_id):
+                # The result should be a Task, Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
+                result = event["result"]
+                assert isinstance(result, dict), "Streaming result must be an object"
+                
+                # Event type should be identifiable (this would be better with proper schema validation)
+                if "status" in result and "id" in result:
+                    # Looks like a Task
+                    task_id = result["id"]
+                    assert task_id is not None
+                    assert task_id != ""
+                    assert task_id != "null"
+                    assert task_id != "undefined"
+                
+                # Otherwise it might be a Message or other valid type
+        
+    except httpx.HTTPError as e:
+        if hasattr(e, "response") and e.response.status_code == 501:
+            # This is a FAILURE because streaming was declared but not implemented
+            pytest.fail(
+                "Streaming capability declared in Agent Card but SUT returned HTTP 501 Not Implemented. "
+                "This is a specification violation - declared capabilities MUST be implemented."
+            )
+        else:
+            raise
+
+
+
     
     # Now try to resubscribe to this task
     resubscribe_params = {"id": task_id}
+    print(f"Resubscribe params: {resubscribe_params}")
     req_id = message_utils.generate_request_id()
     json_rpc_request = message_utils.make_json_rpc_request("tasks/resubscribe", params=resubscribe_params, id=req_id)
     
@@ -307,12 +386,14 @@ async def test_tasks_resubscribe(async_http_client, agent_card_data):
         
         try:
             async for event in sse_client:
+                
                 if "data" in event:
                     try:
                         data = json.loads(event["data"])
                         events.append(data)
                         logger.info(f"Received resubscribe SSE event: {data}")
-                        
+                        assert message_utils.is_json_rpc_success_response(event), "It is an Error response"
+            
                         # Check if this is a terminal event
                         if "result" in data and isinstance(data["result"], dict):
                             status = data["result"].get("status", {})

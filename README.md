@@ -394,6 +394,41 @@ pip install -e .
 pytest --collect-only tests/mandatory/
 ```
 
+### **Running Individual Tests for Debugging**
+
+When debugging specific test failures, you can run individual tests with detailed output:
+
+**Run a single test with verbose output and debug information**:
+```bash
+# Using run_tck.py with verbose mode (shows print() and logger.info() messages)
+python run_tck.py --sut-url http://localhost:9999 --category capabilities --verbose
+
+# Run specific test directly with pytest
+python -m pytest tests/optional/capabilities/test_streaming_methods.py::test_message_stream_basic \
+    --sut-url http://localhost:9999 -s -v --log-cli-level=INFO
+```
+
+**Run all tests in a specific file**:
+```bash
+python -m pytest tests/optional/capabilities/test_streaming_methods.py \
+    --sut-url http://localhost:9999 -s -v --log-cli-level=INFO
+```
+
+**Debug options explained**:
+- `-s`: Shows `print()` statements during test execution
+- `-v`: Verbose test output with detailed test names and outcomes
+- `--log-cli-level=INFO`: Shows `logger.info()` and other log messages
+- `--tb=short`: Shorter traceback format (default in run_tck.py)
+
+**Run with different log levels**:
+```bash
+# Show DEBUG level logs (very detailed)
+python -m pytest tests/path/to/test.py --sut-url URL -s -v --log-cli-level=DEBUG
+
+# Show only WARNING and ERROR logs
+python -m pytest tests/path/to/test.py --sut-url URL -s -v --log-cli-level=WARNING
+```
+
 ## 📚 Documentation
 
 - **[SDK Validation Guide](docs/SDK_VALIDATION_GUIDE.md)** - Detailed usage guide for SDK developers
