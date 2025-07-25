@@ -26,7 +26,7 @@ run_interpreter: "bash"
 
 # Optional: Specify a specific branch, tag, or commit to checkout.
 # If omitted, the default branch of the repository will be used.
-git_ref: "0.2.3.Beta"
+git_ref: "0.2.5"
 
 # Optional: Arguments to pass to the prerequisite script.
 # prerequisites_args: "--fast-build --no-cache"

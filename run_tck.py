@@ -53,9 +53,15 @@ import argparse
 from pathlib import Path
 from typing import Dict
 import json
+import os
+from dotenv import load_dotenv
 
 # Define the directory for all generated reports
 REPORTS_DIR = Path("reports")
+
+def load_env_file():
+    """Load environment variables from .env file if it exists."""
+    load_dotenv(override=False)  # Don't override existing env vars
 
 def explain_test_categories():
     """Explain all test categories in detail."""
@@ -114,7 +120,7 @@ def explain_test_categories():
     print()
     print("=" * 80)
 
-def run_test_category(category: str, sut_url: str, verbose: bool = False, generate_report: bool = False, json_report: str = None):
+def run_test_category(category: str, sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, json_report: str = None):
     """Run a specific test category."""
     
     # Map categories to pytest commands
@@ -175,10 +181,12 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, genera
     if config["markers"]:
         cmd.extend(["-m", config["markers"]])
     
-    if verbose:
-        cmd.append("-v")
+    if verbose_log:
+        cmd.extend(["-v", "-s", "--log-cli-level=INFO"])  # Full verbose with logging
+    elif verbose:
+        cmd.append("-v")  # Just verbose output
     else:
-        cmd.append("-q")
+        cmd.append("-q")  # Quiet output
     
     if generate_report:
         report_path = REPORTS_DIR / f"{category}_test_report.html"
@@ -191,7 +199,7 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, genera
     result = subprocess.run(cmd)
     return result.returncode
 
-def run_all_categories(sut_url: str, verbose: bool = False, generate_report: bool = False, compliance_report: str = None):
+def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, compliance_report: str = None):
     """Run all test categories in recommended order."""
     
     categories = ["mandatory", "capabilities", "quality", "features"]
@@ -213,7 +221,7 @@ def run_all_categories(sut_url: str, verbose: bool = False, generate_report: boo
         if compliance_report:
             json_report_file = f"{category}_results.json"
         
-        exit_code = run_test_category(category, sut_url, verbose, generate_report, json_report_file)
+        exit_code = run_test_category(category, sut_url, verbose, verbose_log, generate_report, json_report_file)
         results[category] = exit_code
         
         # Collect detailed results for compliance report
@@ -429,6 +437,9 @@ def get_agent_card_data(sut_url: str) -> Dict:
 
 def main():
     """Main entry point."""
+    # Load environment variables from .env file if it exists
+    load_env_file()
+    
     parser = argparse.ArgumentParser(
         description="A2A Protocol Technology Compatibility Kit (TCK) - Test Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -445,6 +456,9 @@ Examples:
   
   # Quick compliance check with verbose output
   ./run_tck.py --sut-url http://localhost:9999 --category mandatory --verbose
+  
+  # Run with full verbose logging
+  ./run_tck.py --sut-url http://localhost:9999 --category mandatory --verbose-log
   
   # Run compliance + quality tests (good for production assessment)
   ./run_tck.py --sut-url http://localhost:9999 --category quality
@@ -478,7 +492,13 @@ Categories:
     parser.add_argument(
         "--verbose", "-v",
         action="store_true",
-        help="Enable verbose test output"
+        help="Enable verbose test output (adds -v to pytest)"
+    )
+    
+    parser.add_argument(
+        "--verbose-log",
+        action="store_true",
+        help="Enable verbose test output with logging (adds -v -s --log-cli-level=INFO to pytest)"
     )
     
     parser.add_argument(
@@ -522,12 +542,12 @@ Categories:
 
     # Run tests
     if args.category == "all":
-        results = run_all_categories(args.sut_url, args.verbose, args.report, compliance_report_path)
+        results = run_all_categories(args.sut_url, args.verbose, args.verbose_log, args.report, compliance_report_path)
         # Exit with failure if mandatory or capabilities failed
         if results["mandatory"] != 0 or results["capabilities"] != 0:
             sys.exit(1)
     else:
-        exit_code = run_test_category(args.category, args.sut_url, args.verbose, args.report, None)
+        exit_code = run_test_category(args.category, args.sut_url, args.verbose, args.verbose_log, args.report, None)
         sys.exit(exit_code)
 
 if __name__ == "__main__":
