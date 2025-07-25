@@ -53,9 +53,15 @@ import argparse
 from pathlib import Path
 from typing import Dict
 import json
+import os
+from dotenv import load_dotenv
 
 # Define the directory for all generated reports
 REPORTS_DIR = Path("reports")
+
+def load_env_file():
+    """Load environment variables from .env file if it exists."""
+    load_dotenv(override=False)  # Don't override existing env vars
 
 def explain_test_categories():
     """Explain all test categories in detail."""
@@ -431,6 +437,9 @@ def get_agent_card_data(sut_url: str) -> Dict:
 
 def main():
     """Main entry point."""
+    # Load environment variables from .env file if it exists
+    load_env_file()
+    
     parser = argparse.ArgumentParser(
         description="A2A Protocol Technology Compatibility Kit (TCK) - Test Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter,

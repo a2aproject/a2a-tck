@@ -84,7 +84,14 @@ Use the TCK to validate your A2A implementation:
    uv pip install -e .
    ```
 
-3. **Start your A2A implementation** (System Under Test):
+3. **Configure environment (optional)**:
+   ```bash
+   # Copy example environment file and customize
+   cp .env.example .env
+   # Edit .env to set timeout values and other configuration
+   ```
+
+4. **Start your A2A implementation** (System Under Test):
    ```bash
    # Example using the included Python SUT
    cd python-sut/tck_core_agent
@@ -153,6 +160,16 @@ This will:
 
 You can then proceed to run the TCK tests against your SUT.
 
+## 📋 SUT Requirements
+
+**Before running tests**, ensure your A2A implementation meets the [SUT Requirements](docs/SUT_REQUIREMENTS.md). This includes:
+
+- **Streaming Duration**: Tasks with message IDs starting with `"test-resubscribe-message-id"` must run for ≥ `2 × TCK_STREAMING_TIMEOUT` seconds
+- **Environment Variables**: Optional support for `TCK_STREAMING_TIMEOUT` configuration
+- **Test Patterns**: Proper handling of TCK-specific message ID patterns
+
+📖 **[Read Full SUT Requirements →](docs/SUT_REQUIREMENTS.md)**
+
 ## 🚀 Quick Start
 
 ### 1. **Check A2A Compliance** (Start Here!)
@@ -213,6 +230,50 @@ You can then proceed to run the TCK tests against your SUT.
 # Skip Agent Card fetching (for non-standard implementations)  
 ./run_tck.py --sut-url URL --category mandatory --skip-agent-card
 ```
+
+## ⚙️ Environment Configuration
+
+### **Using Environment Variables**
+
+The TCK supports configuration via environment variables and `.env` files for flexible timeout and behavior customization.
+
+**Setting up environment configuration**:
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit the file to customize settings
+nano .env  # or your preferred editor
+```
+
+**Available environment variables**:
+
+| Variable | Description | Default | Examples |
+|----------|-------------|---------|----------|
+| `TCK_STREAMING_TIMEOUT` | Base timeout for SSE streaming tests (seconds) | `2.0` | `1.0` (fast), `5.0` (slow), `10.0` (debug) |
+
+**Timeout behavior**:
+- **Short timeout**: `TCK_STREAMING_TIMEOUT * 0.5` - Used for basic streaming operations
+- **Normal timeout**: `TCK_STREAMING_TIMEOUT * 1.0` - Used for standard SSE client operations  
+- **Async timeout**: `TCK_STREAMING_TIMEOUT * 1.0` - Used for `asyncio.wait_for` operations
+
+**Usage examples**:
+```bash
+# Use .env file (recommended)
+echo "TCK_STREAMING_TIMEOUT=5.0" > .env
+./run_tck.py --sut-url URL --category capabilities
+
+# Set directly for single run
+TCK_STREAMING_TIMEOUT=1.0 ./run_tck.py --sut-url URL --category capabilities
+
+# Debug with very slow timeouts
+TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --verbose
+```
+
+**When to adjust timeouts**:
+- **Decrease (`1.0`)**: Fast CI/CD pipelines, local development
+- **Increase (`5.0+`)**: Slow networks, debugging, resource-constrained environments
+- **Debug (`10.0+`)**: Detailed troubleshooting, step-through debugging
 
 ## 🎯 Understanding Test Categories
 
@@ -375,7 +436,7 @@ esac
 **Streaming tests skipping**:
 ```bash
 # Check Agent Card capabilities
-curl $SUT_URL/agent | jq .capabilities
+curl $SUT_URL/.well-known/agent.json | jq .capabilities
 # If streaming: false, tests will skip (this is correct!)
 ```
 
@@ -401,7 +462,7 @@ When debugging specific test failures, you can run individual tests with detaile
 **Run a single test with verbose output and debug information**:
 ```bash
 # Using run_tck.py with verbose mode (shows print() and logger.info() messages)
-python run_tck.py --sut-url http://localhost:9999 --category capabilities --verbose
+python run_tck.py --sut-url http://localhost:9999 --category capabilities --verbose-log
 
 # Run specific test directly with pytest
 python -m pytest tests/optional/capabilities/test_streaming_methods.py::test_message_stream_basic \
@@ -431,9 +492,9 @@ python -m pytest tests/path/to/test.py --sut-url URL -s -v --log-cli-level=WARNI
 
 ## 📚 Documentation
 
+- **[SUT Requirements](docs/SUT_REQUIREMENTS.md)** - Essential requirements for A2A implementations to work with the TCK
 - **[SDK Validation Guide](docs/SDK_VALIDATION_GUIDE.md)** - Detailed usage guide for SDK developers
 - **[Specification Update Workflow](docs/SPEC_UPDATE_WORKFLOW.md)** - Monitor and manage A2A specification changes
-
 - **[Test Documentation Standards](docs/TEST_DOCUMENTATION_STANDARDS.md)** - Standards for test contributors
 
 ## 🤝 Contributing

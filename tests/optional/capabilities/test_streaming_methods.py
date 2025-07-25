@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 from typing import Any, AsyncGenerator, Dict, List, Optional
 import uuid
 
@@ -14,6 +15,19 @@ from tests.markers import optional_capability
 from tests.capability_validator import CapabilityValidator, skip_if_capability_not_declared
 
 logger = logging.getLogger(__name__)
+
+# Configurable timeout system
+# Base timeout can be configured via environment variable TCK_STREAMING_TIMEOUT
+# Usage: TCK_STREAMING_TIMEOUT=5.0 python -m pytest ...
+# Default is 2.0 seconds if not specified
+BASE_TIMEOUT = float(os.getenv('TCK_STREAMING_TIMEOUT', '2.0'))
+
+# Timeout multipliers for different operations
+TIMEOUTS = {
+    'sse_client_short': BASE_TIMEOUT * 0.5,      # 1.0s default (for basic streaming)
+    'sse_client_normal': BASE_TIMEOUT * 1.0,     # 2.0s default (for normal streaming)
+    'async_wait_for': BASE_TIMEOUT * 1.0,        # 2.0s default (for asyncio.wait_for)
+}
 
 # SimpleSSEClient to handle Server-Sent Events
 class SimpleSSEClient:
@@ -149,7 +163,7 @@ async def test_message_stream_basic(async_http_client, agent_card_data):
                 "Streaming capability declared but Content-Type is not text/event-stream"
             
             # Process the SSE stream
-            sse_client = SimpleSSEClient(response, timeout=1.0)
+            sse_client = SimpleSSEClient(response, timeout=TIMEOUTS['sse_client_short'])
             events = []
             
             # Collect events with a timeout to avoid hanging indefinitely
@@ -320,7 +334,7 @@ async def test_tasks_resubscribe(async_http_client : httpx.AsyncClient, agent_ca
             assert response.headers.get("content-type", "").startswith("text/event-stream"), \
                 "Streaming capability declared but Content-Type is not text/event-stream"
             # Process the SSE stream
-            sse_client = SimpleSSEClient(response, timeout=2.0)
+            sse_client = SimpleSSEClient(response, timeout=TIMEOUTS['sse_client_normal'])
             events = []
             
             # Collect events with a timeout to avoid hanging indefinitely
@@ -358,7 +372,7 @@ async def test_tasks_resubscribe(async_http_client : httpx.AsyncClient, agent_ca
                             break
                 
                 # Add timeout wrapper to prevent indefinite blocking
-                await asyncio.wait_for(process_sse_events(), timeout=2.0)
+                await asyncio.wait_for(process_sse_events(), timeout=TIMEOUTS['async_wait_for'])
                 
             except asyncio.TimeoutError:
                 logger.warning("Timeout while processing SSE stream")
@@ -404,7 +418,6 @@ async def test_tasks_resubscribe(async_http_client : httpx.AsyncClient, agent_ca
     
     # Now try to resubscribe to this task
     resubscribe_params = {"id": task_id}
-    print(f"Resubscribe params: {resubscribe_params}")
     req_id = message_utils.generate_request_id()
     json_rpc_request = message_utils.make_json_rpc_request("tasks/resubscribe", params=resubscribe_params, id=req_id)
     
@@ -424,7 +437,7 @@ async def test_tasks_resubscribe(async_http_client : httpx.AsyncClient, agent_ca
                 "Streaming capability declared but resubscribe didn't return SSE stream"
             
             # Process the SSE stream similar to message/stream test
-            sse_client = SimpleSSEClient(response, timeout=2.0)
+            sse_client = SimpleSSEClient(response, timeout=TIMEOUTS['sse_client_normal'])
             events = []
             
             try:
@@ -445,8 +458,7 @@ async def test_tasks_resubscribe(async_http_client : httpx.AsyncClient, agent_ca
                                 events.append(data)
                                 logger.info(f"Received resubscribe SSE event: {data}")
                                 # Note: Fixed assertion - should check data, not event
-                                assert message_utils.is_json_rpc_success_response(data), "It is an Error response"
-                    
+                                assert message_utils.is_json_rpc_success_response(data, expected_id=req_id), "Received an error or unexpected JSON-RPC response in the resubscribe stream"
                                 # Check if this is a terminal event
                                 if "result" in data and isinstance(data["result"], dict):
                                     status = data["result"].get("status", {})
@@ -462,7 +474,7 @@ async def test_tasks_resubscribe(async_http_client : httpx.AsyncClient, agent_ca
                                 continue
                 
                 # Add timeout wrapper to prevent indefinite blocking
-                await asyncio.wait_for(process_resubscribe_events(), timeout=2.0)
+                await asyncio.wait_for(process_resubscribe_events(), timeout=TIMEOUTS['async_wait_for'])
                 
             except asyncio.TimeoutError:
                 logger.warning("Timeout while processing resubscribe SSE stream")
@@ -520,7 +532,7 @@ async def test_tasks_resubscribe_nonexistent(async_http_client, agent_card_data)
                 "Streaming capability declared but Content-Type is not text/event-stream"
 
             # Process the SSE stream
-            sse_client = SimpleSSEClient(response, timeout=2.0)
+            sse_client = SimpleSSEClient(response, timeout=TIMEOUTS['sse_client_normal'])
             events = []
             error = {}
 
