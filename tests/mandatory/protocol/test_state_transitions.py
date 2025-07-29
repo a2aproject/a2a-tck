@@ -47,7 +47,7 @@ def follow_up_message_params(text_message_params):
     }
 
 @mandatory_protocol
-def test_task_history_length(sut_client, text_message_params):
+def test_task_history_length(sut_client):
     """
     MANDATORY: A2A Specification §7.3 - historyLength Parameter
     
@@ -56,28 +56,35 @@ def test_task_history_length(sut_client, text_message_params):
     
     Failure Impact: Implementation is not A2A compliant
     """
-    # Step 1: Create a new task with an explicit taskId
-    task_id = "test-history-task-" + str(uuid.uuid4())
-    create_params = text_message_params.copy()
-    create_params["message"]["taskId"] = task_id
+    # Create a task and add multiple messages to build history
+    create_params = {
+        "message": {
+            "kind": "message",
+            "messageId": "test-history-create-message-id-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [
+                {"kind": "text", "text": "Initial message for history test"}
+            ]
+        }
+    }
     
     create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
-    create_resp = sut_client.send_json_rpc(method=create_req["method"], params=create_req["params"], id=create_req["id"])
+    create_resp = sut_client.send_json_rpc(**create_req)
     assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
     
-    # Step 2: Send additional messages to build up history
+    # Get the server-generated task ID
+    task_id = create_resp["result"]["id"]
+    
+    # Add additional messages to the task to build history
     for i in range(3):
         follow_up_params = {
             "message": {
                 "kind": "message",
-                "taskId": task_id,
                 "messageId": f"test-history-message-{i+1}-" + str(uuid.uuid4()),
                 "role": "user",
+                "taskId": task_id,
                 "parts": [
-                    {
-                        "kind": "text",
-                        "text": f"Follow-up message {i+1}"
-                    }
+                    {"kind": "text", "text": f"Follow-up message {i+1} for history test"}
                 ]
             }
         }

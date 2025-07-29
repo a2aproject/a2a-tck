@@ -13,13 +13,11 @@ def sut_client():
 @pytest.fixture
 def created_task_id(sut_client):
     # Create a task using message/send and return its id
-    task_id = "test-cancel-task-" + str(uuid.uuid4())
     params = {
         "message": {
             "kind": "message",
             "messageId": "test-cancel-message-id-" + str(uuid.uuid4()),
             "role": "user",
-            "taskId": task_id,  # Provide the task ID explicitly
             "parts": [
                 {"kind": "text", "text": "Task for cancel test"}
             ]
@@ -32,8 +30,8 @@ def created_task_id(sut_client):
     req = message_utils.make_json_rpc_request("message/send", params=params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
     assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
-    # Return the task ID we provided, since the SUT may return a Message object
-    return task_id
+    # Return the server-generated task ID from the response
+    return resp["result"]["id"]
 
 @mandatory_protocol
 def test_tasks_cancel_valid(sut_client, created_task_id):
