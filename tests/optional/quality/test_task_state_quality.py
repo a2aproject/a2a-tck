@@ -88,7 +88,19 @@ def test_task_state_transitions(sut_client):
     
     # Get the server-generated task ID
     task_id = create_resp["result"]["id"]
+
+    # Verify the initial state and history after task creation
+    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id, "historyLength": 1})
+    get_resp = sut_client.send_json_rpc(**get_req)
+    assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])
     
+    task_after_creation = get_resp["result"]
+    initial_state = task_after_creation.get("status", {}).get("state")
+    assert initial_state in {"submitted", "working"}, f"Unexpected initial state: {initial_state}"
+
+    # Verify history exists and contains the initial message
+    history = task_after_creation.get("history", [])
+    assert len(history) == 1, "Task history should contain the initial message when requested"
     # Send a follow-up message to continue the task
     follow_up_params = {
         "message": {
