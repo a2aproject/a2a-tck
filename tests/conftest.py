@@ -9,6 +9,16 @@ def pytest_addoption(parser):
     parser.addoption("--sut-url", action="store", default=None, help="URL of the SUT's A2A JSON-RPC endpoint")
     parser.addoption("--test-scope", action="store", default="core", help="Test scope: 'core' or 'all'")
     parser.addoption("--skip-agent-card", action="store_true", default=False, help="Skip fetching and validating the Agent Card")
+    
+    # A2A v0.3.0 transport configuration options
+    parser.addoption("--transport-strategy", action="store", default="agent_preferred", 
+                    help="Transport selection strategy: agent_preferred, prefer_jsonrpc, prefer_grpc, prefer_rest, all_supported")
+    parser.addoption("--preferred-transport", action="store", default=None,
+                    help="Preferred transport type: jsonrpc, grpc, rest")
+    parser.addoption("--disabled-transports", action="store", default="",
+                    help="Comma-separated list of disabled transports: jsonrpc,grpc,rest")
+    parser.addoption("--enable-equivalence-testing", action="store_true", default=True,
+                    help="Enable transport equivalence testing for multi-transport SUTs")
 
 def pytest_configure(config):
     sut_url = config.getoption("--sut-url")
@@ -21,6 +31,41 @@ def pytest_configure(config):
         # If --sut-url is not provided, the tests requiring it will fail, which is expected.
         # The RuntimeError in get_sut_url will handle the case where it's needed but not set.
         pass
+    
+    # Configure A2A v0.3.0 transport settings
+    transport_strategy = config.getoption("--transport-strategy")
+    preferred_transport = config.getoption("--preferred-transport")
+    disabled_transports = config.getoption("--disabled-transports")
+    enable_equivalence = config.getoption("--enable-equivalence-testing")
+    
+    # Set transport configuration
+    tck.config.set_transport_selection_strategy(transport_strategy)
+    
+    if preferred_transport:
+        from tck.transport.base_client import TransportType
+        transport_map = {
+            'jsonrpc': TransportType.JSON_RPC,
+            'grpc': TransportType.GRPC,
+            'rest': TransportType.REST
+        }
+        if preferred_transport.lower() in transport_map:
+            tck.config.set_preferred_transport(transport_map[preferred_transport.lower()])
+    
+    if disabled_transports:
+        from tck.transport.base_client import TransportType
+        transport_map = {
+            'jsonrpc': TransportType.JSON_RPC,
+            'grpc': TransportType.GRPC,
+            'rest': TransportType.REST
+        }
+        disabled_list = []
+        for transport_name in disabled_transports.split(','):
+            transport_name = transport_name.strip().lower()
+            if transport_name in transport_map:
+                disabled_list.append(transport_map[transport_name])
+        tck.config.set_disabled_transports(disabled_list)
+    
+    tck.config.set_enable_transport_equivalence_testing(enable_equivalence)
 
 @pytest.fixture(scope="session")
 def agent_card_data(request):
