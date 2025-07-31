@@ -34,6 +34,10 @@ dependencies = [
     "packaging>=21.0",
     "PyYAML>=5.0.0",
     "python-dotenv>=1.0.0",
+    # gRPC support for v0.3.0 multi-transport
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
+    "protobuf>=4.21.0",
 ]
 
 [project.optional-dependencies]
