@@ -55,13 +55,14 @@ def test_history_length_parameter_compliance(sut_client, text_message_params):
     - Specification compliance for this advanced feature
     """
     # Step 1: Create a task with multiple messages to build up history
-    task_id = "test-sdk-limitation-" + str(uuid.uuid4())
     create_params = text_message_params.copy()
-    create_params["message"]["taskId"] = task_id
     
     create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
     create_resp = sut_client.send_json_rpc(method=create_req["method"], params=create_req["params"], id=create_req["id"])
     assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
+    
+    # Get the server-generated task ID
+    task_id = create_resp["result"]["id"]
     
     # Step 2: Add more messages to ensure we have enough history
     for i in range(5):

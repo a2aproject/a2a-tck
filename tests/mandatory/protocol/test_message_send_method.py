@@ -145,14 +145,15 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
     
     Failure Impact: Implementation is not A2A compliant
     """
-    # First, create a task with an explicit taskId
-    task_id = "test-continue-task-" + str(uuid.uuid4())
+    # First, create a task 
     first_params = valid_text_message_params.copy()
-    first_params["message"]["taskId"] = task_id
     
     first_req = message_utils.make_json_rpc_request("message/send", params=first_params)
     first_resp = sut_client.send_json_rpc(method=first_req["method"], params=first_req["params"], id=first_req["id"])
     assert message_utils.is_json_rpc_success_response(first_resp, expected_id=first_req["id"])
+    
+    # Get the server-generated task ID
+    task_id = first_resp["result"]["id"]
     
     # Now, send a follow-up message to continue the task
     continuation_params = {
@@ -184,4 +185,3 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
         assert result.get("kind") == "message"
         assert result.get("role") == "agent"
         assert "parts" in result
-

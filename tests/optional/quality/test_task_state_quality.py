@@ -53,7 +53,7 @@ def follow_up_message_params(text_message_params):
     }
 
 @quality_basic
-def test_task_state_transitions(sut_client, text_message_params, follow_up_message_params):
+def test_task_state_transitions(sut_client):
     """
     QUALITY BASIC: A2A Specification §6.3 - Task State Management
     
@@ -70,47 +70,53 @@ def test_task_state_transitions(sut_client, text_message_params, follow_up_messa
         - Task history is maintained and updated correctly
         - Follow-up messages update task state appropriately
     """
-    # Step 1: Create a new task with an explicit taskId
-    task_id = "test-state-task-" + str(uuid.uuid4())
-    create_params = text_message_params.copy()
-    create_params["message"]["taskId"] = task_id
-    # Add non-blocking configuration to help get intermediate states
-    create_params["configuration"] = {
-        "blocking": False,
-        "acceptedOutputModes": ["text"]
+    # Create a task
+    create_params = {
+        "message": {
+            "kind": "message",
+            "messageId": "test-state-message-id-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [
+                {"kind": "text", "text": "Task for state transition test"}
+            ]
+        }
     }
     
     create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
-    create_resp = sut_client.send_json_rpc(method=create_req["method"], params=create_req["params"], id=create_req["id"])
+    create_resp = sut_client.send_json_rpc(**create_req)
     assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
     
-    # Verify the response (can be Task or Message)
-    result = create_resp["result"]
-    if "status" in result:
-        # This is a Task object
-        initial_state = result["status"]["state"]
-        assert initial_state in {"submitted", "working"}, f"Unexpected initial state: {initial_state}"
-    
-    # Step 2: Get task to verify state and history
-    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
-    get_resp = sut_client.send_json_rpc(method=get_req["method"], params=get_req["params"], id=get_req["id"])
+    # Get the server-generated task ID
+    task_id = create_resp["result"]["id"]
+
+    # Verify the initial state and history after task creation
+    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id, "historyLength": 1})
+    get_resp = sut_client.send_json_rpc(**get_req)
     assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])
     
+    task_after_creation = get_resp["result"]
+    initial_state = task_after_creation.get("status", {}).get("state")
+    assert initial_state in {"submitted", "working"}, f"Unexpected initial state: {initial_state}"
+
     # Verify history exists and contains the initial message
-    history = get_resp["result"].get("history", [])
-    assert len(history) >= 1, "Task history should contain at least the initial message"
-    
-    # Step 3: Send a follow-up message to the task
-    follow_up_params = follow_up_message_params.copy()
-    follow_up_params["message"]["taskId"] = task_id
-    # Add non-blocking configuration for follow-up message too
-    follow_up_params["configuration"] = {
-        "blocking": False,
-        "acceptedOutputModes": ["text"]
+    history = task_after_creation.get("history", [])
+    assert len(history) == 1, "Task history should contain the initial message when requested"
+    # Send a follow-up message to continue the task
+    follow_up_params = {
+        "message": {
+            "kind": "message",
+            "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
+            "role": "user",
+            "taskId": task_id,
+            "parts": [
+                {"kind": "text", "text": "Follow-up for state test"}
+            ]
+        }
     }
-    update_req = message_utils.make_json_rpc_request("message/send", params=follow_up_params)
-    update_resp = sut_client.send_json_rpc(method=update_req["method"], params=update_req["params"], id=update_req["id"])
-    assert message_utils.is_json_rpc_success_response(update_resp, expected_id=update_req["id"])
+    
+    follow_up_req = message_utils.make_json_rpc_request("message/send", params=follow_up_params)
+    follow_up_resp = sut_client.send_json_rpc(**follow_up_req)
+    assert message_utils.is_json_rpc_success_response(follow_up_resp, expected_id=follow_up_req["id"])
     
     # Allow some time for the SUT to process the message
     time.sleep(1)
@@ -129,7 +135,7 @@ def test_task_state_transitions(sut_client, text_message_params, follow_up_messa
     assert current_state in {"working", "input-required", "completed"}, f"Unexpected state: {current_state}"
 
 @quality_basic
-def test_tasks_cancel_already_canceled(sut_client):
+def test_task_cancel_state_handling(sut_client):
     """
     QUALITY BASIC: A2A Specification §7.4 - Idempotent Cancellation
     
@@ -146,26 +152,24 @@ def test_tasks_cancel_already_canceled(sut_client):
         - Second cancellation returns appropriate error
         - Error handling is consistent and predictable
     """
-    # Create a task for testing
-    task_id = "test-cancel-task-" + str(uuid.uuid4())
+    # Create a task
     create_params = {
         "message": {
+            "kind": "message",
             "messageId": "test-cancel-message-id-" + str(uuid.uuid4()),
             "role": "user",
-            "taskId": task_id,
             "parts": [
                 {"kind": "text", "text": "Task for cancel test"}
-            ],
-            "kind": "message"
-        },
-        "configuration": {
-            "blocking": False,
-            "acceptedOutputModes": ["text"]
+            ]
         }
     }
-    req = message_utils.make_json_rpc_request("message/send", params=create_params)
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+    
+    create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
+    create_resp = sut_client.send_json_rpc(**create_req)
+    assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
+    
+    # Get the server-generated task ID
+    task_id = create_resp["result"]["id"]
     
     params = {"id": task_id}
     # First cancel
