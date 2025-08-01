@@ -231,6 +231,42 @@ You can then proceed to run the TCK tests against your SUT.
 ./run_tck.py --sut-url URL --category mandatory --skip-agent-card
 ```
 
+### **A2A v0.3.0 Multi-Transport Testing**
+
+The TCK supports A2A v0.3.0 multi-transport architecture with advanced transport selection and testing capabilities:
+
+```bash
+# Test with specific transport strategy
+./run_tck.py --sut-url URL --category all --transport-strategy prefer_jsonrpc
+
+# Test with preferred transport type
+./run_tck.py --sut-url URL --category all --preferred-transport grpc
+
+# Test with disabled transports
+./run_tck.py --sut-url URL --category all --disabled-transports "grpc,rest"
+
+# Enable transport equivalence testing (default: enabled)
+./run_tck.py --sut-url URL --category all --enable-equivalence-testing
+
+# Combined multi-transport configuration
+./run_tck.py --sut-url URL --category all \
+  --transport-strategy prefer_grpc \
+  --disabled-transports "rest" \
+  --enable-equivalence-testing
+```
+
+**Transport Strategy Options:**
+- `agent_preferred` (default) - Use agent's preferred transport from Agent Card
+- `prefer_jsonrpc` - Prefer JSON-RPC 2.0 over HTTP transport
+- `prefer_grpc` - Prefer gRPC transport when available
+- `prefer_rest` - Prefer HTTP+JSON/REST transport when available  
+- `all_supported` - Test all supported transports
+
+**Transport Types:**
+- `jsonrpc` - JSON-RPC 2.0 over HTTP (backward compatible)
+- `grpc` - gRPC with Protocol Buffers
+- `rest` - HTTP+JSON/REST transport
+
 ## ⚙️ Environment Configuration
 
 ### **Using Environment Variables**
@@ -252,6 +288,20 @@ nano .env  # or your preferred editor
 |----------|-------------|---------|----------|
 | `TCK_STREAMING_TIMEOUT` | Base timeout for SSE streaming tests (seconds) | `2.0` | `1.0` (fast), `5.0` (slow), `10.0` (debug) |
 
+### **A2A v0.3.0 Transport Environment Variables**
+
+The TCK supports additional environment variables for A2A v0.3.0 multi-transport configuration:
+
+| Variable | Description | Default | Examples |
+|----------|-------------|---------|----------|
+| `A2A_TRANSPORT_STRATEGY` | Transport selection strategy | `agent_preferred` | `prefer_jsonrpc`, `prefer_grpc`, `all_supported` |
+| `A2A_PREFERRED_TRANSPORT` | Preferred transport type | None | `jsonrpc`, `grpc`, `rest` |
+| `A2A_DISABLED_TRANSPORTS` | Comma-separated disabled transports | None | `grpc,rest`, `jsonrpc` |
+| `A2A_ENABLE_EQUIVALENCE_TESTING` | Enable transport equivalence testing | `true` | `true`, `false`, `1`, `0` |
+| `A2A_JSONRPC_*` | JSON-RPC specific configuration | - | `A2A_JSONRPC_TIMEOUT=30` |
+| `A2A_GRPC_*` | gRPC specific configuration | - | `A2A_GRPC_MAX_MESSAGE_SIZE=4MB` |
+| `A2A_REST_*` | REST specific configuration | - | `A2A_REST_TIMEOUT=60` |
+
 **Timeout behavior**:
 - **Short timeout**: `TCK_STREAMING_TIMEOUT * 0.5` - Used for basic streaming operations
 - **Normal timeout**: `TCK_STREAMING_TIMEOUT * 1.0` - Used for standard SSE client operations  
@@ -268,6 +318,19 @@ TCK_STREAMING_TIMEOUT=1.0 ./run_tck.py --sut-url URL --category capabilities
 
 # Debug with very slow timeouts
 TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --verbose
+
+# A2A v0.3.0 multi-transport configuration via environment
+A2A_TRANSPORT_STRATEGY=prefer_grpc A2A_DISABLED_TRANSPORTS=rest ./run_tck.py --sut-url URL --category all
+
+# Complex multi-transport setup in .env file
+cat > .env << EOF
+TCK_STREAMING_TIMEOUT=3.0
+A2A_TRANSPORT_STRATEGY=all_supported
+A2A_ENABLE_EQUIVALENCE_TESTING=true
+A2A_GRPC_TIMEOUT=30
+A2A_JSONRPC_TIMEOUT=15
+EOF
+./run_tck.py --sut-url URL --category all
 ```
 
 **When to adjust timeouts**:

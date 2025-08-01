@@ -23,7 +23,8 @@ def fetch_agent_card(sut_base_url: str, session: requests.Session) -> Optional[D
     """
     Retrieve the Agent Card JSON from the SUT.
     
-    Uses the A2A v0.3.0 location: /.well-known/agent-card.json
+    Tries A2A v0.3.0 location first (/.well-known/agent-card.json), then falls back
+    to v0.2.5 location (/.well-known/agent.json) for backward compatibility.
     
     Args:
         sut_base_url: The base URL of the SUT
@@ -34,29 +35,38 @@ def fetch_agent_card(sut_base_url: str, session: requests.Session) -> Optional[D
         
     Specification Reference: A2A Protocol v0.3.0 §5.3 - Recommended Location
     """
-    try:
-        # Parse the base URL to determine the host
-        parsed_url = urllib.parse.urlparse(sut_base_url)
-        base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        
-        # Construct the agent card URL using v0.3.0 location
-        agent_card_url = urllib.parse.urljoin(base_domain, "/.well-known/agent-card.json")
-        
-        logger.info(f"Fetching Agent Card from {agent_card_url}")
-        response = session.get(agent_card_url, timeout=10)
-        response.raise_for_status()
-        
+    # Parse the base URL to determine the host
+    parsed_url = urllib.parse.urlparse(sut_base_url)
+    base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    
+    # Try v0.3.0 location first
+    agent_card_urls = [
+        ("/.well-known/agent-card.json", "v0.3.0"),
+        ("/.well-known/agent.json", "v0.2.5")  # Backward compatibility
+    ]
+    
+    for url_path, version in agent_card_urls:
         try:
-            agent_card = cast(Dict[str, Any], response.json())
-            logger.info(f"Successfully retrieved Agent Card: {json.dumps(agent_card)[:200]}...")
-            return agent_card
-        except ValueError as e:
-            logger.error(f"Failed to parse Agent Card JSON: {e}")
-            return None
+            agent_card_url = urllib.parse.urljoin(base_domain, url_path)
+            logger.info(f"Fetching Agent Card from {agent_card_url} ({version} location)")
             
-    except requests.RequestException as e:
-        logger.error(f"HTTP error retrieving Agent Card: {e}")
-        return None
+            response = session.get(agent_card_url, timeout=10)
+            response.raise_for_status()
+            
+            try:
+                agent_card = cast(Dict[str, Any], response.json())
+                logger.info(f"Successfully retrieved Agent Card from {version} location: {json.dumps(agent_card)[:200]}...")
+                return agent_card
+            except ValueError as e:
+                logger.error(f"Failed to parse Agent Card JSON from {agent_card_url}: {e}")
+                continue  # Try next location
+                
+        except requests.RequestException as e:
+            logger.info(f"Agent Card not found at {version} location ({url_path}): {e}")
+            continue  # Try next location
+    
+    logger.error("Failed to fetch Agent Card from any known location")
+    return None
 
 def get_sut_rpc_endpoint(agent_card_data: Dict[str, Any]) -> Optional[str]:
     """

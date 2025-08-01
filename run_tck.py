@@ -120,7 +120,7 @@ def explain_test_categories():
     print()
     print("=" * 80)
 
-def run_test_category(category: str, sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, json_report: str = None):
+def run_test_category(category: str, sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, json_report: str = None, transport_strategy: str = None, preferred_transport: str = None, disabled_transports: str = None, enable_equivalence_testing: bool = None):
     """Run a specific test category."""
     
     # Map categories to pytest commands
@@ -192,6 +192,21 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, verbos
         report_path = REPORTS_DIR / f"{category}_test_report.html"
         cmd.extend([f"--html={report_path}", "--self-contained-html"])
     
+    # Add A2A v0.3.0 transport configuration options
+    if transport_strategy:
+        cmd.extend(["--transport-strategy", transport_strategy])
+    
+    if preferred_transport:
+        cmd.extend(["--preferred-transport", preferred_transport])
+    
+    if disabled_transports:
+        cmd.extend(["--disabled-transports", disabled_transports])
+    
+    # Note: --enable-equivalence-testing is True by default in conftest.py
+    # Only add the flag if explicitly set to True (it's the default behavior)
+    if enable_equivalence_testing is True:
+        cmd.append("--enable-equivalence-testing")
+    
     print(f"Command: {' '.join(cmd)}")
     print()
     
@@ -199,7 +214,7 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, verbos
     result = subprocess.run(cmd)
     return result.returncode
 
-def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, compliance_report: str = None):
+def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, compliance_report: str = None, transport_strategy: str = None, preferred_transport: str = None, disabled_transports: str = None, enable_equivalence_testing: bool = None):
     """Run all test categories in recommended order."""
     
     categories = ["mandatory", "capabilities", "quality", "features"]
@@ -221,7 +236,7 @@ def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = 
         if compliance_report:
             json_report_file = f"{category}_results.json"
         
-        exit_code = run_test_category(category, sut_url, verbose, verbose_log, generate_report, json_report_file)
+        exit_code = run_test_category(category, sut_url, verbose, verbose_log, generate_report, json_report_file, transport_strategy, preferred_transport, disabled_transports, enable_equivalence_testing)
         results[category] = exit_code
         
         # Collect detailed results for compliance report
@@ -462,6 +477,10 @@ Examples:
   
   # Run compliance + quality tests (good for production assessment)
   ./run_tck.py --sut-url http://localhost:9999 --category quality
+  
+  # A2A v0.3.0 multi-transport testing examples
+  ./run_tck.py --sut-url http://localhost:9999 --category all --transport-strategy prefer_grpc
+  ./run_tck.py --sut-url http://localhost:9999 --category all --disabled-transports "grpc,rest"
 
 Categories:
   mandatory             - Core A2A compliance (MUST pass)
@@ -513,6 +532,32 @@ Categories:
         help="Generate A2A compliance report (JSON format)"
     )
     
+    # A2A v0.3.0 Multi-Transport Configuration Options
+    parser.add_argument(
+        "--transport-strategy",
+        choices=["agent_preferred", "prefer_jsonrpc", "prefer_grpc", "prefer_rest", "all_supported"],
+        default="agent_preferred",
+        help="Transport selection strategy for A2A v0.3.0 multi-transport testing (default: agent_preferred)"
+    )
+    
+    parser.add_argument(
+        "--preferred-transport",
+        choices=["jsonrpc", "grpc", "rest"],
+        help="Preferred transport type for A2A v0.3.0 testing"
+    )
+    
+    parser.add_argument(
+        "--disabled-transports",
+        help="Comma-separated list of disabled transports (e.g., 'grpc,rest')"
+    )
+    
+    parser.add_argument(
+        "--enable-equivalence-testing",
+        action="store_true",
+        default=True,
+        help="Enable transport equivalence testing for multi-transport SUTs (default: enabled)"
+    )
+    
     args = parser.parse_args()
     
     if args.explain:
@@ -542,12 +587,18 @@ Categories:
 
     # Run tests
     if args.category == "all":
-        results = run_all_categories(args.sut_url, args.verbose, args.verbose_log, args.report, compliance_report_path)
+        results = run_all_categories(
+            args.sut_url, args.verbose, args.verbose_log, args.report, compliance_report_path,
+            args.transport_strategy, args.preferred_transport, args.disabled_transports, args.enable_equivalence_testing
+        )
         # Exit with failure if mandatory or capabilities failed
         if results["mandatory"] != 0 or results["capabilities"] != 0:
             sys.exit(1)
     else:
-        exit_code = run_test_category(args.category, args.sut_url, args.verbose, args.verbose_log, args.report, None)
+        exit_code = run_test_category(
+            args.category, args.sut_url, args.verbose, args.verbose_log, args.report, None,
+            args.transport_strategy, args.preferred_transport, args.disabled_transports, args.enable_equivalence_testing
+        )
         sys.exit(exit_code)
 
 if __name__ == "__main__":
