@@ -323,9 +323,10 @@ class BaseTransportClient(ABC):
         # All transports support core methods
         core_methods = {
             "send_message", "send_streaming_message", "get_task", "cancel_task", 
-            "resubscribe_task", "set_push_notification_config", 
-            "get_push_notification_config", "list_push_notification_configs",
-            "delete_push_notification_config", "get_authenticated_extended_card"
+            "resubscribe_task", "subscribe_to_task", "get_agent_card",
+            "set_push_notification_config", "get_push_notification_config", 
+            "list_push_notification_configs", "delete_push_notification_config", 
+            "get_authenticated_extended_card"
         }
         
         if method_name in core_methods:
@@ -350,10 +351,10 @@ class BaseTransportClient(ABC):
             "supported_methods": [
                 method for method in [
                     "send_message", "send_streaming_message", "get_task", "cancel_task",
-                    "resubscribe_task", "set_push_notification_config",
-                    "get_push_notification_config", "list_push_notification_configs", 
-                    "delete_push_notification_config", "get_authenticated_extended_card",
-                    "list_tasks"
+                    "resubscribe_task", "subscribe_to_task", "get_agent_card",
+                    "set_push_notification_config", "get_push_notification_config", 
+                    "list_push_notification_configs", "delete_push_notification_config", 
+                    "get_authenticated_extended_card", "list_tasks"
                 ] if self.supports_method(method)
             ]
         }
