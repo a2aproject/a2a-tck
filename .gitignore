@@ -191,4 +191,4 @@ a2a-java-sdk
 # spec cache
 spec_tracker/cache
 
-a2a-spec-analysis
+#a2a-spec-analysis
