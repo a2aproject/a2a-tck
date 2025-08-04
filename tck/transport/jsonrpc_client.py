@@ -245,10 +245,10 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task retrieval fails
             
-        Specification Reference: A2A Protocol v0.3.0 §7.2 - Task Management
+        Specification Reference: A2A Protocol v0.3.0 §7.3 - Task Retrieval
         """
         try:
-            params = {"taskId": task_id}
+            params = {"id": task_id}
             if history_length is not None:
                 params["historyLength"] = history_length
                 
@@ -281,12 +281,12 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task cancellation fails
             
-        Specification Reference: A2A Protocol v0.3.0 §7.2.2 - Task Cancellation
+        Specification Reference: A2A Protocol v0.3.0 §7.4 - Task Cancellation
         """
         try:
             response = self._make_jsonrpc_request(
                 method="tasks/cancel",
-                params={"taskId": task_id},
+                params={"id": task_id},
                 extra_headers=extra_headers
             )
             return response.get("result", {})
@@ -313,12 +313,12 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task resubscription fails
             
-        Specification Reference: A2A Protocol v0.3.0 §7.2.4 - Task Resubscription
+        Specification Reference: A2A Protocol v0.3.0 §7.9 - Task Resubscription
         """
         try:
             response = self._make_jsonrpc_request(
                 method="tasks/resubscribe",
-                params={"taskId": task_id},
+                params={"id": task_id},
                 extra_headers=extra_headers
             )
             
@@ -349,7 +349,7 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task subscription fails
             
-        Specification Reference: A2A Protocol v0.3.0 §7.2.3 - Task Subscription
+        Specification Reference: A2A Protocol v0.3.0 §7.9 - Task Subscription
         """
         # JSON-RPC uses the same method for both subscribe and resubscribe
         return self.resubscribe_task(task_id, extra_headers)
@@ -440,7 +440,7 @@ class JSONRPCClient(BaseTransportClient):
         try:
             response = self._make_jsonrpc_request(
                 method="tasks/pushNotificationConfig/get",
-                params={"taskId": task_id, "configId": config_id},
+                params={"id": task_id, "pushNotificationConfigId": config_id},
                 extra_headers=extra_headers
             )
             return response.get("result", {})
@@ -472,7 +472,7 @@ class JSONRPCClient(BaseTransportClient):
         try:
             response = self._make_jsonrpc_request(
                 method="tasks/pushNotificationConfig/list",
-                params={"taskId": task_id},
+                params={"id": task_id},
                 extra_headers=extra_headers
             )
             return response.get("result", {})
@@ -505,7 +505,7 @@ class JSONRPCClient(BaseTransportClient):
         try:
             response = self._make_jsonrpc_request(
                 method="tasks/pushNotificationConfig/delete",
-                params={"taskId": task_id, "configId": config_id},
+                params={"id": task_id, "pushNotificationConfigId": config_id},
                 extra_headers=extra_headers
             )
             return response.get("result", {})
@@ -547,30 +547,6 @@ class JSONRPCClient(BaseTransportClient):
     
     # Legacy methods for backward compatibility with existing SUTClient usage
     
-    def send_json_rpc(self, method: Optional[str] = None, params: Union[dict, list, None] = None,
-                     id: Union[str, int, None] = None, extra_headers: Optional[Dict[str, str]] = None,
-                     jsonrpc: Optional[str] = None, **kwargs) -> Dict[str, Any]:
-        """
-        Legacy method for backward compatibility with existing SUTClient usage.
-        
-        This method maintains the exact interface of the original SUTClient.send_json_rpc
-        method to ensure 100% backward compatibility with existing tests.
-        """
-        if method is None and kwargs:
-            method = kwargs.get("method")
-            params = kwargs.get("params", params)
-            id = kwargs.get("id", id)
-            jsonrpc = kwargs.get("jsonrpc", jsonrpc)
-        
-        if method is None:
-            raise ValueError("Method is required for JSON-RPC request")
-        
-        return self._make_jsonrpc_request(
-            method=method,
-            params=params if isinstance(params, dict) else {"args": params} if params else None,
-            request_id=str(id) if id is not None else None,
-            extra_headers=extra_headers
-        )
     
     def raw_send(self, raw_data: str) -> Tuple[int, str]:
         """

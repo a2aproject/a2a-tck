@@ -222,7 +222,7 @@ def transport_manager(request):
     
     # Cleanup: Close all transport clients
     try:
-        manager.close_all_clients()
+        manager.close()
     except Exception as e:
         logger.warning(f"Error during transport manager cleanup: {e}")
 
@@ -246,7 +246,8 @@ def sut_client(transport_manager, request):
     """
     try:
         # Get the appropriate transport client based on configuration
-        client = transport_manager.get_primary_client()
+        # Use None to let TransportManager select based on strategy
+        client = transport_manager.get_transport_client()
         if client is None:
             pytest.fail("No transport client available. Check SUT transport configuration.")
         
@@ -270,7 +271,7 @@ def all_transport_clients(transport_manager, request):
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence Requirements
     """
     try:
-        clients = transport_manager.get_all_clients()
+        clients = transport_manager.get_all_transport_clients()
         if not clients:
             pytest.skip("No transport clients available")
         
@@ -293,7 +294,7 @@ def multi_transport_sut(transport_manager, request):
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence for Multi-Transport SUTs
     """
     try:
-        clients = transport_manager.get_all_clients()
+        clients = transport_manager.get_all_transport_clients()
         
         # Skip if SUT only supports one transport
         if len(clients) < 2:
@@ -362,7 +363,7 @@ def jsonrpc_client_only(transport_manager, request):
     from tck.transport.base_client import TransportType
     
     try:
-        client = transport_manager.get_client(TransportType.JSON_RPC)
+        client = transport_manager.get_transport_client(TransportType.JSON_RPC)
         if client is None:
             pytest.skip("JSON-RPC transport not supported by SUT")
         return client
@@ -385,7 +386,7 @@ def grpc_client_only(transport_manager, request):
     from tck.transport.base_client import TransportType
     
     try:
-        client = transport_manager.get_client(TransportType.GRPC)
+        client = transport_manager.get_transport_client(TransportType.GRPC)
         if client is None:
             pytest.skip("gRPC transport not supported by SUT")
         return client
@@ -408,7 +409,7 @@ def rest_client_only(transport_manager, request):
     from tck.transport.base_client import TransportType
     
     try:
-        client = transport_manager.get_client(TransportType.REST)
+        client = transport_manager.get_transport_client(TransportType.REST)
         if client is None:
             pytest.skip("REST transport not supported by SUT")
         return client
