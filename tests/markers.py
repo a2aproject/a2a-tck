@@ -17,3 +17,6 @@ optional_capability = pytest.mark.optional_capability  # Capability-dependent
 quality_basic = pytest.mark.quality_basic  # Basic implementation quality
 quality_production = pytest.mark.quality_production  # Production-ready quality
 quality_advanced = pytest.mark.quality_advanced  # Advanced features 
+
+# Transport equivalence markers
+transport_equivalence = pytest.mark.transport_equivalence  # Multi-transport functional equivalence

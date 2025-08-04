@@ -86,6 +86,14 @@ def explain_test_categories():
     print("   Example: ./run_tck.py --sut-url http://localhost:9999 --category capabilities")
     print()
     
+    print("🚀 TRANSPORT EQUIVALENCE TESTS")
+    print("   Purpose: Validate A2A v0.3.0 multi-transport functional equivalence")
+    print("   Impact:  Conditional mandatory (if multiple transports declared)")
+    print("   Tests:   8 tests (identical functionality, consistent behavior, same error handling)")
+    print("   Files:   tests/optional/multi_transport/")
+    print("   Example: ./run_tck.py --sut-url http://localhost:9999 --category transport-equivalence")
+    print()
+    
     print("🛡️  QUALITY TESTS")
     print("   Purpose: Assess production readiness and robustness")  
     print("   Impact:  Always optional (improvement suggestions)")
@@ -134,6 +142,11 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, verbos
             "path": "tests/optional/capabilities/", 
             "markers": None,  # Run all tests in this directory for now
             "description": "Capability declaration validation tests"
+        },
+        "transport-equivalence": {
+            "path": "tests/optional/multi_transport/",
+            "markers": "transport_equivalence",
+            "description": "A2A v0.3.0 multi-transport functional equivalence tests"
         },
         "quality": {
             "path": "tests/optional/quality/",
@@ -217,7 +230,7 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, verbos
 def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, compliance_report: str = None, transport_strategy: str = None, preferred_transport: str = None, disabled_transports: str = None, enable_equivalence_testing: bool = None):
     """Run all test categories in recommended order."""
     
-    categories = ["mandatory", "capabilities", "quality", "features"]
+    categories = ["mandatory", "capabilities", "transport-equivalence", "quality", "features"]
     results = {}
     detailed_results = {}
     
@@ -228,7 +241,7 @@ def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = 
     print()
     
     for i, category in enumerate(categories, 1):
-        print(f"📍 STEP {i}/4: Running {category} tests...")
+        print(f"📍 STEP {i}/5: Running {category} tests...")
         print()
         
         # Generate JSON report for this category if compliance report requested
@@ -309,13 +322,15 @@ def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = 
     
     mandatory_passed = results["mandatory"] == 0
     capabilities_passed = results["capabilities"] == 0
+    transport_equivalence_passed = results["transport-equivalence"] == 0
     quality_passed = results["quality"] == 0
     features_passed = results["features"] == 0
     
-    print(f"🔴 Mandatory Tests:   {'✅ PASSED' if mandatory_passed else '❌ FAILED'}")
-    print(f"🔄 Capability Tests:  {'✅ PASSED' if capabilities_passed else '❌ FAILED'}")
-    print(f"🛡️  Quality Tests:     {'✅ PASSED' if quality_passed else '⚠️  ISSUES'}")
-    print(f"🎨 Feature Tests:     {'✅ PASSED' if features_passed else 'ℹ️  INCOMPLETE'}")
+    print(f"🔴 Mandatory Tests:           {'✅ PASSED' if mandatory_passed else '❌ FAILED'}")
+    print(f"🔄 Capability Tests:          {'✅ PASSED' if capabilities_passed else '❌ FAILED'}")
+    print(f"🚀 Transport Equivalence:     {'✅ PASSED' if transport_equivalence_passed else '❌ FAILED'}")
+    print(f"🛡️  Quality Tests:             {'✅ PASSED' if quality_passed else '⚠️  ISSUES'}")
+    print(f"🎨 Feature Tests:             {'✅ PASSED' if features_passed else 'ℹ️  INCOMPLETE'}")
     print()
     
     # Overall assessment
@@ -485,6 +500,7 @@ Examples:
 Categories:
   mandatory             - Core A2A compliance (MUST pass)
   capabilities          - Declared capability validation (conditional mandatory)
+  transport-equivalence - Multi-transport functional equivalence (conditional mandatory)
   quality               - Production readiness assessment (optional)
   features              - Optional feature validation (informational)
   all                   - All categories in recommended order
@@ -498,7 +514,7 @@ Categories:
     
     parser.add_argument(
         "--category",
-        choices=["mandatory", "capabilities", "quality", "features", "all"],
+        choices=["mandatory", "capabilities", "transport-equivalence", "quality", "features", "all"],
         help="Test category to run"
     )
     

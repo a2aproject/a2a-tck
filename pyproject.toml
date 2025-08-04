@@ -75,6 +75,8 @@ markers = [
     "quality_basic: Basic implementation quality",
     "quality_production: Production-ready quality",
     "quality_advanced: Advanced features",
+    # Transport equivalence markers
+    "transport_equivalence: Multi-transport functional equivalence",
 ]
 
 [tool.black]
