@@ -77,6 +77,10 @@ markers = [
     "quality_advanced: Advanced features",
     # Transport equivalence markers
     "transport_equivalence: Multi-transport functional equivalence",
+    # A2A version-specific markers
+    "a2a_v030: A2A v0.3.0 specific features",
+    # General markers for convenience
+    "optional: General optional functionality",
 ]
 
 [tool.black]

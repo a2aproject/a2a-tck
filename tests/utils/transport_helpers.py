@@ -46,6 +46,9 @@ def transport_send_message(client: BaseTransportClient, message_params: Dict[str
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
             logger.debug(f"Transport error: {e}")
+            # Try to extract error details from transport exception
+            if hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+                return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
     
     # Fallback to legacy JSON-RPC pattern for backward compatibility
@@ -340,3 +343,45 @@ def generate_test_task_id(prefix: str = "test") -> str:
         Unique task ID string
     """
     return f"{prefix}-task-id-{uuid.uuid4()}"
+
+
+def is_transport_client(client: Any) -> bool:
+    """
+    Check if a client is a transport-aware BaseTransportClient.
+    
+    Args:
+        client: Client to check
+        
+    Returns:
+        True if client is a BaseTransportClient, False otherwise
+    """
+    return hasattr(client, 'transport_type') and hasattr(client, 'send_message')
+
+
+def get_client_transport_type(client: Any) -> str:
+    """
+    Get the transport type of a client.
+    
+    Args:
+        client: Transport client
+        
+    Returns:
+        Transport type string ("jsonrpc", "grpc", "rest", or "unknown")
+    """
+    if hasattr(client, 'transport_type'):
+        # Handle both enum and string transport types
+        if hasattr(client.transport_type, 'value'):
+            return client.transport_type.value.lower()
+        else:
+            return str(client.transport_type).lower()
+    
+    # Fallback detection based on class name or methods
+    client_class_name = type(client).__name__.lower()
+    if 'jsonrpc' in client_class_name or 'sut' in client_class_name:
+        return "jsonrpc"
+    elif 'grpc' in client_class_name:
+        return "grpc"
+    elif 'rest' in client_class_name or 'http' in client_class_name:
+        return "rest"
+    else:
+        return "unknown"
