@@ -11,12 +11,10 @@ import uuid
 import pytest
 
 from tck import message_utils
-from tck.sut_client import SUTClient
 from tests.markers import quality_basic
+from tests.utils import transport_helpers
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @pytest.fixture
 def text_message_params():
@@ -82,17 +80,15 @@ def test_task_state_transitions(sut_client):
         }
     }
     
-    create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
-    create_resp = sut_client.send_json_rpc(**create_req)
-    assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
+    create_resp = transport_helpers.transport_send_message(sut_client, create_params)
+    assert transport_helpers.is_json_rpc_success_response(create_resp)
     
     # Get the server-generated task ID
     task_id = create_resp["result"]["id"]
 
     # Verify the initial state and history after task creation
-    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id, "historyLength": 1})
-    get_resp = sut_client.send_json_rpc(**get_req)
-    assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])
+    get_resp = transport_helpers.transport_get_task(sut_client, task_id, history_length=1)
+    assert transport_helpers.is_json_rpc_success_response(get_resp)
     
     task_after_creation = get_resp["result"]
     initial_state = task_after_creation.get("status", {}).get("state")
@@ -114,17 +110,15 @@ def test_task_state_transitions(sut_client):
         }
     }
     
-    follow_up_req = message_utils.make_json_rpc_request("message/send", params=follow_up_params)
-    follow_up_resp = sut_client.send_json_rpc(**follow_up_req)
-    assert message_utils.is_json_rpc_success_response(follow_up_resp, expected_id=follow_up_req["id"])
+    follow_up_resp = transport_helpers.transport_send_message(sut_client, follow_up_params)
+    assert transport_helpers.is_json_rpc_success_response(follow_up_resp)
     
     # Allow some time for the SUT to process the message
     time.sleep(1)
     
     # Step 4: Get task again to verify updated state and history
-    get_req2 = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
-    get_resp2 = sut_client.send_json_rpc(method=get_req2["method"], params=get_req2["params"], id=get_req2["id"])
-    assert message_utils.is_json_rpc_success_response(get_resp2, expected_id=get_req2["id"])
+    get_resp2 = transport_helpers.transport_get_task(sut_client, task_id)
+    assert transport_helpers.is_json_rpc_success_response(get_resp2)
     
     # Verify updated history contains the follow-up message
     updated_history = get_resp2["result"].get("history", [])
@@ -164,21 +158,18 @@ def test_task_cancel_state_handling(sut_client):
         }
     }
     
-    create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
-    create_resp = sut_client.send_json_rpc(**create_req)
-    assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
+    create_resp = transport_helpers.transport_send_message(sut_client, create_params)
+    assert transport_helpers.is_json_rpc_success_response(create_resp)
     
     # Get the server-generated task ID
     task_id = create_resp["result"]["id"]
     
     params = {"id": task_id}
     # First cancel
-    req1 = message_utils.make_json_rpc_request("tasks/cancel", params=params)
-    resp1 = sut_client.send_json_rpc(method=req1["method"], params=req1["params"], id=req1["id"])
-    assert message_utils.is_json_rpc_success_response(resp1, expected_id=req1["id"])
+    resp1 = transport_helpers.transport_cancel_task(sut_client, task_id)
+    assert transport_helpers.is_json_rpc_success_response(resp1)
     
     # Second cancel (should fail gracefully)
-    req2 = message_utils.make_json_rpc_request("tasks/cancel", params=params)
-    resp2 = sut_client.send_json_rpc(method=req2["method"], params=req2["params"], id=req2["id"])
-    assert message_utils.is_json_rpc_error_response(resp2, expected_id=req2["id"])
+    resp2 = transport_helpers.transport_cancel_task(sut_client, task_id)
+    assert transport_helpers.is_json_rpc_error_response(resp2)
     # Error code for TaskNotCancelableError is implementation-specific, so just check error presence 

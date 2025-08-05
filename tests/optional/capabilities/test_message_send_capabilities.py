@@ -11,15 +11,13 @@ import uuid
 import pytest
 
 from tck import message_utils
-from tck.sut_client import SUTClient
 from tests.markers import optional_capability
 from tests.capability_validator import has_modality_support
+from tests.utils import transport_helpers
 
 logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @optional_capability
 def test_message_send_valid_file_part(sut_client, valid_file_message_params, agent_card_data):
@@ -44,9 +42,8 @@ def test_message_send_valid_file_part(sut_client, valid_file_message_params, age
     if not has_modality_support(agent_card_data, "file"):
         pytest.skip("File modality not supported by SUT according to Agent Card")
     
-    req = message_utils.make_json_rpc_request("message/send", params=valid_file_message_params)
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+    resp = transport_helpers.transport_send_message(sut_client, valid_file_message_params)
+    assert transport_helpers.is_json_rpc_success_response(resp)
     result = resp["result"]
 
     assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
@@ -82,9 +79,8 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
             "parts": valid_text_message_params["message"]["parts"] + valid_file_message_params["message"]["parts"]
         }
     }
-    req = message_utils.make_json_rpc_request("message/send", params=combined_parts)
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+    resp = transport_helpers.transport_send_message(sut_client, combined_parts)
+    assert transport_helpers.is_json_rpc_success_response(resp)
     result = resp["result"]
 
     assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
@@ -107,9 +103,8 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
         - Valid JSON-RPC response is returned
     """
     # First, create a task
-    first_req = message_utils.make_json_rpc_request("message/send", params=valid_text_message_params)
-    first_resp = sut_client.send_json_rpc(method=first_req["method"], params=first_req["params"], id=first_req["id"])
-    assert message_utils.is_json_rpc_success_response(first_resp, expected_id=first_req["id"])
+    first_resp = transport_helpers.transport_send_message(sut_client, valid_text_message_params)
+    assert transport_helpers.is_json_rpc_success_response(first_resp)
     task_id = first_resp["result"]["id"]
     
     # Check if the response contains a contextId we can use
@@ -138,9 +133,8 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
             ]
         }
     }
-    second_req = message_utils.make_json_rpc_request("message/send", params=continuation_params)
-    second_resp = sut_client.send_json_rpc(method=second_req["method"], params=second_req["params"], id=second_req["id"])
-    assert message_utils.is_json_rpc_success_response(second_resp, expected_id=second_req["id"])
+    second_resp = transport_helpers.transport_send_message(sut_client, continuation_params)
+    assert transport_helpers.is_json_rpc_success_response(second_resp)
     result = second_resp["result"]
     assert result["id"] == task_id  # Should be the same task ID
     assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
@@ -168,9 +162,8 @@ def test_message_send_valid_data_part(sut_client, valid_data_message_params, age
     if not has_modality_support(agent_card_data, "data"):
         pytest.skip("Data modality not supported by SUT according to Agent Card")
     
-    req = message_utils.make_json_rpc_request("message/send", params=valid_data_message_params)
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+    resp = transport_helpers.transport_send_message(sut_client, valid_data_message_params)
+    assert transport_helpers.is_json_rpc_success_response(resp)
     result = resp["result"]
 
     assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
@@ -217,9 +210,8 @@ def test_message_send_data_part_array(sut_client, agent_card_data):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=data_array_params)
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+    resp = transport_helpers.transport_send_message(sut_client, data_array_params)
+    assert transport_helpers.is_json_rpc_success_response(resp)
     result = resp["result"]
 
     assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"} 

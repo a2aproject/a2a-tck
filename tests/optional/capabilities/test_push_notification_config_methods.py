@@ -4,20 +4,18 @@ import uuid
 import pytest
 
 from tck import agent_card_utils, message_utils
-from tck.sut_client import SUTClient
 from tests.markers import optional_capability
 from tests.capability_validator import CapabilityValidator
+from tests.utils import transport_helpers
 
 logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @pytest.fixture
 def created_task_id(sut_client):
     # Create a task using message/send and return its id
-    params = {
+    message_params = {
         "message": {
             "messageId": "test-push-notification-message-id-" + str(uuid.uuid4()),
             "role": "user",
@@ -27,9 +25,8 @@ def created_task_id(sut_client):
             "kind": "message"
         }
     }
-    req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+    resp = transport_helpers.transport_send_message(sut_client, message_params)
+    assert transport_helpers.is_json_rpc_success_response(resp)
     return resp["result"]["id"]
 
 # Helper function to check push notification support
@@ -57,17 +54,14 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
     if not validator.is_capability_declared('pushNotifications'):
         pytest.skip("Push notifications capability not declared - test not applicable")
     
-    config_params = {
-        "taskId": created_task_id,
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook"
-        }
+    config = {
+        "url": "https://example.com/webhook"
     }
-    req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/set", params=config_params)
-    resp = sut_client.send_json_rpc(**req)
+    
+    resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config)
     
     # Since push notifications capability is declared, this MUST work
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_success_response(resp), \
         "Push notifications capability declared but set config failed"
     
     result = resp["result"]
@@ -90,24 +84,19 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
         pytest.skip("Push notifications capability not declared - test not applicable")
     
     # First, set a push notification config
-    config_params = {
-        "taskId": created_task_id,
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook"
-        }
+    config = {
+        "url": "https://example.com/webhook"
     }
-    set_req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/set", params=config_params)
-    set_resp = sut_client.send_json_rpc(**set_req)
-    assert message_utils.is_json_rpc_success_response(set_resp, expected_id=set_req["id"]), \
+    
+    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config)
+    assert transport_helpers.is_json_rpc_success_response(set_resp), \
         "Failed to set push notification config before testing get"
     
     # Now, get the config we just set
-    params = {"id": created_task_id}
-    req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/get", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id)
     
     # Since push notifications capability is declared, this MUST work
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_success_response(resp), \
         "Push notifications capability declared but get config failed"
     
     result = resp["result"]
@@ -131,17 +120,14 @@ def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
     if not validator.is_capability_declared('pushNotifications'):
         pytest.skip("Push notifications capability not declared - test not applicable")
     
-    config_params = {
-        "taskId": "nonexistent-task-id",
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook"
-        }
+    config = {
+        "url": "https://example.com/webhook"
     }
-    req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/set", params=config_params)
-    resp = sut_client.send_json_rpc(**req)
+    
+    resp = transport_helpers.transport_set_push_notification_config(sut_client, "nonexistent-task-id", config)
     
     # Should return proper JSON-RPC error for non-existent task
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(resp), \
         "Push notifications capability declared but invalid task ID not properly rejected"
     
     # Should indicate task not found
@@ -167,10 +153,10 @@ def test_get_push_notification_config_nonexistent(sut_client, agent_card_data):
 
     params = {"id": "nonexistent-task-id"}
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/get", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_json_rpc_request(sut_client, req["method"], req.get("params"), req.get("id"))
     
     # Should return proper JSON-RPC error for non-existent task
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(resp), \
         "Push notifications capability declared but invalid task ID not properly rejected"
     
     # Should indicate task not found
@@ -195,24 +181,17 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
         pytest.skip("Push notifications capability not declared - test not applicable")
     
     # First, set one or more push notification configs
-    config_params = {
-        "taskId": created_task_id,
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook1"
-        }
-    }
-    set_req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/set", params=config_params)
-    set_resp = sut_client.send_json_rpc(**set_req)
-    assert message_utils.is_json_rpc_success_response(set_resp, expected_id=set_req["id"]), \
+    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, {"url": "https://example.com/webhook1"})
+    assert transport_helpers.is_json_rpc_success_response(set_resp), \
         "Failed to set push notification config before testing list"
     
     # Now, list the configs for this task
     params = {"id": created_task_id}
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/list", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_json_rpc_request(sut_client, req["method"], req.get("params"), req.get("id"))
     
     # Since push notifications capability is declared, this MUST work
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_success_response(resp), \
         "Push notifications capability declared but list config failed"
     
     result = resp["result"]
@@ -258,23 +237,23 @@ def test_list_push_notification_config_empty(sut_client, agent_card_data):
         }
     }
     req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+    resp = transport_helpers.transport_send_json_rpc_request(sut_client, req["method"], req.get("params"), req.get("id"))
+    assert transport_helpers.is_json_rpc_success_response(resp)
     empty_task_id = resp["result"]["id"]
     
     # List configs for task with no configurations
     params = {"id": empty_task_id}
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/list", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_json_rpc_request(sut_client, req["method"], req.get("params"), req.get("id"))
     
     # Should return empty list or appropriate error - both are valid
-    if message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]):
+    if transport_helpers.is_json_rpc_success_response(resp):
         result = resp["result"]
         assert isinstance(result, list), "Result must be a list"
         assert len(result) == 0, "Should be empty list for task with no configs"
     else:
         # Some implementations might return an error for no configs - this is acceptable
-        assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+        assert transport_helpers.is_json_rpc_error_response(resp), \
             "Response should be either success with empty list or error"
 
 @optional_capability
@@ -301,7 +280,7 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
         }
     }
     set_req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/set", params=config_params)
-    set_resp = sut_client.send_json_rpc(**set_req)
+    set_resp = transport_helpers.transport_send_json_rpc_request(sut_client, set_req["method"], set_req.get("params"), set_req.get("id"))
     assert message_utils.is_json_rpc_success_response(set_resp, expected_id=set_req["id"]), \
         "Failed to set push notification config before testing delete"
     
@@ -316,10 +295,10 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
             "pushNotificationConfigId": config_id
         }
         req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/delete", params=delete_params)
-        resp = sut_client.send_json_rpc(**req)
+        resp = transport_helpers.transport_send_json_rpc_request(sut_client, req["method"], req.get("params"), req.get("id"))
         
         # Since push notifications capability is declared, this MUST work
-        assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]), \
+        assert transport_helpers.is_json_rpc_success_response(resp), \
             "Push notifications capability declared but delete config failed"
         
         # Result should be null for successful deletion
@@ -329,7 +308,7 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
         # Verify deletion by trying to get the config
         get_params = {"id": created_task_id}
         get_req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/get", params=get_params)
-        get_resp = sut_client.send_json_rpc(**get_req)
+        get_resp = transport_helpers.transport_send_json_rpc_request(sut_client, get_req["method"], get_req.get("params"), get_req.get("id"))
         
         # Should either return error (config not found) or success with empty/different config
         if message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"]):
@@ -368,10 +347,10 @@ def test_delete_push_notification_config_nonexistent(sut_client, created_task_id
         "pushNotificationConfigId": "some-config-id"
     }
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/delete", params=delete_params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_json_rpc_request(sut_client, req["method"], req.get("params"), req.get("id"))
     
     # Should return proper JSON-RPC error for non-existent task
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(resp), \
         "Push notifications capability declared but invalid task ID not properly rejected"
     
     # Should indicate task not found
@@ -385,6 +364,6 @@ def test_delete_push_notification_config_nonexistent(sut_client, created_task_id
         "pushNotificationConfigId": "nonexistent-config-id"
     }
     req = message_utils.make_json_rpc_request("tasks/pushNotificationConfig/delete", params=delete_params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_json_rpc_request(sut_client, req["method"], req.get("params"), req.get("id"))
     result = resp["result"]
     assert result is None, "Delete should return null result on success"

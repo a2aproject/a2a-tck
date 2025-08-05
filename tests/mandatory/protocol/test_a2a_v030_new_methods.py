@@ -586,7 +586,16 @@ class TestTransportSpecificFeatures:
                     
         # Test additional fields in responses (should not break spec compliance)
         try:
-            task = transport_send_message(sut_client, "Test for additional fields")
+            message_params = {
+                "message": {
+                    "role": "user", 
+                    "parts": [{"kind": "text", "text": "Test for additional fields"}],
+                    "messageId": "test-additional-fields",
+                    "kind": "message"
+                }
+            }
+            response = transport_send_message(sut_client, message_params)
+            task = response.get("result", {})
             
             # Task may have additional fields beyond spec
             spec_fields = {"id", "contextId", "status", "history", "artifacts", "metadata", "kind"}

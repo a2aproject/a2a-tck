@@ -385,3 +385,125 @@ def get_client_transport_type(client: Any) -> str:
         return "rest"
     else:
         return "unknown"
+
+
+def transport_send_json_rpc_request(client: BaseTransportClient, method: str, 
+                                   params: Optional[Dict[str, Any]] = None,
+                                   id: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Send a raw JSON-RPC request using any transport client.
+    
+    This function sends arbitrary JSON-RPC methods that may not have dedicated
+    transport helper functions yet.
+    
+    Args:
+        client: Transport client
+        method: JSON-RPC method name
+        params: Optional method parameters
+        id: Optional request ID
+        
+    Returns:
+        JSON-RPC response from the server
+        
+    Specification Reference: A2A v0.3.0 §3.2.1 - JSON-RPC 2.0 Transport
+    """
+    # Create JSON-RPC request
+    req = message_utils.make_json_rpc_request(method, params=params, id=id)
+    
+    # Check if client has raw JSON-RPC support (preferred for arbitrary methods)
+    if hasattr(client, 'send_raw_json_rpc'):
+        logger.debug(f"Using send_raw_json_rpc for method {method}")
+        try:
+            return client.send_raw_json_rpc(req)
+        except Exception as e:
+            # Handle transport-specific JSON-RPC error exceptions
+            if hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+                # Return error in JSON-RPC format for consistency
+                return {"error": e.json_rpc_error, "id": req.get("id")}
+            raise
+    
+    # Fallback for other transport implementations
+    else:
+        raise ValueError(f"Client {type(client)} does not support arbitrary JSON-RPC requests")
+
+
+def transport_set_push_notification_config(client: BaseTransportClient, task_id: str,
+                                          config: Dict[str, Any],
+                                          extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """
+    Set push notification configuration for a task using any transport client.
+    
+    Args:
+        client: Transport client
+        task_id: Task identifier
+        config: Push notification configuration
+        extra_headers: Optional transport-specific headers
+        
+    Returns:
+        Response from the server in JSON-RPC format for compatibility
+        
+    Specification Reference: A2A v0.3.0 §7.5 - Push Notification Configuration
+    """
+    params = {
+        "taskId": task_id,
+        "pushNotificationConfig": config
+    }
+    
+    return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/set", params)
+
+
+def transport_get_push_notification_config(client: BaseTransportClient, task_id: str,
+                                          extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """
+    Get push notification configuration for a task using any transport client.
+    
+    Args:
+        client: Transport client
+        task_id: Task identifier
+        extra_headers: Optional transport-specific headers
+        
+    Returns:
+        Response from the server in JSON-RPC format for compatibility
+        
+    Specification Reference: A2A v0.3.0 §7.6 - Push Notification Configuration
+    """
+    params = {"id": task_id}
+    
+    return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/get", params)
+
+
+def transport_list_push_notification_configs(client: BaseTransportClient,
+                                            extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """
+    List all push notification configurations using any transport client.
+    
+    Args:
+        client: Transport client
+        extra_headers: Optional transport-specific headers
+        
+    Returns:
+        Response from the server in JSON-RPC format for compatibility
+        
+    Specification Reference: A2A v0.3.0 §7.7 - Push Notification Configuration
+    """
+    return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/list", {})
+
+
+def transport_delete_push_notification_config(client: BaseTransportClient, task_id: str,
+                                             extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """
+    Delete push notification configuration for a task using any transport client.
+    
+    Args:
+        client: Transport client
+        task_id: Task identifier
+        extra_headers: Optional transport-specific headers
+        
+    Returns:
+        Response from the server in JSON-RPC format for compatibility
+        
+    Specification Reference: A2A v0.3.0 §7.8 - Push Notification Configuration
+    """
+    params = {"id": task_id}
+    
+    return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/delete", params)
