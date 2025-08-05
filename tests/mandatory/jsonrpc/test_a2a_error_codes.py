@@ -190,7 +190,7 @@ def test_unsupported_operation_error_32004(sut_client):
     """
     # Test 1: Try streaming operation on agent that doesn't support streaming
     try:
-        agent_card = transport_helpers.get_agent_card(sut_client)
+        agent_card = transport_helpers.transport_get_agent_card(sut_client)
         capabilities = agent_card.get("capabilities", {})
         streaming_supported = capabilities.get("streaming", False)
         
@@ -207,7 +207,7 @@ def test_unsupported_operation_error_32004(sut_client):
             
             params = {"message": message_data}
             
-            response = transport_helpers.transport_send_jsonrpc_request(
+            response = transport_helpers.transport_send_json_rpc_request(
                 sut_client,
                 "message/stream",
                 params=params,
@@ -250,7 +250,7 @@ def test_unsupported_operation_error_32004(sut_client):
     }
     
     try:
-        response = transport_helpers.transport_send_jsonrpc_request(
+        response = transport_helpers.transport_send_json_rpc_request(
             sut_client,
             "message/send", 
             params=params,
@@ -323,7 +323,7 @@ def test_content_type_not_supported_error_32005(sut_client):
     params = {"message": message_data}
     
     try:
-        response = transport_helpers.transport_send_jsonrpc_request(
+        response = transport_helpers.transport_send_json_rpc_request(
             sut_client,
             "message/send",
             params=params,
@@ -364,7 +364,7 @@ def test_content_type_not_supported_error_32005(sut_client):
     }
     
     try:
-        response = transport_helpers.transport_send_jsonrpc_request(
+        response = transport_helpers.transport_send_json_rpc_request(
             sut_client,
             "message/send",
             params=params,
