@@ -1,6 +1,6 @@
 # A2A Protocol Technology Compatibility Kit (TCK)
 
-A comprehensive test suite for validating A2A (Application-to-Application) JSON-RPC protocol specification compliance with progressive validation and detailed compliance reporting.
+A comprehensive test suite for validating A2A (Agent-to-Agent) Protocol v0.3.0 specification compliance with multi-transport support, progressive validation, and detailed compliance reporting.
 
 ## Overview
 
@@ -9,6 +9,8 @@ The A2A Protocol TCK is a sophisticated validation framework that provides:
 - **🎯 Capability-Based Validation**: Smart test execution based on Agent Card declarations
 - **📊 Compliance Reporting**: Detailed assessment with actionable recommendations
 - **🚀 Progressive Enhancement**: Four-tier compliance levels for informed deployment decisions
+- **🔄 Multi-Transport Support**: Comprehensive testing for JSON-RPC, gRPC, and REST transports
+- **✨ A2A v0.3.0 Features**: Full support for new authentication schemes, streaming methods, and enhanced security
 
 The TCK transforms A2A specification compliance from guesswork into a clear, structured validation process.
 
