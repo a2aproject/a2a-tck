@@ -82,7 +82,7 @@ class TestAuthenticatedExtendedCard:
                     assert error_code in [-32007, -32603], f"Unexpected error code: {error_code}"
                     
             except Exception as e:
-                pytest.fail(f"Failed to call {method_name}: {e}")
+                pytest.fail(f"Failed to call agent/getAuthenticatedExtendedCard: {e}")
                 
         elif transport_type == "grpc":
             # gRPC: GetAgentCard method
