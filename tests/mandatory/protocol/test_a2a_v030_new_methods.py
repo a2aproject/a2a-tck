@@ -258,10 +258,10 @@ class TestTasksList:
             try:
                 if hasattr(sut_client, 'list_tasks'):
                     tasks = sut_client.list_tasks()
-                    assert isinstance(tasks, list), f"Expected list, got: {type(tasks)}"
+                    assert isinstance(tasks, dict) and "tasks" in tasks and isinstance(tasks["tasks"], list), f"Expected a dict with a 'tasks' list, got: {type(tasks)}"
                     
                     # Each task should be a valid Task object
-                    for task in tasks:
+                    for task in tasks["tasks"]:
                         assert isinstance(task, dict)
                         assert "id" in task
                         assert "status" in task
