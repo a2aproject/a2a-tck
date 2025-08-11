@@ -1,5 +1,6 @@
-import pytest
 import uuid
+
+import pytest
 
 from tck import message_utils
 from tck.sut_client import SUTClient
@@ -10,6 +11,7 @@ from tests.markers import mandatory_protocol
 def sut_client():
     return SUTClient()
 
+
 @pytest.fixture
 def created_task_id(sut_client):
     # Create a task using message/send and return its id
@@ -18,14 +20,9 @@ def created_task_id(sut_client):
             "kind": "message",
             "messageId": "test-cancel-message-id-" + str(uuid.uuid4()),
             "role": "user",
-            "parts": [
-                {"kind": "text", "text": "Task for cancel test"}
-            ]
+            "parts": [{"kind": "text", "text": "Task for cancel test"}],
         },
-        "configuration": {
-            "blocking": False,
-            "acceptedOutputModes": ["text"]
-        }
+        "configuration": {"blocking": False, "acceptedOutputModes": ["text"]},
     }
     req = message_utils.make_json_rpc_request("message/send", params=params)
     resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
@@ -33,14 +30,14 @@ def created_task_id(sut_client):
     # Return the server-generated task ID from the response
     return resp["result"]["id"]
 
+
 @mandatory_protocol
 def test_tasks_cancel_valid(sut_client, created_task_id):
-    """
-    MANDATORY: A2A Specification §7.4 - Task Cancellation
-    
+    """MANDATORY: A2A Specification §7.4 - Task Cancellation
+
     The A2A specification requires all implementations to support
     tasks/cancel for canceling active tasks.
-    
+
     Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": created_task_id}
@@ -51,14 +48,14 @@ def test_tasks_cancel_valid(sut_client, created_task_id):
     assert result["id"] == created_task_id
     assert result.get("status", {}).get("state") == "canceled"
 
+
 @mandatory_protocol
 def test_tasks_cancel_nonexistent(sut_client):
-    """
-    MANDATORY: A2A Specification §7.4 - Task Not Found Error Handling
-    
+    """MANDATORY: A2A Specification §7.4 - Task Not Found Error Handling
+
     The A2A specification requires proper error handling when attempting
     to cancel a non-existent task. MUST return TaskNotFoundError (-32001).
-    
+
     Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": "nonexistent-task-id"}
