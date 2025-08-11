@@ -6,7 +6,7 @@
 # https://google.github.io/styleguide/pyguide.html
 #
 
-line-length = 120
+line-length = 130
 indent-width = 4 # Google Style Guide §3.4: 4 spaces
 
 target-version = "py38" # Minimum Python version
