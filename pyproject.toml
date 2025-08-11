@@ -7,7 +7,7 @@ name = "a2a-tck"
 version = "0.1.0"
 description = "Technology Compatibility Kit for the A2A Protocol"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.8.1"
 authors = [
     {name = "A2A Protocol Developers"}
 ]
