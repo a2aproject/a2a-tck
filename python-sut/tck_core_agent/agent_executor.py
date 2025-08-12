@@ -1,17 +1,18 @@
 import asyncio
-from typing_extensions import override
 
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.types import (
     TaskArtifactUpdateEvent,
+    TaskNotCancelableError,
+    TaskNotFoundError,
     TaskState,
     TaskStatus,
     TaskStatusUpdateEvent,
 )
 from a2a.utils import new_agent_text_message, new_task, new_text_artifact
 from a2a.utils.errors import ServerError
-from a2a.types import TaskNotFoundError, TaskNotCancelableError
+from typing_extensions import override
 
 
 class TckCoreAgent:
@@ -21,17 +22,16 @@ class TckCoreAgent:
         """Process the user query and return a response."""
         if not query.strip():
             return "Hello! Please provide a message for me to respond to."
-        
+
         # Simple responses based on input
         query_lower = query.lower()
         if "hello" in query_lower or "hi" in query_lower:
             return "Hello World! Nice to meet you!"
-        elif "how are you" in query_lower:
+        if "how are you" in query_lower:
             return "I'm doing great! Thanks for asking. How can I help you today?"
-        elif "goodbye" in query_lower or "bye" in query_lower:
+        if "goodbye" in query_lower or "bye" in query_lower:
             return "Goodbye! Have a wonderful day!"
-        else:
-            return f"Hello World! You said: '{query}'. Thanks for your message!"
+        return f"Hello World! You said: '{query}'. Thanks for your message!"
 
 
 class TckCoreAgentExecutor(AgentExecutor):
@@ -52,7 +52,7 @@ class TckCoreAgentExecutor(AgentExecutor):
         task = context.current_task
 
         if not context.message:
-            raise Exception('No message provided')
+            raise Exception("No message provided")
 
         # Create task if it doesn't exist (this handles both new tasks and tasks with provided IDs)
         if not task:
@@ -97,19 +97,19 @@ class TckCoreAgentExecutor(AgentExecutor):
 
             # Short delay to allow tests to see working state
             await asyncio.sleep(0.5)
-            
+
             # Check for cancellation again
             if task.id not in self._running_tasks:
                 return  # Task was canceled
-            
+
             # Process the request
             result = await self.agent.invoke(query)
             await asyncio.sleep(0.2)  # Brief final delay
-            
+
             # Check if task was canceled during processing
             if task.id not in self._running_tasks:
                 return  # Task was canceled
-            
+
             # Create an artifact with the result
             await event_queue.enqueue_event(
                 TaskArtifactUpdateEvent(
@@ -118,8 +118,8 @@ class TckCoreAgentExecutor(AgentExecutor):
                     taskId=task.id,
                     lastChunk=True,
                     artifact=new_text_artifact(
-                        name='response',
-                        description='Agent response to user message.',
+                        name="response",
+                        description="Agent response to user message.",
                         text=result,
                     ),
                 )
@@ -144,7 +144,7 @@ class TckCoreAgentExecutor(AgentExecutor):
 
         except Exception as e:
             # Handle errors by marking task as failed
-            error_message = f"Error processing request: {str(e)}"
+            error_message = f"Error processing request: {e!s}"
             await event_queue.enqueue_event(
                 TaskStatusUpdateEvent(
                     status=TaskStatus(
@@ -165,24 +165,22 @@ class TckCoreAgentExecutor(AgentExecutor):
             self._running_tasks.discard(task.id)
 
     @override
-    async def cancel(
-        self, context: RequestContext, event_queue: EventQueue
-    ) -> None:
+    async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
         """Cancel the task."""
         task = context.current_task
         if not task:
             raise ServerError(TaskNotFoundError(message="No task found to cancel"))
-        
+
         # Check if task is already canceled or completed
         if task.status and task.status.state == TaskState.canceled:
             raise ServerError(TaskNotCancelableError(message="Task is already canceled"))
-        
+
         if task.status and task.status.state == TaskState.completed:
             raise ServerError(TaskNotCancelableError(message="Cannot cancel a completed task"))
-        
+
         # Remove from running tasks to signal cancellation
         self._running_tasks.discard(task.id)
-        
+
         # Cancel the task
         await event_queue.enqueue_event(
             TaskStatusUpdateEvent(
@@ -191,4 +189,4 @@ class TckCoreAgentExecutor(AgentExecutor):
                 contextId=task.contextId,
                 taskId=task.id,
             )
-        ) 
+        )

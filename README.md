@@ -5,6 +5,7 @@ A comprehensive test suite for validating A2A (Application-to-Application) JSON-
 ## Overview
 
 The A2A Protocol TCK is a sophisticated validation framework that provides:
+
 - **📋 Categorized Testing**: Clear separation of mandatory vs. optional requirements  
 - **🎯 Capability-Based Validation**: Smart test execution based on Agent Card declarations
 - **📊 Compliance Reporting**: Detailed assessment with actionable recommendations
@@ -15,13 +16,17 @@ The TCK transforms A2A specification compliance from guesswork into a clear, str
 ## 🔄 Two Main Workflows
 
 ### 1. **Testing Your A2A Implementation** (You're likely here for this)
+
 Use the TCK to validate your A2A implementation:
+
 ```bash
 ./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report report.json
 ```
 
 ### 2. **Managing A2A Specification Updates** (Advanced/Maintainer workflow)
+
 Use the TCK to validate your A2A implementation:
+
 - 📖 **[Complete Specification Update Workflow](docs/SPEC_UPDATE_WORKFLOW.md)**
 - 🔍 **Check spec changes**: `util_scripts/check_spec_changes.py`
 
@@ -32,23 +37,27 @@ Use the TCK to validate your A2A implementation:
 ## ✨ Key Features
 
 ### 🔍 **Intelligent Test Categorization**
+
 - **🔴 MANDATORY**: Must pass for A2A compliance (JSON-RPC 2.0 + A2A core)
 - **🔄 CAPABILITIES**: Conditional mandatory based on Agent Card declarations  
 - **🛡️ QUALITY**: Production readiness indicators (optional)
 - **🎨 FEATURES**: Optional implementation completeness (informational)
 
 ### 🧠 **Capability-Based Test Logic**
+
 - **Smart Execution**: Tests skip when capabilities not declared, become mandatory when declared
 - **False Advertising Detection**: Catches capabilities declared but not implemented
 - **Honest Validation**: Only tests what's actually claimed to be supported
 
 ### 📈 **Compliance Levels & Scoring**
+
 - **🔴 NON_COMPLIANT**: Any mandatory failure (Not A2A Compliant)
 - **🟡 MANDATORY**: Basic compliance (A2A Core Compliant)  
 - **🟢 RECOMMENDED**: Production-ready (A2A Recommended Compliant)
 - **🏆 FULL_FEATURED**: Complete implementation (A2A Fully Compliant)
 
 ### 📋 **Comprehensive Reporting**
+
 - Weighted compliance scoring
 - Specification reference citations
 - Actionable fix recommendations
@@ -63,6 +72,7 @@ Use the TCK to validate your A2A implementation:
 ## Installation
 
 1. **Install uv**:
+
    ```bash
    # Install uv (see https://github.com/astral-sh/uv#installation)
    curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -71,8 +81,9 @@ Use the TCK to validate your A2A implementation:
    ```
 
 2. **Clone and setup**:
+
    ```bash
-   git clone https://github.com/maeste/a2a-tck.git
+   git clone https://github.com/a2aproject/a2a-tck.git
    cd a2a-tck
    
    # Create virtual environment
@@ -85,6 +96,7 @@ Use the TCK to validate your A2A implementation:
    ```
 
 3. **Configure environment (optional)**:
+
    ```bash
    # Copy example environment file and customize
    cp .env.example .env
@@ -92,6 +104,7 @@ Use the TCK to validate your A2A implementation:
    ```
 
 4. **Start your A2A implementation** (System Under Test):
+
    ```bash
    # Example using the included Python SUT
    cd python-sut/tck_core_agent
@@ -112,17 +125,18 @@ You need to create a YAML configuration file (e.g., `my_sut_config.yaml`) to def
 
 The configuration file supports the following fields:
 
-*   `sut_name` (string, mandatory): A descriptive name for your SUT. This name will also be used as the directory name for the SUT within the `SUT/` folder (e.g., `SUT/my_agent`).
-*   `github_repo` (string, mandatory): The HTTPS or SSH URL of the git repository where the SUT source code is hosted.
-*   `git_ref` (string, optional): A specific git branch, tag, or commit hash to checkout after cloning/fetching. If omitted, the repository's default branch will be used.
-*   `prerequisites_script` (string, mandatory): Path to the script that handles prerequisite installation and building the SUT. This path is relative to the root of the SUT's cloned repository (e.g., `scripts/build.sh` or `setup/prepare_env.py`).
-*   `prerequisites_interpreter` (string, optional): The interpreter to use for the `prerequisites_script` (e.g., `bash`, `python3`, `powershell.exe`). If omitted, the script will be executed directly (e.g., `./scripts/build.sh`). Ensure the script is executable and has a valid shebang in this case.
-*   `prerequisites_args` (string, optional): A string of arguments to pass to the `prerequisites_script` (e.g., `"--version 1.2 --no-cache"`).
-*   `run_script` (string, mandatory): Path to the script that starts the SUT. This path is relative to the root of the SUT's cloned repository (e.g., `scripts/run.sh` or `app/start_server.py`).
-*   `run_interpreter` (string, optional): The interpreter to use for the `run_script`.
-*   `run_args` (string, optional): A string of arguments to pass to the `run_script` (e.g., `"--port 8080 --debug"`).
+- `sut_name` (string, mandatory): A descriptive name for your SUT. This name will also be used as the directory name for the SUT within the `SUT/` folder (e.g., `SUT/my_agent`).
+- `github_repo` (string, mandatory): The HTTPS or SSH URL of the git repository where the SUT source code is hosted.
+- `git_ref` (string, optional): A specific git branch, tag, or commit hash to checkout after cloning/fetching. If omitted, the repository's default branch will be used.
+- `prerequisites_script` (string, mandatory): Path to the script that handles prerequisite installation and building the SUT. This path is relative to the root of the SUT's cloned repository (e.g., `scripts/build.sh` or `setup/prepare_env.py`).
+- `prerequisites_interpreter` (string, optional): The interpreter to use for the `prerequisites_script` (e.g., `bash`, `python3`, `powershell.exe`). If omitted, the script will be executed directly (e.g., `./scripts/build.sh`). Ensure the script is executable and has a valid shebang in this case.
+- `prerequisites_args` (string, optional): A string of arguments to pass to the `prerequisites_script` (e.g., `"--version 1.2 --no-cache"`).
+- `run_script` (string, mandatory): Path to the script that starts the SUT. This path is relative to the root of the SUT's cloned repository (e.g., `scripts/run.sh` or `app/start_server.py`).
+- `run_interpreter` (string, optional): The interpreter to use for the `run_script`.
+- `run_args` (string, optional): A string of arguments to pass to the `run_script` (e.g., `"--port 8080 --debug"`).
 
 **Example `sut_config.yaml`:**
+
 ```yaml
 sut_name: "example_agent"
 github_repo: "https://github.com/your_org/example_agent_repo.git"
@@ -137,9 +151,9 @@ run_args: "--host 0.0.0.0 --port 9000"
 
 #### SUT Script Requirements
 
-*   **Prerequisites Script**: This script is responsible for all steps required to build your SUT and install its dependencies. It should exit with a status code of `0` on success and any non-zero status code on failure. If it fails, `run_sut.py` will terminate.
-*   **Run Script**: This script should start your SUT. Typically, it will launch a server or application that runs in the foreground. The `run_sut.py` script will wait for this script to terminate (e.g., by Ctrl+C or if the SUT exits itself).
-*   **Directly Executable Scripts**: If you omit the `*_interpreter` for a script, ensure the script file has execute permissions (e.g., `chmod +x your_script.sh`) and, for shell scripts on Unix-like systems, includes a valid shebang (e.g., `#!/bin/bash`).
+- **Prerequisites Script**: This script is responsible for all steps required to build your SUT and install its dependencies. It should exit with a status code of `0` on success and any non-zero status code on failure. If it fails, `run_sut.py` will terminate.
+- **Run Script**: This script should start your SUT. Typically, it will launch a server or application that runs in the foreground. The `run_sut.py` script will wait for this script to terminate (e.g., by Ctrl+C or if the SUT exits itself).
+- **Directly Executable Scripts**: If you omit the `*_interpreter` for a script, ensure the script file has execute permissions (e.g., `chmod +x your_script.sh`) and, for shell scripts on Unix-like systems, includes a valid shebang (e.g., `#!/bin/bash`).
 
 #### Usage
 
@@ -148,15 +162,19 @@ Once you have your SUT configuration file ready, you can run your SUT using:
 ```bash
 python run_sut.py path/to/your_sut_config.yaml
 ```
+
 For example:
+
 ```bash
 python run_sut.py sut_configs/my_python_agent_config.yaml
 ```
+
 This will:
-1.  Clone the SUT from `github_repo` into `SUT/<sut_name>/` (or update if it already exists).
-2.  Checkout the specified `git_ref` (if any).
-3.  Execute the `prerequisites_script` within the SUT's directory.
-4.  Execute the `run_script` within the SUT's directory to start the SUT.
+
+1. Clone the SUT from `github_repo` into `SUT/<sut_name>/` (or update if it already exists).
+2. Checkout the specified `git_ref` (if any).
+3. Execute the `prerequisites_script` within the SUT's directory.
+4. Execute the `run_script` within the SUT's directory to start the SUT.
 
 You can then proceed to run the TCK tests against your SUT.
 
@@ -173,27 +191,35 @@ You can then proceed to run the TCK tests against your SUT.
 ## 🚀 Quick Start
 
 ### 1. **Check A2A Compliance** (Start Here!)
+
 ```bash
 ./run_tck.py --sut-url http://localhost:9999 --category mandatory
 ```
+
 **Result**: ✅ Pass = A2A compliant, ❌ Fail = NOT A2A compliant
 
 ### 2. **Validate Capability Honesty**
+
 ```bash
 ./run_tck.py --sut-url http://localhost:9999 --category capabilities
 ```
+
 **Result**: Ensures declared capabilities actually work (prevents false advertising)
 
 ### 3. **Assess Production Readiness**  
+
 ```bash
 ./run_tck.py --sut-url http://localhost:9999 --category quality
 ```
+
 **Result**: Identifies issues that may affect production deployment
 
 ### 4. **Generate Comprehensive Report**
+
 ```bash
 ./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report compliance.json
 ```
+
 **Result**: Complete assessment with compliance level and recommendations
 
 ## 📖 Command Reference
@@ -238,6 +264,7 @@ You can then proceed to run the TCK tests against your SUT.
 The TCK supports configuration via environment variables and `.env` files for flexible timeout and behavior customization.
 
 **Setting up environment configuration**:
+
 ```bash
 # Copy the example file
 cp .env.example .env
@@ -253,11 +280,13 @@ nano .env  # or your preferred editor
 | `TCK_STREAMING_TIMEOUT` | Base timeout for SSE streaming tests (seconds) | `2.0` | `1.0` (fast), `5.0` (slow), `10.0` (debug) |
 
 **Timeout behavior**:
+
 - **Short timeout**: `TCK_STREAMING_TIMEOUT * 0.5` - Used for basic streaming operations
 - **Normal timeout**: `TCK_STREAMING_TIMEOUT * 1.0` - Used for standard SSE client operations  
 - **Async timeout**: `TCK_STREAMING_TIMEOUT * 1.0` - Used for `asyncio.wait_for` operations
 
 **Usage examples**:
+
 ```bash
 # Use .env file (recommended)
 echo "TCK_STREAMING_TIMEOUT=5.0" > .env
@@ -271,6 +300,7 @@ TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --
 ```
 
 **When to adjust timeouts**:
+
 - **Decrease (`1.0`)**: Fast CI/CD pipelines, local development
 - **Increase (`5.0+`)**: Slow networks, debugging, resource-constrained environments
 - **Debug (`10.0+`)**: Detailed troubleshooting, step-through debugging
@@ -278,11 +308,13 @@ TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --
 ## 🎯 Understanding Test Categories
 
 ### 🔴 **MANDATORY Tests** - Core A2A Compliance
+
 **Purpose**: Validate core A2A specification requirements  
 **Impact**: Failure = NOT A2A compliant  
 **Location**: `tests/mandatory/`
 
 **Includes**:
+
 - JSON-RPC 2.0 compliance (`tests/mandatory/jsonrpc/`)
 - A2A protocol core methods (`tests/mandatory/protocol/`)
 - Agent Card required fields
@@ -290,16 +322,19 @@ TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --
 - Task management (get/cancel)
 
 **Example Failures**:
+
 - `test_task_history_length` → SDK doesn't implement historyLength parameter
 - `test_mandatory_fields_present` → Agent Card missing required fields
 
 ### 🔄 **CAPABILITY Tests** - Conditional Mandatory  
+
 **Purpose**: Validate declared capabilities work correctly  
 **Impact**: Failure = False advertising  
 **Logic**: Skip if not declared, mandatory if declared  
 **Location**: `tests/optional/capabilities/`
 
 **Capability Validation**:
+
 ```json
 {
   "capabilities": {
@@ -310,17 +345,20 @@ TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --
 ```
 
 **Includes**:
+
 - Streaming support (`message/stream`, `tasks/resubscribe`)
 - Push notification configuration
 - File/data modality support
 - Authentication methods
 
 ### 🛡️ **QUALITY Tests** - Production Readiness
+
 **Purpose**: Assess implementation robustness  
 **Impact**: Never blocks compliance, indicates production issues  
 **Location**: `tests/optional/quality/`
 
 **Quality Areas**:
+
 - Concurrent request handling
 - Edge case robustness  
 - Unicode/special character support
@@ -328,11 +366,13 @@ TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --
 - Error recovery and resilience
 
 ### 🎨 **FEATURE Tests** - Optional Implementation
+
 **Purpose**: Measure optional feature completeness  
 **Impact**: Purely informational  
 **Location**: `tests/optional/features/`
 
 **Includes**:
+
 - Convenience features
 - Enhanced error messages
 - SDK-specific capabilities
@@ -341,23 +381,27 @@ TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --
 ## 📊 Compliance Levels
 
 ### 🔴 **NON_COMPLIANT** - Not A2A Compliant
+
 - **Criteria**: Any mandatory test failure
 - **Business Impact**: Cannot be used for A2A integrations
 - **Action**: Fix mandatory failures immediately
 
 ### 🟡 **MANDATORY** - A2A Core Compliant  
+
 - **Criteria**: 100% mandatory test pass rate
 - **Business Impact**: Basic A2A integration support
 - **Suitable For**: Development and testing environments
 - **Next Step**: Address capability validation
 
 ### 🟢 **RECOMMENDED** - A2A Recommended Compliant
+
 - **Criteria**: Mandatory (100%) + Capability (≥85%) + Quality (≥75%)
 - **Business Impact**: Production-ready with confidence
 - **Suitable For**: Staging and careful production deployment
 - **Next Step**: Enhance feature completeness
 
 ### 🏆 **FULL_FEATURED** - A2A Fully Compliant
+
 - **Criteria**: Capability (≥95%) + Quality (≥90%) + Feature (≥80%)
 - **Business Impact**: Complete A2A implementation
 - **Suitable For**: Full production deployment with confidence
@@ -392,6 +436,7 @@ When you run with `--compliance-report`, you get a JSON report containing:
 ## 🔄 CI/CD Integration
 
 ### **Basic CI Pipeline** (Compliance Gate)
+
 ```bash
 #!/bin/bash
 # Block deployment if not A2A compliant
@@ -404,6 +449,7 @@ echo "✅ A2A compliant - deployment approved"
 ```
 
 ### **Advanced CI Pipeline** (Environment-Aware)
+
 ```bash
 #!/bin/bash
 # Generate compliance report and make environment-specific decisions
@@ -434,6 +480,7 @@ esac
 ### **Common Issues**
 
 **Streaming tests skipping**:
+
 ```bash
 # Check Agent Card capabilities
 curl $SUT_URL/.well-known/agent.json | jq .capabilities
@@ -441,12 +488,14 @@ curl $SUT_URL/.well-known/agent.json | jq .capabilities
 ```
 
 **Quality tests failing but compliance achieved**:
+
 ```bash
 # This is expected - quality tests don't block compliance
 # Address quality issues for production readiness
 ```
 
 **Tests not discovering**:
+
 ```bash
 # Ensure proper installation
 pip install -e .
@@ -460,6 +509,7 @@ pytest --collect-only tests/mandatory/
 When debugging specific test failures, you can run individual tests with detailed output:
 
 **Run a single test with verbose output and debug information**:
+
 ```bash
 # Using run_tck.py with verbose mode (shows print() and logger.info() messages)
 python run_tck.py --sut-url http://localhost:9999 --category capabilities --verbose-log
@@ -470,18 +520,21 @@ python -m pytest tests/optional/capabilities/test_streaming_methods.py::test_mes
 ```
 
 **Run all tests in a specific file**:
+
 ```bash
 python -m pytest tests/optional/capabilities/test_streaming_methods.py \
     --sut-url http://localhost:9999 -s -v --log-cli-level=INFO
 ```
 
 **Debug options explained**:
+
 - `-s`: Shows `print()` statements during test execution
 - `-v`: Verbose test output with detailed test names and outcomes
 - `--log-cli-level=INFO`: Shows `logger.info()` and other log messages
 - `--tb=short`: Shorter traceback format (default in run_tck.py)
 
 **Run with different log levels**:
+
 ```bash
 # Show DEBUG level logs (very detailed)
 python -m pytest tests/path/to/test.py --sut-url URL -s -v --log-cli-level=DEBUG
@@ -513,21 +566,25 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🎯 Quick Decision Guide
 
 **Just want A2A compliance?**
+
 ```bash
 ./run_tck.py --sut-url URL --category mandatory
 ```
 
 **Planning production deployment?**  
+
 ```bash
 ./run_tck.py --sut-url URL --category all --compliance-report report.json
 ```
 
 **Debugging capability issues?**
+
 ```bash
 ./run_tck.py --sut-url URL --category capabilities --verbose
 ```
 
 **Want comprehensive assessment?**
+
 ```bash
 ./run_tck.py --sut-url URL --explain  # Learn about categories first
 ./run_tck.py --sut-url URL --category all --compliance-report full_report.json

@@ -190,3 +190,7 @@ a2a-java-sdk
 
 # spec cache
 spec_tracker/cache
+
+.DS_Store
+
+reports/

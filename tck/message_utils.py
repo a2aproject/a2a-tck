@@ -1,9 +1,11 @@
 import uuid
-from typing import Any, Dict, Optional, Union
+
+from typing import Any, Dict, Union
 
 
 def generate_request_id() -> str:
     return str(uuid.uuid4())
+
 
 def make_json_rpc_request(
     method: str,
@@ -17,6 +19,7 @@ def make_json_rpc_request(
         "id": id if id is not None else generate_request_id(),
     }
 
+
 def is_json_rpc_success_response(resp: dict, expected_id: Union[str, int, None] = None) -> bool:
     if not isinstance(resp, dict):
         return False
@@ -27,6 +30,7 @@ def is_json_rpc_success_response(resp: dict, expected_id: Union[str, int, None] 
     if expected_id is not None and resp.get("id") != expected_id:
         return False
     return True
+
 
 def is_json_rpc_error_response(resp: dict, expected_id: Union[str, int, None] = None) -> bool:
     if not isinstance(resp, dict):

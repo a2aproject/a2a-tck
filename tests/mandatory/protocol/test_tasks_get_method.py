@@ -1,5 +1,6 @@
-import pytest
 import uuid
+
+import pytest
 
 from tck import message_utils
 from tck.sut_client import SUTClient
@@ -10,6 +11,7 @@ from tests.markers import mandatory_protocol
 def sut_client():
     return SUTClient()
 
+
 @pytest.fixture
 def created_task_id(sut_client):
     # Create a task using message/send and return its id
@@ -18,9 +20,7 @@ def created_task_id(sut_client):
             "kind": "message",
             "messageId": "test-get-message-id-" + str(uuid.uuid4()),
             "role": "user",
-            "parts": [
-                {"kind": "text", "text": "Task for get test"}
-            ]
+            "parts": [{"kind": "text", "text": "Task for get test"}],
         }
     }
     req = message_utils.make_json_rpc_request("message/send", params=params)
@@ -29,14 +29,14 @@ def created_task_id(sut_client):
     # Return the server-generated task ID from the response
     return resp["result"]["id"]
 
+
 @mandatory_protocol
 def test_tasks_get_valid(sut_client, created_task_id):
-    """
-    MANDATORY: A2A Specification §7.3 - Task Retrieval
-    
+    """MANDATORY: A2A Specification §7.3 - Task Retrieval
+
     The A2A specification requires all implementations to support
     tasks/get for retrieving task state and history by ID.
-    
+
     Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": created_task_id}
@@ -47,14 +47,14 @@ def test_tasks_get_valid(sut_client, created_task_id):
     assert result["id"] == created_task_id
     assert "status" in result
 
+
 @mandatory_protocol
 def test_tasks_get_with_history_length(sut_client, created_task_id):
-    """
-    MANDATORY: A2A Specification §7.3 - historyLength Parameter
-    
-    The A2A specification states that tasks/get MUST support the historyLength 
+    """MANDATORY: A2A Specification §7.3 - historyLength Parameter
+
+    The A2A specification states that tasks/get MUST support the historyLength
     parameter to limit the number of history entries returned.
-    
+
     Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": created_task_id, "historyLength": 1}
@@ -65,14 +65,14 @@ def test_tasks_get_with_history_length(sut_client, created_task_id):
     assert result["id"] == created_task_id
     assert "history" in result
 
+
 @mandatory_protocol
 def test_tasks_get_nonexistent(sut_client):
-    """
-    MANDATORY: A2A Specification §7.3 - Task Not Found Error Handling
-    
+    """MANDATORY: A2A Specification §7.3 - Task Not Found Error Handling
+
     The A2A specification requires proper error handling when attempting
     to retrieve a non-existent task. MUST return TaskNotFoundError (-32001).
-    
+
     Failure Impact: Implementation is not A2A compliant
     """
     params = {"id": "nonexistent-task-id"}
