@@ -584,11 +584,11 @@ def calculate_success_rate(results: Dict) -> float:
 def get_agent_card_data(sut_url: str) -> Dict:
     """Get agent card data from the SUT."""
     try:
-        import requests
+        from tck.sut_client import SUTClient
+        from tck.agent_card_utils import fetch_agent_card
 
-        response = requests.get(f"{sut_url.rstrip('/')}/agent")
-        if response.status_code == 200:
-            return response.json()
+        sut_client = SUTClient(sut_url)
+        return fetch_agent_card(sut_url, sut_client.session) or {}
     except Exception as e:
         print(f"Warning: Could not fetch agent card: {e}")
 
@@ -622,7 +622,7 @@ Examples:
   
   # Run compliance + quality tests (good for production assessment)
   ./run_tck.py --sut-url http://localhost:9999 --category quality
-  
+
   # A2A v0.3.0 multi-transport testing examples
   ./run_tck.py --sut-url http://localhost:9999 --category all --transport-strategy prefer_grpc
   ./run_tck.py --sut-url http://localhost:9999 --category all --disabled-transports "grpc,rest"
