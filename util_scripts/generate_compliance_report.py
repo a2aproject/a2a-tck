@@ -133,12 +133,10 @@ class ComplianceReportGenerator:
     def _determine_compliance_level(self, mandatory, capability, quality, feature) -> Dict:
         """Determine the overall compliance level."""
         # Handle imports for both standalone execution and module import.
-        try:
-            # When run from util_scripts directory.
-            from compliance_levels import COMPLIANCE_LEVELS
-        except ImportError:
-            # When imported from project root.
+        if __package__:
             from .compliance_levels import COMPLIANCE_LEVELS
+        else:
+            from compliance_levels import COMPLIANCE_LEVELS
 
         # Must pass all mandatory tests for any compliance
         if mandatory['success_rate'] < 100:
