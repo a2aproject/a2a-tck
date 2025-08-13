@@ -16,10 +16,10 @@ def pytest_addoption(parser):
     # A2A v0.3.0 transport configuration options
     parser.addoption("--transport-strategy", action="store", default="agent_preferred", 
                     help="Transport selection strategy: agent_preferred, prefer_jsonrpc, prefer_grpc, prefer_rest, all_supported")
-    parser.addoption("--preferred-transport", action="store", default=None,
-                    help="Preferred transport type: jsonrpc, grpc, rest")
-    parser.addoption("--disabled-transports", action="store", default="",
-                    help="Comma-separated list of disabled transports: jsonrpc,grpc,rest")
+    # --preferred-transport removed; use --transport-strategy instead
+    parser.addoption("--transports", action="store", default=None,
+                    help="Comma-separated list of required transports for this run: jsonrpc,grpc,rest")
+    # --disabled-transports removed; if needed in future, selection will enforce it
     parser.addoption("--enable-equivalence-testing", action="store_true", default=True,
                     help="Enable transport equivalence testing for multi-transport SUTs")
 
@@ -37,36 +37,33 @@ def pytest_configure(config):
     
     # Configure A2A v0.3.0 transport settings
     transport_strategy = config.getoption("--transport-strategy")
-    preferred_transport = config.getoption("--preferred-transport")
-    disabled_transports = config.getoption("--disabled-transports")
+    preferred_transport = None  # deprecated CLI option removed
+    disabled_transports = None  # deprecated CLI option removed
+    required_transports = config.getoption("--transports")
     enable_equivalence = config.getoption("--enable-equivalence-testing")
     
     # Set transport configuration
     tck.config.set_transport_selection_strategy(transport_strategy)
     
-    if preferred_transport:
-        from tck.transport.base_client import TransportType
-        transport_map = {
-            'jsonrpc': TransportType.JSON_RPC,
-            'grpc': TransportType.GRPC,
-            'rest': TransportType.REST
-        }
-        if preferred_transport.lower() in transport_map:
-            tck.config.set_preferred_transport(transport_map[preferred_transport.lower()])
+    # Preferred transport can still be provided via env var A2A_PREFERRED_TRANSPORT
     
-    if disabled_transports:
+    # Disabled transports can still be provided via env var A2A_DISABLED_TRANSPORTS
+
+    # Required transports (strict mode)
+    if required_transports:
         from tck.transport.base_client import TransportType
         transport_map = {
             'jsonrpc': TransportType.JSON_RPC,
             'grpc': TransportType.GRPC,
             'rest': TransportType.REST
         }
-        disabled_list = []
-        for transport_name in disabled_transports.split(','):
-            transport_name = transport_name.strip().lower()
-            if transport_name in transport_map:
-                disabled_list.append(transport_map[transport_name])
-        tck.config.set_disabled_transports(disabled_list)
+        allow_list = []
+        for transport_name in required_transports.split(','):
+            name = transport_name.strip().lower()
+            if name in transport_map:
+                allow_list.append(transport_map[name])
+        if allow_list:
+            tck.config.set_required_transports(allow_list)
     
     tck.config.set_enable_transport_equivalence_testing(enable_equivalence)
 
@@ -215,6 +212,15 @@ def transport_manager(request):
         success = manager.discover_transports()
         if not success:
             pytest.fail(f"Failed to discover transports from SUT at {sut_url}")
+        # If strict required transports are configured and none are available, fail the run
+        required = tck.config.get_required_transports()
+        if required is not None:
+            try:
+                supported = manager.get_supported_transports()
+            except Exception:
+                supported = []
+            if not supported:
+                pytest.fail("Requested transport(s) not supported by SUT; failing run as required")
     except Exception as e:
         pytest.fail(f"Transport discovery failed: {e}")
     

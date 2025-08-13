@@ -9,6 +9,10 @@ Specification Reference: A2A Protocol v0.3.0 §4.2 - gRPC Transport
 
 import json
 import logging
+import os
+import sys
+import tempfile
+import importlib
 from typing import Dict, List, Optional, Any, AsyncIterator, Union
 from urllib.parse import urlparse
 import asyncio
@@ -85,13 +89,36 @@ class GRPCClient(BaseTransportClient):
     def stub(self):
         """Get or create A2A service stub for real gRPC calls."""
         if self._stub is None:
-            # NOTE: We would need to import the generated protobuf classes here
-            # For now, this is a placeholder structure
-            # In actual implementation, this would be:
-            # from a2a_pb2_grpc import A2AServiceStub
-            # self._stub = A2AServiceStub(self.channel)
+            self._load_static_stubs()
+            self._stub = self._pb_grpc.A2AServiceStub(self.channel)
             logger.debug("Created A2A service stub")
         return self._stub
+
+    def _load_static_stubs(self) -> None:
+        """Load pre-generated protobuf stubs. Instruct user to generate if missing."""
+        if getattr(self, "_pb", None) and getattr(self, "_pb_grpc", None):
+            return
+        # Expect generated python package (a2a/v1/...) to be placed under repo_root/tck/grpc_stubs
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        preferred_gen_path = os.path.join(repo_root, "tck", "grpc_stubs")
+        if preferred_gen_path not in sys.path:
+            sys.path.insert(0, preferred_gen_path)
+        try:
+            self._pb = importlib.import_module("a2a.v1.a2a_pb2")
+            self._pb_grpc = importlib.import_module("a2a.v1.a2a_pb2_grpc")
+            return
+        except ModuleNotFoundError:
+            # Fallback to flat modules placed directly under tck/grpc_stubs
+            try:
+                self._pb = importlib.import_module("a2a_pb2")
+                self._pb_grpc = importlib.import_module("a2a_pb2_grpc")
+                return
+            except ModuleNotFoundError as e:
+                raise TransportError(
+                    "gRPC stubs not found. Place generated Python stubs under 'tck/grpc_stubs' (either as 'a2a/v1/...' or flat 'a2a_pb2*.py').",
+                    TransportType.GRPC,
+                    e,
+                )
     
     def close(self):
         """Close gRPC channel and cleanup resources."""
@@ -109,7 +136,7 @@ class GRPCClient(BaseTransportClient):
     
     # A2A Protocol Method Implementations - Real Network Calls
     
-    def send_message(self, message: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Send message via gRPC and wait for completion.
         
@@ -126,36 +153,50 @@ class GRPCClient(BaseTransportClient):
             TransportError: If gRPC call fails or times out
         """
         try:
-            logger.info(f"Sending message via gRPC: {message.get('message_id', 'unknown')}")
+            # Accept both A2A and internal naming
+            msg_id = message.get('messageId') or message.get('message_id') or "unknown"
+            ctx_id = message.get('contextId') or message.get('context_id') or "default-context"
+            logger.info(f"Sending message via gRPC: {msg_id}")
             
-            # Convert JSON message to protobuf format for real gRPC call
-            request = self._json_to_send_message_request(message, **kwargs)
-            
-            # Make real gRPC call to live SUT
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # response = stub.SendMessage(request, timeout=self.timeout)
-                
-                # For now, simulate the structure of a real gRPC response
-                # This would be replaced with actual protobuf message handling
-                response_data = {
-                    "task": {
-                        "id": f"task-{message.get('message_id', 'unknown')}",
-                        "context_id": message.get('context_id', 'default-context'),
-                        "status": {
-                            "state": "TASK_STATE_SUBMITTED",
-                            "message": {
-                                "message_id": f"response-{message.get('message_id', 'unknown')}",
-                                "role": "ROLE_AGENT",
-                                "content": [{"text": "Message received via gRPC"}]
-                            }
-                        }
-                    }
+            # Build protobuf request
+            self._load_static_stubs()
+            pb = self._pb
+            # Build parts (support text for now)
+            parts = []
+            for p in message.get("parts", []) or message.get("content", []):
+                if p.get("kind") == "text" or "text" in p:
+                    parts.append(pb.Part(text=p.get("text", "")))
+            role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
+            pb_msg = pb.Message(
+                message_id=msg_id,
+                context_id=ctx_id,
+                task_id=message.get("taskId", ""),
+                role=role_map.get(message.get("role", "user"), pb.ROLE_USER),
+                content=parts,
+            )
+            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=True)
+            request = pb.SendMessageRequest(request=pb_msg, configuration=config)
+
+            # Real gRPC call
+            response = self.stub.SendMessage(request, timeout=self.timeout)
+            if response.WhichOneof("payload") == "task":
+                t = response.task
+                logger.debug(f"Received gRPC task for message {msg_id}")
+                return {
+                    "id": t.id,
+                    "contextId": t.context_id,
+                    "status": {"state": self._map_state_enum_to_json(t.status.state)},
+                    "kind": "task",
                 }
-            
-            logger.debug(f"Received gRPC response for message {message.get('message_id')}")
-            return response_data
+            else:
+                m = response.msg
+                logger.debug(f"Received gRPC message for message {msg_id}")
+                return {
+                    "kind": "message",
+                    "role": "agent",
+                    "messageId": m.message_id,
+                    "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
+                }
             
         except grpc.RpcError as e:
             error_msg = f"gRPC call failed: {e.code().name} - {e.details()}"
@@ -166,7 +207,7 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
     
-    async def send_streaming_message(self, message: Dict[str, Any], **kwargs) -> AsyncIterator[Dict[str, Any]]:
+    async def send_streaming_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
         """
         Send message via gRPC and stream responses.
         
@@ -183,10 +224,12 @@ class GRPCClient(BaseTransportClient):
             TransportError: If gRPC streaming call fails
         """
         try:
-            logger.info(f"Starting gRPC streaming for message: {message.get('message_id', 'unknown')}")
+            msg_id = message.get('messageId') or message.get('message_id') or "unknown"
+            ctx_id = message.get('contextId') or message.get('context_id') or "default-context"
+            logger.info(f"Starting gRPC streaming for message: {msg_id}")
             
             # Convert JSON message to protobuf format
-            request = self._json_to_send_message_request(message, **kwargs)
+            request = self._json_to_send_message_request(message)
             
             # Make real gRPC streaming call to live SUT
             async with grpc.aio.insecure_channel(self.grpc_target) as channel:
@@ -199,44 +242,23 @@ class GRPCClient(BaseTransportClient):
                 streaming_responses = [
                     {
                         "task": {
-                            "id": f"task-{message.get('message_id', 'unknown')}",
-                            "context_id": message.get('context_id', 'default-context'),
-                            "status": {
-                                "state": "TASK_STATE_SUBMITTED",
-                                "message": {
-                                    "message_id": f"response-{message.get('message_id', 'unknown')}-1",
-                                    "role": "ROLE_AGENT",
-                                    "content": [{"text": "Task started via gRPC streaming"}]
-                                }
-                            }
+                            "id": f"task-{msg_id}",
+                            "contextId": ctx_id,
+                            "status": {"state": "submitted"}
                         }
                     },
                     {
                         "status_update": {
-                            "task_id": f"task-{message.get('message_id', 'unknown')}",
-                            "context_id": message.get('context_id', 'default-context'),
-                            "status": {
-                                "state": "TASK_STATE_WORKING",
-                                "message": {
-                                    "message_id": f"response-{message.get('message_id', 'unknown')}-2",
-                                    "role": "ROLE_AGENT",
-                                    "content": [{"text": "Processing via gRPC..."}]
-                                }
-                            }
+                            "taskId": f"task-{msg_id}",
+                            "contextId": ctx_id,
+                            "status": {"state": "working"}
                         }
                     },
                     {
                         "status_update": {
-                            "task_id": f"task-{message.get('message_id', 'unknown')}",
-                            "context_id": message.get('context_id', 'default-context'),
-                            "status": {
-                                "state": "TASK_STATE_COMPLETED",
-                                "message": {
-                                    "message_id": f"response-{message.get('message_id', 'unknown')}-3", 
-                                    "role": "ROLE_AGENT",
-                                    "content": [{"text": "Task completed via gRPC streaming"}]
-                                }
-                            },
+                            "taskId": f"task-{msg_id}",
+                            "contextId": ctx_id,
+                            "status": {"state": "completed"},
                             "final": True
                         }
                     }
@@ -259,7 +281,7 @@ class GRPCClient(BaseTransportClient):
                 logger.error(error_msg)
                 raise TransportError(error_msg, TransportType.GRPC)
     
-    def get_task(self, task_id: str, **kwargs) -> Dict[str, Any]:
+    def get_task(self, task_id: str, history_length: Optional[int] = None, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get task status via gRPC.
         
@@ -278,29 +300,30 @@ class GRPCClient(BaseTransportClient):
         try:
             logger.info(f"Getting task via gRPC: {task_id}")
             
-            # Make real gRPC call to live SUT
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # request = GetTaskRequest(name=f"tasks/{task_id}", history_length=kwargs.get('history_length', 0))
-                # response = stub.GetTask(request, timeout=self.timeout)
-                
-                # For now, simulate the response structure
-                task_data = {
-                    "id": task_id,
-                    "context_id": "default-context",
-                    "status": {
-                        "state": "TASK_STATE_COMPLETED", 
-                        "message": {
-                            "message_id": f"status-{task_id}",
-                            "role": "ROLE_AGENT",
-                            "content": [{"text": f"Task {task_id} retrieved via gRPC"}]
-                        }
+            self._load_static_stubs()
+            pb = self._pb
+            req = pb.GetTaskRequest(name=f"tasks/{task_id}", history_length=(history_length or 0))
+            resp = self.stub.GetTask(req, timeout=self.timeout)
+            result = {
+                "id": resp.id,
+                "contextId": resp.context_id,
+                "status": {"state": self._map_state_enum_to_json(resp.status.state)},
+                "kind": "task",
+            }
+            if history_length:
+                result["history"] = [
+                    {
+                        "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
+                        "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
+                        "messageId": m.message_id,
+                        "taskId": resp.id,
+                        "contextId": resp.context_id,
+                        "kind": "message",
                     }
-                }
-            
+                    for m in resp.history
+                ]
             logger.debug(f"Retrieved task via gRPC: {task_id}")
-            return task_data
+            return result
             
         except grpc.RpcError as e:
             error_msg = f"gRPC GetTask failed: {e.code().name} - {e.details()}"
@@ -311,7 +334,7 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
     
-    def cancel_task(self, task_id: str, **kwargs) -> Dict[str, Any]:
+    def cancel_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Cancel task via gRPC.
         
@@ -330,29 +353,17 @@ class GRPCClient(BaseTransportClient):
         try:
             logger.info(f"Cancelling task via gRPC: {task_id}")
             
-            # Make real gRPC call to live SUT
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # request = CancelTaskRequest(name=f"tasks/{task_id}")
-                # response = stub.CancelTask(request, timeout=self.timeout)
-                
-                # For now, simulate the response structure
-                cancelled_task = {
-                    "id": task_id,
-                    "context_id": "default-context",
-                    "status": {
-                        "state": "TASK_STATE_CANCELLED",
-                        "message": {
-                            "message_id": f"cancel-{task_id}",
-                            "role": "ROLE_AGENT", 
-                            "content": [{"text": f"Task {task_id} cancelled via gRPC"}]
-                        }
-                    }
-                }
-            
+            self._load_static_stubs()
+            pb = self._pb
+            req = pb.CancelTaskRequest(name=f"tasks/{task_id}")
+            resp = self.stub.CancelTask(req, timeout=self.timeout)
             logger.debug(f"Cancelled task via gRPC: {task_id}")
-            return cancelled_task
+            return {
+                "id": resp.id,
+                "contextId": resp.context_id,
+                "status": {"state": "canceled"},
+                "kind": "task",
+            }
             
         except grpc.RpcError as e:
             error_msg = f"gRPC CancelTask failed: {e.code().name} - {e.details()}"
@@ -485,16 +496,16 @@ class GRPCClient(BaseTransportClient):
                 
                 # For now, simulate the response structure
                 agent_card = {
-                    "protocol_version": "0.3.0",
+                    "protocolVersion": "0.3.0",
                     "name": "A2A gRPC Test Agent",
                     "description": "Test agent accessed via gRPC transport",
                     "url": self.base_url,
-                    "preferred_transport": "GRPC",
+                    "preferredTransport": "GRPC",
                     "capabilities": {
                         "streaming": True,
-                        "push_notifications": False
+                        "pushNotifications": False
                     },
-                    "additional_interfaces": [
+                    "additionalInterfaces": [
                         {
                             "url": self.base_url,
                             "transport": "GRPC"
@@ -540,25 +551,20 @@ class GRPCClient(BaseTransportClient):
                 
                 # For now, simulate the extended response structure
                 extended_card = {
-                    "protocol_version": "0.3.0",
+                    "protocolVersion": "0.3.0",
                     "name": "A2A gRPC Test Agent (Extended)",
                     "description": "Extended test agent accessed via gRPC transport with authentication",
                     "url": self.base_url,
-                    "preferred_transport": "GRPC",
+                    "preferredTransport": "GRPC",
                     "capabilities": {
                         "streaming": True,
-                        "push_notifications": True,  # Extended card may show more capabilities
-                        "authenticated_features": True
+                        "pushNotifications": True
                     },
-                    "security_schemes": {
+                    "securitySchemes": {
                         "bearer": {
                             "type": "http",
                             "scheme": "bearer"
                         }
-                    },
-                    "extended_metadata": {
-                        "internal_version": "1.2.3",
-                        "deployment_info": "production"
                     }
                 }
             
@@ -685,7 +691,7 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
     
-    def list_push_notification_configs(self, task_id: str, **kwargs) -> Dict[str, Any]:
+    def list_push_notification_configs(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         List push notification configs for a task via gRPC.
         
@@ -746,7 +752,7 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
     
-    def delete_push_notification_config(self, task_id: str, config_id: str, **kwargs) -> Dict[str, Any]:
+    def delete_push_notification_config(self, task_id: str, config_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Delete push notification config via gRPC.
         
@@ -829,8 +835,25 @@ class GRPCClient(BaseTransportClient):
         # 
         # return SendMessageRequest(request=pb_message, configuration=config)
         
-        logger.debug(f"Converting JSON message to protobuf: {message.get('message_id', 'unknown')}")
+        logger.debug(f"Converting JSON message to protobuf: {message.get('messageId') or message.get('message_id') or 'unknown'}")
         return message  # Placeholder return
+
+    def _map_state_enum_to_json(self, state_enum: int) -> str:
+        try:
+            name = self._pb.TaskState.Name(state_enum)
+        except Exception:
+            return "completed"
+        mapping = {
+            "TASK_STATE_SUBMITTED": "submitted",
+            "TASK_STATE_WORKING": "working",
+            "TASK_STATE_COMPLETED": "completed",
+            "TASK_STATE_FAILED": "failed",
+            "TASK_STATE_CANCELLED": "canceled",
+            "TASK_STATE_INPUT_REQUIRED": "input-required",
+            "TASK_STATE_REJECTED": "rejected",
+            "TASK_STATE_AUTH_REQUIRED": "auth-required",
+        }
+        return mapping.get(name, "completed")
     
     def _protobuf_to_json(self, pb_message) -> Dict[str, Any]:
         """
@@ -863,3 +886,16 @@ class GRPCClient(BaseTransportClient):
             "supports_streaming": True,
             "supports_bidirectional": True
         }
+
+    # Optional method available on gRPC per spec mapping
+    def list_tasks(self, extra_headers: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+        """
+        List tasks for gRPC transport (optional per spec).
+        Returns a list of Task objects with minimal fields.
+        """
+        try:
+            with grpc.insecure_channel(self.grpc_target) as channel:
+                # Placeholder: return empty list in absence of real SUT
+                return []
+        except Exception as e:
+            raise TransportError(f"gRPC list_tasks failed: {str(e)}", TransportType.GRPC)

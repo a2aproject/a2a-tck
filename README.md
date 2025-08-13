@@ -249,11 +249,8 @@ The TCK supports A2A v0.3.0 multi-transport architecture with advanced transport
 # Test with specific transport strategy
 ./run_tck.py --sut-url URL --category all --transport-strategy prefer_jsonrpc
 
-# Test with preferred transport type
-./run_tck.py --sut-url URL --category all --preferred-transport grpc
-
-# Test with disabled transports
-./run_tck.py --sut-url URL --category all --disabled-transports "grpc,rest"
+# Force a specific transport via strategy
+./run_tck.py --sut-url URL --category all --transport-strategy prefer_grpc
 
 # Enable transport equivalence testing (default: enabled)
 ./run_tck.py --sut-url URL --category all --enable-equivalence-testing
@@ -262,11 +259,25 @@ The TCK supports A2A v0.3.0 multi-transport architecture with advanced transport
 ./run_tck.py --sut-url URL --category transport-equivalence \
   --transport-strategy all_supported
 
-# Combined multi-transport configuration
+# Strict transport selection (required transports, no fallback)
 ./run_tck.py --sut-url URL --category all \
   --transport-strategy prefer_grpc \
-  --disabled-transports "rest" \
+  --transports grpc \
   --enable-equivalence-testing
+
+# Run per-transport single-client tests for JSON-RPC and gRPC, then equivalence
+./run_tck.py --sut-url URL --category all \
+  --transports jsonrpc,grpc
+
+# With compliance reports (one per transport; filenames get _jsonrpc/_grpc suffixes)
+./run_tck.py --sut-url URL --category all \
+  --transports jsonrpc,grpc \
+  --compliance-report reports/compliance.json
+
+### gRPC usage
+
+```bash
+./run_tck.py --sut-url http://localhost:9999 --category mandatory --transports grpc
 ```
 
 **Transport Strategy Options:**
@@ -310,7 +321,7 @@ The TCK supports additional environment variables for A2A v0.3.0 multi-transport
 |----------|-------------|---------|----------|
 | `A2A_TRANSPORT_STRATEGY` | Transport selection strategy | `agent_preferred` | `prefer_jsonrpc`, `prefer_grpc`, `all_supported` |
 | `A2A_PREFERRED_TRANSPORT` | Preferred transport type | None | `jsonrpc`, `grpc`, `rest` |
-| `A2A_DISABLED_TRANSPORTS` | Comma-separated disabled transports | None | `grpc,rest`, `jsonrpc` |
+| `A2A_REQUIRED_TRANSPORTS` | Comma-separated required transports (strict) | None | `grpc`, `jsonrpc,rest` |
 | `A2A_ENABLE_EQUIVALENCE_TESTING` | Enable transport equivalence testing | `true` | `true`, `false`, `1`, `0` |
 | `A2A_JSONRPC_*` | JSON-RPC specific configuration | - | `A2A_JSONRPC_TIMEOUT=30` |
 | `A2A_GRPC_*` | gRPC specific configuration | - | `A2A_GRPC_MAX_MESSAGE_SIZE=4MB` |
@@ -333,8 +344,11 @@ TCK_STREAMING_TIMEOUT=1.0 ./run_tck.py --sut-url URL --category capabilities
 # Debug with very slow timeouts
 TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --verbose
 
-# A2A v0.3.0 multi-transport configuration via environment
-A2A_TRANSPORT_STRATEGY=prefer_grpc A2A_DISABLED_TRANSPORTS=rest ./run_tck.py --sut-url URL --category all
+# A2A v0.3.0 multi-transport configuration via environment (strict single transport)
+A2A_TRANSPORT_STRATEGY=prefer_grpc A2A_REQUIRED_TRANSPORTS=grpc ./run_tck.py --sut-url URL --category all
+
+# Run both JSON-RPC and gRPC per-transport, then equivalence (via env)
+A2A_REQUIRED_TRANSPORTS=jsonrpc,grpc ./run_tck.py --sut-url URL --category all
 
 # Complex multi-transport setup in .env file
 cat > .env << EOF

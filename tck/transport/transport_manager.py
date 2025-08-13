@@ -23,6 +23,7 @@ from tck.agent_card_utils import (
     validate_transport_consistency
 )
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
+from tck import config as tck_config
 
 logger = logging.getLogger(__name__)
 
@@ -112,8 +113,17 @@ class TransportManager:
                 raise TransportManagerError(error_msg) 
             
             # Extract transport information
-            self._supported_transports = get_supported_transports(self._agent_card)
-            self._transport_endpoints = get_transport_endpoints(self._agent_card)
+            discovered = get_supported_transports(self._agent_card)
+            endpoints = get_transport_endpoints(self._agent_card)
+
+            # Apply required transports restriction, if any
+            required = tck_config.get_required_transports()
+            if required is not None:
+                self._supported_transports = [t for t in discovered if t in required]
+                self._transport_endpoints = {t: ep for t, ep in endpoints.items() if t in self._supported_transports}
+            else:
+                self._supported_transports = discovered
+                self._transport_endpoints = endpoints
             
             if not self._supported_transports:
                 raise TransportManagerError("No supported transports found in Agent Card")

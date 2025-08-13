@@ -20,6 +20,7 @@ _test_scope: str = 'core'
 _transport_selection_strategy: str = 'agent_preferred'
 _preferred_transport: Optional[TransportType] = None
 _disabled_transports: List[TransportType] = []
+_required_transports: Optional[List[TransportType]] = None
 _transport_specific_config: Dict[str, Dict[str, str]] = {}
 _enable_transport_equivalence_testing: bool = True
 
@@ -153,6 +154,41 @@ def is_transport_enabled(transport_type: TransportType) -> bool:
     """
     return transport_type not in get_disabled_transports()
 
+def set_required_transports(transports: Optional[List[TransportType]]):
+    """
+    Set list of required transport types for strict selection.
+    
+    Args:
+        transports: List of required transports, or None for unrestricted
+    """
+    global _required_transports
+    if transports is None:
+        _required_transports = None
+    else:
+        _required_transports = transports.copy()
+
+def get_required_transports() -> Optional[List[TransportType]]:
+    """
+    Get list of required transport types for strict selection.
+    
+    Returns:
+        List of required transports, or None if unrestricted
+    """
+    env_required = os.getenv("A2A_REQUIRED_TRANSPORTS")
+    if env_required:
+        return _parse_transport_list_from_env(env_required)
+    return None if _required_transports is None else _required_transports.copy()
+
+def is_transport_required(transport_type: TransportType) -> bool:
+    """
+    Check if a transport is within the required set (if any).
+    
+    Returns:
+        True if no restriction or transport is in required set
+    """
+    required = get_required_transports()
+    return True if required is None else transport_type in required
+
 def set_transport_specific_config(transport_type: TransportType, config: Dict[str, str]):
     """
     Set transport-specific configuration.
@@ -268,11 +304,12 @@ def reset_transport_config():
     Useful for testing and cleanup.
     """
     global _transport_selection_strategy, _preferred_transport
-    global _disabled_transports, _transport_specific_config
+    global _disabled_transports, _required_transports, _transport_specific_config
     global _enable_transport_equivalence_testing
     
     _transport_selection_strategy = 'agent_preferred'
     _preferred_transport = None
     _disabled_transports = []
+    _required_transports = None
     _transport_specific_config = {}
     _enable_transport_equivalence_testing = True

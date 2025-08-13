@@ -128,7 +128,7 @@ def explain_test_categories():
     print()
     print("=" * 80)
 
-def run_test_category(category: str, sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, json_report: str = None, transport_strategy: str = None, preferred_transport: str = None, disabled_transports: str = None, enable_equivalence_testing: bool = None):
+def run_test_category(category: str, sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, json_report: str = None, transport_strategy: str = None, enable_equivalence_testing: bool = None, transports: str = None):
     """Run a specific test category."""
     
     # Map categories to pytest commands
@@ -173,10 +173,27 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, verbos
     print("=" * 70)
     print()
     
+    # Adjust selection for transport-specific runs
+    effective_path = config["path"]
+    effective_markers = config["markers"]
+
+    if category == "mandatory" and transports:
+        # Normalize transports
+        items = [t.strip().lower() for t in transports.split(',') if t.strip()]
+        norm = []
+        mapping = {"jsonrpc": "jsonrpc", "json-rpc": "jsonrpc", "grpc": "grpc", "rest": "rest", "http+json": "rest", "http": "rest"}
+        for it in items:
+            if it in mapping and mapping[it] not in norm:
+                norm.append(mapping[it])
+        # If jsonrpc is not requested, exclude JSON-RPC compliance tests
+        if "jsonrpc" not in norm:
+            effective_path = "tests/mandatory/protocol/"
+            effective_markers = "mandatory_protocol"
+
     # Build pytest command
     cmd = [
         sys.executable, "-m", "pytest",
-        config["path"],
+        effective_path,
         f"--sut-url={sut_url}",
         "--test-scope=all",  # Bypass old core marking system
         "--tb=short",
@@ -191,8 +208,8 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, verbos
         cmd.extend(["--json-report", f"--json-report-file={json_report_path}"])
     
     # Only add marker filtering if markers are specified
-    if config["markers"]:
-        cmd.extend(["-m", config["markers"]])
+    if effective_markers:
+        cmd.extend(["-m", effective_markers])
     
     if verbose_log:
         cmd.extend(["-v", "-s", "--log-cli-level=INFO"])  # Full verbose with logging
@@ -209,11 +226,9 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, verbos
     if transport_strategy:
         cmd.extend(["--transport-strategy", transport_strategy])
     
-    if preferred_transport:
-        cmd.extend(["--preferred-transport", preferred_transport])
-    
-    if disabled_transports:
-        cmd.extend(["--disabled-transports", disabled_transports])
+    # --disabled-transports removed (had no effect on selection)
+    if transports:
+        cmd.extend(["--transports", transports])
     
     # Note: --enable-equivalence-testing is True by default in conftest.py
     # Only add the flag if explicitly set to True (it's the default behavior)
@@ -227,42 +242,91 @@ def run_test_category(category: str, sut_url: str, verbose: bool = False, verbos
     result = subprocess.run(cmd)
     return result.returncode
 
-def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, compliance_report: str = None, transport_strategy: str = None, preferred_transport: str = None, disabled_transports: str = None, enable_equivalence_testing: bool = None):
-    """Run all test categories in recommended order."""
-    
+def run_all_categories(sut_url: str, verbose: bool = False, verbose_log: bool = False, generate_report: bool = False, compliance_report: str = None, transport_strategy: str = None, enable_equivalence_testing: bool = None, transports: str = None):
+    """Run all test categories in recommended order.
+
+    If multiple transports are specified, run single-client categories per transport,
+    then run transport-equivalence once across all specified transports.
+    """
+
     categories = ["mandatory", "capabilities", "transport-equivalence", "quality", "features"]
     results = {}
     detailed_results = {}
-    
+
     print("=" * 80)
     print("🎯 RUNNING ALL A2A TCK TEST CATEGORIES")
     print("Following recommended workflow...")
     print("=" * 80)
     print()
-    
+
+    def _normalize_transports(ts: str) -> list:
+        items = [t.strip().lower() for t in ts.split(',') if t.strip()]
+        norm = []
+        mapping = {"jsonrpc": "jsonrpc", "json-rpc": "jsonrpc", "grpc": "grpc", "rest": "rest", "http+json": "rest", "http": "rest"}
+        for it in items:
+            if it in mapping:
+                if mapping[it] not in norm:
+                    norm.append(mapping[it])
+        return norm
+
+    multi_transports = _normalize_transports(transports) if transports else []
+
+    if multi_transports and len(multi_transports) > 1:
+        # Run single-client categories per transport (exclude transport-equivalence here)
+        single_categories = ["mandatory", "capabilities", "quality", "features"]
+        for tr in multi_transports:
+            print("=" * 80)
+            print(f"🚦 Running single-client categories for transport: {tr}")
+            print("=" * 80)
+            print()
+
+            for j, category in enumerate(single_categories, 1):
+                print(f"📍 [{tr}] STEP {j}/{len(single_categories)}: Running {category} tests...")
+                print()
+
+                # Generate per-transport JSON report name when aggregating
+                json_report_file = None
+                if compliance_report:
+                    json_report_file = f"{category}_{tr}_results.json"
+
+                exit_code = run_test_category(category, sut_url, verbose, verbose_log, generate_report, json_report_file, transport_strategy, enable_equivalence_testing, tr)
+                results[f"{category}:{tr}"] = exit_code
+
+                if j < len(single_categories):
+                    print("─" * 80)
+                    print()
+
+        # After per-transport runs, run transport-equivalence once across all specified transports
+        print("=" * 80)
+        print("🚀 Running TRANSPORT-EQUIVALENCE tests across required transports")
+        print("=" * 80)
+        print()
+        te_exit = run_test_category("transport-equivalence", sut_url, verbose, verbose_log, generate_report, None, transport_strategy, enable_equivalence_testing, ",".join(multi_transports))
+        results["transport-equivalence"] = te_exit
+
+        return results
+
+    # Default: single pass with (zero or one) transports value
     for i, category in enumerate(categories, 1):
         print(f"📍 STEP {i}/5: Running {category} tests...")
         print()
-        
+
         # Generate JSON report for this category if compliance report requested
         json_report_file = None
         if compliance_report:
-            json_report_file = f"{category}_results.json"
-        
-        exit_code = run_test_category(category, sut_url, verbose, verbose_log, generate_report, json_report_file, transport_strategy, preferred_transport, disabled_transports, enable_equivalence_testing)
+            if transports:
+                json_report_file = f"{category}_{transports}_results.json"
+            else:
+                json_report_file = f"{category}_results.json"
+
+        exit_code = run_test_category(category, sut_url, verbose, verbose_log, generate_report, json_report_file, transport_strategy, enable_equivalence_testing, transports)
         results[category] = exit_code
-        
-        # Collect detailed results for compliance report
-        if compliance_report and json_report_file:
-            json_report_path = REPORTS_DIR / json_report_file
-            detailed_results[category] = collect_test_results_from_json(json_report_path, category)
-        
+
         print()
         print(f"✅ {category.upper()} TESTS COMPLETED")
         print(f"Exit code: {exit_code}")
         print()
-        
-        # Show progress
+
         if i < len(categories):
             print("─" * 80)
             print()
@@ -555,17 +619,14 @@ Categories:
         default="agent_preferred",
         help="Transport selection strategy for A2A v0.3.0 multi-transport testing (default: agent_preferred)"
     )
-    
     parser.add_argument(
-        "--preferred-transport",
-        choices=["jsonrpc", "grpc", "rest"],
-        help="Preferred transport type for A2A v0.3.0 testing"
+        "--transports",
+        help="Comma-separated list of transports to allow strictly: jsonrpc,grpc,rest"
     )
     
-    parser.add_argument(
-        "--disabled-transports",
-        help="Comma-separated list of disabled transports (e.g., 'grpc,rest')"
-    )
+    # Removed --preferred-transport in favor of --transport-strategy
+    
+    # Removed --disabled-transports (did not influence selection behavior)
     
     parser.add_argument(
         "--enable-equivalence-testing",
@@ -605,17 +666,49 @@ Categories:
     if args.category == "all":
         results = run_all_categories(
             args.sut_url, args.verbose, args.verbose_log, args.report, compliance_report_path,
-            args.transport_strategy, args.preferred_transport, args.disabled_transports, args.enable_equivalence_testing
+            args.transport_strategy, args.enable_equivalence_testing, args.transports
         )
         # Exit with failure if mandatory or capabilities failed
         if results["mandatory"] != 0 or results["capabilities"] != 0:
             sys.exit(1)
     else:
-        exit_code = run_test_category(
-            args.category, args.sut_url, args.verbose, args.verbose_log, args.report, None,
-            args.transport_strategy, args.preferred_transport, args.disabled_transports, args.enable_equivalence_testing
-        )
-        sys.exit(exit_code)
+        # If multiple transports provided and category is single-client, fan out per transport
+        def _normalize_transports(ts: str) -> list:
+            items = [t.strip().lower() for t in ts.split(',') if t.strip()]
+            norm = []
+            mapping = {"jsonrpc": "jsonrpc", "json-rpc": "jsonrpc", "grpc": "grpc", "rest": "rest", "http+json": "rest", "http": "rest"}
+            for it in items:
+                if it in mapping and mapping[it] not in norm:
+                    norm.append(mapping[it])
+            return norm
+
+        mt = _normalize_transports(args.transports) if args.transports else []
+
+        if mt and len(mt) > 1 and args.category != "transport-equivalence":
+            print("=" * 80)
+            print(f"🔁 Running category '{args.category}' per transport: {', '.join(mt)}")
+            print("=" * 80)
+            print()
+
+            aggregate_ok = True
+            for tr in mt:
+                print(f"➡️  [{tr}] Running {args.category}...")
+                code = run_test_category(
+                    args.category, args.sut_url, args.verbose, args.verbose_log, args.report, None,
+                    args.transport_strategy, args.enable_equivalence_testing, tr
+                )
+                print(f"⬅️  [{tr}] Exit code: {code}")
+                print()
+                if code != 0:
+                    aggregate_ok = False
+            sys.exit(0 if aggregate_ok else 1)
+        else:
+            # Single transport or transport-equivalence: single run
+            exit_code = run_test_category(
+                args.category, args.sut_url, args.verbose, args.verbose_log, args.report, None,
+                args.transport_strategy, args.enable_equivalence_testing, args.transports
+            )
+            sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()

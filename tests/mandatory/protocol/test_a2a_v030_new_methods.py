@@ -24,6 +24,7 @@ from tck.transport.base_client import BaseTransportClient
 from tck.transport.jsonrpc_client import JSONRPCClient
 from tck.transport.grpc_client import GRPCClient
 from tck.transport.rest_client import RESTClient
+from tests.markers import mandatory_protocol, optional_capability, a2a_v030
 from tests.utils.transport_helpers import (
     transport_send_message,
     transport_get_task,
@@ -166,20 +167,22 @@ class TestAuthenticatedExtendedCard:
                 "unauthorized", "authentication", "401", "403"
             ]), f"Expected authentication error, got: {exc_info.value}"
 
-    @pytest.mark.optional
-    @pytest.mark.a2a_v030
+    @optional_capability
+    @a2a_v030
     def test_authenticated_extended_card_with_auth(self, sut_client: BaseTransportClient):
         """
         Test that agent/authenticatedExtendedCard returns extended card with valid auth.
         
-        A2A v0.3.0 Specification Reference: §7.10
+        A2A v0.3.0 Specification Reference: §7.10 & §11.1.3
         
         Validates:
         - Authenticated requests return AgentCard object
         - Extended card may contain additional details
         - Response follows AgentCard schema
         
-        Note: This test requires proper authentication configuration.
+        CAPABILITY-DEPENDENT: This test is MANDATORY if supportsAuthenticatedExtendedCard: true
+        is declared in the Agent Card, otherwise it's skipped. This prevents false advertising
+        where agents claim to support authenticated extended cards but don't implement them properly.
         """
         # Check if SUT supports authenticated extended card
         try:
@@ -277,19 +280,22 @@ class TestTasksList:
                 else:
                     pytest.fail(f"Failed to call tasks/list on {transport_type}: {e}")
 
-    @pytest.mark.optional
-    @pytest.mark.a2a_v030
+    @optional_capability
+    @a2a_v030
     def test_tasks_list_with_existing_tasks(self, sut_client: BaseTransportClient):
         """
         Test tasks/list returns existing tasks when tasks are present.
         
-        A2A v0.3.0 Specification Reference: §7.3.1
-        Transport Support: gRPC, REST only
+        A2A v0.3.0 Specification Reference: §7.3.1 & §3.5.6
+        Transport Support: gRPC, REST only (not available on JSON-RPC)
         
         Validates:
         - List includes previously created tasks
         - Task objects follow proper schema
         - List is properly formatted
+        
+        TRANSPORT-DEPENDENT: This test is MANDATORY for gRPC/REST transports if declared
+        in the Agent Card, skipped for JSON-RPC (which doesn't support tasks/list).
         """
         transport_type = get_client_transport_type(sut_client)
         
@@ -445,18 +451,22 @@ class TestTransportSpecificFeatures:
     maintaining functional equivalence with core A2A functionality.
     """
 
-    @pytest.mark.optional
-    @pytest.mark.a2a_v030
+    @optional_capability
+    @a2a_v030
     def test_grpc_specific_features(self, sut_client: BaseTransportClient):
         """
         Test gRPC-specific features like bidirectional streaming and metadata.
         
-        A2A v0.3.0 Specification Reference: §3.4.3
+        A2A v0.3.0 Specification Reference: §3.4.3 (Transport-Specific Extensions)
         
         Validates:
         - Bidirectional streaming support (if implemented)
         - gRPC metadata handling
         - Protocol Buffers serialization
+        
+        TRANSPORT-DEPENDENT: This test is MANDATORY if gRPC transport is declared in
+        Agent Card additionalInterfaces, ensuring transport-specific optimizations
+        maintain functional equivalence.
         """
         if get_client_transport_type(sut_client) != "grpc":
             pytest.skip("Test only applicable to gRPC transport")
@@ -490,8 +500,8 @@ class TestTransportSpecificFeatures:
                 else:
                     pytest.fail(f"gRPC bidirectional streaming test failed: {e}")
 
-    @pytest.mark.optional
-    @pytest.mark.a2a_v030
+    @optional_capability
+    @a2a_v030
     def test_rest_specific_features(self, sut_client: BaseTransportClient):
         """
         Test REST-specific features like HTTP caching and conditional requests.
@@ -544,8 +554,8 @@ class TestTransportSpecificFeatures:
                 else:
                     pytest.fail(f"REST conditional request test failed: {e}")
 
-    @pytest.mark.optional
-    @pytest.mark.a2a_v030  
+    @optional_capability
+    @a2a_v030  
     def test_jsonrpc_specific_features(self, sut_client: BaseTransportClient):
         """
         Test JSON-RPC-specific features and extensions.
