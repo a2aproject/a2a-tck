@@ -1,6 +1,6 @@
 # A2A Protocol Technology Compatibility Kit (TCK)
 
-A comprehensive test suite for validating A2A (Application-to-Application) JSON-RPC protocol specification compliance with progressive validation and detailed compliance reporting.
+A comprehensive test suite for validating A2A (Agent-to-Agent) Protocol v0.3.0 specification compliance with multi-transport support, progressive validation, and detailed compliance reporting.
 
 ## Overview
 
@@ -9,6 +9,8 @@ The A2A Protocol TCK is a sophisticated validation framework that provides:
 - **🎯 Capability-Based Validation**: Smart test execution based on Agent Card declarations
 - **📊 Compliance Reporting**: Detailed assessment with actionable recommendations
 - **🚀 Progressive Enhancement**: Four-tier compliance levels for informed deployment decisions
+- **🔄 Multi-Transport Support**: Comprehensive testing for JSON-RPC, gRPC, and REST transports
+- **✨ A2A v0.3.0 Features**: Full support for new authentication schemes, streaming methods, and enhanced security
 
 The TCK transforms A2A specification compliance from guesswork into a clear, structured validation process.
 
@@ -34,6 +36,7 @@ Use the TCK to validate your A2A implementation:
 ### 🔍 **Intelligent Test Categorization**
 - **🔴 MANDATORY**: Must pass for A2A compliance (JSON-RPC 2.0 + A2A core)
 - **🔄 CAPABILITIES**: Conditional mandatory based on Agent Card declarations  
+- **🚀 TRANSPORT EQUIVALENCE**: Multi-transport functional equivalence (conditional mandatory)
 - **🛡️ QUALITY**: Production readiness indicators (optional)
 - **🎨 FEATURES**: Optional implementation completeness (informational)
 
@@ -184,13 +187,19 @@ You can then proceed to run the TCK tests against your SUT.
 ```
 **Result**: Ensures declared capabilities actually work (prevents false advertising)
 
-### 3. **Assess Production Readiness**  
+### 3. **Validate Multi-Transport Equivalence** (A2A v0.3.0)
+```bash
+./run_tck.py --sut-url http://localhost:9999 --category transport-equivalence
+```
+**Result**: Ensures functional equivalence across declared transport types (JSON-RPC, gRPC, REST)
+
+### 4. **Assess Production Readiness**  
 ```bash
 ./run_tck.py --sut-url http://localhost:9999 --category quality
 ```
 **Result**: Identifies issues that may affect production deployment
 
-### 4. **Generate Comprehensive Report**
+### 5. **Generate Comprehensive Report**
 ```bash
 ./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report compliance.json
 ```
@@ -208,11 +217,12 @@ You can then proceed to run the TCK tests against your SUT.
 ./run_tck.py --sut-url URL --category CATEGORY
 
 # Available categories:
-#   mandatory    - A2A compliance validation (MUST pass)  
-#   capabilities - Capability honesty check (conditional mandatory)
-#   quality      - Production readiness assessment
-#   features     - Optional feature completeness
-#   all          - Complete validation workflow
+#   mandatory             - A2A compliance validation (MUST pass)  
+#   capabilities          - Capability honesty check (conditional mandatory)
+#   transport-equivalence - Multi-transport functional equivalence (conditional mandatory)
+#   quality               - Production readiness assessment
+#   features              - Optional feature completeness
+#   all                   - Complete validation workflow
 ```
 
 ### **Advanced Options**
@@ -230,6 +240,57 @@ You can then proceed to run the TCK tests against your SUT.
 # Skip Agent Card fetching (for non-standard implementations)  
 ./run_tck.py --sut-url URL --category mandatory --skip-agent-card
 ```
+
+### **A2A v0.3.0 Multi-Transport Testing**
+
+The TCK supports A2A v0.3.0 multi-transport architecture with advanced transport selection and testing capabilities:
+
+```bash
+# Test with specific transport strategy
+./run_tck.py --sut-url URL --category all --transport-strategy prefer_jsonrpc
+
+# Force a specific transport via strategy
+./run_tck.py --sut-url URL --category all --transport-strategy prefer_grpc
+
+# Enable transport equivalence testing (default: enabled)
+./run_tck.py --sut-url URL --category all --enable-equivalence-testing
+
+# Test only transport equivalence with specific configuration
+./run_tck.py --sut-url URL --category transport-equivalence \
+  --transport-strategy all_supported
+
+# Strict transport selection (required transports, no fallback)
+./run_tck.py --sut-url URL --category all \
+  --transport-strategy prefer_grpc \
+  --transports grpc \
+  --enable-equivalence-testing
+
+# Run per-transport single-client tests for JSON-RPC and gRPC, then equivalence
+./run_tck.py --sut-url URL --category all \
+  --transports jsonrpc,grpc
+
+# With compliance reports (one per transport; filenames get _jsonrpc/_grpc suffixes)
+./run_tck.py --sut-url URL --category all \
+  --transports jsonrpc,grpc \
+  --compliance-report reports/compliance.json
+
+### gRPC usage
+
+```bash
+./run_tck.py --sut-url http://localhost:9999 --category mandatory --transports grpc
+```
+
+**Transport Strategy Options:**
+- `agent_preferred` (default) - Use agent's preferred transport from Agent Card
+- `prefer_jsonrpc` - Prefer JSON-RPC 2.0 over HTTP transport
+- `prefer_grpc` - Prefer gRPC transport when available
+- `prefer_rest` - Prefer HTTP+JSON/REST transport when available  
+- `all_supported` - Test all supported transports
+
+**Transport Types:**
+- `jsonrpc` - JSON-RPC 2.0 over HTTP (backward compatible)
+- `grpc` - gRPC with Protocol Buffers
+- `rest` - HTTP+JSON/REST transport
 
 ## ⚙️ Environment Configuration
 
@@ -252,6 +313,20 @@ nano .env  # or your preferred editor
 |----------|-------------|---------|----------|
 | `TCK_STREAMING_TIMEOUT` | Base timeout for SSE streaming tests (seconds) | `2.0` | `1.0` (fast), `5.0` (slow), `10.0` (debug) |
 
+### **A2A v0.3.0 Transport Environment Variables**
+
+The TCK supports additional environment variables for A2A v0.3.0 multi-transport configuration:
+
+| Variable | Description | Default | Examples |
+|----------|-------------|---------|----------|
+| `A2A_TRANSPORT_STRATEGY` | Transport selection strategy | `agent_preferred` | `prefer_jsonrpc`, `prefer_grpc`, `all_supported` |
+| `A2A_PREFERRED_TRANSPORT` | Preferred transport type | None | `jsonrpc`, `grpc`, `rest` |
+| `A2A_REQUIRED_TRANSPORTS` | Comma-separated required transports (strict) | None | `grpc`, `jsonrpc,rest` |
+| `A2A_ENABLE_EQUIVALENCE_TESTING` | Enable transport equivalence testing | `true` | `true`, `false`, `1`, `0` |
+| `A2A_JSONRPC_*` | JSON-RPC specific configuration | - | `A2A_JSONRPC_TIMEOUT=30` |
+| `A2A_GRPC_*` | gRPC specific configuration | - | `A2A_GRPC_MAX_MESSAGE_SIZE=4MB` |
+| `A2A_REST_*` | REST specific configuration | - | `A2A_REST_TIMEOUT=60` |
+
 **Timeout behavior**:
 - **Short timeout**: `TCK_STREAMING_TIMEOUT * 0.5` - Used for basic streaming operations
 - **Normal timeout**: `TCK_STREAMING_TIMEOUT * 1.0` - Used for standard SSE client operations  
@@ -268,6 +343,22 @@ TCK_STREAMING_TIMEOUT=1.0 ./run_tck.py --sut-url URL --category capabilities
 
 # Debug with very slow timeouts
 TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --verbose
+
+# A2A v0.3.0 multi-transport configuration via environment (strict single transport)
+A2A_TRANSPORT_STRATEGY=prefer_grpc A2A_REQUIRED_TRANSPORTS=grpc ./run_tck.py --sut-url URL --category all
+
+# Run both JSON-RPC and gRPC per-transport, then equivalence (via env)
+A2A_REQUIRED_TRANSPORTS=jsonrpc,grpc ./run_tck.py --sut-url URL --category all
+
+# Complex multi-transport setup in .env file
+cat > .env << EOF
+TCK_STREAMING_TIMEOUT=3.0
+A2A_TRANSPORT_STRATEGY=all_supported
+A2A_ENABLE_EQUIVALENCE_TESTING=true
+A2A_GRPC_TIMEOUT=30
+A2A_JSONRPC_TIMEOUT=15
+EOF
+./run_tck.py --sut-url URL --category all
 ```
 
 **When to adjust timeouts**:
@@ -314,6 +405,30 @@ TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --
 - Push notification configuration
 - File/data modality support
 - Authentication methods
+
+### 🚀 **TRANSPORT EQUIVALENCE Tests** - Multi-Transport Functional Equivalence
+**Purpose**: Validate A2A v0.3.0 multi-transport functional equivalence  
+**Impact**: Conditional mandatory (if multiple transports declared)  
+**Logic**: Skip if single transport, mandatory if multiple transports declared  
+**Location**: `tests/optional/multi_transport/`
+
+**A2A v0.3.0 Functional Equivalence Requirements** (per specification §3.4.1):
+```json
+{
+  "additionalInterfaces": [
+    {"url": "...", "transport": "JSONRPC"},  ← Must test equivalence
+    {"url": "...", "transport": "GRPC"},    ← if multiple declared
+    {"url": "...", "transport": "HTTP+JSON"}
+  ]
+}
+```
+
+**Validates**:
+- **Identical Functionality**: Same operations across all transports
+- **Consistent Behavior**: Semantically equivalent results 
+- **Same Error Handling**: Consistent error codes (TaskNotFoundError: -32001)
+- **Equivalent Authentication**: Same auth schemes across transports
+- **Method Mapping Compliance**: Correct transport-specific method names
 
 ### 🛡️ **QUALITY Tests** - Production Readiness
 **Purpose**: Assess implementation robustness  
@@ -525,6 +640,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 **Debugging capability issues?**
 ```bash
 ./run_tck.py --sut-url URL --category capabilities --verbose
+```
+
+**Testing A2A v0.3.0 multi-transport implementation?**
+```bash
+./run_tck.py --sut-url URL --category transport-equivalence --transport-strategy all_supported
 ```
 
 **Want comprehensive assessment?**

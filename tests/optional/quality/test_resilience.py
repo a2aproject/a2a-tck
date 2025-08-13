@@ -8,16 +8,15 @@ import uuid
 import pytest
 
 from tck import message_utils
-from tck.sut_client import SUTClient
+from tests.utils import transport_helpers
+
 
 # Import markers
 quality_production = pytest.mark.quality_production
 
 logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @pytest.fixture
 def text_message_params():
@@ -133,10 +132,9 @@ def test_streaming_reconnection_simulation(sut_client, text_message_params):
     4. Reconnecting and continuing to receive events
     """
     # Step 1: Create a task for streaming
-    create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
-    create_resp = sut_client.send_json_rpc(**create_req)
+    create_resp = transport_helpers.transport_send_message(sut_client, text_message_params)
     
-    if not message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"]):
+    if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for streaming reconnection test")
         
     task_id = create_resp["result"]["id"]
@@ -204,10 +202,9 @@ def test_partial_update_recovery(sut_client, text_message_params):
     3. Verifies task state integrity
     """
     # Step 1: Create a task
-    create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
-    create_resp = sut_client.send_json_rpc(**create_req)
+    create_resp = transport_helpers.transport_send_message(sut_client, text_message_params)
     
-    if not message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"]):
+    if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for partial update test")
         
     task_id = create_resp["result"]["id"]
@@ -241,18 +238,16 @@ def test_partial_update_recovery(sut_client, text_message_params):
         elif i == 2:
             time.sleep(2)    # Longer delay before third update
         
-        req = message_utils.make_json_rpc_request("message/send", params=params)
-        resp = sut_client.send_json_rpc(**req)
+        resp = transport_helpers.transport_send_message(sut_client, params)
         
         # Verify each update succeeded
-        assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+        assert transport_helpers.is_json_rpc_success_response(resp)
         logger.info(f"Update {i+1} successful")
     
     # Step 3: Get the final task state to verify integrity
-    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
-    get_resp = sut_client.send_json_rpc(**get_req)
+    get_resp = transport_helpers.transport_get_task(sut_client, task_id)
     
-    assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"])
+    assert transport_helpers.is_json_rpc_success_response(get_resp)
     
     # In a real test, you might check additional properties of the task
     # to ensure all updates were processed properly and the task is in a consistent state

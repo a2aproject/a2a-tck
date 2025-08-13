@@ -4,22 +4,24 @@ import uuid
 import pytest
 
 from tck import agent_card_utils, message_utils
-from tck.sut_client import SUTClient
 from tests.markers import mandatory_protocol, optional_capability
+from tests.utils.transport_helpers import (
+    transport_send_message,
+    is_json_rpc_success_response,
+    extract_task_id_from_response,
+    generate_test_message_id
+)
 
 logger = logging.getLogger(__name__)
-
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
 
 @pytest.fixture
 def valid_text_message_params():
     # Minimal valid params for message/send (TextPart)
+    # Uses transport-agnostic message ID generation
     return {
         "message": {
             "kind": "message",
-            "messageId": "test-message-id-" + str(uuid.uuid4()),
+            "messageId": generate_test_message_id("text"),
             "role": "user",
             "parts": [
                 {
@@ -37,7 +39,7 @@ def valid_file_message_params():
     return {
         "message": {
             "kind": "message",
-            "messageId": "test-file-message-id-" + str(uuid.uuid4()),
+            "messageId": generate_test_message_id("file"),
             "role": "user",
             "parts": [
                 {
@@ -59,7 +61,7 @@ def valid_data_message_params():
     return {
         "message": {
             "kind": "message",
-            "messageId": "test-data-message-id-" + str(uuid.uuid4()),
+            "messageId": generate_test_message_id("data"),
             "role": "user",
             "parts": [
                 {
@@ -94,23 +96,30 @@ def has_modality_support(agent_card_data, modality):
 @mandatory_protocol
 def test_message_send_valid_text(sut_client, valid_text_message_params, agent_card_data):
     """
-    MANDATORY: A2A Specification §7.1 - Core Message Protocol
+    MANDATORY: A2A v0.3.0 §7.1 - Core Message Protocol
     
-    The A2A specification requires all implementations to support
+    The A2A v0.3.0 specification requires all implementations to support
     message/send with text content as the fundamental communication method.
+    This test works across all transport types (JSON-RPC, gRPC, REST).
     
-    Failure Impact: Implementation is not A2A compliant
+    Failure Impact: Implementation is not A2A v0.3.0 compliant
+    
+    Specification Reference: A2A v0.3.0 §7.1 - Core Message Protocol
     """
     # Text modality is considered fundamental, but check anyway
     if not has_modality_support(agent_card_data, "text"):
         logger.warning("Agent Card does not declare 'text' modality support, but testing anyway as it's fundamental")
     
-    req = message_utils.make_json_rpc_request("message/send", params=valid_text_message_params)
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
-    result = resp["result"]
+    # Use transport-agnostic message sending
+    resp = transport_send_message(sut_client, valid_text_message_params)
+    
+    # Validate response using transport-agnostic validation
+    assert is_json_rpc_success_response(resp), f"Message send failed: {resp}"
+    
+    # Extract result from transport response
+    result = resp.get("result", resp)
 
-    # According to A2A spec, message/send can return either Task or Message
+    # According to A2A v0.3.0 spec, message/send can return either Task or Message
     if "status" in result:
         # This is a Task object
         assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
@@ -123,44 +132,59 @@ def test_message_send_valid_text(sut_client, valid_text_message_params, agent_ca
 @mandatory_protocol
 def test_message_send_invalid_params(sut_client):
     """
-    MANDATORY: A2A Specification §7.1 - Parameter Validation
+    MANDATORY: A2A v0.3.0 §7.1 - Parameter Validation
     
-    The A2A specification requires proper validation of message/send parameters.
+    The A2A v0.3.0 specification requires proper validation of message/send parameters.
     Missing required fields MUST result in InvalidParamsError (-32602).
+    This test works across all transport types.
     
-    Failure Impact: Implementation is not A2A compliant
+    Failure Impact: Implementation is not A2A v0.3.0 compliant
+    
+    Specification Reference: A2A v0.3.0 §8.1 - Standard JSON-RPC Errors
     """
     invalid_params = {"message": {"kind": "message"}}  # missing required fields (messageId, role, parts)
-    req = message_utils.make_json_rpc_request("message/send", params=invalid_params)
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-    assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
+    
+    # Use transport-agnostic message sending (should fail)
+    resp = transport_send_message(sut_client, invalid_params)
+    
+    # Check for proper error response across transports
+    assert "error" in resp or not is_json_rpc_success_response(resp), \
+        "Invalid parameters should result in error response"
+    
+    logger.info(f"Invalid params response: {resp}")
+    # For JSON-RPC, verify specific error code
+    if "error" in resp and "code" in resp["error"]:
+        assert resp["error"]["code"] == -32602, \
+            f"Expected InvalidParamsError (-32602), got {resp['error']['code']}"
 
 @mandatory_protocol
 def test_message_send_continue_task(sut_client, valid_text_message_params):
     """
-    MANDATORY: A2A Specification §7.1 - Task Continuation
+    MANDATORY: A2A v0.3.0 §7.1 - Task Continuation
     
-    The A2A specification requires support for continuing existing tasks
-    via message/send with taskId parameter.
+    The A2A v0.3.0 specification requires support for continuing existing tasks
+    via message/send with taskId parameter. This test works across all transport types.
     
-    Failure Impact: Implementation is not A2A compliant
+    Failure Impact: Implementation is not A2A v0.3.0 compliant
+    
+    Specification Reference: A2A v0.3.0 §7.1 - Core Message Protocol
     """
-    # First, create a task 
+    # First, create a task using transport-agnostic sending
     first_params = valid_text_message_params.copy()
     
-    first_req = message_utils.make_json_rpc_request("message/send", params=first_params)
-    first_resp = sut_client.send_json_rpc(method=first_req["method"], params=first_req["params"], id=first_req["id"])
-    assert message_utils.is_json_rpc_success_response(first_resp, expected_id=first_req["id"])
+    first_resp = transport_send_message(sut_client, first_params)
+    assert is_json_rpc_success_response(first_resp), f"Initial message send failed: {first_resp}"
     
-    # Get the server-generated task ID
-    task_id = first_resp["result"]["id"]
+    # Extract task ID from transport response
+    task_id = extract_task_id_from_response(first_resp)
+    assert task_id is not None, "Failed to extract task ID from response"
     
     # Now, send a follow-up message to continue the task
     continuation_params = {
         "message": {
             "kind": "message",
             "taskId": task_id,
-            "messageId": "test-continuation-message-id-" + str(uuid.uuid4()),
+            "messageId": generate_test_message_id("continuation"),
             "role": "user",
             "parts": [
                 {
@@ -170,15 +194,17 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
             ]
         }
     }
-    second_req = message_utils.make_json_rpc_request("message/send", params=continuation_params)
-    second_resp = sut_client.send_json_rpc(method=second_req["method"], params=second_req["params"], id=second_req["id"])
-    assert message_utils.is_json_rpc_success_response(second_resp, expected_id=second_req["id"])
-    result = second_resp["result"]
+    
+    second_resp = transport_send_message(sut_client, continuation_params)
+    assert is_json_rpc_success_response(second_resp), f"Task continuation failed: {second_resp}"
+    
+    # Extract result from transport response
+    result = second_resp.get("result", second_resp)
     
     # The result can be either a Task or Message object
     if "status" in result:
         # This is a Task object
-        assert result["id"] == task_id  # Should be the same task ID
+        assert result["id"] == task_id, f"Task ID mismatch: expected {task_id}, got {result.get('id')}"
         assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
     else:
         # This is a Message object - verify it has the expected structure

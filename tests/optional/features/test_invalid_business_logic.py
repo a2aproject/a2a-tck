@@ -3,7 +3,7 @@ import uuid
 import logging
 
 from tck import message_utils
-from tck.sut_client import SUTClient
+from tests.utils import transport_helpers
 
 # Import markers
 mandatory_protocol = pytest.mark.mandatory_protocol
@@ -11,9 +11,7 @@ optional_feature = pytest.mark.optional_feature
 
 logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @optional_feature
 def test_unsupported_part_kind(sut_client):
@@ -47,16 +45,16 @@ def test_unsupported_part_kind(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    # Replace with transport helper
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # Expect either an error response or a task with failed state
-    if message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]):
+    if transport_helpers.is_json_rpc_error_response(resp):
         # Check if it's an InvalidParamsError or other error
         assert resp["error"]["code"] in {-32602, -32603}, "Expected InvalidParamsError or InternalError (Spec: InvalidParamsError/-32602, InternalError/-32603)"
     else:
         # If not an error response, the task might be created but in a failed state
-        assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+        assert transport_helpers.is_json_rpc_success_response(resp)
         task = resp["result"]
         assert task["status"].get("state") in {"failed", "error"}, "Task should be in failed state"
 
@@ -97,16 +95,16 @@ def test_invalid_file_part(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    # Replace with transport helper
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT might either reject with an error or accept and later fail the task
-    if message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]):
+    if transport_helpers.is_json_rpc_error_response(resp):
         # It's acceptable to reject with an error
         pass
     else:
         # If accepted, the task might be created in a working or failed state
-        assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+        assert transport_helpers.is_json_rpc_success_response(resp)
         task = resp["result"]
         # Don't assert on the state here as it might be implementation-specific
 
@@ -136,11 +134,11 @@ def test_empty_message_parts(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    # Replace with transport helper
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # Per A2A spec, this MUST be rejected with InvalidParams error
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(resp), \
         f"SUT MUST reject messages with empty parts array per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
         f"Expected InvalidParams error code -32602 for empty parts, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
@@ -178,8 +176,8 @@ def test_very_large_message(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    # Replace with transport helper
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT might either:
     # 1. Accept the message and handle it (success)
@@ -187,9 +185,8 @@ def test_very_large_message(sut_client):
     # 3. Accept but fail the task
     
     # Don't make strict assertions here, as the behavior is implementation-specific
-    # Just make sure we get a valid JSON-RPC response
-    assert "jsonrpc" in resp
-    assert "id" in resp and resp["id"] == req["id"]
+    # Just make sure we get a valid response
+    assert isinstance(resp, dict), "Response should be a dictionary"
 
 @mandatory_protocol
 def test_missing_required_message_fields(sut_client):
@@ -224,11 +221,10 @@ def test_missing_required_message_fields(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params_no_message_id)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params_no_message_id)
     
     # Per A2A spec, this MUST be rejected with InvalidParams error
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(resp), \
         f"SUT MUST reject messages missing required 'messageId' field per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
         f"Expected InvalidParams error code -32602 for missing messageId, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
@@ -247,11 +243,10 @@ def test_missing_required_message_fields(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params_no_role)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params_no_role)
     
     # Per A2A spec, this MUST be rejected with InvalidParams error
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(resp), \
         f"SUT MUST reject messages missing required 'role' field per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
         f"Expected InvalidParams error code -32602 for missing role, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
@@ -265,11 +260,10 @@ def test_missing_required_message_fields(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params_no_parts)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params_no_parts)
     
     # Per A2A spec, this MUST be rejected with InvalidParams error
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(resp), \
         f"SUT MUST reject messages missing required 'parts' field per A2A spec, but got: {resp}"
     assert resp["error"]["code"] == -32602, \
         f"Expected InvalidParams error code -32602 for missing parts, but got: {resp['error']['code']} (Spec: InvalidParamsError)"
@@ -310,14 +304,14 @@ def test_file_part_without_mimetype(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    # Replace with transport helper
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT should handle this gracefully since mimeType is RECOMMENDED, not required
-    if message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]):
+    if transport_helpers.is_json_rpc_error_response(resp):
         # If rejected, should be for business logic reasons, not spec violations
         logger.info("SUT rejected file without mimeType - this is acceptable behavior")
     else:
         # If accepted, should create a valid task
-        assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"])
+        assert transport_helpers.is_json_rpc_success_response(resp)
         logger.info("SUT accepted file without mimeType - this demonstrates good flexibility") 

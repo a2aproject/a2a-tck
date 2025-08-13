@@ -8,9 +8,7 @@ from tck.sut_client import SUTClient
 from tests.markers import mandatory_protocol
 
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @pytest.fixture
 def text_message_params():
@@ -68,9 +66,10 @@ def test_task_history_length(sut_client):
         }
     }
     
-    create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
-    create_resp = sut_client.send_json_rpc(**create_req)
-    assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
+    from tests.utils import transport_helpers
+    
+    create_resp = transport_helpers.transport_send_message(sut_client, create_params)
+    assert transport_helpers.is_json_rpc_success_response(create_resp)
     
     # Get the server-generated task ID
     task_id = create_resp["result"]["id"]
@@ -88,21 +87,18 @@ def test_task_history_length(sut_client):
                 ]
             }
         }
-        update_req = message_utils.make_json_rpc_request("message/send", params=follow_up_params)
-        update_resp = sut_client.send_json_rpc(method=update_req["method"], params=update_req["params"], id=update_req["id"])
-        assert message_utils.is_json_rpc_success_response(update_resp, expected_id=update_req["id"])
+        update_resp = transport_helpers.transport_send_message(sut_client, follow_up_params)
+        assert transport_helpers.is_json_rpc_success_response(update_resp)
         time.sleep(0.5)  # Brief pause between messages
     
     # Step 3: Get task with full history
-    get_full_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
-    get_full_resp = sut_client.send_json_rpc(method=get_full_req["method"], params=get_full_req["params"], id=get_full_req["id"])
-    assert message_utils.is_json_rpc_success_response(get_full_resp, expected_id=get_full_req["id"])
+    get_full_resp = transport_helpers.transport_get_task(sut_client, task_id)
+    assert transport_helpers.is_json_rpc_success_response(get_full_resp)
     full_history = get_full_resp["result"].get("history", [])
     
     # Step 4: Get task with limited history (historyLength=2)
-    get_limited_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id, "historyLength": 2})
-    get_limited_resp = sut_client.send_json_rpc(method=get_limited_req["method"], params=get_limited_req["params"], id=get_limited_req["id"])
-    assert message_utils.is_json_rpc_success_response(get_limited_resp, expected_id=get_limited_req["id"])
+    get_limited_resp = transport_helpers.transport_get_task(sut_client, task_id, history_length=2)
+    assert transport_helpers.is_json_rpc_success_response(get_limited_resp)
     limited_history = get_limited_resp["result"].get("history", [])
     
 # Verify that full history contains more entries than limited history (if available)

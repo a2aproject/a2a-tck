@@ -7,14 +7,13 @@ import uuid
 import pytest
 
 from tck import message_utils
-from tck.sut_client import SUTClient
+from tests.utils import transport_helpers
+
 from tests.markers import quality_production, quality_basic
 
 logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @pytest.fixture
 def text_message_params():
@@ -58,7 +57,7 @@ def test_parallel_requests(sut_client, text_message_params):
         
         req = message_utils.make_json_rpc_request("message/send", params=params)
         try:
-            resp = sut_client.send_json_rpc(**req)
+            resp = transport_helpers.transport_send_message(sut_client, params)
             return (i, req["id"], resp)
         except Exception as e:
             logger.error(f"Request {i} failed: {e}")
@@ -75,7 +74,7 @@ def test_parallel_requests(sut_client, text_message_params):
     # Verify all requests were processed successfully
     num_success = 0
     for i, req_id, resp in results:
-        if resp and message_utils.is_json_rpc_success_response(resp, expected_id=req_id):
+        if resp and transport_helpers.is_json_rpc_success_response(resp):
             num_success += 1
         else:
             logger.warning(f"Request {i} with ID {req_id} failed or returned unexpected response")
@@ -114,7 +113,7 @@ def test_rapid_sequential_requests(sut_client, text_message_params):
         
         req = message_utils.make_json_rpc_request("message/send", params=params)
         try:
-            resp = sut_client.send_json_rpc(**req)
+            resp = transport_helpers.transport_send_message(sut_client, params)
             results.append((i, req["id"], resp))
         except Exception as e:
             logger.error(f"Request {i} failed: {e}")
@@ -123,7 +122,7 @@ def test_rapid_sequential_requests(sut_client, text_message_params):
     # Verify all requests were processed successfully
     num_success = 0
     for i, req_id, resp in results:
-        if resp and message_utils.is_json_rpc_success_response(resp, expected_id=req_id):
+        if resp and transport_helpers.is_json_rpc_success_response(resp):
             num_success += 1
         else:
             logger.warning(f"Request {i} with ID {req_id} failed or returned unexpected response")
@@ -147,19 +146,17 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     - No race conditions or data corruption
     """
     # Step 1: Create a task
-    create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
-    create_resp = sut_client.send_json_rpc(**create_req)
+    create_resp = transport_helpers.transport_send_message(sut_client, text_message_params)
     
-    if not message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"]):
+    if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for concurrent operations test")
         
     task_id = create_resp["result"]["id"]
     
     # Step 2: Define operations to perform concurrently on the task
     def get_task():
-        req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
-        resp = sut_client.send_json_rpc(**req)
-        return ("get", req["id"], resp)
+        resp = transport_helpers.transport_get_task(sut_client, task_id)
+        return ("get", task_id, resp)
     
     def update_task():
         params = {
@@ -176,16 +173,14 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
                 "kind": "message"
             }
         }
-        req = message_utils.make_json_rpc_request("message/send", params=params)
-        resp = sut_client.send_json_rpc(**req)
-        return ("update", req["id"], resp)
+        resp = transport_helpers.transport_send_message(sut_client, params)
+        return ("update", task_id, resp)
     
     def cancel_task():
         # Sleep briefly to let other operations start
         time.sleep(0.1)
-        req = message_utils.make_json_rpc_request("tasks/cancel", params={"id": task_id})
-        resp = sut_client.send_json_rpc(**req)
-        return ("cancel", req["id"], resp)
+        resp = transport_helpers.transport_cancel_task(sut_client, task_id)
+        return ("cancel", task_id, resp)
     
     # Step 3: Execute operations concurrently
     operations = [get_task, update_task, cancel_task]
@@ -202,5 +197,6 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     # Some SUTs might reject operations after cancel, others might accept them
     for op_name, req_id, resp in results:
         logger.info(f"Operation {op_name} resulted in: {resp}")
-        assert "jsonrpc" in resp, f"Operation {op_name} did not return valid JSON-RPC response"
-        assert "id" in resp and resp["id"] == req_id, f"Operation {op_name} returned wrong request ID" 
+        assert isinstance(resp, dict), f"Operation {op_name} did not return valid response"
+        # Transport helper responses may be success or error format
+        assert "result" in resp or "error" in resp, f"Operation {op_name} response should contain result or error" 

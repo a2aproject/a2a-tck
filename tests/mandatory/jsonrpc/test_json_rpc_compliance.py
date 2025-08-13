@@ -67,7 +67,7 @@ def test_rejects_unknown_method(sut_client):
     Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
     req = message_utils.make_json_rpc_request("nonexistent/method", params={})
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
+    resp = sut_client.send_raw_json_rpc(req)
     assert resp["error"]["code"] == -32601  # Spec: MethodNotFoundError
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"])
 
@@ -82,5 +82,5 @@ def test_rejects_invalid_params(sut_client):
     Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
     req = message_utils.make_json_rpc_request("message/send", params={"message": {"parts": "invalid"}})
-    resp = sut_client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
+    resp = sut_client.send_raw_json_rpc(req)
     assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError

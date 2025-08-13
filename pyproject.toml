@@ -34,6 +34,13 @@ dependencies = [
     "packaging>=21.0",
     "PyYAML>=5.0.0",
     "python-dotenv>=1.0.0",
+    # gRPC support for v0.3.0 multi-transport
+    "grpcio>=1.62.0",
+    "grpcio-tools>=1.62.0",
+    "protobuf>=4.25.0",
+    "googleapis-common-protos>=1.63.0",
+    # Enhanced TLS/certificate analysis
+    "pyOpenSSL>=23.0.0",
 ]
 
 [project.optional-dependencies]
@@ -71,6 +78,12 @@ markers = [
     "quality_basic: Basic implementation quality",
     "quality_production: Production-ready quality",
     "quality_advanced: Advanced features",
+    # Transport equivalence markers
+    "transport_equivalence: Multi-transport functional equivalence",
+    # A2A version-specific markers
+    "a2a_v030: A2A v0.3.0 specific features",
+    # General markers for convenience
+    "optional: General optional functionality",
 ]
 
 [tool.black]

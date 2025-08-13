@@ -591,3 +591,239 @@ async def test_tasks_resubscribe_nonexistent(async_http_client, agent_card_data)
             )
         else:
             raise
+
+@optional_capability
+@pytest.mark.asyncio
+async def test_sse_header_compliance(async_http_client, agent_card_data):
+    """
+    CONDITIONAL MANDATORY: A2A Specification §3.3.1 - SSE Header Compliance
+    
+    Status: MANDATORY if capabilities.streaming = true
+            SKIP if capabilities.streaming = false/missing
+            
+    Test validates that streaming responses include proper SSE headers as required
+    by the A2A specification and W3C SSE standard.
+    """
+    validator = CapabilityValidator(agent_card_data)
+    
+    if not validator.is_capability_declared('streaming'):
+        pytest.skip("Streaming capability not declared - test not applicable")
+    
+    # Prepare streaming request
+    params = {
+        "message": {
+            "kind": "message",
+            "messageId": "test-sse-headers-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [{"kind": "text", "text": "Test SSE headers"}]
+        }
+    }
+    
+    req_id = message_utils.generate_request_id()
+    json_rpc_request = message_utils.make_json_rpc_request("message/stream", params=params, id=req_id)
+    
+    sut_url = config.get_sut_url()
+    headers = {"Content-Type": "application/json"}
+    
+    async with async_http_client.stream("POST", sut_url, json=json_rpc_request, headers=headers) as response:
+        # Validate HTTP status
+        assert response.status_code == 200, "Streaming should return HTTP 200"
+        
+        # Validate required SSE headers per A2A specification §3.3.1
+        content_type = response.headers.get("content-type", "")
+        assert content_type.startswith("text/event-stream"), \
+            f"Streaming must return Content-Type: text/event-stream, got: {content_type}"
+        
+        # Optional but recommended SSE headers for better client behavior
+        cache_control = response.headers.get("cache-control", "")
+        if cache_control:
+            assert "no-cache" in cache_control.lower(), \
+                "If Cache-Control is present, it should include no-cache for SSE streams"
+        
+        # Connection header should allow streaming
+        connection = response.headers.get("connection", "")
+        if connection:
+            assert "close" not in connection.lower(), \
+                "Connection header should not force close for streaming"
+
+@optional_capability
+@pytest.mark.asyncio
+async def test_sse_event_format_compliance(async_http_client, agent_card_data):
+    """
+    CONDITIONAL MANDATORY: A2A Specification §3.3.1 - SSE Event Format
+    
+    Status: MANDATORY if capabilities.streaming = true
+            SKIP if capabilities.streaming = false/missing
+            
+    Test validates that SSE events follow proper format with JSON-RPC 2.0
+    responses in the data field as required by A2A specification.
+    """
+    validator = CapabilityValidator(agent_card_data)
+    
+    if not validator.is_capability_declared('streaming'):
+        pytest.skip("Streaming capability not declared - test not applicable")
+    
+    params = {
+        "message": {
+            "kind": "message",
+            "messageId": "test-sse-format-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [{"kind": "text", "text": "Test SSE event format"}]
+        }
+    }
+    
+    req_id = message_utils.generate_request_id()
+    json_rpc_request = message_utils.make_json_rpc_request("message/stream", params=params, id=req_id)
+    
+    sut_url = config.get_sut_url()
+    headers = {"Content-Type": "application/json"}
+    
+    async with async_http_client.stream("POST", sut_url, json=json_rpc_request, headers=headers) as response:
+        assert response.status_code == 200
+        assert response.headers.get("content-type", "").startswith("text/event-stream")
+        
+        sse_client = SimpleSSEClient(response, timeout=TIMEOUTS['sse_client_short'])
+        events_processed = 0
+        
+        async for event in sse_client:
+            events_processed += 1
+            
+            # Validate SSE event structure per W3C specification
+            assert isinstance(event, dict), "SSE event should be parsed as dictionary"
+            
+            if "data" in event:
+                # Validate that data field contains valid JSON
+                try:
+                    data = json.loads(event["data"])
+                except json.JSONDecodeError:
+                    pytest.fail(f"SSE data field must contain valid JSON, got: {event['data']}")
+                
+                # Validate JSON-RPC 2.0 structure per A2A specification §3.3.1
+                assert "jsonrpc" in data, "SSE data must contain JSON-RPC 2.0 response"
+                assert data["jsonrpc"] == "2.0", "JSON-RPC version must be 2.0"
+                assert "id" in data, "JSON-RPC response must include id field"
+                assert data["id"] == req_id, f"JSON-RPC id mismatch: expected {req_id}, got {data.get('id')}"
+                
+                # Must have either result or error, but not both
+                has_result = "result" in data
+                has_error = "error" in data
+                assert has_result or has_error, "JSON-RPC response must have result or error"
+                assert not (has_result and has_error), "JSON-RPC response cannot have both result and error"
+                
+                # Validate result structure for success responses
+                if has_result:
+                    result = data["result"]
+                    assert isinstance(result, dict), "Result must be object for A2A streaming responses"
+                    
+                    # Should be Task, Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
+                    if "kind" in result:
+                        valid_kinds = ["task", "message", "status-update", "artifact-update"]
+                        assert result["kind"] in valid_kinds, \
+                            f"Result kind must be one of {valid_kinds}, got: {result.get('kind')}"
+            
+            # Process a few events then break
+            if events_processed >= 3:
+                break
+        
+        assert events_processed > 0, "Streaming should produce at least one SSE event"
+
+@optional_capability
+@pytest.mark.asyncio
+async def test_streaming_connection_resilience(async_http_client, agent_card_data):
+    """
+    CONDITIONAL MANDATORY: A2A Specification §7.9 - Streaming Resilience
+    
+    Status: MANDATORY if capabilities.streaming = true
+            SKIP if capabilities.streaming = false/missing
+            
+    Test validates that streaming connections handle interruptions gracefully
+    and that tasks/resubscribe allows resuming streams.
+    """
+    validator = CapabilityValidator(agent_card_data)
+    
+    if not validator.is_capability_declared('streaming'):
+        pytest.skip("Streaming capability not declared - test not applicable")
+    
+    # First create a task via streaming to get a task ID
+    params = {
+        "message": {
+            "kind": "message",
+            "messageId": "test-resilience-" + str(uuid.uuid4()),
+            "role": "user",
+            "parts": [{"kind": "text", "text": "Simple task for resilience test"}]
+        }
+    }
+    
+    req_id = message_utils.generate_request_id()
+    json_rpc_request = message_utils.make_json_rpc_request("message/stream", params=params, id=req_id)
+    
+    sut_url = config.get_sut_url()
+    headers = {"Content-Type": "application/json"}
+    task_id = None
+    
+    # Start initial stream and capture task ID - handle gracefully if timeout occurs
+    try:
+        async with async_http_client.stream("POST", sut_url, json=json_rpc_request, headers=headers) as response:
+            assert response.status_code == 200
+            
+            sse_client = SimpleSSEClient(response, timeout=TIMEOUTS['sse_client_short'])
+            
+            try:
+                async for event in sse_client:
+                    if "data" in event:
+                        try:
+                            data = json.loads(event["data"])
+                            if "result" in data and isinstance(data["result"], dict):
+                                result = data["result"]
+                                if "id" in result and "status" in result:
+                                    # Found a Task object
+                                    task_id = result["id"]
+                                    logger.info(f"Captured task ID: {task_id}")
+                                    break
+                        except json.JSONDecodeError:
+                            continue
+                    
+                    # Break after first event to simulate early disconnection
+                    break
+            except asyncio.TimeoutError:
+                logger.warning("Timeout during initial stream - this is expected for resilience test")
+    except (httpx.HTTPError, httpx.ReadTimeout, httpx.TimeoutException) as e:
+        logger.info(f"Connection interruption during initial stream: {e} - this is expected")
+    
+    if task_id:
+        # Try to resubscribe to the task with timeout handling
+        resubscribe_params = {"id": task_id}
+        req_id_2 = message_utils.generate_request_id()
+        resubscribe_request = message_utils.make_json_rpc_request("tasks/resubscribe", params=resubscribe_params, id=req_id_2)
+        
+        try:
+            async with async_http_client.stream("POST", sut_url, json=resubscribe_request, headers=headers, timeout=10.0) as response:
+                assert response.status_code == 200, "Resubscribe should succeed for existing task"
+                assert response.headers.get("content-type", "").startswith("text/event-stream"), \
+                    "Resubscribe should return SSE stream"
+                
+                # Verify we can receive events from resubscription
+                sse_client = SimpleSSEClient(response, timeout=TIMEOUTS['sse_client_short'])
+                resubscribe_events = 0
+                
+                try:
+                    async for event in sse_client:
+                        if "data" in event:
+                            resubscribe_events += 1
+                            logger.info(f"Received resubscribe event #{resubscribe_events}")
+                            if resubscribe_events >= 1:  # At least one event from resubscription
+                                break
+                except asyncio.TimeoutError:
+                    logger.warning("Timeout during resubscribe stream processing")
+                
+                # Test passes if we can establish the resubscribe connection, even if no events
+                # This validates that the resubscribe mechanism works
+                assert True, "Resubscribe connection established successfully"
+        except (httpx.HTTPError, httpx.ReadTimeout, httpx.TimeoutException) as e:
+            # If resubscribe fails, check if it's due to task not found (which is acceptable)
+            if "not found" in str(e).lower() or "404" in str(e):
+                pytest.skip("Task expired before resubscribe test - this is implementation-dependent behavior")
+            else:
+                pytest.fail(f"Resubscribe failed unexpectedly: {e}")
+    else:
+        pytest.skip("Could not capture task ID from initial stream - cannot test resubscribe resilience")

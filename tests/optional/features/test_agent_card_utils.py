@@ -65,7 +65,12 @@ def test_fetch_agent_card_success():
         - JSON parsing handles valid Agent Card data correctly
         - HTTP communication works as expected
     """
-    # Mock the HTTP response
+    # Mock the HTTP responses - v0.3.0 endpoint returns 404, v0.2.5 endpoint succeeds
+    responses.add(
+        responses.GET,
+        "https://example.com/.well-known/agent-card.json",
+        status=404
+    )
     responses.add(
         responses.GET,
         "https://example.com/.well-known/agent.json",
@@ -81,7 +86,10 @@ def test_fetch_agent_card_success():
     
     # Verify the result
     assert result == SAMPLE_AGENT_CARD
-    assert responses.calls[0].request.url == "https://example.com/.well-known/agent.json"
+    # Should try v0.3.0 first (404), then v0.2.5 (success)
+    assert len(responses.calls) == 2
+    assert responses.calls[0].request.url == "https://example.com/.well-known/agent-card.json"
+    assert responses.calls[1].request.url == "https://example.com/.well-known/agent.json"
 
 @optional_feature
 @responses.activate
