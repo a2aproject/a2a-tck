@@ -46,8 +46,11 @@ def transport_send_message(client: BaseTransportClient, message_params: Dict[str
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
             logger.debug(f"Transport error: {e}")
-            # Try to extract error details from transport exception
-            if hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, 'a2a_error') and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, 'json_rpc_error') and e.json_rpc_error:
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
     
@@ -88,8 +91,11 @@ def transport_get_task(client: BaseTransportClient, task_id: str,
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
             logger.debug(f"Transport error: {e}")
-            # Try to extract error details from transport exception
-            if hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, 'a2a_error') and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, 'json_rpc_error') and e.json_rpc_error:
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
     
@@ -132,8 +138,11 @@ def transport_cancel_task(client: BaseTransportClient, task_id: str,
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
             logger.debug(f"Transport error: {e}")
-            # Try to extract error details from transport exception
-            if hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, 'a2a_error') and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, 'json_rpc_error') and e.json_rpc_error:
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
     
@@ -172,8 +181,11 @@ def transport_get_agent_card(client: BaseTransportClient,
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
             logger.debug(f"Transport error: {e}")
-            # Try to extract error details from transport exception
-            if hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, 'a2a_error') and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, 'json_rpc_error') and e.json_rpc_error:
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
     

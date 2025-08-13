@@ -36,9 +36,11 @@ class TransportError(Exception):
     """
     
     def __init__(self, message: str, transport_type: TransportType, 
+                 a2a_error: Optional[Dict[str, Any]] = None,
                  original_error: Optional[Exception] = None):
         super().__init__(message)
         self.transport_type = transport_type
+        self.a2a_error = a2a_error
         self.original_error = original_error
         
     def __str__(self) -> str:

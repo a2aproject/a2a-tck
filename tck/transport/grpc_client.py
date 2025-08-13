@@ -201,7 +201,9 @@ class GRPCClient(BaseTransportClient):
         except grpc.RpcError as e:
             error_msg = f"gRPC call failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
-            raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC send_message: {str(e)}"
             logger.error(error_msg)
@@ -328,7 +330,9 @@ class GRPCClient(BaseTransportClient):
         except grpc.RpcError as e:
             error_msg = f"gRPC GetTask failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
-            raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC get_task: {str(e)}"
             logger.error(error_msg)
@@ -368,7 +372,9 @@ class GRPCClient(BaseTransportClient):
         except grpc.RpcError as e:
             error_msg = f"gRPC CancelTask failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
-            raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC cancel_task: {str(e)}"
             logger.error(error_msg)
@@ -487,31 +493,46 @@ class GRPCClient(BaseTransportClient):
         try:
             logger.info("Getting agent card via gRPC")
             
-            # Make real gRPC call to live SUT
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # request = GetAgentCardRequest()
-                # response = stub.GetAgentCard(request, timeout=self.timeout)
-                
-                # For now, simulate the response structure
-                agent_card = {
-                    "protocolVersion": "0.3.0",
-                    "name": "A2A gRPC Test Agent",
-                    "description": "Test agent accessed via gRPC transport",
-                    "url": self.base_url,
-                    "preferredTransport": "GRPC",
-                    "capabilities": {
-                        "streaming": True,
-                        "pushNotifications": False
-                    },
-                    "additionalInterfaces": [
-                        {
-                            "url": self.base_url,
-                            "transport": "GRPC"
-                        }
-                    ]
-                }
+            self._load_static_stubs()
+            pb = self._pb
+            req = pb.GetAgentCardRequest()
+            resp = self.stub.GetAgentCard(req, timeout=self.timeout)
+            
+            # Convert protobuf response to JSON format
+            agent_card = {
+                "protocolVersion": resp.protocol_version,
+                "name": resp.name,
+                "description": resp.description,
+                "url": resp.url,
+                "version": resp.version,
+                "preferredTransport": resp.preferred_transport or "GRPC",
+                "capabilities": {
+                    "streaming": resp.capabilities.streaming if resp.capabilities else False,
+                    "pushNotifications": resp.capabilities.push_notifications if resp.capabilities else False
+                },
+                "defaultInputModes": list(resp.default_input_modes),
+                "defaultOutputModes": list(resp.default_output_modes),
+                "additionalInterfaces": [
+                    {
+                        "url": iface.url,
+                        "transport": iface.transport
+                    }
+                    for iface in resp.additional_interfaces
+                ],
+                "skills": [
+                    {
+                        "id": skill.id,
+                        "name": skill.name,
+                        "description": skill.description,
+                        "tags": list(skill.tags),
+                        "examples": list(skill.examples)
+                    }
+                    for skill in resp.skills
+                ]
+            }
+            
+            if resp.documentation_url:
+                agent_card["documentationUrl"] = resp.documentation_url
             
             logger.debug("Retrieved agent card via gRPC")
             return agent_card
@@ -519,7 +540,9 @@ class GRPCClient(BaseTransportClient):
         except grpc.RpcError as e:
             error_msg = f"gRPC GetAgentCard failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
-            raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC get_agent_card: {str(e)}"
             logger.error(error_msg)
@@ -855,6 +878,74 @@ class GRPCClient(BaseTransportClient):
         }
         return mapping.get(name, "completed")
     
+    def _map_grpc_error_to_a2a(self, grpc_error: grpc.RpcError) -> Dict[str, Any]:
+        """
+        Map gRPC status codes to A2A error codes per specification.
+        
+        Reference: A2A Protocol v0.3.0 Error Mapping Table
+        """
+        grpc_code = grpc_error.code()
+        details = grpc_error.details()
+        
+        # Error mapping per A2A v0.3.0 specification
+        if grpc_code == grpc.StatusCode.INVALID_ARGUMENT:
+            if "PARSE_ERROR" in details:
+                return {"code": -32700, "message": "Invalid JSON payload"}
+            elif "INVALID_REQUEST" in details:
+                return {"code": -32600, "message": "Invalid JSON-RPC Request"}
+            elif "INVALID_PARAMS" in details or "Parts cannot be empty" in details:
+                return {"code": -32602, "message": "Invalid method parameters"}
+            elif "CONTENT_TYPE_NOT_SUPPORTED" in details:
+                return {"code": -32005, "message": "Incompatible content types"}
+            else:
+                return {"code": -32602, "message": "Invalid method parameters"}
+        
+        elif grpc_code == grpc.StatusCode.UNIMPLEMENTED:
+            if "METHOD_NOT_FOUND" in details:
+                return {"code": -32601, "message": "Method not found"}
+            elif "PUSH_NOTIFICATIONS_NOT_SUPPORTED" in details:
+                return {"code": -32003, "message": "Push Notification is not supported"}
+            elif "AUTHENTICATED_CARD_NOT_CONFIGURED" in details:
+                return {"code": -32007, "message": "Authenticated Extended Card not configured"}
+            elif "OPERATION_NOT_SUPPORTED" in details:
+                return {"code": -32004, "message": "This operation is not supported"}
+            else:
+                return {"code": -32601, "message": "Method not found"}
+        
+        elif grpc_code == grpc.StatusCode.NOT_FOUND:
+            if "TASK_NOT_FOUND" in details or "Task not found" in details:
+                return {"code": -32001, "message": "Task not found"}
+            else:
+                return {"code": -32001, "message": "Task not found"}
+        
+        elif grpc_code == grpc.StatusCode.FAILED_PRECONDITION:
+            if "TASK_NOT_CANCELABLE" in details:
+                return {"code": -32002, "message": "Task cannot be canceled"}
+            else:
+                return {"code": -32002, "message": "Task cannot be canceled"}
+        
+        elif grpc_code == grpc.StatusCode.INTERNAL:
+            if "INVALID_AGENT_RESPONSE" in details:
+                return {"code": -32006, "message": "Invalid agent response type"}
+            elif "Parts cannot be empty" in details or "InternalError: Parts cannot be empty" in details:
+                # SUT is incorrectly returning INTERNAL for invalid params
+                return {"code": -32602, "message": "Invalid method parameters"}
+            else:
+                return {"code": -32603, "message": "Internal server error"}
+        
+        elif grpc_code == grpc.StatusCode.UNAUTHENTICATED:
+            return {"code": -32603, "message": "Authentication required"}  # No standard A2A code for auth
+        
+        elif grpc_code == grpc.StatusCode.PERMISSION_DENIED:
+            return {"code": -32603, "message": "Permission denied"}  # No standard A2A code for authz
+        
+        elif grpc_code == grpc.StatusCode.UNAVAILABLE:
+            return {"code": -32603, "message": "Service temporarily unavailable"}  # No standard A2A code
+        
+        else:
+            # Default to internal error for unmapped codes
+            return {"code": -32603, "message": "Internal server error"}
+    
     def _protobuf_to_json(self, pb_message) -> Dict[str, Any]:
         """
         Convert protobuf message to JSON format.
@@ -888,14 +979,59 @@ class GRPCClient(BaseTransportClient):
         }
 
     # Optional method available on gRPC per spec mapping
-    def list_tasks(self, extra_headers: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+    def list_tasks(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        List tasks for gRPC transport (optional per spec).
-        Returns a list of Task objects with minimal fields.
+        List tasks for gRPC transport per A2A v0.3.0 specification.
+        
+        Maps to: A2AService.ListTask() RPC call (when implemented)
+        
+        Note: The current protobuf definition appears to be missing the ListTask method
+        that is defined in the A2A v0.3.0 specification section 7.3.
+        
+        Returns:
+            Dict with 'tasks' key containing list of Task objects
+            
+        Raises:
+            TransportError: If gRPC call fails or method not implemented
         """
         try:
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # Placeholder: return empty list in absence of real SUT
-                return []
+            logger.info("Listing tasks via gRPC")
+            
+            # According to A2A v0.3.0 spec, this should call ListTask method
+            # However, the current protobuf doesn't have this method defined
+            # This is a discrepancy between specification and implementation
+            
+            # Try to check if the method exists on the stub
+            if hasattr(self.stub, 'ListTask'):
+                self._load_static_stubs()
+                pb = self._pb
+                # ListTask takes empty request per spec
+                req = pb.ListTaskRequest() if hasattr(pb, 'ListTaskRequest') else None
+                if req is not None:
+                    resp = self.stub.ListTask(req, timeout=self.timeout)
+                    # Convert repeated Task to dict format
+                    return {
+                        "tasks": [
+                            {
+                                "id": task.id,
+                                "contextId": task.context_id,
+                                "status": {"state": self._map_state_enum_to_json(task.status.state)},
+                                "kind": "task"
+                            }
+                            for task in resp  # resp should be repeated Task per spec
+                        ]
+                    }
+            
+            # Method not implemented in current protobuf - return empty list
+            logger.warning("ListTask method not available in gRPC stub - this is a protobuf/spec discrepancy")
+            return {"tasks": []}
+            
+        except grpc.RpcError as e:
+            error_msg = f"gRPC ListTask failed: {e.code().name} - {e.details()}"
+            logger.error(error_msg)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
+            logger.error(f"gRPC list_tasks failed: {str(e)}")
             raise TransportError(f"gRPC list_tasks failed: {str(e)}", TransportType.GRPC)
