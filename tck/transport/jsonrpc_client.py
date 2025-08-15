@@ -407,7 +407,7 @@ class JSONRPCClient(BaseTransportClient):
         try:
             response = self._make_jsonrpc_request(
                 method="tasks/pushNotificationConfig/set",
-                params={"taskId": task_id, "config": config},
+                params={"taskId": task_id, "pushNotificationConfig": config},
                 extra_headers=extra_headers
             )
             return response.get("result", {})
@@ -444,6 +444,7 @@ class JSONRPCClient(BaseTransportClient):
                 extra_headers=extra_headers
             )
             return response.get("result", {})
+            
             
         except Exception as e:
             if isinstance(e, JSONRPCError):

@@ -434,6 +434,11 @@ def transport_send_json_rpc_request(client: BaseTransportClient, method: str,
                 return {"error": e.json_rpc_error, "id": req.get("id")}
             raise
     
+    # Fallback to legacy JSON-RPC pattern for backward compatibility
+    elif hasattr(client, 'send_json_rpc'):
+        logger.debug(f"Using legacy send_json_rpc for method {method}")
+        return client.send_json_rpc(method=req["method"], params=req.get("params"), id=req.get("id"))
+    
     # Fallback for other transport implementations
     else:
         raise ValueError(f"Client {type(client)} does not support arbitrary JSON-RPC requests")
@@ -456,15 +461,38 @@ def transport_set_push_notification_config(client: BaseTransportClient, task_id:
         
     Specification Reference: A2A v0.3.0 §7.5 - Push Notification Configuration
     """
-    params = {
-        "taskId": task_id,
-        "pushNotificationConfig": config
-    }
+    # Check if client is a BaseTransportClient with push notification methods
+    if hasattr(client, 'set_push_notification_config') and hasattr(client, 'transport_type'):
+        logger.debug(f"Using transport-aware set_push_notification_config for {client.transport_type.value}")
+        try:
+            result = client.set_push_notification_config(task_id, config, extra_headers)
+            # Wrap result in JSON-RPC format for compatibility with existing tests
+            return {"result": result}
+        except Exception as e:
+            # Convert transport exceptions to JSON-RPC error format
+            logger.debug(f"Transport error: {e}")
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, 'a2a_error') and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+                return {"error": e.json_rpc_error}
+            return {"error": {"code": -32603, "message": str(e)}}
     
-    return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/set", params)
+    # Fallback to JSON-RPC pattern for backward compatibility
+    elif hasattr(client, 'send_json_rpc'):
+        logger.debug("Using legacy send_json_rpc for push notification config")
+        params = {
+            "taskId": task_id,
+            "pushNotificationConfig": config
+        }
+        return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/set", params)
+    
+    else:
+        raise ValueError(f"Client {type(client)} does not support push notification configuration")
 
 
-def transport_get_push_notification_config(client: BaseTransportClient, task_id: str,
+def transport_get_push_notification_config(client: BaseTransportClient, task_id: str, config_id: str = "default",
                                           extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """
     Get push notification configuration for a task using any transport client.
@@ -472,6 +500,7 @@ def transport_get_push_notification_config(client: BaseTransportClient, task_id:
     Args:
         client: Transport client
         task_id: Task identifier
+        config_id: Configuration identifier
         extra_headers: Optional transport-specific headers
         
     Returns:
@@ -479,32 +508,38 @@ def transport_get_push_notification_config(client: BaseTransportClient, task_id:
         
     Specification Reference: A2A v0.3.0 §7.6 - Push Notification Configuration
     """
-    params = {"id": task_id}
+    # Check if client is a BaseTransportClient with push notification methods
+    if hasattr(client, 'get_push_notification_config') and hasattr(client, 'transport_type'):
+        logger.debug(f"Using transport-aware get_push_notification_config for {client.transport_type.value}")
+        try:
+            result = client.get_push_notification_config(task_id, config_id, extra_headers)
+            # Wrap result in JSON-RPC format for compatibility with existing tests
+            return {"result": result}
+        except Exception as e:
+            # Convert transport exceptions to JSON-RPC error format
+            logger.debug(f"Transport error: {e}")
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, 'a2a_error') and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+                return {"error": e.json_rpc_error}
+            return {"error": {"code": -32603, "message": str(e)}}
     
-    return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/get", params)
+    # Fallback to JSON-RPC pattern for backward compatibility
+    elif hasattr(client, 'send_json_rpc'):
+        logger.debug("Using legacy send_json_rpc for push notification config")
+        params = {"id": task_id, "configId": config_id}
+        return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/get", params)
+    
+    else:
+        raise ValueError(f"Client {type(client)} does not support push notification configuration")
 
 
-def transport_list_push_notification_configs(client: BaseTransportClient,
+def transport_list_push_notification_configs(client: BaseTransportClient, task_id: str,
                                             extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """
-    List all push notification configurations using any transport client.
-    
-    Args:
-        client: Transport client
-        extra_headers: Optional transport-specific headers
-        
-    Returns:
-        Response from the server in JSON-RPC format for compatibility
-        
-    Specification Reference: A2A v0.3.0 §7.7 - Push Notification Configuration
-    """
-    return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/list", {})
-
-
-def transport_delete_push_notification_config(client: BaseTransportClient, task_id: str,
-                                             extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-    """
-    Delete push notification configuration for a task using any transport client.
+    List push notification configurations for a task using any transport client.
     
     Args:
         client: Transport client
@@ -514,8 +549,75 @@ def transport_delete_push_notification_config(client: BaseTransportClient, task_
     Returns:
         Response from the server in JSON-RPC format for compatibility
         
+    Specification Reference: A2A v0.3.0 §7.7 - Push Notification Configuration
+    """
+    # Check if client is a BaseTransportClient with push notification methods
+    if hasattr(client, 'list_push_notification_configs') and hasattr(client, 'transport_type'):
+        logger.debug(f"Using transport-aware list_push_notification_configs for {client.transport_type.value}")
+        try:
+            result = client.list_push_notification_configs(task_id, extra_headers)
+            # Wrap result in JSON-RPC format for compatibility with existing tests
+            return {"result": result}
+        except Exception as e:
+            # Convert transport exceptions to JSON-RPC error format
+            logger.debug(f"Transport error: {e}")
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, 'a2a_error') and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+                return {"error": e.json_rpc_error}
+            return {"error": {"code": -32603, "message": str(e)}}
+    
+    # Fallback to JSON-RPC pattern for backward compatibility
+    elif hasattr(client, 'send_json_rpc'):
+        logger.debug("Using legacy send_json_rpc for push notification config list")
+        params = {"id": task_id}
+        return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/list", params)
+    
+    else:
+        raise ValueError(f"Client {type(client)} does not support push notification configuration")
+
+
+def transport_delete_push_notification_config(client: BaseTransportClient, task_id: str, config_id: str,
+                                             extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """
+    Delete push notification configuration for a task using any transport client.
+    
+    Args:
+        client: Transport client
+        task_id: Task identifier
+        config_id: Configuration identifier
+        extra_headers: Optional transport-specific headers
+        
+    Returns:
+        Response from the server in JSON-RPC format for compatibility
+        
     Specification Reference: A2A v0.3.0 §7.8 - Push Notification Configuration
     """
-    params = {"id": task_id}
+    # Check if client is a BaseTransportClient with push notification methods
+    if hasattr(client, 'delete_push_notification_config') and hasattr(client, 'transport_type'):
+        logger.debug(f"Using transport-aware delete_push_notification_config for {client.transport_type.value}")
+        try:
+            result = client.delete_push_notification_config(task_id, config_id, extra_headers)
+            # Wrap result in JSON-RPC format for compatibility with existing tests
+            return {"result": result}
+        except Exception as e:
+            # Convert transport exceptions to JSON-RPC error format
+            logger.debug(f"Transport error: {e}")
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, 'a2a_error') and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, 'json_rpc_error') and e.json_rpc_error:
+                return {"error": e.json_rpc_error}
+            return {"error": {"code": -32603, "message": str(e)}}
     
-    return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/delete", params)
+    # Fallback to JSON-RPC pattern for backward compatibility
+    elif hasattr(client, 'send_json_rpc'):
+        logger.debug("Using legacy send_json_rpc for push notification config")
+        params = {"taskId": task_id, "configId": config_id}
+        return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/delete", params)
+    
+    else:
+        raise ValueError(f"Client {type(client)} does not support push notification configuration")

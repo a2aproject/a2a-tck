@@ -7,7 +7,7 @@ according to the A2A specification: https://google.github.io/A2A/specification/#
 
 import time
 import uuid
-
+import logging
 import pytest
 
 from tck import message_utils
@@ -82,7 +82,7 @@ def test_task_state_transitions(sut_client):
     
     create_resp = transport_helpers.transport_send_message(sut_client, create_params)
     assert transport_helpers.is_json_rpc_success_response(create_resp)
-    
+    logging.info(f"Create response: {create_resp}")
     # Get the server-generated task ID
     task_id = create_resp["result"]["id"]
 

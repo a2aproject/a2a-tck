@@ -26,6 +26,241 @@ from tck.transport.base_client import BaseTransportClient, TransportType, Transp
 logger = logging.getLogger(__name__)
 
 
+class A2AValidationError(TransportError):
+    """Raised when gRPC response doesn't conform to A2A specification."""
+    pass
+
+
+def _validate_task_object(task: Dict[str, Any]) -> None:
+    """
+    Validate that a Task object conforms to A2A specification.
+    
+    Raises A2AValidationError if validation fails.
+    """
+    # Validate required fields per A2A specification
+    required_fields = ['id', 'contextId', 'status', 'kind']
+    for field in required_fields:
+        if field not in task:
+            raise A2AValidationError(f"Task missing required field '{field}'", TransportType.GRPC)
+        if not task[field]:  # Check for empty string or None
+            raise A2AValidationError(f"Task field '{field}' cannot be empty", TransportType.GRPC)
+    
+    # Validate 'kind' field
+    if task['kind'] != 'task':
+        raise A2AValidationError(f"Task 'kind' must be 'task', got '{task['kind']}'", TransportType.GRPC)
+    
+    # Validate 'id' field (must be non-empty string)
+    if not isinstance(task['id'], str) or not task['id'].strip():
+        raise A2AValidationError(f"Task 'id' must be a non-empty string, got '{task['id']}'", TransportType.GRPC)
+    
+    # Validate 'contextId' field (must be non-empty string)
+    if not isinstance(task['contextId'], str) or not task['contextId'].strip():
+        raise A2AValidationError(f"Task 'contextId' must be a non-empty string, got '{task['contextId']}'", TransportType.GRPC)
+    
+    # Validate 'status' field
+    if not isinstance(task['status'], dict):
+        raise A2AValidationError(f"Task 'status' must be an object, got {type(task['status'])}", TransportType.GRPC)
+    
+    # Validate TaskStatus object
+    status = task['status']
+    if 'state' not in status:
+        raise A2AValidationError("Task status missing required field 'state'", TransportType.GRPC)
+    
+    valid_states = ['submitted', 'working', 'completed', 'failed', 'canceled', 'input-required', 'rejected', 'auth-required']
+    if status['state'] not in valid_states:
+        raise A2AValidationError(f"Task status 'state' must be one of {valid_states}, got '{status['state']}'", TransportType.GRPC)
+    
+    # Validate optional fields
+    if 'history' in task:
+        if not isinstance(task['history'], list):
+            raise A2AValidationError(f"Task 'history' must be an array, got {type(task['history'])}", TransportType.GRPC)
+        for i, message in enumerate(task['history']):
+            _validate_message_object(message, f"history[{i}]")
+    
+    if 'artifacts' in task:
+        if not isinstance(task['artifacts'], list):
+            raise A2AValidationError(f"Task 'artifacts' must be an array, got {type(task['artifacts'])}", TransportType.GRPC)
+        for i, artifact in enumerate(task['artifacts']):
+            _validate_artifact_object(artifact, f"artifacts[{i}]")
+
+
+def _validate_message_object(message: Dict[str, Any], context: str = "message") -> None:
+    """
+    Validate that a Message object conforms to A2A specification.
+    """
+    required_fields = ['role', 'parts', 'messageId', 'kind']
+    for field in required_fields:
+        if field not in message:
+            raise A2AValidationError(f"{context} missing required field '{field}'", TransportType.GRPC)
+    
+    # Validate 'kind' field
+    if message['kind'] != 'message':
+        raise A2AValidationError(f"{context} 'kind' must be 'message', got '{message['kind']}'", TransportType.GRPC)
+    
+    # Validate 'role' field
+    valid_roles = ['user', 'agent']
+    if message['role'] not in valid_roles:
+        raise A2AValidationError(f"{context} 'role' must be one of {valid_roles}, got '{message['role']}'", TransportType.GRPC)
+    
+    # Validate 'messageId' field
+    if not isinstance(message['messageId'], str) or not message['messageId'].strip():
+        raise A2AValidationError(f"{context} 'messageId' must be a non-empty string", TransportType.GRPC)
+    
+    # Validate 'parts' field
+    if not isinstance(message['parts'], list):
+        raise A2AValidationError(f"{context} 'parts' must be an array", TransportType.GRPC)
+    
+    for i, part in enumerate(message['parts']):
+        _validate_part_object(part, f"{context}.parts[{i}]")
+
+
+def _validate_part_object(part: Dict[str, Any], context: str = "part") -> None:
+    """
+    Validate that a Part object conforms to A2A specification.
+    """
+    if 'kind' not in part:
+        raise A2AValidationError(f"{context} missing required field 'kind'", TransportType.GRPC)
+    
+    valid_kinds = ['text', 'file', 'data']
+    if part['kind'] not in valid_kinds:
+        raise A2AValidationError(f"{context} 'kind' must be one of {valid_kinds}, got '{part['kind']}'", TransportType.GRPC)
+    
+    # Validate specific part types
+    if part['kind'] == 'text':
+        if 'text' not in part:
+            raise A2AValidationError(f"{context} TextPart missing required field 'text'", TransportType.GRPC)
+        if not isinstance(part['text'], str):
+            raise A2AValidationError(f"{context} TextPart 'text' must be a string", TransportType.GRPC)
+    
+    elif part['kind'] == 'file':
+        if 'file' not in part:
+            raise A2AValidationError(f"{context} FilePart missing required field 'file'", TransportType.GRPC)
+        file_obj = part['file']
+        if not isinstance(file_obj, dict):
+            raise A2AValidationError(f"{context} FilePart 'file' must be an object", TransportType.GRPC)
+        
+        # FilePart must have either 'bytes' or 'uri'
+        if 'bytes' not in file_obj and 'uri' not in file_obj:
+            raise A2AValidationError(f"{context} FilePart must have either 'bytes' or 'uri'", TransportType.GRPC)
+    
+    elif part['kind'] == 'data':
+        if 'data' not in part:
+            raise A2AValidationError(f"{context} DataPart missing required field 'data'", TransportType.GRPC)
+
+
+def _validate_artifact_object(artifact: Dict[str, Any], context: str = "artifact") -> None:
+    """
+    Validate that an Artifact object conforms to A2A specification.
+    """
+    required_fields = ['artifactId', 'parts']
+    for field in required_fields:
+        if field not in artifact:
+            raise A2AValidationError(f"{context} missing required field '{field}'", TransportType.GRPC)
+    
+    # Validate 'artifactId' field
+    if not isinstance(artifact['artifactId'], str) or not artifact['artifactId'].strip():
+        raise A2AValidationError(f"{context} 'artifactId' must be a non-empty string", TransportType.GRPC)
+    
+    # Validate 'parts' field
+    if not isinstance(artifact['parts'], list):
+        raise A2AValidationError(f"{context} 'parts' must be an array", TransportType.GRPC)
+    
+    for i, part in enumerate(artifact['parts']):
+        _validate_part_object(part, f"{context}.parts[{i}]")
+
+
+def _validate_agent_card_object(agent_card: Dict[str, Any]) -> None:
+    """
+    Validate that an AgentCard object conforms to A2A specification.
+    """
+    required_fields = ['protocolVersion', 'name', 'description', 'url', 'preferredTransport']
+    for field in required_fields:
+        if field not in agent_card:
+            raise A2AValidationError(f"AgentCard missing required field '{field}'", TransportType.GRPC)
+        if not agent_card[field]:  # Check for empty string or None
+            raise A2AValidationError(f"AgentCard field '{field}' cannot be empty", TransportType.GRPC)
+    
+    # Validate transport protocols
+    valid_transports = ['JSONRPC', 'GRPC', 'HTTP+JSON']
+    if agent_card['preferredTransport'] not in valid_transports:
+        raise A2AValidationError(f"AgentCard 'preferredTransport' must be one of {valid_transports}", TransportType.GRPC)
+
+
+def _validate_push_notification_config_list(config_list: List[Dict[str, Any]]) -> None:
+    """
+    Validate that a list of TaskPushNotificationConfig objects conforms to A2A specification.
+    """
+    if not isinstance(config_list, list):
+        raise A2AValidationError(f"Push notification config list must be an array, got {type(config_list)}", TransportType.GRPC)
+    
+    for i, config in enumerate(config_list):
+        if not isinstance(config, dict):
+            raise A2AValidationError(f"Push notification config[{i}] must be an object", TransportType.GRPC)
+        
+        # Validate TaskPushNotificationConfig structure
+        required_fields = ['pushNotificationConfig', 'taskId']
+        for field in required_fields:
+            if field not in config:
+                raise A2AValidationError(f"Push notification config[{i}] missing required field '{field}'", TransportType.GRPC)
+        
+        # Validate taskId
+        if not isinstance(config['taskId'], str):
+            raise A2AValidationError(f"Push notification config[{i}] 'taskId' must be a string", TransportType.GRPC)
+        
+        # Validate pushNotificationConfig structure
+        push_config = config['pushNotificationConfig']
+        if not isinstance(push_config, dict):
+            raise A2AValidationError(f"Push notification config[{i}] 'pushNotificationConfig' must be an object", TransportType.GRPC)
+        
+        # PushNotificationConfig required fields
+        push_required_fields = ['id', 'url']
+        for field in push_required_fields:
+            if field not in push_config:
+                raise A2AValidationError(f"Push notification config[{i}].pushNotificationConfig missing required field '{field}'", TransportType.GRPC)
+
+
+def _validate_a2a_response(response: Dict[str, Any], method_name: str) -> None:
+    """
+    Validate gRPC response conforms to A2A specification based on the method.
+    
+    Args:
+        response: The response object from gRPC call
+        method_name: The A2A method name (e.g., 'send_message', 'get_task', etc.)
+    """
+    try:
+        if method_name in ['send_message', 'get_task', 'cancel_task']:
+            # These methods should return Task objects
+            _validate_task_object(response)
+        
+        elif method_name == 'get_agent_card':
+            # This method should return AgentCard object
+            _validate_agent_card_object(response)
+        
+        elif method_name == 'send_message_response':
+            # When send_message returns a Message object instead of Task
+            _validate_message_object(response)
+        
+        elif method_name == 'list_push_notification_configs':
+            # This method should return a list of TaskPushNotificationConfig objects
+            _validate_push_notification_config_list(response)
+        
+        elif method_name in ['set_push_notification_config', 'get_push_notification_config']:
+            # These methods should return TaskPushNotificationConfig objects
+            required_fields = ['pushNotificationConfig']
+            for field in required_fields:
+                if field not in response:
+                    raise A2AValidationError(f"Push notification config response missing required field '{field}'", TransportType.GRPC)
+        
+        # Add validation for other methods as needed
+        
+    except A2AValidationError:
+        # Re-raise A2A validation errors
+        raise
+    except Exception as e:
+        # Catch any other validation errors and wrap them
+        raise A2AValidationError(f"Unexpected validation error for {method_name}: {str(e)}", TransportType.GRPC)
+
+
 class GRPCClient(BaseTransportClient):
     """
     A2A gRPC transport client for real network communication.
@@ -70,6 +305,7 @@ class GRPCClient(BaseTransportClient):
         
         self._channel: Optional[grpc.Channel] = None
         self._stub = None
+        
         
         logger.info(f"Initialized gRPC client for target: {self.grpc_target} (TLS: {self.use_tls})")
     
@@ -153,25 +389,41 @@ class GRPCClient(BaseTransportClient):
             TransportError: If gRPC call fails or times out
         """
         try:
-            # Accept both A2A and internal naming
-            msg_id = message.get('messageId') or message.get('message_id') or "unknown"
-            ctx_id = message.get('contextId') or message.get('context_id') or "default-context"
-            logger.info(f"Sending message via gRPC: {msg_id}")
+            # Accept both A2A and internal naming - don't provide defaults for required fields
+            msg_id = message.get('messageId') or message.get('message_id')
+            ctx_id = message.get('contextId') or message.get('context_id')
+            
+            # Check if required fields are missing to allow SUT validation
+            if not msg_id:
+                msg_id = ""  # Let SUT handle missing messageId validation
+            if not ctx_id:
+                ctx_id = ""  # Let SUT handle missing contextId validation
+            logger.debug(f"Sending message via gRPC: {msg_id}")
             
             # Build protobuf request
             self._load_static_stubs()
             pb = self._pb
-            # Build parts (support text for now)
+            # Build parts - handle unsupported types appropriately
             parts = []
             for p in message.get("parts", []) or message.get("content", []):
                 if p.get("kind") == "text" or "text" in p:
                     parts.append(pb.Part(text=p.get("text", "")))
+                elif p.get("type") or p.get("kind"):
+                    # Unsupported part type - create empty Part to let SUT handle validation
+                    parts.append(pb.Part())
+                else:
+                    # Empty or unrecognized part structure
+                    parts.append(pb.Part())
             role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
+            # Don't provide default role - let SUT validate required fields
+            user_role = message.get("role")
+            pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
+            
             pb_msg = pb.Message(
                 message_id=msg_id,
                 context_id=ctx_id,
                 task_id=message.get("taskId", ""),
-                role=role_map.get(message.get("role", "user"), pb.ROLE_USER),
+                role=pb_role,
                 content=parts,
             )
             config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=True)
@@ -181,22 +433,27 @@ class GRPCClient(BaseTransportClient):
             response = self.stub.SendMessage(request, timeout=self.timeout)
             if response.WhichOneof("payload") == "task":
                 t = response.task
-                logger.debug(f"Received gRPC task for message {msg_id}")
-                return {
+                logger.info(f"Received gRPC task for message {msg_id}: {t.id}")
+                result = {
                     "id": t.id,
                     "contextId": t.context_id,
                     "status": {"state": self._map_state_enum_to_json(t.status.state)},
                     "kind": "task",
                 }
+                # Validate response conforms to A2A specification
+                _validate_a2a_response(result, "send_message")
+                return result
             else:
                 m = response.msg
                 logger.debug(f"Received gRPC message for message {msg_id}")
-                return {
+                result = {
                     "kind": "message",
                     "role": "agent",
                     "messageId": m.message_id,
                     "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
                 }
+                # Note: Message validation would need to be implemented for message responses
+                return result
             
         except grpc.RpcError as e:
             error_msg = f"gRPC call failed: {e.code().name} - {e.details()}"
@@ -304,7 +561,15 @@ class GRPCClient(BaseTransportClient):
             
             self._load_static_stubs()
             pb = self._pb
-            req = pb.GetTaskRequest(name=f"tasks/{task_id}", history_length=(history_length or 0))
+            # Only include history_length if explicitly provided (consistent with JSON-RPC)
+            req_kwargs = {"name": f"tasks/{task_id}"}
+            if history_length is not None:
+                req_kwargs["history_length"] = history_length
+            else:
+                # Default to requesting full history when no limit specified
+                req_kwargs["history_length"] = 100  # Reasonable default
+            
+            req = pb.GetTaskRequest(**req_kwargs)
             resp = self.stub.GetTask(req, timeout=self.timeout)
             result = {
                 "id": resp.id,
@@ -312,7 +577,8 @@ class GRPCClient(BaseTransportClient):
                 "status": {"state": self._map_state_enum_to_json(resp.status.state)},
                 "kind": "task",
             }
-            if history_length:
+            # Always include history if SUT returned it (regardless of history_length value)
+            if resp.history:
                 result["history"] = [
                     {
                         "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
@@ -325,6 +591,8 @@ class GRPCClient(BaseTransportClient):
                     for m in resp.history
                 ]
             logger.debug(f"Retrieved task via gRPC: {task_id}")
+            # Validate response conforms to A2A specification
+            _validate_a2a_response(result, "get_task")
             return result
             
         except grpc.RpcError as e:
@@ -362,12 +630,15 @@ class GRPCClient(BaseTransportClient):
             req = pb.CancelTaskRequest(name=f"tasks/{task_id}")
             resp = self.stub.CancelTask(req, timeout=self.timeout)
             logger.debug(f"Cancelled task via gRPC: {task_id}")
-            return {
+            result = {
                 "id": resp.id,
                 "contextId": resp.context_id,
                 "status": {"state": "canceled"},
                 "kind": "task",
             }
+            # Validate response conforms to A2A specification
+            _validate_a2a_response(result, "cancel_task")
+            return result
             
         except grpc.RpcError as e:
             error_msg = f"gRPC CancelTask failed: {e.code().name} - {e.details()}"
@@ -535,6 +806,8 @@ class GRPCClient(BaseTransportClient):
                 agent_card["documentationUrl"] = resp.documentation_url
             
             logger.debug("Retrieved agent card via gRPC")
+            # Validate response conforms to A2A specification
+            _validate_a2a_response(agent_card, "get_agent_card")
             return agent_card
             
         except grpc.RpcError as e:
@@ -605,7 +878,8 @@ class GRPCClient(BaseTransportClient):
     
     # Push notification configuration methods
     
-    def set_push_notification_config(self, task_id: str, config: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def set_push_notification_config(self, task_id: str, config: Dict[str, Any], 
+                                    extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Set push notification config for a task via gRPC.
         
@@ -625,41 +899,59 @@ class GRPCClient(BaseTransportClient):
         try:
             logger.info(f"Setting push notification config for task via gRPC: {task_id}")
             
-            # Make real gRPC call to live SUT
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # request = CreateTaskPushNotificationConfigRequest(
-                #     parent=f"tasks/{task_id}",
-                #     config_id=config.get('id', 'default'),
-                #     config=TaskPushNotificationConfig(...)
-                # )
-                # response = stub.CreateTaskPushNotificationConfig(request, timeout=self.timeout)
-                
-                # For now, simulate the response structure
-                created_config = {
-                    "name": f"tasks/{task_id}/pushNotificationConfigs/{config.get('id', 'default')}",
-                    "push_notification_config": {
-                        "id": config.get('id', 'default'),
-                        "url": config.get('url', ''),
-                        "token": config.get('token', ''),
-                        "authentication": config.get('authentication', {})
-                    }
+            self._load_static_stubs()
+            pb = self._pb
+            
+            # Build push notification config
+            push_config = pb.PushNotificationConfig(
+                id=config.get('id', 'default'),
+                url=config.get('url', ''),
+                token=config.get('token', '')
+            )
+            
+            # Build task push notification config
+            task_config = pb.TaskPushNotificationConfig(
+                name=f"tasks/{task_id}/pushNotificationConfigs/{config.get('id', 'default')}",
+                push_notification_config=push_config
+            )
+            
+            # Build request
+            req = pb.CreateTaskPushNotificationConfigRequest(
+                parent=f"tasks/{task_id}",
+                config_id=config.get('id', 'default'),
+                config=task_config
+            )
+            
+            resp = self.stub.CreateTaskPushNotificationConfig(req, timeout=self.timeout)
+            
+            # Convert response to JSON format that matches expected test format
+            created_config = {
+                "pushNotificationConfig": {
+                    "id": resp.push_notification_config.id,
+                    "url": resp.push_notification_config.url,
+                    "token": resp.push_notification_config.token,
+                    "authentication": {}  # Convert authentication if present
                 }
+            }
             
             logger.debug(f"Set push notification config via gRPC: {task_id}")
+            # Validate response conforms to A2A specification
+            _validate_a2a_response(created_config, "set_push_notification_config")
             return created_config
             
         except grpc.RpcError as e:
             error_msg = f"gRPC CreateTaskPushNotificationConfig failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
-            raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC set_push_notification_config: {str(e)}"
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
     
-    def get_push_notification_config(self, task_id: str, config_id: str, **kwargs) -> Dict[str, Any]:
+    def get_push_notification_config(self, task_id: str, config_id: str = "default", 
+                                    extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get push notification config via gRPC.
         
@@ -679,36 +971,34 @@ class GRPCClient(BaseTransportClient):
         try:
             logger.info(f"Getting push notification config via gRPC: {task_id}/{config_id}")
             
-            # Make real gRPC call to live SUT
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # request = GetTaskPushNotificationConfigRequest(
-                #     name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}"
-                # )
-                # response = stub.GetTaskPushNotificationConfig(request, timeout=self.timeout)
-                
-                # For now, simulate the response structure
-                config_data = {
-                    "name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}",
-                    "push_notification_config": {
-                        "id": config_id,
-                        "url": "https://example.com/webhook",
-                        "token": "webhook-token-123",
-                        "authentication": {
-                            "schemes": ["bearer"],
-                            "credentials": "bearer-token"
-                        }
-                    }
+            self._load_static_stubs()
+            pb = self._pb
+            req = pb.GetTaskPushNotificationConfigRequest(
+                name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}"
+            )
+            resp = self.stub.GetTaskPushNotificationConfig(req, timeout=self.timeout)
+            
+            # Convert response to JSON format that matches expected test format
+            config_data = {
+                "pushNotificationConfig": {
+                    "id": resp.push_notification_config.id,
+                    "url": resp.push_notification_config.url,
+                    "token": resp.push_notification_config.token,
+                    "authentication": {}  # Convert authentication if present
                 }
+            }
             
             logger.debug(f"Retrieved push notification config via gRPC: {task_id}/{config_id}")
+            # Validate response conforms to A2A specification
+            _validate_a2a_response(config_data, "get_push_notification_config")
             return config_data
             
         except grpc.RpcError as e:
             error_msg = f"gRPC GetTaskPushNotificationConfig failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
-            raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC get_push_notification_config: {str(e)}"
             logger.error(error_msg)
@@ -733,37 +1023,27 @@ class GRPCClient(BaseTransportClient):
         try:
             logger.info(f"Listing push notification configs via gRPC: {task_id}")
             
-            # Make real gRPC call to live SUT
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # request = ListTaskPushNotificationConfigRequest(parent=f"tasks/{task_id}")
-                # response = stub.ListTaskPushNotificationConfig(request, timeout=self.timeout)
-                
-                # For now, simulate the response structure
-                configs_list = {
-                    "configs": [
-                        {
-                            "name": f"tasks/{task_id}/pushNotificationConfigs/config1",
-                            "push_notification_config": {
-                                "id": "config1",
-                                "url": "https://example.com/webhook1",
-                                "token": "token1"
-                            }
-                        },
-                        {
-                            "name": f"tasks/{task_id}/pushNotificationConfigs/config2", 
-                            "push_notification_config": {
-                                "id": "config2",
-                                "url": "https://example.com/webhook2",
-                                "token": "token2"
-                            }
-                        }
-                    ],
-                    "next_page_token": ""
-                }
+            self._load_static_stubs()
+            pb = self._pb
+            req = pb.ListTaskPushNotificationConfigRequest(parent=f"tasks/{task_id}")
+            resp = self.stub.ListTaskPushNotificationConfig(req, timeout=self.timeout)
             
-            logger.debug(f"Listed push notification configs via gRPC: {task_id}")
+            # Convert response to JSON format that matches expected test format
+            configs_list = []
+            for config in resp.configs:
+                configs_list.append({
+                    "pushNotificationConfig": {
+                        "id": config.push_notification_config.id,
+                        "url": config.push_notification_config.url,
+                        "token": config.push_notification_config.token,
+                        "authentication": {}
+                    },
+                    "taskId": task_id
+                })
+            
+            logger.debug(f"Listed {len(configs_list)} push notification configs via gRPC: {task_id}")
+            # Validate response conforms to A2A specification
+            _validate_a2a_response(configs_list, "list_push_notification_configs")
             return configs_list
             
         except grpc.RpcError as e:
@@ -795,17 +1075,15 @@ class GRPCClient(BaseTransportClient):
         try:
             logger.info(f"Deleting push notification config via gRPC: {task_id}/{config_id}")
             
-            # Make real gRPC call to live SUT
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # request = DeleteTaskPushNotificationConfigRequest(
-                #     name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}"
-                # )
-                # response = stub.DeleteTaskPushNotificationConfig(request, timeout=self.timeout)
-                
-                # For now, simulate the response structure (Empty response)
-                deletion_result = {}  # gRPC DeleteTaskPushNotificationConfig returns Empty
+            self._load_static_stubs()
+            pb = self._pb
+            req = pb.DeleteTaskPushNotificationConfigRequest(
+                name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}"
+            )
+            resp = self.stub.DeleteTaskPushNotificationConfig(req, timeout=self.timeout)
+            
+            # gRPC DeleteTaskPushNotificationConfig returns Empty response
+            deletion_result = None
             
             logger.debug(f"Deleted push notification config via gRPC: {task_id}/{config_id}")
             return deletion_result
