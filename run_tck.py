@@ -669,7 +669,17 @@ Categories:
             args.transport_strategy, args.enable_equivalence_testing, args.transports
         )
         # Exit with failure if mandatory or capabilities failed
-        if results["mandatory"] != 0 or results["capabilities"] != 0:
+        # Handle both single-transport keys ("mandatory") and multi-transport keys ("mandatory:jsonrpc")
+        mandatory_failures = 0
+        capabilities_failures = 0
+        
+        for key, exit_code in results.items():
+            if key == "mandatory" or key.startswith("mandatory:"):
+                mandatory_failures += exit_code
+            elif key == "capabilities" or key.startswith("capabilities:"):
+                capabilities_failures += exit_code
+        
+        if mandatory_failures != 0 or capabilities_failures != 0:
             sys.exit(1)
     else:
         # If multiple transports provided and category is single-client, fan out per transport

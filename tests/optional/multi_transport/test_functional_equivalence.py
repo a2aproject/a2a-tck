@@ -200,8 +200,8 @@ def test_consistent_behavior_message_send(all_transport_clients, sample_message)
             base_status = base_result["status"]
             result_status = result["status"]
             
-            # Both should have valid status values
-            valid_states = ["pending", "submitted", "running", "completed", "failed", "cancelled", "input-required", "auth-required"]
+            # Both should have valid status values per A2A specification TaskState enum
+            valid_states = ["submitted", "working", "input-required", "completed", "canceled", "failed", "rejected", "auth-required"]
             if isinstance(base_status, str):
                 assert base_status in valid_states, f"Invalid status from {base_transport}: {base_status}"
                 assert result_status in valid_states, f"Invalid status from {transport_type}: {result_status}"
