@@ -17,3 +17,12 @@ optional_capability = pytest.mark.optional_capability  # Capability-dependent
 quality_basic = pytest.mark.quality_basic  # Basic implementation quality
 quality_production = pytest.mark.quality_production  # Production-ready quality
 quality_advanced = pytest.mark.quality_advanced  # Advanced features 
+
+# Transport equivalence markers
+transport_equivalence = pytest.mark.transport_equivalence  # Multi-transport functional equivalence
+
+# A2A version-specific markers
+a2a_v030 = pytest.mark.a2a_v030  # A2A v0.3.0 specific features
+
+# General markers for convenience
+optional = pytest.mark.optional  # General optional functionality

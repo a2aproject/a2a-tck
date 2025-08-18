@@ -51,7 +51,7 @@ def test_duplicate_request_ids(sut_client, text_message_params):
         params=text_message_params,
         id=fixed_id
     )
-    first_resp = sut_client.send_json_rpc(**first_req)
+    first_resp = sut_client.send_raw_json_rpc(first_req)
     assert message_utils.is_json_rpc_success_response(first_resp, expected_id=fixed_id)
     
     # Second request with the same ID but different params
@@ -63,7 +63,7 @@ def test_duplicate_request_ids(sut_client, text_message_params):
         params=second_params,
         id=fixed_id
     )
-    second_resp = sut_client.send_json_rpc(**second_req)
+    second_resp = sut_client.send_raw_json_rpc(second_req)
     
     # Various SUTs might handle this differently:
     # 1. Reject with InvalidRequest error

@@ -10,13 +10,11 @@ import uuid
 import time
 
 from tck import message_utils
-from tck.sut_client import SUTClient
 from tests.markers import optional_feature
+from tests.utils import transport_helpers
 
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 
 @pytest.fixture
@@ -57,9 +55,8 @@ def test_history_length_parameter_compliance(sut_client, text_message_params):
     # Step 1: Create a task with multiple messages to build up history
     create_params = text_message_params.copy()
     
-    create_req = message_utils.make_json_rpc_request("message/send", params=create_params)
-    create_resp = sut_client.send_json_rpc(method=create_req["method"], params=create_req["params"], id=create_req["id"])
-    assert message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"])
+    create_resp = transport_helpers.transport_send_message(sut_client, create_params)
+    assert transport_helpers.is_json_rpc_success_response(create_resp)
     
     # Get the server-generated task ID
     task_id = create_resp["result"]["id"]
@@ -79,16 +76,14 @@ def test_history_length_parameter_compliance(sut_client, text_message_params):
                 ]
             }
         }
-        update_req = message_utils.make_json_rpc_request("message/send", params=follow_up_params)
-        update_resp = sut_client.send_json_rpc(method=update_req["method"], params=update_req["params"], id=update_req["id"])
-        assert message_utils.is_json_rpc_success_response(update_resp, expected_id=update_req["id"])
+        update_resp = transport_helpers.transport_send_message(sut_client, follow_up_params)
+        assert transport_helpers.is_json_rpc_success_response(update_resp)
         time.sleep(0.3)
     
     # Step 3: Get task with historyLength=2 
     # Test if implementation respects the historyLength parameter 
-    get_limited_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id, "historyLength": 2})
-    get_limited_resp = sut_client.send_json_rpc(method=get_limited_req["method"], params=get_limited_req["params"], id=get_limited_req["id"])
-    assert message_utils.is_json_rpc_success_response(get_limited_resp, expected_id=get_limited_req["id"])
+    get_limited_resp = transport_helpers.transport_get_task(sut_client, task_id, history_length=2)
+    assert transport_helpers.is_json_rpc_success_response(get_limited_resp)
     
     # Step 4: Verify specification compliance
     # The A2A specification requires this behavior

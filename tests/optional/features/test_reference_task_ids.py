@@ -1,13 +1,11 @@
 import pytest
 
 from tck import message_utils
-from tck.sut_client import SUTClient
 from tests.markers import optional_feature
+from tests.utils import transport_helpers
 
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @pytest.fixture
 def text_message_params():
@@ -42,11 +40,10 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
         - Task references are handled appropriately by implementation
     """
     # Step 1: Create a reference task
-    create_req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
-    create_resp = sut_client.send_json_rpc(**create_req)
+    create_resp = transport_helpers.transport_send_message(sut_client, text_message_params)
     
     # Skip test if response is not successful
-    if not message_utils.is_json_rpc_success_response(create_resp, expected_id=create_req["id"]):
+    if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create reference task")
         
     reference_task_id = create_resp["result"]["id"]
@@ -64,8 +61,7 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
         }
     }
     
-    ref_req = message_utils.make_json_rpc_request("message/send", params=params_with_reference)
-    ref_resp = sut_client.send_json_rpc(**ref_req)
+    ref_resp = transport_helpers.transport_send_message(sut_client, params_with_reference)
     
     # The SUT might handle this in different ways:
     # 1. Accept it and use the reference (success)
@@ -73,8 +69,8 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
     # 3. Reject it if referenceTaskIds are not supported (error)
     
     # We'll just check for a valid response, since behavior is implementation-specific
-    assert "jsonrpc" in ref_resp
-    assert "id" in ref_resp and ref_resp["id"] == ref_req["id"]
+    # Both success and error responses are acceptable for this optional feature
+    assert isinstance(ref_resp, dict), "Response should be a dictionary"
 
 @optional_feature
 def test_reference_task_ids_invalid(sut_client):
@@ -107,8 +103,7 @@ def test_reference_task_ids_invalid(sut_client):
         }
     }
     
-    req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT might handle this in different ways:
     # 1. Reject with an error (TaskNotFoundError)
@@ -116,10 +111,9 @@ def test_reference_task_ids_invalid(sut_client):
     # 3. Accept but fail the task if references are critical
     
     # We'll just check for a valid response, since behavior is implementation-specific
-    assert "jsonrpc" in resp
-    assert "id" in resp and resp["id"] == req["id"]
+    assert isinstance(resp, dict), "Response should be a dictionary"
     
     # If it's an error response, check it's a reasonable error code
-    if message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]):
+    if transport_helpers.is_json_rpc_error_response(resp):
         # Error code might be TaskNotFoundError or InvalidParamsError
-        assert resp["error"]["code"] < 0, "Expected a negative error code" 
+        assert resp.get("error", {}).get("code", 0) < 0, "Expected a negative error code" 

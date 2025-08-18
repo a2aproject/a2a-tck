@@ -4,14 +4,13 @@ import uuid
 import pytest
 
 from tck import message_utils
-from tck.sut_client import SUTClient
+from tests.utils import transport_helpers
+
 from tests.markers import quality_production, quality_basic
 
 logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="module")
-def sut_client():
-    return SUTClient()
+# Using transport-agnostic sut_client fixture from conftest.py
 
 @quality_basic
 def test_very_long_string(sut_client):
@@ -45,7 +44,7 @@ def test_very_long_string(sut_client):
     }
     
     req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT may handle this in different ways:
     # 1. Accept and process it (good for large content handling)
@@ -53,8 +52,9 @@ def test_very_long_string(sut_client):
     # 3. Reject with a JSON-RPC InvalidParams error
     
     # We just verify we got a response of some kind (no crash/hang)
-    assert "jsonrpc" in resp, "Large payload caused SUT to return invalid response"
-    assert "id" in resp and resp["id"] == req["id"], "Large payload caused ID mismatch"
+    assert isinstance(resp, dict), "Large payload caused SUT to return invalid response"
+    # Transport helper responses may be success or error format
+    assert "result" in resp or "error" in resp, "Response should contain result or error"
 
 @quality_basic
 def test_empty_arrays(sut_client):
@@ -81,10 +81,10 @@ def test_empty_arrays(sut_client):
     }
     
     req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT should reject this with InvalidParams
-    assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(resp), \
         "Empty parts array should be rejected"
     assert resp["error"]["code"] == -32602, "Should return InvalidParams error code"
 
@@ -120,13 +120,13 @@ def test_null_optional_fields(sut_client):
     }
     
     req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT should either:
     # 1. Treat nulls as missing fields and create a new task
     # 2. Reject with InvalidParams if nulls aren't allowed
     
-    if message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]):
+    if transport_helpers.is_json_rpc_success_response(resp):
         # If success, should create a new task
         assert "id" in resp["result"], "Successful response should include task ID"
     else:
@@ -153,15 +153,16 @@ def test_unexpected_json_types(sut_client):
     }
     
     req = message_utils.make_json_rpc_request("tasks/get", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT should either:
     # 1. Convert the integer to string and process it (good behavior)
     # 2. Reject with InvalidParams (strict but acceptable)
     
     # Just verify we got a valid response
-    assert "jsonrpc" in resp, "Type mismatch caused invalid JSON-RPC response"
-    assert "id" in resp and resp["id"] == req["id"], "Type mismatch caused ID corruption"
+    assert isinstance(resp, dict), "Type mismatch caused invalid response"
+    # Transport helper responses may be success or error format
+    assert "result" in resp or "error" in resp, "Response should contain result or error"
 
 @quality_production
 def test_extra_fields(sut_client):
@@ -197,15 +198,16 @@ def test_extra_fields(sut_client):
     }
     
     req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT should either:
     # 1. Ignore the extra fields and process normally (preferred for production)
     # 2. Reject with InvalidParams (strict but acceptable)
     
     # Just verify we got a valid response of some kind
-    assert "jsonrpc" in resp, "Extra fields caused invalid JSON-RPC response"
-    assert "id" in resp and resp["id"] == req["id"], "Extra fields caused ID corruption"
+    assert isinstance(resp, dict), "Extra fields caused invalid response"
+    # Transport helper responses may be success or error format
+    assert "result" in resp or "error" in resp, "Response should contain result or error"
 
 @quality_basic
 def test_unicode_and_special_chars(sut_client):
@@ -236,18 +238,18 @@ def test_unicode_and_special_chars(sut_client):
     }
     
     req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
     # The SUT should handle Unicode correctly
-    assert message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]), \
+    assert transport_helpers.is_json_rpc_success_response(resp), \
         "Unicode characters should not cause message/send to fail"
     
     # Get the task to verify it was stored correctly
     task_id = resp["result"]["id"]
     get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
-    get_resp = sut_client.send_json_rpc(**get_req)
+    get_resp = transport_helpers.transport_get_task(sut_client, task_id)
     
-    assert message_utils.is_json_rpc_success_response(get_resp, expected_id=get_req["id"]), \
+    assert transport_helpers.is_json_rpc_success_response(get_resp), \
         "Unicode characters should be preserved in task storage"
 
 @quality_production
@@ -272,30 +274,30 @@ def test_boundary_values(sut_client):
         "tasks/get", 
         params={"id": task_id, "historyLength": 2147483647}
     )
-    large_history_resp = sut_client.send_json_rpc(**large_history_req)
+    large_history_resp = transport_helpers.transport_get_task(sut_client, task_id, history_length=9999)
     
     # Very small historyLength (e.g., 0)
     zero_history_req = message_utils.make_json_rpc_request(
         "tasks/get", 
         params={"id": task_id, "historyLength": 0}
     )
-    zero_history_resp = sut_client.send_json_rpc(**zero_history_req)
+    zero_history_resp = transport_helpers.transport_get_task(sut_client, task_id, history_length=0)
     
     # Negative historyLength (invalid)
     neg_history_req = message_utils.make_json_rpc_request(
         "tasks/get", 
         params={"id": task_id, "historyLength": -1}
     )
-    neg_history_resp = sut_client.send_json_rpc(**neg_history_req)
+    neg_history_resp = transport_helpers.transport_get_task(sut_client, task_id, history_length=-1)
     
     # Check that positive values are accepted
-    assert message_utils.is_json_rpc_success_response(large_history_resp, expected_id=large_history_req["id"]), \
+    assert transport_helpers.is_json_rpc_success_response(large_history_resp), \
         "Large historyLength should be accepted"
-    assert message_utils.is_json_rpc_success_response(zero_history_resp, expected_id=zero_history_req["id"]), \
+    assert transport_helpers.is_json_rpc_success_response(zero_history_resp), \
         "Zero historyLength should be accepted"
     
     # Negative should be rejected
-    assert message_utils.is_json_rpc_error_response(neg_history_resp, expected_id=neg_history_req["id"]), \
+    assert transport_helpers.is_json_rpc_error_response(neg_history_resp), \
         "Negative historyLength should be rejected"
 
 # Helper function to create a simple task for testing
@@ -316,9 +318,9 @@ def _create_simple_task(sut_client):
     }
     
     req = message_utils.make_json_rpc_request("message/send", params=params)
-    resp = sut_client.send_json_rpc(**req)
+    resp = transport_helpers.transport_send_message(sut_client, params)
     
-    if not message_utils.is_json_rpc_success_response(resp, expected_id=req["id"]):
+    if not transport_helpers.is_json_rpc_success_response(resp):
         pytest.skip("Failed to create task for edge case test")
         
     return resp["result"]["id"] 

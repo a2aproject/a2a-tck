@@ -12,48 +12,8 @@ class SUTClient:
         self.base_url = base_url or config.get_sut_url()
         self.session = requests.Session()
 
-    def send_json_rpc(
-        self,
-        method: Optional[str] = None,
-        params: Union[dict, list, None] = None,
-        id: Union[str, int, None] = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-        jsonrpc: Optional[str] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
-        if method is None and kwargs:
-            method = kwargs.get("method")
-            params = kwargs.get("params", params)
-            id = kwargs.get("id", id)
-            jsonrpc = kwargs.get("jsonrpc", jsonrpc)
-        
-        if method is None:
-            raise ValueError("Method is required for JSON-RPC request")
-            
-        jsonrpc_request = {
-            "jsonrpc": jsonrpc or "2.0",
-            "method": method,
-            "params": params if params is not None else {},
-            "id": id if id is not None else "tck-auto-id",
-        }
-        headers = {"Content-Type": "application/json"}
-        if extra_headers:
-            headers.update(extra_headers)
-        logger.info(f"Sending JSON-RPC request to {self.base_url}: {jsonrpc_request}")
-        try:
-            response = self.session.post(
-                self.base_url, json=jsonrpc_request, headers=headers, timeout=10
-            )
-            logger.info(f"SUT responded with {response.status_code}: {response.text}")
-            response.raise_for_status()
-        except requests.RequestException as e:
-            logger.error(f"HTTP error communicating with SUT: {e}")
-            raise
-        try:
-            return cast(Dict[str, Any], response.json())
-        except ValueError as e:
-            logger.error(f"Failed to parse JSON response from SUT: {e}")
-            raise
+    # Legacy send_json_rpc method removed - use transport-agnostic clients instead
+    # See transport_helpers.py for modern alternatives
 
     def raw_send(self, raw_data: str) -> Tuple[int, str]:
         """
