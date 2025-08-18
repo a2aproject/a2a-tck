@@ -9,4 +9,4 @@ This package provides tools to:
 """
 
 __version__ = "0.1.0"
-__author__ = "A2A TCK Team" 
+__author__ = "A2A TCK Team"

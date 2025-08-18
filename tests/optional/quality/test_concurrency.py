@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Using transport-agnostic sut_client fixture from conftest.py
 
+
 @pytest.fixture
 def text_message_params():
     """Create a basic text message params object"""
@@ -22,25 +23,21 @@ def text_message_params():
         "message": {
             "messageId": "test-message-id-" + str(uuid.uuid4()),
             "role": "user",
-            "parts": [
-                {
-                    "kind": "text",
-                    "text": "Hello from concurrency test!"
-                }
-            ],
-            "kind": "message"
+            "parts": [{"kind": "text", "text": "Hello from concurrency test!"}],
+            "kind": "message",
         }
     }
+
 
 @quality_production
 def test_parallel_requests(sut_client, text_message_params):
     """
     QUALITY PRODUCTION: Concurrent Request Handling
-    
+
     Tests the SUT's ability to handle multiple parallel requests gracefully.
     This is important for production deployments where multiple clients
     may send requests simultaneously.
-    
+
     Validates:
     - Multiple parallel message/send requests
     - Proper response handling under concurrent load
@@ -48,13 +45,13 @@ def test_parallel_requests(sut_client, text_message_params):
     """
     # Number of parallel requests to send
     NUM_REQUESTS = 5
-    
+
     # Function to send a request and return the response
     def send_request(i):
         # Create unique text for each request to differentiate
         params = text_message_params.copy()
         params["message"]["parts"][0]["text"] = f"Parallel request {i} - {uuid.uuid4()}"
-        
+
         req = message_utils.make_json_rpc_request("message/send", params=params)
         try:
             resp = transport_helpers.transport_send_message(sut_client, params)
@@ -62,15 +59,15 @@ def test_parallel_requests(sut_client, text_message_params):
         except Exception as e:
             logger.error(f"Request {i} failed: {e}")
             return (i, req["id"], None)
-    
+
     # Send requests in parallel using ThreadPoolExecutor
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_REQUESTS) as executor:
         futures = [executor.submit(send_request, i) for i in range(NUM_REQUESTS)]
-        
+
         for future in concurrent.futures.as_completed(futures):
             results.append(future.result())
-    
+
     # Verify all requests were processed successfully
     num_success = 0
     for i, req_id, resp in results:
@@ -78,24 +75,25 @@ def test_parallel_requests(sut_client, text_message_params):
             num_success += 1
         else:
             logger.warning(f"Request {i} with ID {req_id} failed or returned unexpected response")
-    
+
     # We expect most requests to succeed, but allow for some failures in case
     # the SUT has rate limiting or concurrency limits
     assert num_success > 0, "All parallel requests failed - poor concurrency handling"
     logger.info(f"{num_success} out of {NUM_REQUESTS} parallel requests succeeded")
 
+
 @quality_basic
 def test_rapid_sequential_requests(sut_client, text_message_params):
     """
     QUALITY BASIC: A2A Specification §5.1 - Sequential Request Handling
-    
+
     Tests A2A Specification requirement for robust message processing.
     The SUT should handle rapid sequential requests without
     degradation or resource leaks.
-    
+
     Failure Impact: Limits production reliability (acceptable for basic quality)
     Fix Suggestion: Implement proper request queuing and resource management
-    
+
     Validates:
     - Multiple rapid sequential requests per A2A message/send method
     - Consistent response times and behavior
@@ -104,13 +102,13 @@ def test_rapid_sequential_requests(sut_client, text_message_params):
     """
     # Number of sequential requests to send
     NUM_REQUESTS = 10
-    
+
     # Send multiple requests as quickly as possible
     results = []
     for i in range(NUM_REQUESTS):
         params = text_message_params.copy()
         params["message"]["parts"][0]["text"] = f"Rapid request {i} - {uuid.uuid4()}"
-        
+
         req = message_utils.make_json_rpc_request("message/send", params=params)
         try:
             resp = transport_helpers.transport_send_message(sut_client, params)
@@ -118,7 +116,7 @@ def test_rapid_sequential_requests(sut_client, text_message_params):
         except Exception as e:
             logger.error(f"Request {i} failed: {e}")
             results.append((i, req["id"], None))
-    
+
     # Verify all requests were processed successfully
     num_success = 0
     for i, req_id, resp in results:
@@ -126,20 +124,21 @@ def test_rapid_sequential_requests(sut_client, text_message_params):
             num_success += 1
         else:
             logger.warning(f"Request {i} with ID {req_id} failed or returned unexpected response")
-    
+
     # Expect a high success rate for sequential requests
     assert num_success > NUM_REQUESTS * 0.8, f"Too many failures: {num_success} out of {NUM_REQUESTS} succeeded"
     logger.info(f"{num_success} out of {NUM_REQUESTS} rapid sequential requests succeeded")
+
 
 @quality_production
 def test_concurrent_operations_same_task(sut_client, text_message_params):
     """
     QUALITY PRODUCTION: Task Concurrency Safety
-    
+
     Tests the SUT's handling of concurrent operations on the same task.
     This is critical for production systems where multiple operations
     might be performed on a task simultaneously.
-    
+
     Validates:
     - Concurrent task operations (get, update, cancel)
     - Proper state management under concurrent access
@@ -147,51 +146,46 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     """
     # Step 1: Create a task
     create_resp = transport_helpers.transport_send_message(sut_client, text_message_params)
-    
+
     if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for concurrent operations test")
-        
+
     task_id = create_resp["result"]["id"]
-    
+
     # Step 2: Define operations to perform concurrently on the task
     def get_task():
         resp = transport_helpers.transport_get_task(sut_client, task_id)
         return ("get", task_id, resp)
-    
+
     def update_task():
         params = {
             "message": {
                 "taskId": task_id,
                 "messageId": "test-update-message-id-" + str(uuid.uuid4()),
                 "role": "user",
-                "parts": [
-                    {
-                        "kind": "text",
-                        "text": f"Concurrent update {uuid.uuid4()}"
-                    }
-                ],
-                "kind": "message"
+                "parts": [{"kind": "text", "text": f"Concurrent update {uuid.uuid4()}"}],
+                "kind": "message",
             }
         }
         resp = transport_helpers.transport_send_message(sut_client, params)
         return ("update", task_id, resp)
-    
+
     def cancel_task():
         # Sleep briefly to let other operations start
         time.sleep(0.1)
         resp = transport_helpers.transport_cancel_task(sut_client, task_id)
         return ("cancel", task_id, resp)
-    
+
     # Step 3: Execute operations concurrently
     operations = [get_task, update_task, cancel_task]
     results = []
-    
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(operations)) as executor:
         futures = [executor.submit(op) for op in operations]
-        
+
         for future in concurrent.futures.as_completed(futures):
             results.append(future.result())
-    
+
     # Step 4: Verify results
     # We don't assert specific success/failure patterns since behavior may vary
     # Some SUTs might reject operations after cancel, others might accept them
@@ -199,4 +193,4 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
         logger.info(f"Operation {op_name} resulted in: {resp}")
         assert isinstance(resp, dict), f"Operation {op_name} did not return valid response"
         # Transport helper responses may be success or error format
-        assert "result" in resp or "error" in resp, f"Operation {op_name} response should contain result or error" 
+        assert "result" in resp or "error" in resp, f"Operation {op_name} response should contain result or error"

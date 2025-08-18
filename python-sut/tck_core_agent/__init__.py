@@ -1,1 +1,1 @@
-# TCK Core Agent - A2A Agent Implementation for Testing 
+# TCK Core Agent - A2A Agent Implementation for Testing
