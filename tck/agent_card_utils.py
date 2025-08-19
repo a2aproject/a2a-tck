@@ -279,7 +279,7 @@ def get_transport_endpoints(agent_card_data: Dict[str, Any]) -> Dict[TransportTy
             transport_type = _parse_transport_type(preferred_transport)
             if transport_type:
                 endpoints[transport_type] = main_url
-    
+
     # Check additional interfaces for transport-specific endpoints
     additional = agent_card_data.get("additionalInterfaces", [])
     if isinstance(additional, list):
