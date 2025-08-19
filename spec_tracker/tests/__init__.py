@@ -1,1 +1,1 @@
-"""Unit tests for A2A Specification Change Tracker.""" 
+"""Unit tests for A2A Specification Change Tracker."""

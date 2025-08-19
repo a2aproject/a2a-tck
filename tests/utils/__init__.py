@@ -21,7 +21,7 @@ from .transport_helpers import (
 
 __all__ = [
     "transport_send_message",
-    "transport_get_task", 
+    "transport_get_task",
     "transport_cancel_task",
     "transport_get_agent_card",
     "is_json_rpc_success_response",

@@ -15,7 +15,7 @@ from .base_client import BaseTransportClient, TransportError, TransportType
 
 __all__ = [
     "BaseTransportClient",
-    "TransportError", 
+    "TransportError",
     "TransportType",
     # "TransportManager",  # Will be added in Task 1.3
 ]

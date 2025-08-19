@@ -7,33 +7,26 @@ from tests.utils import transport_helpers
 
 # Using transport-agnostic sut_client fixture from conftest.py
 
+
 @pytest.fixture
 def text_message_params():
     """Create a basic text message params object"""
-    return {
-        "message": {
-            "parts": [
-                {
-                    "kind": "text",
-                    "text": "Hello from reference task ID test!"
-                }
-            ]
-        }
-    }
+    return {"message": {"parts": [{"kind": "text", "text": "Hello from reference task ID test!"}]}}
+
 
 @optional_feature
 def test_reference_task_ids_valid(sut_client, text_message_params):
     """
     OPTIONAL FEATURE: A2A Reference Task IDs Support
-    
+
     Tests optional implementation that enhances user experience
     but is not required for A2A compliance.
-    
+
     Test validates handling of valid referenceTaskIds in messages.
-    
+
     Failure Impact: Limits feature completeness (perfectly acceptable)
     Fix Suggestion: Implement referenceTaskIds support to enable task relationships
-    
+
     Asserts:
         - Valid referenceTaskIds are processed without error
         - Response format is valid regardless of feature support
@@ -41,50 +34,46 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
     """
     # Step 1: Create a reference task
     create_resp = transport_helpers.transport_send_message(sut_client, text_message_params)
-    
+
     # Skip test if response is not successful
     if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create reference task")
-        
+
     reference_task_id = create_resp["result"]["id"]
-    
+
     # Step 2: Create a new task with reference to the first task
     params_with_reference = {
         "message": {
-            "parts": [
-                {
-                    "kind": "text",
-                    "text": "This message references another task"
-                }
-            ],
-            "referenceTaskIds": [reference_task_id]
+            "parts": [{"kind": "text", "text": "This message references another task"}],
+            "referenceTaskIds": [reference_task_id],
         }
     }
-    
+
     ref_resp = transport_helpers.transport_send_message(sut_client, params_with_reference)
-    
+
     # The SUT might handle this in different ways:
     # 1. Accept it and use the reference (success)
     # 2. Ignore the reference but still process the message (success)
     # 3. Reject it if referenceTaskIds are not supported (error)
-    
+
     # We'll just check for a valid response, since behavior is implementation-specific
     # Both success and error responses are acceptable for this optional feature
     assert isinstance(ref_resp, dict), "Response should be a dictionary"
+
 
 @optional_feature
 def test_reference_task_ids_invalid(sut_client):
     """
     OPTIONAL FEATURE: A2A Reference Task IDs Invalid Handling
-    
+
     Tests optional implementation that enhances user experience
     but is not required for A2A compliance.
-    
+
     Test validates handling of invalid referenceTaskIds in messages.
-    
+
     Failure Impact: Limits feature completeness (perfectly acceptable)
     Fix Suggestion: Implement proper validation and error handling for invalid task references
-    
+
     Asserts:
         - Invalid referenceTaskIds are handled gracefully
         - Error responses (if any) use appropriate error codes
@@ -93,27 +82,22 @@ def test_reference_task_ids_invalid(sut_client):
     # Create a message with an invalid/non-existent reference task ID
     params = {
         "message": {
-            "parts": [
-                {
-                    "kind": "text",
-                    "text": "This message references a non-existent task"
-                }
-            ],
-            "referenceTaskIds": ["non-existent-task-id"]
+            "parts": [{"kind": "text", "text": "This message references a non-existent task"}],
+            "referenceTaskIds": ["non-existent-task-id"],
         }
     }
-    
+
     resp = transport_helpers.transport_send_message(sut_client, params)
-    
+
     # The SUT might handle this in different ways:
     # 1. Reject with an error (TaskNotFoundError)
     # 2. Accept but ignore the invalid reference
     # 3. Accept but fail the task if references are critical
-    
+
     # We'll just check for a valid response, since behavior is implementation-specific
     assert isinstance(resp, dict), "Response should be a dictionary"
-    
+
     # If it's an error response, check it's a reasonable error code
     if transport_helpers.is_json_rpc_error_response(resp):
         # Error code might be TaskNotFoundError or InvalidParamsError
-        assert resp.get("error", {}).get("code", 0) < 0, "Expected a negative error code" 
+        assert resp.get("error", {}).get("code", 0) < 0, "Expected a negative error code"

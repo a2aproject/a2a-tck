@@ -7,20 +7,18 @@ import subprocess
 import sys
 import os
 
+
 def main():
     """Run the spec change tracker."""
     # Get the project root directory (two levels up from this script)
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
     # Build command to run the spec tracker's main script
     # The spec_tracker/main.py script needs to be run from the project root
-    spec_tracker_script = os.path.join(project_root, 'spec_tracker', 'main.py')
-    
-    cmd = [
-        sys.executable,
-        spec_tracker_script
-    ] + sys.argv[1:]  # Forward all arguments
-    
+    spec_tracker_script = os.path.join(project_root, "spec_tracker", "main.py")
+
+    cmd = [sys.executable, spec_tracker_script] + sys.argv[1:]  # Forward all arguments
+
     try:
         # Run the command from the project root and capture exit code
         result = subprocess.run(cmd, cwd=project_root, check=False)
@@ -35,5 +33,6 @@ def main():
         print(f"❌ Error running spec change tracker: {e}")
         return 1
 
+
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

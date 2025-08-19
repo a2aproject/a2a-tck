@@ -17,7 +17,7 @@ from .a2a_v030_compliance import (
 
 __all__ = [
     "A2AError",
-    "JSONRPCError", 
+    "JSONRPCError",
     "TransportComplianceValidator",
     "MethodMappingValidator",
     "FunctionalEquivalenceValidator",

@@ -14,20 +14,21 @@ from tck.transport.base_client import TransportType
 
 # These will be set by pytest via conftest.py
 _sut_url: Optional[str] = None
-_test_scope: str = 'core'
+_test_scope: str = "core"
 
 # Transport configuration - A2A v0.3.0 multi-transport support
-_transport_selection_strategy: str = 'agent_preferred'
+_transport_selection_strategy: str = "agent_preferred"
 _preferred_transport: Optional[TransportType] = None
 _disabled_transports: List[TransportType] = []
 _required_transports: Optional[List[TransportType]] = None
 _transport_specific_config: Dict[str, Dict[str, str]] = {}
 _enable_transport_equivalence_testing: bool = True
 
-def set_config(sut_url: str, test_scope: str = 'core'):
+
+def set_config(sut_url: str, test_scope: str = "core"):
     """
     Set basic TCK configuration.
-    
+
     Args:
         sut_url: Base URL of the SUT
         test_scope: Test scope ('core' or 'all')
@@ -36,13 +37,14 @@ def set_config(sut_url: str, test_scope: str = 'core'):
     _sut_url = sut_url
     _test_scope = test_scope
 
+
 def get_sut_url() -> str:
     """
     Get the configured SUT URL.
-    
+
     Returns:
         The SUT base URL
-        
+
     Raises:
         RuntimeError: If SUT URL is not configured
     """
@@ -53,10 +55,11 @@ def get_sut_url() -> str:
         raise RuntimeError("SUT URL is not configured. Did you forget to pass --sut-url?")
     return _sut_url
 
+
 def get_test_scope() -> str:
     """
     Get the configured test scope.
-    
+
     Returns:
         Test scope string ('core' or 'all')
     """
@@ -65,28 +68,26 @@ def get_test_scope() -> str:
 
 # A2A v0.3.0 Transport Configuration Functions
 
+
 def set_transport_selection_strategy(strategy: str):
     """
     Set the transport selection strategy.
-    
+
     Args:
-        strategy: Selection strategy ('agent_preferred', 'prefer_jsonrpc', 
+        strategy: Selection strategy ('agent_preferred', 'prefer_jsonrpc',
                  'prefer_grpc', 'prefer_rest', 'all_supported')
     """
     global _transport_selection_strategy
-    valid_strategies = {
-        'agent_preferred', 'prefer_jsonrpc', 'prefer_grpc', 
-        'prefer_rest', 'all_supported'
-    }
+    valid_strategies = {"agent_preferred", "prefer_jsonrpc", "prefer_grpc", "prefer_rest", "all_supported"}
     if strategy not in valid_strategies:
-        raise ValueError(f"Invalid transport selection strategy: {strategy}. "
-                        f"Valid options: {valid_strategies}")
+        raise ValueError(f"Invalid transport selection strategy: {strategy}. Valid options: {valid_strategies}")
     _transport_selection_strategy = strategy
+
 
 def get_transport_selection_strategy() -> str:
     """
     Get the transport selection strategy.
-    
+
     Returns:
         Current transport selection strategy
     """
@@ -96,20 +97,22 @@ def get_transport_selection_strategy() -> str:
         return env_strategy
     return _transport_selection_strategy
 
+
 def set_preferred_transport(transport_type: Optional[TransportType]):
     """
     Set a preferred transport type for testing.
-    
+
     Args:
         transport_type: Preferred transport type or None for auto-selection
     """
     global _preferred_transport
     _preferred_transport = transport_type
 
+
 def get_preferred_transport() -> Optional[TransportType]:
     """
     Get the preferred transport type.
-    
+
     Returns:
         Preferred transport type or None if not set
     """
@@ -119,20 +122,22 @@ def get_preferred_transport() -> Optional[TransportType]:
         return _parse_transport_from_env(env_transport)
     return _preferred_transport
 
+
 def set_disabled_transports(transports: List[TransportType]):
     """
     Set list of disabled transport types.
-    
+
     Args:
         transports: List of transport types to disable
     """
     global _disabled_transports
     _disabled_transports = transports.copy()
 
+
 def get_disabled_transports() -> List[TransportType]:
     """
     Get list of disabled transport types.
-    
+
     Returns:
         List of disabled transport types
     """
@@ -142,22 +147,24 @@ def get_disabled_transports() -> List[TransportType]:
         return _parse_transport_list_from_env(env_disabled)
     return _disabled_transports.copy()
 
+
 def is_transport_enabled(transport_type: TransportType) -> bool:
     """
     Check if a transport type is enabled.
-    
+
     Args:
         transport_type: Transport type to check
-        
+
     Returns:
         True if transport is enabled, False if disabled
     """
     return transport_type not in get_disabled_transports()
 
+
 def set_required_transports(transports: Optional[List[TransportType]]):
     """
     Set list of required transport types for strict selection.
-    
+
     Args:
         transports: List of required transports, or None for unrestricted
     """
@@ -167,10 +174,11 @@ def set_required_transports(transports: Optional[List[TransportType]]):
     else:
         _required_transports = transports.copy()
 
+
 def get_required_transports() -> Optional[List[TransportType]]:
     """
     Get list of required transport types for strict selection.
-    
+
     Returns:
         List of required transports, or None if unrestricted
     """
@@ -179,20 +187,22 @@ def get_required_transports() -> Optional[List[TransportType]]:
         return _parse_transport_list_from_env(env_required)
     return None if _required_transports is None else _required_transports.copy()
 
+
 def is_transport_required(transport_type: TransportType) -> bool:
     """
     Check if a transport is within the required set (if any).
-    
+
     Returns:
         True if no restriction or transport is in required set
     """
     required = get_required_transports()
     return True if required is None else transport_type in required
 
+
 def set_transport_specific_config(transport_type: TransportType, config: Dict[str, str]):
     """
     Set transport-specific configuration.
-    
+
     Args:
         transport_type: Transport type to configure
         config: Configuration dictionary
@@ -200,114 +210,121 @@ def set_transport_specific_config(transport_type: TransportType, config: Dict[st
     global _transport_specific_config
     _transport_specific_config[transport_type.value] = config.copy()
 
+
 def get_transport_specific_config(transport_type: TransportType) -> Dict[str, str]:
     """
     Get transport-specific configuration.
-    
+
     Args:
         transport_type: Transport type to get config for
-        
+
     Returns:
         Configuration dictionary for the transport
     """
     config = _transport_specific_config.get(transport_type.value, {}).copy()
-    
+
     # Add environment variable overrides
     env_prefix = f"A2A_{transport_type.value.upper()}_"
     for key, value in os.environ.items():
         if key.startswith(env_prefix):
-            config_key = key[len(env_prefix):].lower()
+            config_key = key[len(env_prefix) :].lower()
             config[config_key] = value
-    
+
     return config
+
 
 def set_enable_transport_equivalence_testing(enabled: bool):
     """
     Enable or disable transport equivalence testing.
-    
+
     Args:
         enabled: True to enable equivalence testing, False to disable
     """
     global _enable_transport_equivalence_testing
     _enable_transport_equivalence_testing = enabled
 
+
 def is_transport_equivalence_testing_enabled() -> bool:
     """
     Check if transport equivalence testing is enabled.
-    
+
     Returns:
         True if equivalence testing is enabled
     """
     # Check environment variable override
     env_enabled = os.getenv("A2A_ENABLE_EQUIVALENCE_TESTING")
     if env_enabled is not None:
-        return env_enabled.lower() in ('true', '1', 'yes', 'on')
+        return env_enabled.lower() in ("true", "1", "yes", "on")
     return _enable_transport_equivalence_testing
+
 
 def get_transport_capabilities() -> Dict[str, bool]:
     """
     Get transport capability flags from environment.
-    
+
     Returns:
         Dictionary of capability flags
     """
     return {
-        'jsonrpc_enabled': is_transport_enabled(TransportType.JSON_RPC),
-        'grpc_enabled': is_transport_enabled(TransportType.GRPC),
-        'rest_enabled': is_transport_enabled(TransportType.REST),
-        'equivalence_testing_enabled': is_transport_equivalence_testing_enabled(),
-        'preferred_transport': get_preferred_transport().value if get_preferred_transport() else None,
-        'selection_strategy': get_transport_selection_strategy()
+        "jsonrpc_enabled": is_transport_enabled(TransportType.JSON_RPC),
+        "grpc_enabled": is_transport_enabled(TransportType.GRPC),
+        "rest_enabled": is_transport_enabled(TransportType.REST),
+        "equivalence_testing_enabled": is_transport_equivalence_testing_enabled(),
+        "preferred_transport": get_preferred_transport().value if get_preferred_transport() else None,
+        "selection_strategy": get_transport_selection_strategy(),
     }
+
 
 def _parse_transport_from_env(transport_str: str) -> Optional[TransportType]:
     """
     Parse transport type from environment variable string.
-    
+
     Args:
         transport_str: Transport string from environment
-        
+
     Returns:
         TransportType or None if invalid
     """
     transport_map = {
-        'jsonrpc': TransportType.JSON_RPC,
-        'json-rpc': TransportType.JSON_RPC,
-        'grpc': TransportType.GRPC,
-        'rest': TransportType.REST,
-        'http': TransportType.REST
+        "jsonrpc": TransportType.JSON_RPC,
+        "json-rpc": TransportType.JSON_RPC,
+        "grpc": TransportType.GRPC,
+        "rest": TransportType.REST,
+        "http": TransportType.REST,
     }
     return transport_map.get(transport_str.lower())
+
 
 def _parse_transport_list_from_env(transport_list_str: str) -> List[TransportType]:
     """
     Parse list of transport types from environment variable.
-    
+
     Args:
         transport_list_str: Comma-separated transport list
-        
+
     Returns:
         List of TransportType enums
     """
     transports = []
-    for transport_str in transport_list_str.split(','):
+    for transport_str in transport_list_str.split(","):
         transport_str = transport_str.strip()
         transport = _parse_transport_from_env(transport_str)
         if transport:
             transports.append(transport)
     return transports
 
+
 def reset_transport_config():
     """
     Reset all transport configuration to defaults.
-    
+
     Useful for testing and cleanup.
     """
     global _transport_selection_strategy, _preferred_transport
     global _disabled_transports, _required_transports, _transport_specific_config
     global _enable_transport_equivalence_testing
-    
-    _transport_selection_strategy = 'agent_preferred'
+
+    _transport_selection_strategy = "agent_preferred"
     _preferred_transport = None
     _disabled_transports = []
     _required_transports = None
