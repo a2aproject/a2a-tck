@@ -271,7 +271,15 @@ def get_transport_endpoints(agent_card_data: Dict[str, Any]) -> Dict[TransportTy
     if main_endpoint and isinstance(main_endpoint, str):
         # Assume main endpoint is JSON-RPC unless specified otherwise
         endpoints[TransportType.JSON_RPC] = main_endpoint
-
+    else:
+        # Fallback: check main "url" field and map to preferred transport
+        main_url = agent_card_data.get("url")
+        preferred_transport = agent_card_data.get("preferredTransport")
+        if main_url and isinstance(main_url, str) and preferred_transport and isinstance(preferred_transport, str):
+            transport_type = _parse_transport_type(preferred_transport)
+            if transport_type:
+                endpoints[transport_type] = main_url
+    
     # Check additional interfaces for transport-specific endpoints
     additional = agent_card_data.get("additionalInterfaces", [])
     if isinstance(additional, list):
