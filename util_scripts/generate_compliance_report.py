@@ -190,9 +190,9 @@ class ComplianceReportGenerator:
         analysis = {"declared": declared_capabilities, "issues": [], "recommendations": []}
 
         # Check for common capability issues
-        if declared_capabilities.get("streaming") and "capability_results" in self.test_results:
-            streaming_tests = [t for t in self.test_results["capability_results"].get("tests", {}) if "stream" in t]
-            if any(self.test_results["capability_results"]["tests"][t].get("outcome") == "FAILED" for t in streaming_tests):
+        if declared_capabilities.get("streaming") and "capabilities" in self.test_results:
+            streaming_tests = [t for t in self.test_results["capabilities"].get("tests", {}) if "stream" in t]
+            if any(self.test_results["capabilities"]["tests"][t].get("outcome") == "FAILED" for t in streaming_tests):
                 analysis["issues"].append("Streaming capability declared but tests fail - implementation incomplete")
 
         return analysis
