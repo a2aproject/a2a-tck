@@ -194,6 +194,7 @@ class TestRESTClientSendMessage:
                 "status": {
                     "state": "TASK_STATE_SUBMITTED",
                     "message": {
+                        "kind": "message",
                         "message_id": "response-123",
                         "role": "ROLE_AGENT",
                         "content": [{"text": "Message received via REST"}],
@@ -491,6 +492,7 @@ class TestRESTClientTaskOperations:
             "status": {
                 "state": "TASK_STATE_COMPLETED",
                 "message": {
+                    "kind": "message",
                     "message_id": "status-123",
                     "role": "ROLE_AGENT",
                     "content": [{"text": "Task 123 retrieved via REST"}],
@@ -545,6 +547,7 @@ class TestRESTClientTaskOperations:
             "status": {
                 "state": "TASK_STATE_CANCELLED",
                 "message": {
+                    "kind": "message",
                     "message_id": "cancel-456",
                     "role": "ROLE_AGENT",
                     "content": [{"text": "Task 456 cancelled via REST"}],
