@@ -2,7 +2,7 @@
 A2A v0.3.0 New Methods Testing
 
 Tests for new methods introduced in A2A v0.3.0 specification:
-- agent/authenticatedExtendedCard (§7.10)
+- agent/getAuthenticatedExtendedCard (§7.10)
 - tasks/list (§7.3.1 - gRPC/REST only)
 - Method mapping compliance across transports (§3.5.6)
 - Transport-specific features validation
@@ -11,7 +11,7 @@ These tests validate that SUTs correctly implement the new v0.3.0 methods
 with proper authentication, transport mapping, and functional compliance.
 
 References:
-- A2A v0.3.0 Specification §7.10: agent/authenticatedExtendedCard
+- A2A v0.3.0 Specification §7.10: agent/getAuthenticatedExtendedCard
 - A2A v0.3.0 Specification §7.3.1: tasks/list
 - A2A v0.3.0 Specification §3.5.6: Method Mapping Reference Table
 - A2A v0.3.0 Specification §3.2: Transport Protocol Requirements
@@ -38,7 +38,7 @@ from tests.utils.transport_helpers import (
 
 class TestAuthenticatedExtendedCard:
     """
-    Test suite for agent/authenticatedExtendedCard method (§7.10)
+    Test suite for agent/getAuthenticatedExtendedCard method (§7.10)
 
     Validates that SUTs correctly implement authenticated agent card retrieval
     with proper authentication requirements and extended card functionality.
@@ -49,7 +49,7 @@ class TestAuthenticatedExtendedCard:
     @pytest.mark.a2a_v030
     def test_authenticated_extended_card_method_exists(self, sut_client: BaseTransportClient, agent_card_data):
         """
-        Test that agent/authenticatedExtendedCard method exists and is callable.
+        Test that agent/getAuthenticatedExtendedCard method exists and is callable.
 
         A2A v0.3.0 Specification Reference: §7.10
         Transport Support: All transports (JSON-RPC, gRPC, REST)
@@ -107,7 +107,7 @@ class TestAuthenticatedExtendedCard:
     @pytest.mark.a2a_v030
     def test_authenticated_extended_card_without_auth(self, sut_client: BaseTransportClient, agent_card_data):
         """
-        Test that agent/authenticatedExtendedCard properly rejects unauthenticated requests.
+        Test that agent/getAuthenticatedExtendedCard properly rejects unauthenticated requests.
 
         A2A v0.3.0 Specification Reference: §7.10
 
@@ -163,7 +163,7 @@ class TestAuthenticatedExtendedCard:
     @a2a_v030
     def test_authenticated_extended_card_with_auth(self, sut_client: BaseTransportClient, agent_card_data):
         """
-        Test that agent/authenticatedExtendedCard returns extended card with valid auth.
+        Test that agent/getAuthenticatedExtendedCard returns extended card with valid auth.
 
         A2A v0.3.0 Specification Reference: §7.10 & §11.1.3
 

@@ -2,15 +2,16 @@
 A2A v0.3.0 Protocol: Mandatory Extended Agent Card Tests
 
 SPECIFICATION REQUIREMENTS (Section 7.10):
-- agent/authenticatedExtendedCard endpoint MUST be available when declared
+- agent/getAuthenticatedExtendedCard JSON-RPC method, or GetAgentCard gRPC
+  method or v1/card JSON+HTTP endpoint MUST be available when declared
 - Client MUST authenticate using declared security schemes
 - Server SHOULD include WWW-Authenticate header on 401 responses
 - Clients SHOULD replace cached Agent Card with extended card content
 
-These tests verify the mandatory agent/authenticatedExtendedCard method
+These tests verify the mandatory agent/getAuthenticatedExtendedCard method
 when supportsAuthenticatedExtendedCard is declared in the Agent Card.
 
-Reference: A2A v0.3.0 Specification Section 7.10 (agent/authenticatedExtendedCard)
+Reference: A2A v0.3.0 Specification Section 7.10 (agent/getAuthenticatedExtendedCard)
 """
 
 import logging
@@ -59,19 +60,11 @@ def get_extended_card_url(base_url: str) -> str:
     """
     Construct the extended Agent Card URL according to A2A v0.3.0 specification.
 
-    Per Section 7.10: The endpoint URL is {AgentCard.url}/../agent/authenticatedExtendedCard
+    Per Section 7.10: The endpoint URL is {AgentCard.url}/v1/card
     relative to the base URL specified in the public Agent Card.
     """
     parsed = urllib.parse.urlparse(base_url)
-
-    # Remove the path and add the extended card path
-    base_path = parsed.path.rstrip("/")
-    if base_path:
-        # Go up one directory from the base path, then add the extended card path
-        parent_path = "/".join(base_path.split("/")[:-1])
-        extended_path = f"{parent_path}/agent/authenticatedExtendedCard"
-    else:
-        extended_path = "/agent/authenticatedExtendedCard"
+    extended_path = f"{parsed.path}/v1/card"
 
     # Reconstruct the URL
     extended_url = urllib.parse.urlunparse(
@@ -94,7 +87,7 @@ def test_extended_agent_card_endpoint_exists(extended_card_agent_card):
     MANDATORY: A2A v0.3.0 Section 7.10 - Extended Agent Card Endpoint Availability
 
     When supportsAuthenticatedExtendedCard is declared as true, the agent MUST
-    implement the agent/authenticatedExtendedCard endpoint.
+    implement the agent/getAuthenticatedExtendedCard endpoint.
 
     This endpoint is an HTTP GET endpoint (not JSON-RPC) that returns a more
     detailed Agent Card after authentication.

@@ -98,7 +98,7 @@ class TransportComplianceValidator:
                 "send_message",  # message/send
                 "get_task",  # tasks/get
                 "cancel_task",  # tasks/cancel
-                "get_agent_card",  # agent/authenticatedExtendedCard
+                "get_agent_card",  # agent/getAuthenticatedExtendedCard
             ],
             "optional_methods": [
                 "send_streaming_message",  # message/stream
@@ -240,7 +240,7 @@ class MethodMappingValidator:
             "description": "Resume task streaming",
         },
         "get_agent_card": {
-            "jsonrpc": "agent/authenticatedExtendedCard",
+            "jsonrpc": "agent/getAuthenticatedExtendedCard",
             "grpc": "GetAgentCard",
             "rest": "GET /v1/card",
             "description": "Get authenticated agent card",

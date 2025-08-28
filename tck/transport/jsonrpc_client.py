@@ -503,7 +503,7 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="agent/authenticatedExtendedCard", params={}, extra_headers=extra_headers
+                method="agent/getAuthenticatedExtendedCard", params={}, extra_headers=extra_headers
             )
             return response.get("result", {})
 
