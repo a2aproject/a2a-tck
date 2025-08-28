@@ -47,7 +47,7 @@ class TestAuthenticatedExtendedCard:
     @pytest.mark.mandatory
     @pytest.mark.mandatory_protocol
     @pytest.mark.a2a_v030
-    def test_authenticated_extended_card_method_exists(self, sut_client: BaseTransportClient):
+    def test_authenticated_extended_card_method_exists(self, sut_client: BaseTransportClient, agent_card_data):
         """
         Test that agent/authenticatedExtendedCard method exists and is callable.
 
@@ -60,12 +60,8 @@ class TestAuthenticatedExtendedCard:
         - Authentication is properly enforced
         """
         # Check if agent card supports authenticated extended card
-        try:
-            agent_card = sut_client.get_agent_card()
-            if not agent_card.get("supportsAuthenticatedExtendedCard", False):
-                pytest.skip("SUT does not support authenticated extended card")
-        except Exception as e:
-            pytest.skip(f"Could not retrieve agent card: {e}")
+        if not agent_card_data.get("supportsAuthenticatedExtendedCard", False):
+            pytest.skip("SUT does not support authenticated extended card")
 
         # Test method existence based on transport type
         transport_type = get_client_transport_type(sut_client)
@@ -109,7 +105,7 @@ class TestAuthenticatedExtendedCard:
     @pytest.mark.mandatory
     @pytest.mark.mandatory_protocol
     @pytest.mark.a2a_v030
-    def test_authenticated_extended_card_without_auth(self, sut_client: BaseTransportClient):
+    def test_authenticated_extended_card_without_auth(self, sut_client: BaseTransportClient, agent_card_data):
         """
         Test that agent/authenticatedExtendedCard properly rejects unauthenticated requests.
 
@@ -121,12 +117,8 @@ class TestAuthenticatedExtendedCard:
         - Error response follows A2A error format
         """
         # Check if SUT supports authenticated extended card
-        try:
-            agent_card = sut_client.get_agent_card()
-            if not agent_card.get("supportsAuthenticatedExtendedCard", False):
-                pytest.skip("SUT does not support authenticated extended card")
-        except Exception:
-            pytest.skip("Could not retrieve agent card")
+        if not agent_card_data.get("supportsAuthenticatedExtendedCard", False):
+            pytest.skip("SUT does not support authenticated extended card")
 
         # Test without authentication credentials
         transport_type = get_client_transport_type(sut_client)
@@ -169,7 +161,7 @@ class TestAuthenticatedExtendedCard:
 
     @optional_capability
     @a2a_v030
-    def test_authenticated_extended_card_with_auth(self, sut_client: BaseTransportClient):
+    def test_authenticated_extended_card_with_auth(self, sut_client: BaseTransportClient, agent_card_data):
         """
         Test that agent/authenticatedExtendedCard returns extended card with valid auth.
 
@@ -185,12 +177,8 @@ class TestAuthenticatedExtendedCard:
         where agents claim to support authenticated extended cards but don't implement them properly.
         """
         # Check if SUT supports authenticated extended card
-        try:
-            agent_card = sut_client.get_agent_card()
-            if not agent_card.get("supportsAuthenticatedExtendedCard", False):
-                pytest.skip("SUT does not support authenticated extended card")
-        except Exception:
-            pytest.skip("Could not retrieve agent card")
+        if not agent_card_data.get("supportsAuthenticatedExtendedCard", False):
+            pytest.skip("SUT does not support authenticated extended card")
 
         # Skip if no authentication is configured
         if not hasattr(sut_client, "headers") or not any(
