@@ -33,7 +33,7 @@ class JSONRPCError(TransportError):
     """
 
     def __init__(self, message: str, original_error: Optional[Exception] = None, json_rpc_error: Optional[Dict[str, Any]] = None):
-        super().__init__(message, TransportType.JSON_RPC, original_error)
+        super().__init__(message, TransportType.JSON_RPC, json_rpc_error, original_error)
         self.json_rpc_error = json_rpc_error
 
 
