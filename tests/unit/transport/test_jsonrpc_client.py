@@ -150,10 +150,10 @@ class TestJSONRPCClient:
         # Mock successful response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.text = '{"jsonrpc": "2.0", "result": {"taskId": "task-123", "status": "completed"}, "id": "req-1"}'
+        mock_response.text = '{"jsonrpc": "2.0", "result": {"id": "task-123", "status": "completed"}, "id": "req-1"}'
         mock_response.json.return_value = {
             "jsonrpc": "2.0",
-            "result": {"taskId": "task-123", "status": "completed"},
+            "result": {"id": "task-123", "status": "completed"},
             "id": "req-1",
         }
         mock_response.raise_for_status.return_value = None
@@ -164,10 +164,10 @@ class TestJSONRPCClient:
         # Verify correct method and params were used
         call_args = mock_post.call_args
         assert call_args[1]["json"]["method"] == "tasks/get"
-        assert call_args[1]["json"]["params"] == {"taskId": "task-123", "historyLength": 5}
+        assert call_args[1]["json"]["params"] == {"id": "task-123", "historyLength": 5}
 
         # Verify result extraction
-        assert result == {"taskId": "task-123", "status": "completed"}
+        assert result == {"id": "task-123", "status": "completed"}
 
     @patch("requests.Session.post")
     def test_cancel_task_interface(self, mock_post):
@@ -175,10 +175,10 @@ class TestJSONRPCClient:
         # Mock successful response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.text = '{"jsonrpc": "2.0", "result": {"taskId": "task-123", "status": "cancelled"}, "id": "req-1"}'
+        mock_response.text = '{"jsonrpc": "2.0", "result": {"id": "task-123", "status": "cancelled"}, "id": "req-1"}'
         mock_response.json.return_value = {
             "jsonrpc": "2.0",
-            "result": {"taskId": "task-123", "status": "cancelled"},
+            "result": {"id": "task-123", "status": "cancelled"},
             "id": "req-1",
         }
         mock_response.raise_for_status.return_value = None
@@ -189,10 +189,10 @@ class TestJSONRPCClient:
         # Verify correct method and params were used
         call_args = mock_post.call_args
         assert call_args[1]["json"]["method"] == "tasks/cancel"
-        assert call_args[1]["json"]["params"] == {"taskId": "task-123"}
+        assert call_args[1]["json"]["params"] == {"id": "task-123"}
 
         # Verify result extraction
-        assert result == {"taskId": "task-123", "status": "cancelled"}
+        assert result == {"id": "task-123", "status": "cancelled"}
 
     @patch("requests.Session.post")
     def test_legacy_send_json_rpc_compatibility(self, mock_post):
