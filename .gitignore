@@ -192,3 +192,7 @@ a2a-java-sdk
 spec_tracker/cache
 
 #a2a-spec-analysis
+
+# Reports
+reports/*.json
+
