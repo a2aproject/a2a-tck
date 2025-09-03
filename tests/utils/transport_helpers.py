@@ -195,8 +195,8 @@ def transport_get_agent_card(client: BaseTransportClient, extra_headers: Optiona
 
     # Fallback to legacy JSON-RPC pattern
     elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for agent/authenticatedExtendedCard")
-        req = message_utils.make_json_rpc_request("agent/authenticatedExtendedCard", params={})
+        logger.debug("Using legacy send_json_rpc for agent/getAuthenticatedExtendedCard")
+        req = message_utils.make_json_rpc_request("agent/getAuthenticatedExtendedCard", params={})
         return client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
 
     else:
