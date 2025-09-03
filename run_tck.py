@@ -625,7 +625,7 @@ Examples:
 
   # A2A v0.3.0 multi-transport testing examples
   ./run_tck.py --sut-url http://localhost:9999 --category all --transport-strategy prefer_grpc
-  ./run_tck.py --sut-url http://localhost:9999 --category all --disabled-transports "grpc,rest"
+  ./run_tck.py --sut-url http://localhost:9999 --category all --transports "jsonrpc,grpc"
 
 Categories:
   mandatory             - Core A2A compliance (MUST pass)
