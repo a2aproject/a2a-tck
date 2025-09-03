@@ -194,26 +194,6 @@ class TestJSONRPCClient:
         # Verify result extraction
         assert result == {"taskId": "task-123", "status": "cancelled"}
 
-    @patch("requests.Session.post")
-    def test_legacy_send_json_rpc_compatibility(self, mock_post):
-        """Test backward compatibility with legacy send_json_rpc method."""
-        # Mock successful response
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = '{"jsonrpc": "2.0", "result": {"success": true}, "id": "test-id"}'
-        mock_response.json.return_value = {"jsonrpc": "2.0", "result": {"success": True}, "id": "test-id"}
-        mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
-
-        # Test legacy interface
-        result = self.client.send_json_rpc(method="test/method", params={"param": "value"}, id="test-id")
-
-        # Verify request structure matches legacy expectations
-        call_args = mock_post.call_args
-        assert call_args[1]["json"]["method"] == "test/method"
-        assert call_args[1]["json"]["params"] == {"param": "value"}
-        assert call_args[1]["json"]["id"] == "test-id"
-
     def test_context_manager(self):
         """Test using client as context manager."""
         with JSONRPCClient("https://example.com/jsonrpc") as client:

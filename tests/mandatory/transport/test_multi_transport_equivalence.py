@@ -21,6 +21,7 @@ from typing import Dict, Any, List, Optional, Tuple
 import pytest
 
 from tck import config, message_utils
+from tck.transport.base_client import BaseTransportClient
 from tests.markers import mandatory
 from tests.utils import transport_helpers
 
@@ -61,16 +62,12 @@ def transport_capabilities():
     return capabilities
 
 
-def execute_equivalent_operation(operation: str, params: Dict[str, Any], transport: str = "http_jsonrpc") -> Dict[str, Any]:
+def execute_equivalent_operation(sut_client: BaseTransportClient, operation: str, params: Dict[str, Any], transport: str = "http_jsonrpc") -> Dict[str, Any]:
     """
     Execute the same logical operation across different transports.
 
     This function abstracts transport-specific details to test functional equivalence.
     """
-    from tck.sut_client import SUTClient
-
-    sut_client = SUTClient()
-
     if operation == "send_message":
         return transport_helpers.transport_send_message(sut_client, params)
     elif operation == "get_task":
@@ -84,7 +81,7 @@ def execute_equivalent_operation(operation: str, params: Dict[str, Any], transpo
 
 
 @mandatory
-def test_message_sending_equivalence(transport_capabilities):
+def test_message_sending_equivalence(sut_client: BaseTransportClient, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Message Sending Transport Equivalence
 
@@ -131,7 +128,7 @@ def test_message_sending_equivalence(transport_capabilities):
         try:
             # Execute the same operation via each transport
             result = execute_equivalent_operation(
-                "send_message", {"message": test_message}, transport.lower().replace("/", "_").replace("-", "_")
+                sut_client, "send_message", {"message": test_message}, transport.lower().replace("/", "_").replace("-", "_")
             )
 
             transport_results[transport] = {
@@ -191,7 +188,7 @@ def test_message_sending_equivalence(transport_capabilities):
 
 
 @mandatory
-def test_task_retrieval_equivalence(transport_capabilities):
+def test_task_retrieval_equivalence(sut_client: BaseTransportClient, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Task Retrieval Transport Equivalence
 
@@ -221,10 +218,6 @@ def test_task_retrieval_equivalence(transport_capabilities):
     logger.info(f"Testing task retrieval equivalence across {len(available_transports)} transports")
 
     # Create a test task first
-    from tck.sut_client import SUTClient
-
-    sut_client = SUTClient()
-
     req_id = message_utils.generate_request_id()
     test_message = {
         "role": "user",
@@ -257,7 +250,7 @@ def test_task_retrieval_equivalence(transport_capabilities):
 
         try:
             result = execute_equivalent_operation(
-                "get_task", {"task_id": task_id}, transport.lower().replace("/", "_").replace("-", "_")
+                sut_client, "get_task", {"task_id": task_id}, transport.lower().replace("/", "_").replace("-", "_")
             )
 
             transport_results[transport] = {
@@ -323,7 +316,7 @@ def test_task_retrieval_equivalence(transport_capabilities):
 
 
 @mandatory
-def test_agent_card_access_equivalence(transport_capabilities):
+def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Agent Card Access Transport Equivalence
 
@@ -359,7 +352,9 @@ def test_agent_card_access_equivalence(transport_capabilities):
         logger.info(f"Testing Agent Card access via {transport}")
 
         try:
-            result = execute_equivalent_operation("get_agent_card", {}, transport.lower().replace("/", "_").replace("-", "_"))
+            result = execute_equivalent_operation(
+                sut_client, "get_agent_card", {}, transport.lower().replace("/", "_").replace("-", "_")
+            )
 
             transport_results[transport] = {
                 "success": transport_helpers.is_json_rpc_success_response(result),
@@ -417,7 +412,7 @@ def test_agent_card_access_equivalence(transport_capabilities):
 
 
 @mandatory
-def test_error_handling_equivalence(transport_capabilities):
+def test_error_handling_equivalence(sut_client: BaseTransportClient, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Error Handling Transport Equivalence
 
@@ -461,7 +456,7 @@ def test_error_handling_equivalence(transport_capabilities):
         for transport in available_transports:
             try:
                 result = execute_equivalent_operation(
-                    scenario["operation"], scenario["params"], transport.lower().replace("/", "_").replace("-", "_")
+                    sut_client, scenario["operation"], scenario["params"], transport.lower().replace("/", "_").replace("-", "_")
                 )
 
                 # Analyze error response
@@ -526,7 +521,7 @@ def test_error_handling_equivalence(transport_capabilities):
 
 
 @mandatory
-def test_performance_equivalence(transport_capabilities):
+def test_performance_equivalence(sut_client: BaseTransportClient, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Performance Transport Equivalence
 
@@ -574,7 +569,7 @@ def test_performance_equivalence(transport_capabilities):
 
                 try:
                     result = execute_equivalent_operation(
-                        operation["operation"], operation["params"], transport.lower().replace("/", "_").replace("-", "_")
+                        sut_client, operation["operation"], operation["params"], transport.lower().replace("/", "_").replace("-", "_")
                     )
 
                     end_time = time.time()
@@ -644,7 +639,7 @@ def test_performance_equivalence(transport_capabilities):
 
 
 @mandatory
-def test_concurrent_operation_equivalence(transport_capabilities):
+def test_concurrent_operation_equivalence(sut_client: BaseTransportClient, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Concurrent Operation Transport Equivalence
 
@@ -673,9 +668,6 @@ def test_concurrent_operation_equivalence(transport_capabilities):
 
     logger.info(f"Testing concurrent operation equivalence across {len(available_transports)} transports")
 
-    # Create multiple tasks concurrently across transports
-    from tck.sut_client import SUTClient
-
     concurrent_results = {}
 
     for i, transport in enumerate(available_transports):
@@ -691,7 +683,7 @@ def test_concurrent_operation_equivalence(transport_capabilities):
             }
 
             result = execute_equivalent_operation(
-                "send_message", {"message": test_message}, transport.lower().replace("/", "_").replace("-", "_")
+                sut_client, "send_message", {"message": test_message}, transport.lower().replace("/", "_").replace("-", "_")
             )
 
             concurrent_results[transport] = {

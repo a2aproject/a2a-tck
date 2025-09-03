@@ -203,7 +203,7 @@ class TestTransportIntegration:
 
         # Test JSON-RPC client specific features
         jsonrpc_client = all_clients[TransportType.JSON_RPC]
-        assert hasattr(jsonrpc_client, "send_json_rpc")  # Legacy method
+        assert not hasattr(jsonrpc_client, "send_json_rpc")  # Legacy method was removed
         assert not jsonrpc_client.supports_method("list_tasks")  # Not supported in JSON-RPC
 
         # Test gRPC client specific features
