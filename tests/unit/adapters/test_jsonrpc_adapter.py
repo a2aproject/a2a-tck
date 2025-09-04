@@ -270,7 +270,7 @@ class TestJSONRPCTestAdapter:
     def test_legacy_send_json_rpc(self, adapter, test_context):
         """Test legacy send_json_rpc method."""
         result = adapter.test_legacy_send_json_rpc(
-            test_context, "message/send", {"message": {"content": "Legacy test"}}, "legacy-id-123"
+            test_context, "message/send", {"message": {"kind": "message", "content": "Legacy test"}}, "legacy-id-123"
         )
 
         assert result.outcome == TestOutcome.PASS

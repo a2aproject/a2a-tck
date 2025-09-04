@@ -723,6 +723,7 @@ class GRPCClient(BaseTransportClient):
                             "status": {
                                 "state": "TASK_STATE_WORKING",
                                 "message": {
+                                    "kind": "message",
                                     "message_id": f"sub-{task_id}-1",
                                     "role": "ROLE_AGENT",
                                     "content": [{"text": f"Subscribed to task {task_id} via gRPC"}],
@@ -737,6 +738,7 @@ class GRPCClient(BaseTransportClient):
                             "status": {
                                 "state": "TASK_STATE_COMPLETED",
                                 "message": {
+                                    "kind": "message",
                                     "message_id": f"sub-{task_id}-2",
                                     "role": "ROLE_AGENT",
                                     "content": [{"text": f"Task {task_id} completed via gRPC subscription"}],

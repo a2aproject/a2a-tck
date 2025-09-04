@@ -559,7 +559,7 @@ class TestTransportSpecificFeatures:
                     {
                         "method": "message/send",
                         "params": {
-                            "message": {"role": "user", "parts": [{"kind": "text", "text": "test"}], "messageId": "test-batch-1"}
+                            "message": {"kind": "message", "role": "user", "parts": [{"kind": "text", "text": "test"}], "messageId": "test-batch-1"}
                         },
                         "id": 2,
                     },

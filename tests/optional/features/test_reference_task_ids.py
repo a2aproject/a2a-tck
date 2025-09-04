@@ -11,7 +11,7 @@ from tests.utils import transport_helpers
 @pytest.fixture
 def text_message_params():
     """Create a basic text message params object"""
-    return {"message": {"parts": [{"kind": "text", "text": "Hello from reference task ID test!"}]}}
+    return {"message": {"kind": "message", "parts": [{"kind": "text", "text": "Hello from reference task ID test!"}]}}
 
 
 @optional_feature
@@ -44,6 +44,7 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
     # Step 2: Create a new task with reference to the first task
     params_with_reference = {
         "message": {
+            "kind": "message",
             "parts": [{"kind": "text", "text": "This message references another task"}],
             "referenceTaskIds": [reference_task_id],
         }
@@ -82,6 +83,7 @@ def test_reference_task_ids_invalid(sut_client):
     # Create a message with an invalid/non-existent reference task ID
     params = {
         "message": {
+            "kind": "message",
             "parts": [{"kind": "text", "text": "This message references a non-existent task"}],
             "referenceTaskIds": ["non-existent-task-id"],
         }

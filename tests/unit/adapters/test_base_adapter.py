@@ -411,7 +411,7 @@ class TestBaseTransportAdapter:
             {
                 "name": "basic_message",
                 "type": "send_message",
-                "message": {"content": "Test message", "type": "text"},
+                "message": {"kind": "message", "content": "Test message", "type": "text"},
                 "spec_reference": "A2A v0.3.0 §7.1",
             },
             {"name": "task_retrieval", "type": "get_task", "task_id": "test-task-789"},
