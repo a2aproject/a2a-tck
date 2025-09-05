@@ -138,7 +138,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Prepare payload according to A2A REST specification
@@ -205,7 +205,7 @@ class RESTClient(BaseTransportClient):
             headers["Accept"] = "text/event-stream"  # SSE format
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Prepare payload
@@ -289,7 +289,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Add query parameters
@@ -345,7 +345,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Make real HTTP request to live SUT
@@ -416,7 +416,7 @@ class RESTClient(BaseTransportClient):
             headers["Accept"] = "text/event-stream"  # SSE format
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Make real HTTP streaming request to live SUT
@@ -490,7 +490,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Make real HTTP request to live SUT
@@ -594,7 +594,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Make real HTTP request to live SUT
@@ -646,7 +646,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Make real HTTP request to live SUT
@@ -697,7 +697,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Make real HTTP request to live SUT
@@ -749,7 +749,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Make real HTTP request to live SUT
@@ -804,7 +804,7 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
+            if "extra_headers" in kwargs and kwargs["extra_headers"]:
                 headers.update(kwargs["extra_headers"])
 
             # Add query parameters for pagination, filtering, etc.

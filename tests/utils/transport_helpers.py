@@ -41,7 +41,7 @@ def transport_send_message(
         logger.debug(f"Using transport-aware send_message for {client.transport_type.value}")
         message = message_params.get("message", message_params)
         try:
-            result = client.send_message(message, extra_headers)
+            result = client.send_message(message, extra_headers=extra_headers)
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
@@ -221,7 +221,7 @@ def is_json_rpc_success_response(response: Dict[str, Any], expected_id: Optional
         return False
 
     # For full JSON-RPC responses, use the existing validation
-    if "jsonrpc" in response and "id" in response:
+    if response and "jsonrpc" in response and "id" in response:
         return message_utils.is_json_rpc_success_response(response, expected_id)
 
     # For transport-aware responses in JSON-RPC format ({"result": {...}} or {"error": {...}})
