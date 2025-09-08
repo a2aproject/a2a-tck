@@ -55,12 +55,6 @@ def transport_send_message(
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
 
-    # Fallback to legacy JSON-RPC pattern for backward compatibility
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for backward compatibility")
-        req = message_utils.make_json_rpc_request("message/send", params=message_params)
-        return client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-
     else:
         raise ValueError(f"Client {type(client)} does not support message sending")
 
@@ -103,16 +97,6 @@ def transport_get_task(
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
 
-    # Fallback to legacy JSON-RPC pattern
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for tasks/get")
-        params = {"id": task_id}
-        if history_length is not None:
-            params["historyLength"] = history_length
-
-        req = message_utils.make_json_rpc_request("tasks/get", params=params)
-        return client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-
     else:
         raise ValueError(f"Client {type(client)} does not support task retrieval")
 
@@ -151,13 +135,6 @@ def transport_cancel_task(
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
 
-    # Fallback to legacy JSON-RPC pattern
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for tasks/cancel")
-        params = {"id": task_id}
-        req = message_utils.make_json_rpc_request("tasks/cancel", params=params)
-        return client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-
     else:
         raise ValueError(f"Client {type(client)} does not support task cancellation")
 
@@ -192,13 +169,6 @@ def transport_get_agent_card(client: BaseTransportClient, extra_headers: Optiona
             elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
-
-    # Fallback to legacy JSON-RPC pattern
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for agent/getAuthenticatedExtendedCard")
-        req = message_utils.make_json_rpc_request("agent/getAuthenticatedExtendedCard", params={})
-        return client.send_json_rpc(method=req["method"], params=req["params"], id=req["id"])
-
     else:
         raise ValueError(f"Client {type(client)} does not support agent card retrieval")
 
@@ -441,11 +411,6 @@ def transport_send_json_rpc_request(
                 return {"error": e.json_rpc_error, "id": req.get("id")}
             raise
 
-    # Fallback to legacy JSON-RPC pattern for backward compatibility
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug(f"Using legacy send_json_rpc for method {method}")
-        return client.send_json_rpc(method=req["method"], params=req.get("params"), id=req.get("id"))
-
     # Fallback for other transport implementations
     else:
         raise ValueError(f"Client {type(client)} does not support arbitrary JSON-RPC requests")
@@ -486,12 +451,6 @@ def transport_set_push_notification_config(
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
 
-    # Fallback to JSON-RPC pattern for backward compatibility
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for push notification config")
-        params = {"taskId": task_id, "pushNotificationConfig": config}
-        return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/set", params)
-
     else:
         raise ValueError(f"Client {type(client)} does not support push notification configuration")
 
@@ -531,12 +490,6 @@ def transport_get_push_notification_config(
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
 
-    # Fallback to JSON-RPC pattern for backward compatibility
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for push notification config")
-        params = {"id": task_id, "configId": config_id}
-        return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/get", params)
-
     else:
         raise ValueError(f"Client {type(client)} does not support push notification configuration")
 
@@ -574,12 +527,6 @@ def transport_list_push_notification_configs(
             elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
-
-    # Fallback to JSON-RPC pattern for backward compatibility
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for push notification config list")
-        params = {"id": task_id}
-        return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/list", params)
 
     else:
         raise ValueError(f"Client {type(client)} does not support push notification configuration")
@@ -619,12 +566,6 @@ def transport_delete_push_notification_config(
             elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
-
-    # Fallback to JSON-RPC pattern for backward compatibility
-    elif hasattr(client, "send_json_rpc"):
-        logger.debug("Using legacy send_json_rpc for push notification config")
-        params = {"taskId": task_id, "configId": config_id}
-        return transport_send_json_rpc_request(client, "tasks/pushNotificationConfig/delete", params)
 
     else:
         raise ValueError(f"Client {type(client)} does not support push notification configuration")

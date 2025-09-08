@@ -92,10 +92,6 @@ class MockJSONRPCClient(JSONRPCClient):
         response = self._make_jsonrpc_request("agent/getAuthenticatedExtendedCard", {}, extra_headers=extra_headers)
         return response["result"]
 
-    def send_json_rpc(self, method=None, params=None, id=None, extra_headers=None, **kwargs):
-        self.call_log.append(("send_json_rpc", method, params, id, extra_headers, kwargs))
-        return self._make_jsonrpc_request(method, params, id, extra_headers)
-
     # Implement remaining abstract methods with minimal functionality
     def resubscribe_task(self, task_id: str, extra_headers=None):
         return iter([{"taskId": task_id, "state": "in-progress"}])
@@ -266,21 +262,6 @@ class TestJSONRPCTestAdapter:
         assert call[0] == "_make_jsonrpc_request"
         assert call[1] == "custom/method"
         assert call[2] == {"param1": "value1"}
-
-    def test_legacy_send_json_rpc(self, adapter, test_context):
-        """Test legacy send_json_rpc method."""
-        result = adapter.test_legacy_send_json_rpc(
-            test_context, "message/send", {"message": {"kind": "message", "content": "Legacy test"}}, "legacy-id-123"
-        )
-
-        assert result.outcome == TestOutcome.PASS
-        assert result.duration_ms is not None
-
-        # Verify legacy method was called
-        call = adapter.jsonrpc_client.call_log[0]
-        assert call[0] == "send_json_rpc"
-        assert call[1] == "message/send"
-        assert call[3] == "legacy-id-123"  # request ID
 
     def test_jsonrpc_task_response_validation(self, adapter, test_context):
         """Test JSON-RPC specific task response validation."""
