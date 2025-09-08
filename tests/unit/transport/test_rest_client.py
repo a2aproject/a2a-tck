@@ -222,7 +222,7 @@ class TestRESTClientSendMessage:
 
             # Verify correct URL and payload were used
             mock_post.assert_called_once_with(
-                "https://example.com:8080/messages", json={"message": message}, headers=client.default_headers
+                "https://example.com:8080/v1/message:send", json={"message": message}, headers=client.default_headers
             )
 
             # Verify result
@@ -254,7 +254,7 @@ class TestRESTClientSendMessage:
             expected_headers.update(extra_headers)
 
             mock_post.assert_called_once_with(
-                "https://example.com:8080/messages", json={"message": message}, headers=expected_headers
+                "https://example.com:8080/v1/message:send", json={"message": message}, headers=expected_headers
             )
 
     @patch("httpx.Client.post")
@@ -285,7 +285,7 @@ class TestRESTClientSendMessage:
             }
 
             mock_post.assert_called_once_with(
-                "https://example.com:8080/messages", json=expected_payload, headers=client.default_headers
+                "https://example.com:8080/v1/message:send", json=expected_payload, headers=client.default_headers
             )
 
     @patch("httpx.Client.post")
@@ -399,7 +399,7 @@ class TestRESTClientStreamingMessage:
         # Verify correct URL and headers were used
         mock_async_client.stream.assert_called_once_with(
             "POST",
-            "https://example.com:8080/messages/stream",
+            "https://example.com:8080/v1/message:stream",
             json={"message": message},
             headers={**client.default_headers, "Accept": "text/event-stream"},
         )
@@ -510,7 +510,7 @@ class TestRESTClientTaskOperations:
 
             result = client.get_task("task-123")
 
-            mock_get.assert_called_once_with("https://example.com:8080/tasks/task-123", params={}, headers=client.default_headers)
+            mock_get.assert_called_once_with("https://example.com:8080/v1/tasks/task-123", params={}, headers=client.default_headers)
 
             assert result["id"] == "task-123"
             assert result["context_id"] == "default-context"
@@ -534,7 +534,7 @@ class TestRESTClientTaskOperations:
             client.get_task("task-123", history_length=10)
 
             mock_get.assert_called_once_with(
-                "https://example.com:8080/tasks/task-123", params={"history_length": 10}, headers=client.default_headers
+                "https://example.com:8080/v1/tasks/task-123", params={"history_length": 10}, headers=client.default_headers
             )
 
     @patch("httpx.Client.post")
@@ -565,7 +565,7 @@ class TestRESTClientTaskOperations:
 
             result = client.cancel_task("task-456")
 
-            mock_post.assert_called_once_with("https://example.com:8080/tasks/task-456/cancel", headers=client.default_headers)
+            mock_post.assert_called_once_with("https://example.com:8080/v1/tasks/task-456:cancel", headers=client.default_headers)
 
             assert result["id"] == "task-456"
             assert result["status"]["state"] == "TASK_STATE_CANCELLED"
@@ -621,7 +621,7 @@ class TestRESTClientTaskOperations:
         # Verify correct URL and headers were used
         mock_async_client.stream.assert_called_once_with(
             "GET",
-            "https://example.com:8080/tasks/task-789/events",
+            "https://example.com:8080/v1/tasks/task-789:subscribe",
             headers={**client.default_headers, "Accept": "text/event-stream"},
         )
 
@@ -655,7 +655,7 @@ class TestRESTClientAgentCard:
 
             result = client.get_agent_card()
 
-            mock_get.assert_called_once_with("https://example.com:8080/agent-card", headers=client.default_headers)
+            mock_get.assert_called_once_with("https://example.com:8080/v1/card", headers=client.default_headers)
 
             assert result["protocol_version"] == "0.3.0"
             assert result["name"] == "A2A REST Test Agent"
@@ -692,7 +692,7 @@ class TestRESTClientAgentCard:
             expected_headers = client.default_headers.copy()
             expected_headers.update(auth_headers)
 
-            mock_get.assert_called_once_with("https://example.com:8080/agent-card", headers=expected_headers)
+            mock_get.assert_called_once_with("https://example.com:8080/v1/card", headers=expected_headers)
 
             assert result["name"] == "A2A REST Test Agent (Extended)"
             assert result["capabilities"]["authenticated_features"] is True
@@ -731,7 +731,7 @@ class TestRESTClientPushNotifications:
             result = client.set_push_notification_config("task-123", config)
 
             mock_post.assert_called_once_with(
-                "https://example.com:8080/tasks/task-123/push-notification-configs", json=config, headers=client.default_headers
+                "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs", json=config, headers=client.default_headers
             )
 
             assert result["push_notification_config"]["id"] == "config1"
@@ -743,7 +743,7 @@ class TestRESTClientPushNotifications:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "name": "tasks/task-123/push-notification-configs/config1",
+            "name": "tasks/task-123/pushNotificationConfigs/config1",
             "push_notification_config": {
                 "id": "config1",
                 "url": "https://webhook.example.com/notify",
@@ -762,7 +762,7 @@ class TestRESTClientPushNotifications:
             result = client.get_push_notification_config("task-123", "config1")
 
             mock_get.assert_called_once_with(
-                "https://example.com:8080/tasks/task-123/push-notification-configs/config1", headers=client.default_headers
+                "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs/config1", headers=client.default_headers
             )
 
             assert result["push_notification_config"]["id"] == "config1"
@@ -775,11 +775,11 @@ class TestRESTClientPushNotifications:
         mock_response.json.return_value = {
             "configs": [
                 {
-                    "name": "tasks/task-123/push-notification-configs/config1",
+                    "name": "tasks/task-123/pushNotificationConfigs/config1",
                     "push_notification_config": {"id": "config1", "url": "https://webhook1.example.com/notify"},
                 },
                 {
-                    "name": "tasks/task-123/push-notification-configs/config2",
+                    "name": "tasks/task-123/pushNotificationConfigs/config2",
                     "push_notification_config": {"id": "config2", "url": "https://webhook2.example.com/notify"},
                 },
             ],
@@ -797,7 +797,7 @@ class TestRESTClientPushNotifications:
             result = client.list_push_notification_configs("task-123")
 
             mock_get.assert_called_once_with(
-                "https://example.com:8080/tasks/task-123/push-notification-configs", headers=client.default_headers
+                "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs", headers=client.default_headers
             )
 
             assert len(result["configs"]) == 2
@@ -822,7 +822,7 @@ class TestRESTClientPushNotifications:
             result = client.delete_push_notification_config("task-123", "config1")
 
             mock_delete.assert_called_once_with(
-                "https://example.com:8080/tasks/task-123/push-notification-configs/config1", headers=client.default_headers
+                "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs/config1", headers=client.default_headers
             )
 
             assert result == {}  # Empty response for successful deletion

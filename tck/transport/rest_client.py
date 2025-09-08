@@ -114,11 +114,11 @@ class RESTClient(BaseTransportClient):
 
     # A2A Protocol Method Implementations - Real HTTP Calls
 
-    def send_message(self, message: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         """
         Send message via HTTP POST and wait for completion.
 
-        Maps to: POST /messages HTTP request
+        Maps to: POST v1/message:send HTTP request
 
         Args:
             message: A2A message in JSON format
@@ -134,12 +134,12 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Sending message via REST: {message.get('message_id', 'unknown')}")
 
             # Prepare request
-            url = urljoin(self.base_url, "messages")
+            url = urljoin(self.base_url, "v1/message:send")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
-                headers.update(kwargs["extra_headers"])
+            if extra_headers:
+                headers.update(extra_headers)
 
             # Prepare payload according to A2A REST specification
             payload = {"message": message}
@@ -180,11 +180,14 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
+    def __repr__(self) -> str:
+        return super().__repr__()
+
     async def send_streaming_message(self, message: Dict[str, Any], **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
         Send message via HTTP POST and stream responses using Server-Sent Events.
 
-        Maps to: POST /messages/stream HTTP request with SSE response
+        Maps to: POST v1/messages:stream HTTP request with SSE response
 
         Args:
             message: A2A message in JSON format
@@ -200,7 +203,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Starting REST streaming for message: {message.get('message_id', 'unknown')}")
 
             # Prepare request
-            url = urljoin(self.base_url, "messages/stream")
+            url = urljoin(self.base_url, "v1/message:stream")
             headers = self.default_headers.copy()
             headers["Accept"] = "text/event-stream"  # SSE format
 
@@ -269,7 +272,7 @@ class RESTClient(BaseTransportClient):
         """
         Get task status via HTTP GET.
 
-        Maps to: GET /tasks/{task_id} HTTP request
+        Maps to: GET v1/tasks/{task_id} HTTP request
 
         Args:
             task_id: ID of the task to retrieve
@@ -285,7 +288,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Getting task via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}")
+            url = urljoin(self.base_url, f"v1/tasks/{task_id}")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -325,7 +328,7 @@ class RESTClient(BaseTransportClient):
         """
         Cancel task via HTTP POST.
 
-        Maps to: POST /tasks/{task_id}/cancel HTTP request
+        Maps to: POST v1/tasks/{task_id}:cancel HTTP request
 
         Args:
             task_id: ID of the task to cancel
@@ -341,7 +344,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Cancelling task via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/cancel")
+            url = urljoin(self.base_url, f"v1/tasks/{task_id}:cancel")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -376,7 +379,7 @@ class RESTClient(BaseTransportClient):
         """
         Resubscribe to task updates via HTTP SSE streaming.
 
-        Maps to: GET /tasks/{task_id}/events HTTP request with SSE response
+        Maps to: GET v1/tasks/{task_id}:subscribe HTTP request with SSE response
         This is an alias for subscribe_to_task for interface compatibility.
 
         Args:
@@ -395,7 +398,7 @@ class RESTClient(BaseTransportClient):
         """
         Subscribe to task updates via HTTP SSE streaming.
 
-        Maps to: GET /tasks/{task_id}/events HTTP request with SSE response
+        Maps to: GET v1/tasks/{task_id}:subscribeevents HTTP request with SSE response
 
         Args:
             task_id: ID of the task to subscribe to
@@ -411,7 +414,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Subscribing to task via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/events")
+            url = urljoin(self.base_url, f"v1/tasks/{task_id}:subscribe")
             headers = self.default_headers.copy()
             headers["Accept"] = "text/event-stream"  # SSE format
 
@@ -471,7 +474,7 @@ class RESTClient(BaseTransportClient):
         """
         Get agent card via HTTP GET.
 
-        Maps to: GET /agent-card HTTP request
+        Maps to: GET /v1/card HTTP request
 
         Args:
             **kwargs: Additional configuration options (extra_headers)
@@ -486,7 +489,7 @@ class RESTClient(BaseTransportClient):
             logger.info("Getting agent card via REST")
 
             # Prepare request
-            url = urljoin(self.base_url, "agent-card")
+            url = urljoin(self.base_url, "/v1/card")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -521,7 +524,7 @@ class RESTClient(BaseTransportClient):
         """
         Get authenticated extended agent card via HTTP GET.
 
-        Maps to: GET /agent-card HTTP request with authentication headers
+        Maps to: GET /v1/card HTTP request with authentication headers
 
         Args:
             **kwargs: Additional configuration options (extra_headers with auth)
@@ -536,7 +539,7 @@ class RESTClient(BaseTransportClient):
             logger.info("Getting authenticated extended agent card via REST")
 
             # Prepare request
-            url = urljoin(self.base_url, "agent-card")
+            url = urljoin(self.base_url, "/v1/card")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided (should include authentication)
@@ -573,7 +576,7 @@ class RESTClient(BaseTransportClient):
         """
         Set push notification config for a task via HTTP POST.
 
-        Maps to: POST /tasks/{task_id}/push-notification-configs HTTP request
+        Maps to: POST v1/tasks/{task_id}/pushNotificationConfigs HTTP request
 
         Args:
             task_id: ID of the task to configure
@@ -590,7 +593,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Setting push notification config for task via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/push-notification-configs")
+            url = urljoin(self.base_url, f"v1/tasks/{task_id}/pushNotificationConfigs")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -625,7 +628,7 @@ class RESTClient(BaseTransportClient):
         """
         Get push notification config via HTTP GET.
 
-        Maps to: GET /tasks/{task_id}/push-notification-configs/{config_id} HTTP request
+        Maps to: GET v1/tasks/{task_id}/pushNotificationConfigs/{config_id} HTTP request
 
         Args:
             task_id: ID of the task
@@ -642,7 +645,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Getting push notification config via REST: {task_id}/{config_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/push-notification-configs/{config_id}")
+            url = urljoin(self.base_url, f"v1/tasks/{task_id}/pushNotificationConfigs/{config_id}")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -677,7 +680,7 @@ class RESTClient(BaseTransportClient):
         """
         List push notification configs for a task via HTTP GET.
 
-        Maps to: GET /tasks/{task_id}/push-notification-configs HTTP request
+        Maps to: GET v1/tasks/{task_id}/pushNotificationConfigs HTTP request
 
         Args:
             task_id: ID of the task
@@ -693,7 +696,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Listing push notification configs via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/push-notification-configs")
+            url = urljoin(self.base_url, f"v1/tasks/{task_id}/pushNotificationConfigs")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -728,7 +731,7 @@ class RESTClient(BaseTransportClient):
         """
         Delete push notification config via HTTP DELETE.
 
-        Maps to: DELETE /tasks/{task_id}/push-notification-configs/{config_id} HTTP request
+        Maps to: DELETE v1/tasks/{task_id}/pushNotificationConfigs/{config_id} HTTP request
 
         Args:
             task_id: ID of the task
@@ -745,7 +748,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Deleting push notification config via REST: {task_id}/{config_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/push-notification-configs/{config_id}")
+            url = urljoin(self.base_url, f"v1/tasks/{task_id}/pushNotificationConfigs/{config_id}")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
