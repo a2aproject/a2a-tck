@@ -99,7 +99,7 @@ class TestTransportError:
     def test_transport_error_with_original(self):
         """Test TransportError with original exception."""
         original = ValueError("Original error")
-        error = TransportError("Test error", TransportType.GRPC, original)
+        error = TransportError("Test error", TransportType.GRPC, original_error=original)
         assert "[GRPC] Test error (caused by: Original error)" in str(error)
         assert error.original_error == original
 
