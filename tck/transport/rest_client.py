@@ -114,7 +114,7 @@ class RESTClient(BaseTransportClient):
 
     # A2A Protocol Method Implementations - Real HTTP Calls
 
-    def send_message(self, message: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         """
         Send message via HTTP POST and wait for completion.
 
@@ -138,8 +138,8 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs:
-                headers.update(kwargs["extra_headers"])
+            if extra_headers:
+                headers.update(extra_headers)
 
             # Prepare payload according to A2A REST specification
             payload = {"message": message}
@@ -179,6 +179,9 @@ class RESTClient(BaseTransportClient):
             error_msg = f"Unexpected error in REST send_message: {str(e)}"
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
+
+    def __repr__(self) -> str:
+        return super().__repr__()
 
     async def send_streaming_message(self, message: Dict[str, Any], **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
