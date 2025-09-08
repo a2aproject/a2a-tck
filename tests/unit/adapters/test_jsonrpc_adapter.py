@@ -55,7 +55,7 @@ class MockJSONRPCClient(JSONRPCClient):
         elif method == "tasks/cancel":
             task_id = params.get("taskId", "unknown-task")
             return {"jsonrpc": "2.0", "result": {"taskId": task_id, "state": "cancelled"}, "id": request_id or "test-id"}
-        elif method == "agent/card":
+        elif method == "agent/getAuthenticatedExtendedCard":
             return {
                 "jsonrpc": "2.0",
                 "result": {"protocol_version": "0.3.0", "name": "Test JSON-RPC Agent", "endpoint": "https://example.com/jsonrpc"},
@@ -89,7 +89,7 @@ class MockJSONRPCClient(JSONRPCClient):
 
     def get_agent_card(self, extra_headers=None):
         self.call_log.append(("get_agent_card", extra_headers))
-        response = self._make_jsonrpc_request("agent/card", {}, extra_headers=extra_headers)
+        response = self._make_jsonrpc_request("agent/getAuthenticatedExtendedCard", {}, extra_headers=extra_headers)
         return response["result"]
 
     # Implement remaining abstract methods with minimal functionality

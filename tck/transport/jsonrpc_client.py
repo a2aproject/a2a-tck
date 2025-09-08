@@ -329,7 +329,7 @@ class JSONRPCClient(BaseTransportClient):
 
     def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        Get agent card using agent/card method.
+        Get agent card using agent/getAuthenticatedExtendedCard method.
 
         Makes a real JSON-RPC call to get the agent card information.
 
@@ -345,7 +345,7 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §5.5 - Agent Card Retrieval
         """
         try:
-            response = self._make_jsonrpc_request(method="agent/card", params={}, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="agent/getAuthenticatedExtendedCard", params={}, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
@@ -503,7 +503,7 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="agent/authenticatedExtendedCard", params={}, extra_headers=extra_headers
+                method="agent/getAuthenticatedExtendedCard", params={}, extra_headers=extra_headers
             )
             return response.get("result", {})
 

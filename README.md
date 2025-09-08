@@ -280,6 +280,41 @@ The TCK supports A2A v0.3.0 multi-transport architecture with advanced transport
 ./run_tck.py --sut-url http://localhost:9999 --category mandatory --transports grpc
 ```
 
+### **Understanding Multi-Transport Options**
+
+**Two complementary options control transport behavior:**
+
+#### `--transports` (Transport Filtering)
+**Purpose**: Restricts which transports are allowed/tested  
+**Effect**: Filters available transports before selection  
+**Values**: Comma-separated list: `jsonrpc,grpc,rest`  
+**Default**: None (all transports allowed)
+
+#### `--transport-strategy` (Selection Strategy)  
+**Purpose**: Defines how to select from available transports  
+**Effect**: Controls selection logic after filtering  
+**Values**: `agent_preferred`, `prefer_jsonrpc`, `prefer_grpc`, `prefer_rest`, `all_supported`  
+**Default**: `agent_preferred`
+
+#### **How they work together:**
+1. `--transports` **filters** which transports can be used
+2. `--transport-strategy` **selects** from the filtered list
+
+#### **Examples:**
+```bash
+# Only test JSON-RPC (filter + strategy is irrelevant)
+--transports jsonrpc
+
+# Test both gRPC and REST, but prefer gRPC when both available
+--transports grpc,rest --transport-strategy prefer_grpc
+
+# Test all agent transports, preferring JSON-RPC
+--transport-strategy prefer_jsonrpc
+
+# Force strict gRPC-only testing
+--transports grpc --transport-strategy prefer_grpc
+```
+
 **Transport Strategy Options:**
 - `agent_preferred` (default) - Use agent's preferred transport from Agent Card
 - `prefer_jsonrpc` - Prefer JSON-RPC 2.0 over HTTP transport

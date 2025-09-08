@@ -286,6 +286,7 @@ def run_all_categories(
     categories = ["mandatory", "capabilities", "transport-equivalence", "quality", "features"]
     results = {}
     detailed_results = {}
+    category_statistics = {}  # Store test statistics for final summary
 
     print("=" * 80)
     print("🎯 RUNNING ALL A2A TCK TEST CATEGORIES")
@@ -325,10 +326,8 @@ def run_all_categories(
                 print(f"📍 [{tr}] STEP {j}/{len(single_categories)}: Running {category} tests...")
                 print()
 
-                # Generate per-transport JSON report name when aggregating
-                json_report_file = None
-                if compliance_report:
-                    json_report_file = f"{category}_{tr}_results.json"
+                # Generate per-transport JSON report name for statistics collection
+                json_report_file = f"{category}_{tr}_results.json"
 
                 exit_code = run_test_category(
                     category,
@@ -336,12 +335,23 @@ def run_all_categories(
                     verbose,
                     verbose_log,
                     generate_report,
-                    json_report_file,
+                    json_report_file,  # This ensures JSON reports are always generated for statistics
                     transport_strategy,
                     enable_equivalence_testing,
                     tr,
                 )
                 results[f"{category}:{tr}"] = exit_code
+                
+                # Collect detailed statistics from JSON report
+                json_path = REPORTS_DIR / json_report_file
+                stats = collect_test_results_from_json(json_path, category)
+                # Aggregate multi-transport stats for the category
+                if category not in category_statistics:
+                    category_statistics[category] = {"total": 0, "passed": 0, "failed": 0, "skipped": 0, "xfailed": 0, "error": 0}
+                for key in ["total", "passed", "failed", "skipped", "xfailed"]:
+                    category_statistics[category][key] += stats.get(key, 0)
+                # Add actual errors from JSON report
+                category_statistics[category]["error"] += stats.get("error", 0)
 
                 if j < len(single_categories):
                     print("─" * 80)
@@ -358,12 +368,24 @@ def run_all_categories(
             verbose,
             verbose_log,
             generate_report,
-            None,
+            "transport-equivalence_results.json",  # Always generate JSON for statistics
             transport_strategy,
             enable_equivalence_testing,
             ",".join(multi_transports),
         )
         results["transport-equivalence"] = te_exit
+        
+        # Collect transport-equivalence statistics
+        json_path = REPORTS_DIR / "transport-equivalence_results.json"
+        stats = collect_test_results_from_json(json_path, "transport-equivalence")
+        category_statistics["transport-equivalence"] = {
+            "total": stats.get("total", 0),
+            "passed": stats.get("passed", 0), 
+            "failed": stats.get("failed", 0),
+            "skipped": stats.get("skipped", 0),
+            "xfailed": stats.get("xfailed", 0),
+            "error": stats.get("error", 0)  # Actual errors from JSON report
+        }
 
         return results
 
@@ -372,13 +394,11 @@ def run_all_categories(
         print(f"📍 STEP {i}/5: Running {category} tests...")
         print()
 
-        # Generate JSON report for this category if compliance report requested
-        json_report_file = None
-        if compliance_report:
-            if transports:
-                json_report_file = f"{category}_{transports}_results.json"
-            else:
-                json_report_file = f"{category}_results.json"
+        # Generate JSON report for this category for statistics collection
+        if transports:
+            json_report_file = f"{category}_{transports}_results.json"
+        else:
+            json_report_file = f"{category}_results.json"
 
         exit_code = run_test_category(
             category,
@@ -386,12 +406,24 @@ def run_all_categories(
             verbose,
             verbose_log,
             generate_report,
-            json_report_file,
+            json_report_file,  # Always generate JSON for statistics
             transport_strategy,
             enable_equivalence_testing,
             transports,
         )
         results[category] = exit_code
+        
+        # Collect detailed statistics from JSON report
+        json_path = REPORTS_DIR / json_report_file
+        stats = collect_test_results_from_json(json_path, category)
+        category_statistics[category] = {
+            "total": stats.get("total", 0),
+            "passed": stats.get("passed", 0),
+            "failed": stats.get("failed", 0),
+            "skipped": stats.get("skipped", 0),
+            "xfailed": stats.get("xfailed", 0),
+            "error": stats.get("error", 0)  # Actual errors from JSON report
+        }
 
         print()
         print(f"✅ {category.upper()} TESTS COMPLETED")
@@ -437,11 +469,10 @@ def run_all_categories(
             print(f"📈 Overall score: {compliance_summary['overall_score']:.1f}%")
             print()
 
-            # Clean up temporary JSON files
+            # Clean up temporary JSON files only if they weren't part of the compliance report
             for category in categories:
-                json_file = REPORTS_DIR / f"{category}_results.json"
-                if json_file.exists():
-                    json_file.unlink()
+                # Keep the original compliance report JSON files
+                pass
 
         except Exception as e:
             print(f"⚠️  Warning: Could not generate compliance report: {e}")
@@ -459,11 +490,18 @@ def run_all_categories(
     quality_passed = results["quality"] == 0
     features_passed = results["features"] == 0
 
-    print(f"🔴 Mandatory Tests:           {'✅ PASSED' if mandatory_passed else '❌ FAILED'}")
-    print(f"🔄 Capability Tests:          {'✅ PASSED' if capabilities_passed else '❌ FAILED'}")
-    print(f"🚀 Transport Equivalence:     {'✅ PASSED' if transport_equivalence_passed else '❌ FAILED'}")
-    print(f"🛡️  Quality Tests:             {'✅ PASSED' if quality_passed else '⚠️  ISSUES'}")
-    print(f"🎨 Feature Tests:             {'✅ PASSED' if features_passed else 'ℹ️  INCOMPLETE'}")
+    # Get statistics for display
+    mandatory_stats = format_test_statistics(category_statistics.get("mandatory", {}))
+    capabilities_stats = format_test_statistics(category_statistics.get("capabilities", {}))
+    transport_equivalence_stats = format_test_statistics(category_statistics.get("transport-equivalence", {}))
+    quality_stats = format_test_statistics(category_statistics.get("quality", {}))
+    features_stats = format_test_statistics(category_statistics.get("features", {}))
+
+    print(f"🔴 Mandatory Tests:           {'✅ PASSED' if mandatory_passed else '❌ FAILED'} ({mandatory_stats})")
+    print(f"🔄 Capability Tests:          {'✅ PASSED' if capabilities_passed else '❌ FAILED'} ({capabilities_stats})")
+    print(f"🚀 Transport Equivalence:     {'✅ PASSED' if transport_equivalence_passed else '❌ FAILED'} ({transport_equivalence_stats})")
+    print(f"🛡️  Quality Tests:             {'✅ PASSED' if quality_passed else '⚠️  ISSUES'} ({quality_stats})")
+    print(f"🎨 Feature Tests:             {'✅ PASSED' if features_passed else 'ℹ️  INCOMPLETE'} ({features_stats})")
     print()
 
     # Overall assessment
@@ -500,6 +538,19 @@ def run_all_categories(
     print()
     print("=" * 80)
 
+    # Clean up temporary JSON files used for statistics (if not compliance reporting)
+    if not compliance_report:
+        for category in categories:
+            if transports:
+                json_file = REPORTS_DIR / f"{category}_{transports}_results.json"
+            else:
+                json_file = REPORTS_DIR / f"{category}_results.json"
+            if json_file.exists():
+                try:
+                    json_file.unlink()
+                except:
+                    pass  # Ignore cleanup errors
+
     return results
 
 
@@ -507,8 +558,9 @@ def collect_test_results_from_json(json_file: Path, category: str) -> Dict:
     """Collect detailed test results from pytest JSON report."""
     try:
         if not json_file.exists():
-            print(f"Warning: JSON report file {json_file} not found")
-            return {"total": 0, "passed": 0, "failed": 0, "skipped": 0, "xfailed": 0, "tests": {}}
+            print(f"Warning: JSON report file {json_file} not found - using fallback statistics")
+            # Return minimal structure for fallback
+            return {"total": 1, "passed": 0, "failed": 1, "skipped": 0, "xfailed": 0, "error": 0, "tests": {}}
 
         with open(json_file, "r") as f:
             report_data = json.load(f)
@@ -517,12 +569,21 @@ def collect_test_results_from_json(json_file: Path, category: str) -> Dict:
         summary = report_data.get("summary", {})
         tests = report_data.get("tests", [])
 
-        # Extract summary statistics
+        # Extract summary statistics from pytest-json-report format
         total = summary.get("total", 0)
         passed = summary.get("passed", 0)
-        failed = summary.get("failed", 0)
+        failed = summary.get("failed", 0)  # Regular test failures
+        error = summary.get("error", 0)    # Setup/teardown errors
         skipped = summary.get("skipped", 0)
-        xfailed = summary.get("xfailed", 0)
+        
+        # Count xfailed from individual test results since it's not in summary
+        xfailed = 0
+        for test in tests:
+            if test.get("outcome") == "xfailed":
+                xfailed += 1
+        
+        # Combine failed and error into one "failed" category for our purposes
+        total_failed = failed + error
 
         # Parse individual test results
         test_details = {}
@@ -537,7 +598,7 @@ def collect_test_results_from_json(json_file: Path, category: str) -> Dict:
                 "markers": [marker.get("name", "") for marker in test.get("markers", [])],
             }
 
-        return {"total": total, "passed": passed, "failed": failed, "skipped": skipped, "xfailed": xfailed, "tests": test_details}
+        return {"total": total, "passed": passed, "failed": total_failed, "skipped": skipped, "xfailed": xfailed, "error": error, "tests": test_details}
 
     except Exception as e:
         print(f"Warning: Could not parse JSON report {json_file}: {e}")
@@ -548,6 +609,7 @@ def collect_test_results_from_json(json_file: Path, category: str) -> Dict:
             "failed": 1,
             "skipped": 0,
             "xfailed": 0,
+            "error": 0,
             "tests": {"parse_error": {"outcome": "FAILED", "error_message": str(e)}},
         }
 
@@ -562,6 +624,20 @@ def collect_test_results(category: str, exit_code: int) -> Dict:
         return {"total": 10, "passed": 10, "failed": 0, "skipped": 0, "xfailed": 0, "tests": {}}
     else:
         return {"total": 10, "passed": 7, "failed": 3, "skipped": 0, "xfailed": 0, "tests": {}}
+
+
+def format_test_statistics(stats: Dict) -> str:
+    """Format test statistics in compact format: p:#/f:#/x:#/e:#/s:#"""
+    if not stats:
+        return "p:0/f:0/x:0/e:0/s:0"
+    
+    passed = stats.get("passed", 0)
+    failed = stats.get("failed", 0)
+    xfailed = stats.get("xfailed", 0)
+    error = stats.get("error", 0)
+    skipped = stats.get("skipped", 0)
+    
+    return f"p:{passed}/f:{failed}/x:{xfailed}/e:{error}/s:{skipped}"
 
 
 def calculate_success_rate(results: Dict) -> float:
@@ -625,7 +701,7 @@ Examples:
 
   # A2A v0.3.0 multi-transport testing examples
   ./run_tck.py --sut-url http://localhost:9999 --category all --transport-strategy prefer_grpc
-  ./run_tck.py --sut-url http://localhost:9999 --category all --disabled-transports "grpc,rest"
+  ./run_tck.py --sut-url http://localhost:9999 --category all --transports "jsonrpc,grpc"
 
 Categories:
   mandatory             - Core A2A compliance (MUST pass)

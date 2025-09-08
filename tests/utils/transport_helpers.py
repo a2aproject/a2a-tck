@@ -169,7 +169,6 @@ def transport_get_agent_card(client: BaseTransportClient, extra_headers: Optiona
             elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
                 return {"error": e.json_rpc_error}
             return {"error": {"code": -32603, "message": str(e)}}
-
     else:
         raise ValueError(f"Client {type(client)} does not support agent card retrieval")
 
