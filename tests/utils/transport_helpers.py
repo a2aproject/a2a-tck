@@ -42,7 +42,10 @@ def transport_send_message(
         message = message_params.get("message", message_params)
         try:
             result = client.send_message(message, extra_headers)
-            # Wrap result in JSON-RPC format for compatibility with existing tests
+            # Check if result is already an error response
+            if isinstance(result, dict) and "error" in result:
+                return result  # Return error response as-is
+            # Wrap success result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
@@ -83,8 +86,11 @@ def transport_get_task(
     if hasattr(client, "get_task") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware get_task for {client.transport_type.value}")
         try:
-            result = client.get_task(task_id, history_length, extra_headers)
-            # Wrap result in JSON-RPC format for compatibility with existing tests
+            result = client.get_task(task_id, history_length=history_length, extra_headers=extra_headers)
+            # Check if result is already an error response
+            if isinstance(result, dict) and "error" in result:
+                return result  # Return error response as-is
+            # Wrap success result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
@@ -121,8 +127,11 @@ def transport_cancel_task(
     if hasattr(client, "cancel_task") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware cancel_task for {client.transport_type.value}")
         try:
-            result = client.cancel_task(task_id, extra_headers)
-            # Wrap result in JSON-RPC format for compatibility with existing tests
+            result = client.cancel_task(task_id, extra_headers=extra_headers)
+            # Check if result is already an error response
+            if isinstance(result, dict) and "error" in result:
+                return result  # Return error response as-is
+            # Wrap success result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
@@ -437,7 +446,7 @@ def transport_set_push_notification_config(
     if hasattr(client, "set_push_notification_config") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware set_push_notification_config for {client.transport_type.value}")
         try:
-            result = client.set_push_notification_config(task_id, config, extra_headers)
+            result = client.set_push_notification_config(task_id, config, extra_headers=extra_headers)
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
@@ -476,7 +485,7 @@ def transport_get_push_notification_config(
     if hasattr(client, "get_push_notification_config") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware get_push_notification_config for {client.transport_type.value}")
         try:
-            result = client.get_push_notification_config(task_id, config_id, extra_headers)
+            result = client.get_push_notification_config(task_id, config_id, extra_headers=extra_headers)
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
@@ -514,7 +523,7 @@ def transport_list_push_notification_configs(
     if hasattr(client, "list_push_notification_configs") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware list_push_notification_configs for {client.transport_type.value}")
         try:
-            result = client.list_push_notification_configs(task_id, extra_headers)
+            result = client.list_push_notification_configs(task_id, extra_headers=extra_headers)
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
@@ -553,7 +562,7 @@ def transport_delete_push_notification_config(
     if hasattr(client, "delete_push_notification_config") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware delete_push_notification_config for {client.transport_type.value}")
         try:
-            result = client.delete_push_notification_config(task_id, config_id, extra_headers)
+            result = client.delete_push_notification_config(task_id, config_id, extra_headers=extra_headers)
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
