@@ -9,10 +9,11 @@ Specification Reference: A2A Protocol v0.3.0 §4.3 - HTTP+JSON/REST Transport
 
 import json
 import logging
-from typing import Dict, List, Optional, Any, AsyncIterator, Union
-from urllib.parse import urljoin, urlparse
-import asyncio
-import time
+import os
+import ssl
+import traceback
+from typing import Dict, Optional, Any, AsyncIterator
+from urllib.parse import urljoin
 
 import httpx
 from httpx import AsyncClient, Client
@@ -70,20 +71,58 @@ class RESTClient(BaseTransportClient):
 
         logger.info(f"Initialized REST client for endpoint: {self.base_url}")
 
+    def _create_ssl_context(self):
+        """Create a robust SSL context that handles various SSL/TLS issues."""
+        # Check if user wants to force simple SSL mode
+        if os.getenv('A2A_TCK_SIMPLE_SSL', '').lower() in ('true', '1', 'yes'):
+            logger.info("Using simple SSL mode (verify=False) due to A2A_TCK_SIMPLE_SSL")
+            return False
+
+        try:
+            # Try the most permissive SSL context first
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            
+            # Additional SSL options to handle edge cases
+            ssl_context.set_ciphers('DEFAULT:@SECLEVEL=1')
+
+            logger.debug("Created enhanced SSL context with permissive settings")
+            return ssl_context
+        except Exception as e:
+            logger.warning(f"Failed to create custom SSL context: {e}, falling back to verify=False")
+            return False
+
     @property
     def client(self) -> Client:
         """Get or create synchronous HTTP client for real network communication."""
         if self._client is None:
-            self._client = Client(timeout=self.timeout, headers=self.default_headers, follow_redirects=True)
-            logger.debug(f"Created HTTP client for {self.base_url}")
+            # Try SSL context first, fall back to verify=False
+            verify_setting = self._create_ssl_context()
+            
+            self._client = Client(
+                timeout=self.timeout, 
+                headers=self.default_headers, 
+                follow_redirects=True, 
+                verify=verify_setting
+            )
+            logger.debug(f"Created HTTP client for {self.base_url} with verify={type(verify_setting).__name__}")
         return self._client
 
     @property
     def async_client(self) -> AsyncClient:
         """Get or create asynchronous HTTP client for real network communication."""
         if self._async_client is None:
-            self._async_client = AsyncClient(timeout=self.timeout, headers=self.default_headers, follow_redirects=True)
-            logger.debug(f"Created async HTTP client for {self.base_url}")
+            # Try SSL context first, fall back to verify=False
+            verify_setting = self._create_ssl_context()
+            
+            self._async_client = AsyncClient(
+                verify=verify_setting, 
+                timeout=self.timeout, 
+                headers=self.default_headers, 
+                follow_redirects=True
+            )
+            logger.debug(f"Created async HTTP client for {self.base_url} with verify={type(verify_setting).__name__}")
         return self._async_client
 
     def close(self):
@@ -167,13 +206,13 @@ class RESTClient(BaseTransportClient):
                     if "file" in part:
                         file_data = part["file"]
                         protobuf_part["file"] = {
-                            "name": file_data.get("name", ""),
+                           # "name": file_data.get("name", ""),
                             "mime_type": file_data.get("mimeType", ""),
-                            "uri": file_data.get("uri", file_data.get("url", "")),
-                            "size_in_bytes": file_data.get("sizeInBytes", 0)
+                            "file_with_uri": file_data.get("uri", file_data.get("url", "")),
+                           # "size_in_bytes": file_data.get("sizeInBytes", 0)
                         }
                         if "bytes" in file_data:
-                            protobuf_part["file"]["bytes"] = file_data["bytes"]
+                            protobuf_part["file"]["file_with_bytes"] = file_data["bytes"]
                 elif part.get("kind") == "data":
                     # DataPart has structure: {"data": {"data": <actual_data>}}
                     # The protobuf DataPart has a single field "data" of type google.protobuf.Struct
@@ -475,6 +514,18 @@ class RESTClient(BaseTransportClient):
             error_msg = f"HTTP {e.response.status_code}: {e.response.text}"
             logger.error(error_msg)
             raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
+        except ssl.SSLError as e:
+            error_msg = f"SSL/TLS error: {str(e)}"
+            logger.error(error_msg)
+            logger.error(f"SSL error details - Library: {ssl.OPENSSL_VERSION}")
+            logger.error(f"Base URL: {self.base_url}")
+
+            # Try to provide more specific error information
+            if "_ssl.c:" in str(e):
+                logger.error("This appears to be a low-level SSL library error")
+                logger.error("Consider checking SSL/TLS configuration or certificate issues")
+            traceback.print_exception(type(e), e, e.__traceback__)
+            raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
         except Exception as e:
             error_msg = f"Unexpected error in REST send_message: {str(e)}"
             logger.error(error_msg)
@@ -601,7 +652,8 @@ class RESTClient(BaseTransportClient):
             # Add query parameters
             params = {}
             if "history_length" in kwargs:
-                params["history_length"] = kwargs["history_length"]
+                if kwargs["history_length"] is not None :
+                    params["history_length"] = kwargs["history_length"]
 
             # Make real HTTP request to live SUT
             response = self.client.get(url, params=params, headers=headers)
@@ -1130,7 +1182,7 @@ class RESTClient(BaseTransportClient):
         """
         List tasks via HTTP GET (REST transport supports this method).
 
-        Maps to: GET /tasks HTTP request
+        Maps to: GET v1/tasks HTTP request
 
         Args:
             **kwargs: Additional configuration options (extra_headers, pagination)
@@ -1145,7 +1197,7 @@ class RESTClient(BaseTransportClient):
             logger.info("Listing tasks via REST")
 
             # Prepare request
-            url = urljoin(self.base_url, "tasks")
+            url = urljoin(self.base_url, "v1/tasks")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided

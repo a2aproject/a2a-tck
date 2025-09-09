@@ -311,6 +311,7 @@ class TestMethodMappingCompliance:
             get_response = transport_get_task(sut_client, task_id)
             assert get_response is not None
             retrieved_task = get_response.get("result", get_response)
+
             assert retrieved_task["id"] == task_id
 
             # Test tasks/cancel mapping
