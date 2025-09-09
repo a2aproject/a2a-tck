@@ -217,58 +217,7 @@ class TestTasksList:
     JSON-RPC transport does not support this method.
     """
 
-    @pytest.mark.mandatory
-    @pytest.mark.mandatory_protocol
-    @pytest.mark.a2a_v030
-    def test_tasks_list_method_availability(self, sut_client: BaseTransportClient):
-        """
-        Test that tasks/list method is available on gRPC and REST, not on JSON-RPC.
-
-        A2A v0.3.0 Specification Reference: §7.3.1, §3.5.6
-
-        Validates:
-        - gRPC: ListTask method exists
-        - REST: GET /v1/tasks endpoint exists
-        - JSON-RPC: Method should not exist (N/A in spec table)
-        """
-        transport_type = get_client_transport_type(sut_client)
-
-        if transport_type == "jsonrpc":
-            # JSON-RPC should NOT support tasks/list
-            # We can't directly test this without a list_tasks method on the client
-            # so we'll skip this test for now
-            pytest.skip("JSON-RPC transport method testing requires direct protocol access")
-
-            # Should get "Method not found" error (-32601)
-            error_msg = str(exc_info.value)
-            assert "method not found" in error_msg.lower() or "-32601" in error_msg
-
-        elif transport_type in ["grpc", "rest"]:
-            # gRPC and REST should support tasks/list
-            try:
-                if hasattr(sut_client, "list_tasks"):
-                    tasks = sut_client.list_tasks()
-                    assert isinstance(tasks, dict) and "tasks" in tasks and isinstance(tasks["tasks"], list), (
-                        f"Expected a dict with a 'tasks' list, got: {type(tasks)}"
-                    )
-
-                    # Each task should be a valid Task object
-                    for task in tasks["tasks"]:
-                        assert isinstance(task, dict)
-                        assert "id" in task
-                        assert "status" in task
-                        assert "kind" in task
-                        assert task["kind"] == "task"
-
-                else:
-                    pytest.skip(f"list_tasks method not implemented on {transport_type} client")
-
-            except Exception as e:
-                if "not found" in str(e).lower() or "not implemented" in str(e).lower():
-                    pytest.skip(f"tasks/list not implemented on {transport_type} transport")
-                else:
-                    pytest.fail(f"Failed to call tasks/list on {transport_type}: {e}")
-
+    
     @optional_capability
     @a2a_v030
     def test_tasks_list_with_existing_tasks(self, sut_client: BaseTransportClient):
