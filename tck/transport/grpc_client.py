@@ -723,7 +723,7 @@ class GRPCClient(BaseTransportClient):
                             }
                         }
                     ]
-                else :
+                else:
                 # For now, simulate subscription response structure
                     subscription_events = [
                         {
