@@ -13,12 +13,11 @@ Specification Reference: A2A Protocol v0.3.0 §3.2.1 - JSON-RPC 2.0 Transport
 
 import json
 import logging
+import os
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, Union, cast, Iterator
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, Iterator, AsyncIterator
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+import httpx
 
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
 
@@ -64,20 +63,19 @@ class JSONRPCClient(BaseTransportClient):
 
         self.timeout = timeout
         self.max_retries = max_retries
+        
+        # Configure streaming timeout from environment or use reasonable default
+        base_timeout = float(os.getenv("TCK_STREAMING_TIMEOUT", "30.0"))
+        self.streaming_timeout = base_timeout * 2  # Double the base timeout for streaming
 
-        # Configure session with retry strategy for reliable network communication
-        self.session = requests.Session()
-        retry_strategy = Retry(
-            total=max_retries,
-            status_forcelist=[429, 500, 502, 503, 504],
-            backoff_factor=1,
-            allowed_methods=["HEAD", "GET", "POST"],
+        # Configure httpx client with retry strategy for reliable network communication
+        transport = httpx.HTTPTransport(retries=max_retries)
+        self.client = httpx.Client(
+            timeout=timeout,
+            transport=transport
         )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
 
-        self._logger.info(f"JSON-RPC client initialized for {base_url}")
+        self._logger.info(f"JSON-RPC client initialized for {base_url} (streaming timeout: {self.streaming_timeout}s)")
 
     def _generate_id(self) -> str:
         """Generate a unique request ID for JSON-RPC requests."""
@@ -119,12 +117,16 @@ class JSONRPCClient(BaseTransportClient):
 
         try:
             # Make actual HTTP request to live SUT
-            response = self.session.post(self.base_url, json=jsonrpc_request, headers=headers, timeout=self.timeout)
+            response = self.client.post(self.base_url, json=jsonrpc_request, headers=headers)
 
             self._logger.info(f"SUT responded with {response.status_code}: {response.text}")
             response.raise_for_status()
 
-        except requests.RequestException as e:
+        except httpx.HTTPStatusError as e:
+            error_msg = f"HTTP status error communicating with SUT at {self.base_url}: {e.response.status_code} {e.response.text}"
+            self._logger.error(error_msg)
+            raise JSONRPCError(error_msg, original_error=e)
+        except httpx.RequestError as e:
             error_msg = f"HTTP error communicating with SUT at {self.base_url}: {e}"
             self._logger.error(error_msg)
             raise JSONRPCError(error_msg, original_error=e)
@@ -144,6 +146,114 @@ class JSONRPCClient(BaseTransportClient):
             raise JSONRPCError(error_msg, json_rpc_error=json_response["error"])
 
         return json_response
+
+    async def _make_streaming_jsonrpc_request(
+        self,
+        method: str,
+        params: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """
+        Make a JSON-RPC 2.0 request that expects Server-Sent Events (SSE) response.
+
+        This method performs actual network communication with the SUT endpoint
+        and expects a streaming response with text/event-stream content type.
+
+        Args:
+            method: JSON-RPC method name
+            params: Method parameters
+            request_id: Request ID (auto-generated if not provided)
+            extra_headers: Additional HTTP headers
+
+        Yields:
+            Individual JSON-RPC responses parsed from SSE events
+
+        Raises:
+            JSONRPCError: If the request fails or returns an error
+
+        Specification Reference: A2A Protocol v0.3.0 §3.3 - Streaming Transport
+        """
+        # Build JSON-RPC 2.0 request
+        jsonrpc_request = {"jsonrpc": "2.0", "method": method, "params": params or {}, "id": request_id or self._generate_id()}
+
+        # Prepare headers
+        headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
+        if extra_headers:
+            headers.update(extra_headers)
+
+        self._logger.info(f"Sending streaming JSON-RPC request to {self.base_url}: {jsonrpc_request}")
+
+        try:
+            # Use httpx.AsyncClient for streaming
+            async with httpx.AsyncClient(timeout=self.streaming_timeout) as async_client:
+                async with async_client.stream(
+                    "POST",
+                    self.base_url,
+                    json=jsonrpc_request,
+                    headers=headers
+                ) as response:
+                    
+                    self._logger.info(f"SUT responded with {response.status_code}, content-type: {response.headers.get('content-type')}")
+                    
+                    # Validate response status
+                    response.raise_for_status()
+                    
+                    # Validate content type for SSE
+                    content_type = response.headers.get("content-type", "")
+                    if not content_type.startswith("text/event-stream"):
+                        raise JSONRPCError(f"Expected text/event-stream content type for streaming, got: {content_type}")
+
+                    # Parse Server-Sent Events stream
+                    async for line in response.aiter_lines():
+                        if line is None:
+                            continue
+                            
+                        line = line.strip()
+                        
+                        if not line:
+                            continue
+                            
+                        # Parse SSE format: "data: {json}"
+                        if line.startswith("data: "):
+                            try:
+                                data_str = line[6:]  # Remove "data: " prefix
+                                if data_str == "[DONE]":
+                                    break
+                                self._logger.info(f"Received SSE data: {data_str}")
+                                event_data = json.loads(data_str)
+                                # Check for JSON-RPC error in the event
+                                if "error" in event_data:
+                                    error_msg = f"JSON-RPC error from streaming SUT: {event_data['error']}"
+                                    self._logger.error(error_msg)
+                                    raise JSONRPCError(error_msg, json_rpc_error=event_data["error"])
+                                
+                                yield event_data
+                                
+                            except json.JSONDecodeError as e:
+                                self._logger.warning(f"Failed to parse SSE data: {data_str}, error: {e}")
+                                continue
+                                
+                        # Handle other SSE events (id, event, retry)
+                        elif line.startswith("event: "):
+                            event_type = line[7:]
+                            self._logger.debug(f"Received SSE event type: {event_type}")
+                        elif line.startswith("id: "):
+                            event_id = line[4:]
+                            self._logger.debug(f"Received SSE event ID: {event_id}")
+
+        except httpx.HTTPStatusError as e:
+            error_msg = f"HTTP status error communicating with SUT at {self.base_url}: {e.response.status_code} {e.response.text}"
+            self._logger.error(error_msg)
+            raise JSONRPCError(error_msg, original_error=e)
+        except httpx.RequestError as e:
+            error_msg = f"HTTP error communicating with SUT at {self.base_url}: {e}"
+            self._logger.error(error_msg)
+            raise JSONRPCError(error_msg, original_error=e)
+        except Exception as e:
+            error_msg = f"Unexpected error in streaming request: {e}"
+            self._logger.error(error_msg)
+            raise JSONRPCError(error_msg, original_error=e)
 
     def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
@@ -172,20 +282,22 @@ class JSONRPCClient(BaseTransportClient):
                 raise
             raise JSONRPCError(f"Failed to send message: {e}", original_error=e)
 
-    def send_streaming_message(
+    async def send_streaming_message(
         self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> AsyncIterator[Dict[str, Any]]:
         """
         Send a message with streaming response using message/stream method.
 
         Makes a real JSON-RPC call with Server-Sent Events to test streaming functionality.
+        This method yields the initial task creation and initial updates, but doesn't consume
+        the entire stream to allow resubscribe_task to work properly.
 
         Args:
             message: The message object conforming to A2A Message schema
             extra_headers: Optional HTTP headers
 
         Returns:
-            Iterator that yields task updates from the real SUT stream
+            AsyncIterator that yields task updates from the real SUT SSE stream
 
         Raises:
             JSONRPCError: If streaming message sending fails
@@ -193,21 +305,21 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §3.3 - Streaming Transport
         """
         try:
-            # For JSON-RPC streaming, we typically get a task ID first
-            response = self._make_jsonrpc_request(
+            # Use the new streaming method that properly handles SSE
+            event_count = 0
+            async for event in self._make_streaming_jsonrpc_request(
                 method="message/stream", params={"message": message}, extra_headers=extra_headers
-            )
-
-            task_info = response.get("result", {})
-            task_id = task_info.get("taskId")
-
-            if not task_id:
-                raise JSONRPCError("No task ID returned from streaming message request")
-
-            # Return iterator that can be used to stream updates
-            # Note: Real streaming implementation would use SSE or WebSocket
-            # For now, we return the initial task info
-            yield task_info
+            ):
+                # Extract result from JSON-RPC response
+                result = event.get("result")
+                if result:
+                    yield result
+                    event_count += 1
+                    
+                    # Only yield the first few events to avoid consuming the entire stream
+                    # This allows resubscribe_task to work properly later
+                    if event_count >= 2:
+                        break
 
         except Exception as e:
             if isinstance(e, JSONRPCError):
@@ -275,18 +387,18 @@ class JSONRPCClient(BaseTransportClient):
                 raise
             raise JSONRPCError(f"Failed to cancel task {task_id}: {e}", original_error=e)
 
-    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Iterator[Dict[str, Any]]:
+    async def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
         """
         Resubscribe to task updates using tasks/resubscribe method.
 
-        Makes a real JSON-RPC call to resubscribe to task updates.
+        Makes a real JSON-RPC call to resubscribe to task updates via SSE.
 
         Args:
             task_id: The unique identifier of the task to resubscribe to
             extra_headers: Optional HTTP headers
 
         Returns:
-            Iterator that yields task updates from the real SUT
+            AsyncIterator that yields task updates from the real SUT SSE stream
 
         Raises:
             JSONRPCError: If task resubscription fails
@@ -294,17 +406,21 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §7.9 - Task Resubscription
         """
         try:
-            response = self._make_jsonrpc_request(method="tasks/resubscribe", params={"id": task_id}, extra_headers=extra_headers)
-
-            # Return the subscription info
-            yield response.get("result", {})
+            # Use the new streaming method that properly handles SSE
+            async for event in self._make_streaming_jsonrpc_request(
+                method="tasks/resubscribe", params={"id": task_id}, extra_headers=extra_headers
+            ):
+                # Extract result from JSON-RPC response
+                result = event.get("result")
+                if result:
+                    yield result
 
         except Exception as e:
             if isinstance(e, JSONRPCError):
                 raise
             raise JSONRPCError(f"Failed to resubscribe to task {task_id}: {e}", original_error=e)
 
-    def subscribe_to_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Iterator[Dict[str, Any]]:
+    async def subscribe_to_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
         """
         Subscribe to task updates using tasks/subscribe method.
 
@@ -317,7 +433,7 @@ class JSONRPCClient(BaseTransportClient):
             extra_headers: Optional HTTP headers
 
         Returns:
-            Iterator that yields task updates from the real SUT
+            AsyncIterator that yields task updates from the real SUT
 
         Raises:
             JSONRPCError: If task subscription fails
@@ -325,7 +441,8 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §7.9 - Task Subscription
         """
         # JSON-RPC uses the same method for both subscribe and resubscribe
-        return self.resubscribe_task(task_id, extra_headers)
+        async for result in self.resubscribe_task(task_id, extra_headers):
+            yield result
 
     def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
@@ -531,10 +648,10 @@ class JSONRPCClient(BaseTransportClient):
         self._logger.info(f"Sending raw data to {self.base_url}: {raw_data}")
 
         try:
-            response = self.session.post(self.base_url, data=raw_data, headers=headers, timeout=self.timeout)
+            response = self.client.post(self.base_url, content=raw_data, headers=headers)
             self._logger.info(f"SUT responded with {response.status_code}: {response.text}")
             return response.status_code, response.text
-        except requests.exceptions.RequestException as e:
+        except httpx.RequestError as e:
             self._logger.error(f"HTTP request failed: {e}")
             raise
 
@@ -555,11 +672,14 @@ class JSONRPCClient(BaseTransportClient):
         self._logger.info(f"Sending raw JSON-RPC request to {self.base_url}: {json_request}")
 
         try:
-            response = self.session.post(self.base_url, json=json_request, headers=headers, timeout=self.timeout)
+            response = self.client.post(self.base_url, json=json_request, headers=headers)
             self._logger.info(f"SUT responded with {response.status_code}: {response.text}")
             response.raise_for_status()
             return cast(Dict[str, Any], response.json())
-        except requests.RequestException as e:
+        except httpx.HTTPStatusError as e:
+            self._logger.error(f"HTTP status error communicating with SUT: {e.response.status_code} {e.response.text}")
+            raise
+        except httpx.RequestError as e:
             self._logger.error(f"HTTP error communicating with SUT: {e}")
             raise
         except ValueError as e:
@@ -567,9 +687,9 @@ class JSONRPCClient(BaseTransportClient):
             raise
 
     def close(self):
-        """Close the HTTP session."""
-        if hasattr(self, "session"):
-            self.session.close()
+        """Close the HTTP client."""
+        if hasattr(self, "client"):
+            self.client.close()
 
     def __enter__(self):
         return self
