@@ -516,68 +516,8 @@ class GRPCClient(BaseTransportClient):
             ctx_id = message.get("contextId") or message.get("context_id") or "default-context"
             logger.info(f"Starting gRPC streaming for message: {msg_id}")
 
-            # Build protobuf request using the same logic as send_message
-            self._load_static_stubs()
-            pb = self._pb
-            
-            # Accept both A2A and internal naming - don't provide defaults for required fields
-            msg_id = message.get("messageId") or message.get("message_id")
-            ctx_id = message.get("contextId") or message.get("context_id")
-
-            # Check if required fields are missing to allow SUT validation
-            if not msg_id:
-                msg_id = ""  # Let SUT handle missing messageId validation
-            if not ctx_id:
-                ctx_id = ""  # Let SUT handle missing contextId validation
-
-            # Build parts - handle different part types appropriately
-            parts = []
-            for p in message.get("parts", []) or message.get("content", []):
-                if p.get("kind") == "text":
-                    parts.append(pb.Part(text=p.get("text", "")))
-                elif p.get("kind") == "data" and "data" in p:
-                    # Handle DataPart - convert JSON data to protobuf Struct
-                    from google.protobuf.struct_pb2 import Struct
-                    struct_data = Struct()
-                    struct_data.update(p["data"])
-                    data_part = pb.DataPart(data=struct_data)
-                    parts.append(pb.Part(data=data_part))
-                elif p.get("kind") == "file" and (("file" in p and "uri" in p["file"]) or ("file" in p and "bytes" in p["file"]) or "fileUri" in p or "fileBytes" in p):
-                    # Handle FilePart
-                    file_part = pb.FilePart()
-                    if "fileUri" in p:
-                        file_part.file_with_uri = p["fileUri"]
-                    elif "fileBytes" in p:
-                        file_part.file_with_bytes = p["fileBytes"]
-                    elif "file" in p:
-                        if "uri" in p["file"]:
-                            file_part.file_with_uri = p["file"]["uri"]
-                        elif "bytes" in p["file"]:
-                            file_part.file_with_bytes = p["file"]["bytes"]
-                    if "mimeType" in p:
-                        file_part.mime_type = p["mimeType"]
-                    parts.append(pb.Part(file=file_part))
-                elif p.get("type") or p.get("kind"):
-                    # Unsupported part type - create empty Part to let SUT handle validation
-                    parts.append(pb.Part())
-                else:
-                    # Empty or unrecognized part structure
-                    parts.append(pb.Part())
-                    
-            role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
-            # Don't provide default role - let SUT validate required fields
-            user_role = message.get("role")
-            pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
-
-            pb_msg = pb.Message(
-                message_id=msg_id,
-                context_id=ctx_id,
-                task_id=message.get("taskId", ""),
-                role=pb_role,
-                content=parts,
-            )
-            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=False)  # Set blocking=False for streaming
-            request = pb.SendMessageRequest(request=pb_msg, configuration=config)
+            # Build protobuf request
+            request = self._json_to_send_message_request(message, blocking=False)
 
             # Make real gRPC streaming call to live SUT
             if self.use_tls:
