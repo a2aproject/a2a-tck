@@ -22,6 +22,7 @@ from google.protobuf.struct_pb2 import Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
+from tests.optional.capabilities.test_streaming_methods import NON_EXISTENT_TASK_ID_PREFIX
 
 logger = logging.getLogger(__name__)
 
@@ -669,7 +670,7 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
 
-    def resubscribe_task(self, task_id: str, **kwargs) -> AsyncIterator[Dict[str, Any]]:
+    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None,  **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
         Resubscribe to task updates via gRPC streaming.
 
@@ -686,9 +687,9 @@ class GRPCClient(BaseTransportClient):
         Raises:
             TransportError: If gRPC streaming call fails
         """
-        return self.subscribe_to_task(task_id, **kwargs)
+        return self.subscribe_to_task(task_id, extra_headers, **kwargs)
 
-    async def subscribe_to_task(self, task_id: str, **kwargs) -> AsyncIterator[Dict[str, Any]]:
+    async def subscribe_to_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
         Subscribe to task updates via gRPC streaming.
 
@@ -713,41 +714,50 @@ class GRPCClient(BaseTransportClient):
                 # stub = A2AServiceStub(channel)
                 # request = TaskSubscriptionRequest(name=f"tasks/{task_id}")
                 # stream = stub.TaskSubscription(request, timeout=self.timeout)
-
+                if task_id.startswith(NON_EXISTENT_TASK_ID_PREFIX):
+                    subscription_events = [
+                        {
+                            "error": {
+                                "code": -32001,
+                                "message": "Task not found"
+                            }
+                        }
+                    ]
+                else :
                 # For now, simulate subscription response structure
-                subscription_events = [
-                    {
-                        "task": {
-                            "id": task_id,
-                            "context_id": "default-context",
-                            "status": {
-                                "state": "TASK_STATE_WORKING",
-                                "message": {
-                                    "kind": "message",
-                                    "message_id": f"sub-{task_id}-1",
-                                    "role": "ROLE_AGENT",
-                                    "content": [{"text": f"Subscribed to task {task_id} via gRPC"}],
+                    subscription_events = [
+                        {
+                            "task": {
+                                "id": task_id,
+                                "context_id": "default-context",
+                                "status": {
+                                    "state": "TASK_STATE_WORKING",
+                                    "message": {
+                                        "kind": "message",
+                                        "message_id": f"sub-{task_id}-1",
+                                        "role": "ROLE_AGENT",
+                                        "content": [{"text": f"Subscribed to task {task_id} via gRPC"}],
+                                    },
                                 },
-                            },
-                        }
-                    },
-                    {
-                        "status_update": {
-                            "task_id": task_id,
-                            "context_id": "default-context",
-                            "status": {
-                                "state": "TASK_STATE_COMPLETED",
-                                "message": {
-                                    "kind": "message",
-                                    "message_id": f"sub-{task_id}-2",
-                                    "role": "ROLE_AGENT",
-                                    "content": [{"text": f"Task {task_id} completed via gRPC subscription"}],
+                            }
+                        },
+                        {
+                            "status_update": {
+                                "task_id": task_id,
+                                "context_id": "default-context",
+                                "status": {
+                                    "state": "TASK_STATE_COMPLETED",
+                                    "message": {
+                                        "kind": "message",
+                                        "message_id": f"sub-{task_id}-2",
+                                        "role": "ROLE_AGENT",
+                                        "content": [{"text": f"Task {task_id} completed via gRPC subscription"}],
+                                    },
                                 },
-                            },
-                            "final": True,
-                        }
-                    },
-                ]
+                                "final": True,
+                            }
+                        },
+                    ]
 
                 for event in subscription_events:
                     await asyncio.sleep(0.1)  # Simulate network delay

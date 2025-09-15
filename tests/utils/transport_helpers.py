@@ -578,3 +578,60 @@ def transport_delete_push_notification_config(
 
     else:
         raise ValueError(f"Client {type(client)} does not support push notification configuration")
+
+
+def transport_send_streaming_message(
+    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+) -> Any:
+    """
+    Send a message with streaming response using any transport client.
+
+    Args:
+        client: Transport client (BaseTransportClient)
+        message_params: Message parameters in A2A format
+        extra_headers: Optional transport-specific headers
+
+    Returns:
+        Stream object that yields task updates (transport-specific type)
+
+    Raises:
+        ValueError: If client doesn't support streaming
+        TransportError: If streaming message sending fails
+
+    Specification Reference: A2A v0.3.0 §8.1 - Streaming Support
+    """
+    # Check if client is a BaseTransportClient with streaming support
+    if hasattr(client, "send_streaming_message") and hasattr(client, "transport_type"):
+        logger.debug(f"Using transport-aware send_streaming_message for {client.transport_type.value}")
+        message = message_params.get("message", message_params)
+        return client.send_streaming_message(message, extra_headers)
+    else:
+        raise ValueError(f"Client {type(client)} does not support streaming message sending")
+
+
+def transport_resubscribe_task(
+    client: BaseTransportClient, task_id: str, extra_headers: Optional[Dict[str, str]] = None
+) -> Any:
+    """
+    Resubscribe to task updates using any transport client.
+
+    Args:
+        client: Transport client (BaseTransportClient)
+        task_id: Task identifier to resubscribe to
+        extra_headers: Optional transport-specific headers
+
+    Returns:
+        Stream object that yields task updates (transport-specific type)
+
+    Raises:
+        ValueError: If client doesn't support task resubscription
+        TransportError: If task resubscription fails
+
+    Specification Reference: A2A v0.3.0 §7.9 - Task Resubscription
+    """
+    # Check if client is a BaseTransportClient with resubscription support
+    if hasattr(client, "resubscribe_task") and hasattr(client, "transport_type"):
+        logger.debug(f"Using transport-aware resubscribe_task for {client.transport_type.value}")
+        return client.resubscribe_task(task_id, extra_headers)
+    else:
+        raise ValueError(f"Client {type(client)} does not support task resubscription")

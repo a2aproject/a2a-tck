@@ -18,6 +18,8 @@ from urllib.parse import urljoin
 import httpx
 from httpx import AsyncClient, Client
 
+from tck.message_utils import convert_a2a_message_to_protobuf_json, handle_http_error_response, \
+    convert_protobuf_response_to_a2a_json
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
 
 logger = logging.getLogger(__name__)
@@ -151,302 +153,7 @@ class RESTClient(BaseTransportClient):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    # A2A Protocol Method Implementations - Real HTTP Calls
 
-    def _convert_a2a_message_to_protobuf_json(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Convert A2A JSON message format to protobuf-compatible JSON format.
-        
-        A2A JSON format:
-        {
-            "kind": "message",
-            "messageId": "...",
-            "role": "user",
-            "parts": [{"kind": "text", "text": "..."}]
-        }
-        
-        Protobuf JSON format:
-        {
-            "message_id": "...",
-            "role": "ROLE_USER", 
-            "content": [{"text": "..."}]
-        }
-        """
-        protobuf_message = {}
-        
-        # Map messageId -> message_id
-        if "messageId" in message:
-            protobuf_message["message_id"] = message["messageId"]
-        
-        # Map contextId -> context_id
-        if "contextId" in message:
-            protobuf_message["context_id"] = message["contextId"]
-            
-        # Map taskId -> task_id
-        if "taskId" in message:
-            protobuf_message["task_id"] = message["taskId"]
-            
-        # Map role to protobuf enum format
-        if "role" in message:
-            role_map = {
-                "user": "ROLE_USER",
-                "agent": "ROLE_AGENT"
-            }
-            protobuf_message["role"] = role_map.get(message["role"], "ROLE_UNSPECIFIED")
-        
-        # Map parts -> content (and convert part format)
-        if "parts" in message:
-            protobuf_message["content"] = []
-            for part in message["parts"]:
-                protobuf_part = {}
-                if part.get("kind") == "text":
-                    protobuf_part["text"] = part.get("text", "")
-                elif part.get("kind") == "file":
-                    # Map file part (simplified for now)
-                    if "file" in part:
-                        file_data = part["file"]
-                        protobuf_part["file"] = {
-                           # "name": file_data.get("name", ""),
-                            "mime_type": file_data.get("mimeType", ""),
-                            "file_with_uri": file_data.get("uri", file_data.get("url", "")),
-                           # "size_in_bytes": file_data.get("sizeInBytes", 0)
-                        }
-                        if "bytes" in file_data:
-                            protobuf_part["file"]["file_with_bytes"] = file_data["bytes"]
-                elif part.get("kind") == "data":
-                    # DataPart has structure: {"data": {"data": <actual_data>}}
-                    # The protobuf DataPart has a single field "data" of type google.protobuf.Struct
-                    protobuf_part["data"] = {"data": part.get("data", {})}
-                
-                # Add metadata if present
-                if "metadata" in part:
-                    protobuf_part["metadata"] = part["metadata"]
-                    
-                protobuf_message["content"].append(protobuf_part)
-        
-        # Map metadata if present
-        if "metadata" in message:
-            protobuf_message["metadata"] = message["metadata"]
-            
-        # Map extensions if present
-        if "extensions" in message:
-            protobuf_message["extensions"] = message["extensions"]
-            
-        return protobuf_message
-
-    def _convert_protobuf_response_to_a2a_json(self, response: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Convert protobuf JSON response format back to A2A JSON format.
-        
-        Protobuf JSON format response:
-        {
-            "task": {
-                "id": "...",
-                "context_id": "...",
-                "status": {...},
-                "history": [{"message_id": "...", "role": "ROLE_USER", "content": [...]}]
-            }
-        }
-        
-        A2A JSON format response:
-        {
-            "result": {
-                "id": "...",
-                "contextId": "...", 
-                "status": {...},
-                "history": [{"messageId": "...", "role": "user", "parts": [...], "kind": "message"}],
-                "kind": "task"
-            }
-        }
-        """
-        # Handle different response structures
-        if "task" in response:
-            # Convert task response (wrapped format)
-            task = response["task"]
-            a2a_task = self._convert_protobuf_task_to_a2a(task)
-            return a2a_task
-        elif "message" in response:
-            # Convert message response  
-            message = response["message"]
-            a2a_message = self._convert_protobuf_message_to_a2a(message)
-            return a2a_message
-        elif "id" in response and "status" in response:
-            # Direct task object (not wrapped) - common for cancel/get responses
-            a2a_task = self._convert_protobuf_task_to_a2a(response)
-            return a2a_task
-        else:
-            # Return as-is if format not recognized
-            return response
-    
-    def _convert_protobuf_task_to_a2a(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert protobuf task to A2A task format."""
-        a2a_task = {"kind": "task"}
-        
-        # Map basic fields
-        if "id" in task:
-            a2a_task["id"] = task["id"]
-        if "context_id" in task:
-            a2a_task["contextId"] = task["context_id"]
-        if "status" in task:
-            # Convert protobuf status to A2A status format
-            status = task["status"]
-            a2a_status = {}
-            if "state" in status:
-                # Convert protobuf enum state to A2A state
-                state_map = {
-                    "TASK_STATE_SUBMITTED": "submitted",
-                    "TASK_STATE_WORKING": "working", 
-                    "TASK_STATE_COMPLETED": "completed",
-                    "TASK_STATE_FAILED": "failed",
-                    "TASK_STATE_CANCELLED": "canceled",
-                    "TASK_STATE_INPUT_REQUIRED": "input-required",
-                    "TASK_STATE_REJECTED": "rejected",
-                    "TASK_STATE_AUTH_REQUIRED": "auth-required"
-                }
-                a2a_status["state"] = state_map.get(status["state"], status["state"])
-            if "timestamp" in status:
-                a2a_status["timestamp"] = status["timestamp"]
-            if "message" in status:
-                # Convert status message if present
-                a2a_status["message"] = self._convert_protobuf_message_to_a2a(status["message"])
-            a2a_task["status"] = a2a_status
-        if "artifacts" in task:
-            a2a_task["artifacts"] = task["artifacts"]
-        if "metadata" in task:
-            a2a_task["metadata"] = task["metadata"]
-            
-        # Convert history messages
-        if "history" in task:
-            a2a_task["history"] = []
-            for msg in task["history"]:
-                a2a_msg = self._convert_protobuf_message_to_a2a(msg)
-                a2a_task["history"].append(a2a_msg)
-                
-        return a2a_task
-    
-    def _convert_protobuf_message_to_a2a(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert protobuf message to A2A message format."""
-        a2a_message = {"kind": "message"}
-        
-        # Map basic fields
-        if "message_id" in message:
-            a2a_message["messageId"] = message["message_id"]
-        if "context_id" in message:
-            a2a_message["contextId"] = message["context_id"]
-        if "task_id" in message:
-            a2a_message["taskId"] = message["task_id"]
-        if "metadata" in message:
-            a2a_message["metadata"] = message["metadata"]
-        if "extensions" in message:
-            a2a_message["extensions"] = message["extensions"]
-            
-        # Convert role from protobuf enum to A2A format
-        if "role" in message:
-            role_map = {
-                "ROLE_USER": "user",
-                "ROLE_AGENT": "agent",
-                "ROLE_UNSPECIFIED": "user"  # default fallback
-            }
-            a2a_message["role"] = role_map.get(message["role"], "user")
-            
-        # Convert content -> parts
-        if "content" in message:
-            a2a_message["parts"] = []
-            for part in message["content"]:
-                a2a_part = {}
-                if "text" in part:
-                    a2a_part["kind"] = "text"
-                    a2a_part["text"] = part["text"]
-                elif "file" in part:
-                    a2a_part["kind"] = "file"
-                    file_data = part["file"]
-                    a2a_file = {}
-                    if "name" in file_data:
-                        a2a_file["name"] = file_data["name"]
-                    if "mime_type" in file_data:
-                        a2a_file["mimeType"] = file_data["mime_type"]
-                    if "uri" in file_data:
-                        a2a_file["uri"] = file_data["uri"]
-                    if "size_in_bytes" in file_data:
-                        a2a_file["sizeInBytes"] = file_data["size_in_bytes"]
-                    if "bytes" in file_data:
-                        a2a_file["bytes"] = file_data["bytes"]
-                    a2a_part["file"] = a2a_file
-                elif "data" in part:
-                    a2a_part["kind"] = "data"
-                    # Handle nested DataPart structure: {"data": {"data": <actual_data>}}
-                    data_field = part["data"]
-                    if isinstance(data_field, dict) and "data" in data_field:
-                        # Extract the inner data from protobuf DataPart structure
-                        a2a_part["data"] = data_field["data"]
-                    else:
-                        # Fallback for direct data (shouldn't happen with correct protobuf)
-                        a2a_part["data"] = data_field
-                    
-                if "metadata" in part:
-                    a2a_part["metadata"] = part["metadata"]
-                    
-                a2a_message["parts"].append(a2a_part)
-                
-        return a2a_message
-
-    def _handle_http_error_response(self, response) -> Dict[str, Any]:
-        """
-        Handle HTTP error responses and map them to proper JSON-RPC error format.
-        
-        Maps HTTP status codes and SUT error types to A2A JSON-RPC error codes.
-        """
-        try:
-            # Try to parse error response as JSON
-            error_data = response.json()
-            error_type = error_data.get("error", "")
-            error_message = error_data.get("message", response.text)
-            
-            # Map SUT error types to A2A JSON-RPC error codes
-            if "TaskNotFoundError" in error_type:
-                return {"error": {"code": -32001, "message": "Task not found"}}
-            elif "TaskNotCancelableError" in error_type:
-                return {"error": {"code": -32002, "message": "Task cannot be canceled"}}
-            elif "PushNotificationNotSupportedError" in error_type:
-                return {"error": {"code": -32003, "message": "Push Notification is not supported"}}
-            elif "UnsupportedOperationError" in error_type:
-                return {"error": {"code": -32004, "message": "This operation is not supported"}}
-            elif "ContentTypeNotSupportedError" in error_type:
-                return {"error": {"code": -32005, "message": "Incompatible content types"}}
-            elif "InvalidAgentResponseError" in error_type:
-                return {"error": {"code": -32006, "message": "Invalid agent response type"}}
-            elif "AuthenticatedExtendedCardNotConfiguredError" in error_type:
-                return {"error": {"code": -32007, "message": "Authenticated Extended Card not configured"}}
-            elif "InvalidParamsError" in error_type:
-                return {"error": {"code": -32602, "message": "Invalid method parameters"}}
-            elif "InternalError" in error_type and ("Parts cannot be empty" in error_message or "InternalError: Parts cannot be empty" in error_message):
-                # SUT is incorrectly returning InternalError for invalid params (same bug as gRPC INTERNAL status)
-                return {"error": {"code": -32602, "message": "Invalid method parameters"}}
-            
-            # Map by HTTP status code if error type not recognized
-            elif response.status_code == 404:
-                return {"error": {"code": -32001, "message": "Task not found"}}
-            elif response.status_code == 400:
-                return {"error": {"code": -32602, "message": "Invalid method parameters"}}
-            elif response.status_code == 422:
-                return {"error": {"code": -32602, "message": "Invalid method parameters"}}
-            elif response.status_code == 501:
-                return {"error": {"code": -32601, "message": "Method not found"}}
-            else:
-                return {"error": {"code": -32603, "message": f"Internal server error: {error_message}"}}
-                
-        except (ValueError, json.JSONDecodeError):
-            # If response is not valid JSON, map by HTTP status code only
-            if response.status_code == 404:
-                return {"error": {"code": -32001, "message": "Task not found"}}
-            elif response.status_code == 400:
-                return {"error": {"code": -32602, "message": "Invalid method parameters"}}
-            elif response.status_code == 422:
-                return {"error": {"code": -32602, "message": "Invalid method parameters"}}
-            elif response.status_code == 501:
-                return {"error": {"code": -32601, "message": "Method not found"}}
-            else:
-                return {"error": {"code": -32603, "message": f"HTTP {response.status_code}: {response.text}"}}
 
     def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         """
@@ -476,7 +183,7 @@ class RESTClient(BaseTransportClient):
                 headers.update(extra_headers)
 
             # Convert A2A JSON message to protobuf-compatible format
-            protobuf_message = self._convert_a2a_message_to_protobuf_json(message)
+            protobuf_message = convert_a2a_message_to_protobuf_json(message)
             
             # Prepare payload according to A2A REST specification (using protobuf format)
             payload = {"message": protobuf_message}
@@ -495,13 +202,13 @@ class RESTClient(BaseTransportClient):
             # Handle HTTP errors
             if response.status_code >= 400:
                 logger.error(f"REST request failed: HTTP {response.status_code}")
-                return self._handle_http_error_response(response)
+                return handle_http_error_response(response)
 
             # Parse JSON response
             response_data = response.json()
 
             # Convert protobuf response back to A2A JSON format
-            a2a_response = self._convert_protobuf_response_to_a2a_json(response_data)
+            a2a_response = convert_protobuf_response_to_a2a_json(response_data)
 
             logger.debug(f"Received REST response for message {message.get('message_id')}")
             return a2a_response
@@ -534,7 +241,7 @@ class RESTClient(BaseTransportClient):
     def __repr__(self) -> str:
         return super().__repr__()
 
-    async def send_streaming_message(self, message: Dict[str, Any], **kwargs) -> AsyncIterator[Dict[str, Any]]:
+    async def send_streaming_message(self, message: Dict[str, Any],  extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
         Send message via HTTP POST and stream responses using Server-Sent Events.
 
@@ -557,13 +264,12 @@ class RESTClient(BaseTransportClient):
             url = urljoin(self.base_url, "v1/message:stream")
             headers = self.default_headers.copy()
             headers["Accept"] = "text/event-stream"  # SSE format
-
             # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            if extra_headers:
+                headers.update(extra_headers)
 
             # Convert A2A JSON message to protobuf-compatible format
-            protobuf_message = self._convert_a2a_message_to_protobuf_json(message)
+            protobuf_message = convert_a2a_message_to_protobuf_json(message)
             
             # Prepare payload
             payload = {"message": protobuf_message}
@@ -661,13 +367,13 @@ class RESTClient(BaseTransportClient):
             # Handle HTTP errors
             if response.status_code >= 400:
                 logger.error(f"REST get_task failed: HTTP {response.status_code}")
-                return self._handle_http_error_response(response)
+                return handle_http_error_response(response)
 
             # Parse JSON response
             task_data = response.json()
 
             # Convert protobuf response back to A2A JSON format
-            a2a_response = self._convert_protobuf_response_to_a2a_json(task_data)
+            a2a_response = convert_protobuf_response_to_a2a_json(task_data)
 
             logger.debug(f"Retrieved task via REST: {task_id}")
             return a2a_response
@@ -714,13 +420,13 @@ class RESTClient(BaseTransportClient):
             # Handle HTTP errors
             if response.status_code >= 400:
                 logger.error(f"REST cancel_task failed: HTTP {response.status_code}")
-                return self._handle_http_error_response(response)
+                return handle_http_error_response(response)
 
             # Parse JSON response
             cancelled_task = response.json()
 
             # Convert protobuf response back to A2A JSON format
-            a2a_response = self._convert_protobuf_response_to_a2a_json(cancelled_task)
+            a2a_response = convert_protobuf_response_to_a2a_json(cancelled_task)
 
             logger.debug(f"Cancelled task via REST: {task_id}")
             return a2a_response
@@ -734,7 +440,7 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
-    def resubscribe_task(self, task_id: str, **kwargs) -> AsyncIterator[Dict[str, Any]]:
+    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
         Resubscribe to task updates via HTTP SSE streaming.
 
@@ -751,9 +457,9 @@ class RESTClient(BaseTransportClient):
         Raises:
             TransportError: If HTTP streaming request fails
         """
-        return self.subscribe_to_task(task_id, **kwargs)
+        return self.subscribe_to_task(task_id, extra_headers, **kwargs)
 
-    async def subscribe_to_task(self, task_id: str, **kwargs) -> AsyncIterator[Dict[str, Any]]:
+    async def subscribe_to_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
         Subscribe to task updates via HTTP SSE streaming.
 
@@ -776,13 +482,12 @@ class RESTClient(BaseTransportClient):
             url = urljoin(self.base_url, f"v1/tasks/{task_id}:subscribe")
             headers = self.default_headers.copy()
             headers["Accept"] = "text/event-stream"  # SSE format
-
             # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            if extra_headers:
+                headers.update(extra_headers)
 
             # Make real HTTP streaming request to live SUT
-            async with self.async_client.stream("GET", url, headers=headers) as response:
+            async with self.async_client.stream("POST", url, headers=headers) as response:
                 # Handle HTTP errors
                 if response.status_code >= 400:
                     error_msg = f"HTTP {response.status_code}: {await response.aread()}"
