@@ -516,33 +516,113 @@ class GRPCClient(BaseTransportClient):
             ctx_id = message.get("contextId") or message.get("context_id") or "default-context"
             logger.info(f"Starting gRPC streaming for message: {msg_id}")
 
-            # Convert JSON message to protobuf format
-            request = self._json_to_send_message_request(message)
+            # Build protobuf request using the same logic as send_message
+            self._load_static_stubs()
+            pb = self._pb
+            
+            # Accept both A2A and internal naming - don't provide defaults for required fields
+            msg_id = message.get("messageId") or message.get("message_id")
+            ctx_id = message.get("contextId") or message.get("context_id")
+
+            # Check if required fields are missing to allow SUT validation
+            if not msg_id:
+                msg_id = ""  # Let SUT handle missing messageId validation
+            if not ctx_id:
+                ctx_id = ""  # Let SUT handle missing contextId validation
+
+            # Build parts - handle different part types appropriately
+            parts = []
+            for p in message.get("parts", []) or message.get("content", []):
+                if p.get("kind") == "text":
+                    parts.append(pb.Part(text=p.get("text", "")))
+                elif p.get("kind") == "data" and "data" in p:
+                    # Handle DataPart - convert JSON data to protobuf Struct
+                    from google.protobuf.struct_pb2 import Struct
+                    struct_data = Struct()
+                    struct_data.update(p["data"])
+                    data_part = pb.DataPart(data=struct_data)
+                    parts.append(pb.Part(data=data_part))
+                elif p.get("kind") == "file" and (("file" in p and "uri" in p["file"]) or ("file" in p and "bytes" in p["file"]) or "fileUri" in p or "fileBytes" in p):
+                    # Handle FilePart
+                    file_part = pb.FilePart()
+                    if "fileUri" in p:
+                        file_part.file_with_uri = p["fileUri"]
+                    elif "fileBytes" in p:
+                        file_part.file_with_bytes = p["fileBytes"]
+                    elif "file" in p:
+                        if "uri" in p["file"]:
+                            file_part.file_with_uri = p["file"]["uri"]
+                        elif "bytes" in p["file"]:
+                            file_part.file_with_bytes = p["file"]["bytes"]
+                    if "mimeType" in p:
+                        file_part.mime_type = p["mimeType"]
+                    parts.append(pb.Part(file=file_part))
+                elif p.get("type") or p.get("kind"):
+                    # Unsupported part type - create empty Part to let SUT handle validation
+                    parts.append(pb.Part())
+                else:
+                    # Empty or unrecognized part structure
+                    parts.append(pb.Part())
+                    
+            role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
+            # Don't provide default role - let SUT validate required fields
+            user_role = message.get("role")
+            pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
+
+            pb_msg = pb.Message(
+                message_id=msg_id,
+                context_id=ctx_id,
+                task_id=message.get("taskId", ""),
+                role=pb_role,
+                content=parts,
+            )
+            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=False)  # Set blocking=False for streaming
+            request = pb.SendMessageRequest(request=pb_msg, configuration=config)
 
             # Make real gRPC streaming call to live SUT
-            async with grpc.aio.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # stream = stub.SendStreamingMessage(request, timeout=self.timeout)
-
-                # For now, simulate streaming response structure
-                # This would be replaced with actual protobuf stream handling
-                streaming_responses = [
-                    {"task": {"id": f"task-{msg_id}", "contextId": ctx_id, "status": {"state": "submitted"}}},
-                    {"status_update": {"taskId": f"task-{msg_id}", "contextId": ctx_id, "status": {"state": "working"}}},
-                    {
-                        "status_update": {
-                            "taskId": f"task-{msg_id}",
-                            "contextId": ctx_id,
-                            "status": {"state": "completed"},
-                            "final": True,
+            if self.use_tls:
+                credentials = grpc.ssl_channel_credentials()
+                channel = grpc.aio.secure_channel(self.grpc_target, credentials)
+            else:
+                channel = grpc.aio.insecure_channel(self.grpc_target)
+                
+            async with channel:
+                # Use the generated protobuf stub for streaming
+                stub = self._pb_grpc.A2AServiceStub(channel)
+                stream = stub.SendStreamingMessage(request, timeout=self.timeout)
+                
+                async for response in stream:
+                    # Convert protobuf response to JSON format
+                    if response.WhichOneof("payload") == "task":
+                        t = response.task
+                        yield {
+                            "task": {
+                                "id": t.id,
+                                "contextId": t.context_id,
+                                "status": {"state": self._map_state_enum_to_json(t.status.state)},
+                                "kind": "task",
+                            }
                         }
-                    },
-                ]
-
-                for response in streaming_responses:
-                    await asyncio.sleep(0.1)  # Simulate network delay
-                    yield response
+                    elif response.WhichOneof("payload") == "status_update":
+                        su = response.status_update
+                        yield {
+                            "status_update": {
+                                "taskId": su.task_id,
+                                "contextId": su.context_id,
+                                "status": {"state": self._map_state_enum_to_json(su.status.state)},
+                                "final": getattr(su, "final", False),
+                            }
+                        }
+                    elif response.WhichOneof("payload") == "msg":
+                        m = response.msg
+                        yield {
+                            "message": {
+                                "kind": "message",
+                                "role": "agent",
+                                "messageId": m.message_id,
+                                "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
+                            }
+                        }
 
             logger.debug(f"Completed gRPC streaming for message {message.get('message_id')}")
 
@@ -709,72 +789,68 @@ class GRPCClient(BaseTransportClient):
             logger.info(f"Subscribing to task via gRPC: {task_id}")
 
             # Make real gRPC streaming call to live SUT
-            async with grpc.aio.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would use generated protobuf stub
-                # stub = A2AServiceStub(channel)
-                # request = TaskSubscriptionRequest(name=f"tasks/{task_id}")
-                # stream = stub.TaskSubscription(request, timeout=self.timeout)
-                if task_id.startswith(NON_EXISTENT_TASK_ID_PREFIX):
-                    subscription_events = [
-                        {
-                            "error": {
-                                "code": -32001,
-                                "message": "Task not found"
+            self._load_static_stubs()
+            pb = self._pb
+            
+            # Build TaskSubscriptionRequest
+            request = pb.TaskSubscriptionRequest(name=f"tasks/{task_id}")
+            
+            # Create appropriate channel based on TLS setting
+            if self.use_tls:
+                credentials = grpc.ssl_channel_credentials()
+                channel = grpc.aio.secure_channel(self.grpc_target, credentials)
+            else:
+                channel = grpc.aio.insecure_channel(self.grpc_target)
+                
+            async with channel:
+                # Use the generated protobuf stub for task subscription
+                stub = self._pb_grpc.A2AServiceStub(channel)
+                stream = stub.TaskSubscription(request, timeout=self.timeout)
+                
+                async for response in stream:
+                    # Convert protobuf response to JSON format
+                    if response.WhichOneof("payload") == "task":
+                        t = response.task
+                        yield {
+                            "task": {
+                                "id": t.id,
+                                "contextId": t.context_id,
+                                "status": {"state": self._map_state_enum_to_json(t.status.state)},
+                                "kind": "task",
                             }
                         }
-                    ]
-                else:
-                # For now, simulate subscription response structure
-                    subscription_events = [
-                        {
-                            "task": {
-                                "id": task_id,
-                                "context_id": "default-context",
-                                "status": {
-                                    "state": "TASK_STATE_WORKING",
-                                    "message": {
-                                        "kind": "message",
-                                        "message_id": f"sub-{task_id}-1",
-                                        "role": "ROLE_AGENT",
-                                        "content": [{"text": f"Subscribed to task {task_id} via gRPC"}],
-                                    },
-                                },
-                            }
-                        },
-                        {
+                    elif response.WhichOneof("payload") == "status_update":
+                        su = response.status_update
+                        yield {
                             "status_update": {
-                                "task_id": task_id,
-                                "context_id": "default-context",
-                                "status": {
-                                    "state": "TASK_STATE_COMPLETED",
-                                    "message": {
-                                        "kind": "message",
-                                        "message_id": f"sub-{task_id}-2",
-                                        "role": "ROLE_AGENT",
-                                        "content": [{"text": f"Task {task_id} completed via gRPC subscription"}],
-                                    },
-                                },
-                                "final": True,
+                                "taskId": su.task_id,
+                                "contextId": su.context_id,
+                                "status": {"state": self._map_state_enum_to_json(su.status.state)},
+                                "final": getattr(su, "final", False),
                             }
-                        },
-                    ]
-
-                for event in subscription_events:
-                    await asyncio.sleep(0.1)  # Simulate network delay
-                    yield event
+                        }
+                    elif response.WhichOneof("payload") == "error":
+                        # Handle error responses from the server
+                        error = response.error
+                        yield {
+                            "error": {
+                                "code": error.code,
+                                "message": error.message,
+                            }
+                        }
 
             logger.debug(f"Completed gRPC subscription for task: {task_id}")
 
+        except grpc.RpcError as e:
+            error_msg = f"gRPC TaskSubscription failed: {e.code().name} - {e.details()}"
+            logger.error(error_msg)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
-            # Check if it's a gRPC error (either real or mock)
-            if hasattr(e, "code") and hasattr(e, "details"):
-                error_msg = f"gRPC TaskSubscription failed: {e.code().name} - {e.details()}"
-                logger.error(error_msg)
-                raise TransportError(f"gRPC streaming error: {error_msg}", TransportType.GRPC)
-            else:
-                error_msg = f"Unexpected error in gRPC subscription: {str(e)}"
-                logger.error(error_msg)
-                raise TransportError(error_msg, TransportType.GRPC)
+            error_msg = f"Unexpected error in gRPC subscription: {str(e)}"
+            logger.error(error_msg)
+            raise TransportError(error_msg, TransportType.GRPC)
 
     def get_agent_card(self, **kwargs) -> Dict[str, Any]:
         """
@@ -847,14 +923,14 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
 
-    def get_authenticated_extended_card(self, **kwargs) -> Dict[str, Any]:
+    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get authenticated extended agent card via gRPC.
 
         Maps to: A2AService.GetAgentCard() RPC call with authentication
 
         Args:
-            **kwargs: Additional configuration options
+            extra_headers: Additional authentication headers
 
         Returns:
             Dict containing extended agent card data from SUT
@@ -865,22 +941,70 @@ class GRPCClient(BaseTransportClient):
         try:
             logger.info("Getting authenticated extended agent card via gRPC")
 
-            # Make real gRPC call to live SUT (with authentication headers)
-            with grpc.insecure_channel(self.grpc_target) as channel:
-                # NOTE: In actual implementation, would include auth metadata
-                # metadata = [('authorization', f'Bearer {token}')]
-                # response = stub.GetAgentCard(request, metadata=metadata, timeout=self.timeout)
+            self._load_static_stubs()
+            pb = self._pb
+            
+            # Create GetAgentCardRequest
+            req = pb.GetAgentCardRequest()
+            
+            # Prepare authentication metadata from extra_headers
+            metadata = []
+            if extra_headers:
+                for key, value in extra_headers.items():
+                    metadata.append((key.lower(), value))
+            
+            # Make real gRPC call to live SUT with authentication metadata
+            if self.use_tls:
+                credentials = grpc.ssl_channel_credentials()
+                channel = grpc.secure_channel(self.grpc_target, credentials)
+            else:
+                channel = grpc.insecure_channel(self.grpc_target)
+                
+            with channel:
+                stub = self._pb_grpc.A2AServiceStub(channel)
+                resp = stub.GetAgentCard(req, metadata=metadata, timeout=self.timeout)
 
-                # For now, simulate the extended response structure
+                # Convert protobuf response to JSON format (same as get_agent_card)
                 extended_card = {
-                    "protocolVersion": "0.3.0",
-                    "name": "A2A gRPC Test Agent (Extended)",
-                    "description": "Extended test agent accessed via gRPC transport with authentication",
-                    "url": self.base_url,
-                    "preferredTransport": "GRPC",
-                    "capabilities": {"streaming": True, "pushNotifications": True},
-                    "securitySchemes": {"bearer": {"type": "http", "scheme": "bearer"}},
+                    "protocolVersion": resp.protocol_version,
+                    "name": resp.name,
+                    "description": resp.description,
+                    "url": resp.url,
+                    "version": resp.version,
+                    "preferredTransport": resp.preferred_transport or "GRPC",
+                    "capabilities": {
+                        "streaming": resp.capabilities.streaming if resp.capabilities else False,
+                        "pushNotifications": resp.capabilities.push_notifications if resp.capabilities else False,
+                    },
+                    "defaultInputModes": list(resp.default_input_modes),
+                    "defaultOutputModes": list(resp.default_output_modes),
+                    "additionalInterfaces": [
+                        {"url": iface.url, "transport": iface.transport} for iface in resp.additional_interfaces
+                    ],
+                    "skills": [
+                        {
+                            "id": skill.id,
+                            "name": skill.name,
+                            "description": skill.description,
+                            "tags": list(skill.tags),
+                            "examples": list(skill.examples),
+                        }
+                        for skill in resp.skills
+                    ],
                 }
+                
+
+                if resp.documentation_url:
+                    extended_card["documentationUrl"] = resp.documentation_url
+                    
+                # Add security schemes if present (for extended card)
+                if resp.security_schemes:
+                    extended_card["securitySchemes"] = {}
+                    for scheme_name, scheme in resp.security_schemes.items():
+                        extended_card["securitySchemes"][scheme_name] = {
+                            "type": scheme.type,
+                            "scheme": scheme.scheme if hasattr(scheme, "scheme") else None,
+                        }
 
             logger.debug("Retrieved authenticated extended agent card via gRPC")
             return extended_card
@@ -888,7 +1012,9 @@ class GRPCClient(BaseTransportClient):
         except grpc.RpcError as e:
             error_msg = f"gRPC GetAgentCard (authenticated) failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
-            raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC get_authenticated_extended_card: {str(e)}"
             logger.error(error_msg)
@@ -1119,41 +1245,84 @@ class GRPCClient(BaseTransportClient):
         """
         Convert JSON message to SendMessageRequest protobuf.
 
-        NOTE: In actual implementation, this would create real protobuf objects.
-        For now, this documents the expected conversion process.
-        """
-        # This is a placeholder for the actual protobuf conversion
-        # In real implementation, would be:
-        #
-        # from a2a_pb2 import SendMessageRequest, Message, Part, SendMessageConfiguration
-        #
-        # # Convert message content
-        # parts = []
-        # for content_item in message.get('content', []):
-        #     if 'text' in content_item:
-        #         parts.append(Part(text=content_item['text']))
-        #     # Handle file and data parts...
-        #
-        # # Create protobuf message
-        # pb_message = Message(
-        #     message_id=message.get('message_id', ''),
-        #     context_id=message.get('context_id', ''),
-        #     task_id=message.get('task_id', ''),
-        #     role=Role.ROLE_USER,
-        #     content=parts
-        # )
-        #
-        # # Create configuration
-        # config = SendMessageConfiguration(
-        #     accepted_output_modes=kwargs.get('accepted_output_modes', []),
-        #     history_length=kwargs.get('history_length', 0),
-        #     blocking=kwargs.get('blocking', True)
-        # )
-        #
-        # return SendMessageRequest(request=pb_message, configuration=config)
+        Args:
+            message: A2A message in JSON format
+            **kwargs: Configuration options for the request
 
-        logger.debug(f"Converting JSON message to protobuf: {message.get('messageId') or message.get('message_id') or 'unknown'}")
-        return message  # Placeholder return
+        Returns:
+            SendMessageRequest protobuf object
+        """
+        self._load_static_stubs()
+        pb = self._pb
+        
+        # Accept both A2A and internal naming - don't provide defaults for required fields
+        msg_id = message.get("messageId") or message.get("message_id")
+        ctx_id = message.get("contextId") or message.get("context_id")
+
+        # Check if required fields are missing to allow SUT validation
+        if not msg_id:
+            msg_id = ""  # Let SUT handle missing messageId validation
+        if not ctx_id:
+            ctx_id = ""  # Let SUT handle missing contextId validation
+
+        # Build parts - handle different part types appropriately
+        parts = []
+        for p in message.get("parts", []) or message.get("content", []):
+            if p.get("kind") == "text":
+                parts.append(pb.Part(text=p.get("text", "")))
+            elif p.get("kind") == "data" and "data" in p:
+                # Handle DataPart - convert JSON data to protobuf Struct
+                from google.protobuf.struct_pb2 import Struct
+                struct_data = Struct()
+                struct_data.update(p["data"])
+                data_part = pb.DataPart(data=struct_data)
+                parts.append(pb.Part(data=data_part))
+            elif p.get("kind") == "file" and (("file" in p and "uri" in p["file"]) or ("file" in p and "bytes" in p["file"]) or "fileUri" in p or "fileBytes" in p):
+                # Handle FilePart
+                file_part = pb.FilePart()
+                if "fileUri" in p:
+                    file_part.file_with_uri = p["fileUri"]
+                elif "fileBytes" in p:
+                    file_part.file_with_bytes = p["fileBytes"]
+                elif "file" in p:
+                    if "uri" in p["file"]:
+                        file_part.file_with_uri = p["file"]["uri"]
+                    elif "bytes" in p["file"]:
+                        file_part.file_with_bytes = p["file"]["bytes"]
+                if "mimeType" in p:
+                    file_part.mime_type = p["mimeType"]
+                parts.append(pb.Part(file=file_part))
+            elif p.get("type") or p.get("kind"):
+                # Unsupported part type - create empty Part to let SUT handle validation
+                parts.append(pb.Part())
+            else:
+                # Empty or unrecognized part structure
+                parts.append(pb.Part())
+                
+        role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
+        # Don't provide default role - let SUT validate required fields
+        user_role = message.get("role")
+        pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
+
+        pb_msg = pb.Message(
+            message_id=msg_id,
+            context_id=ctx_id,
+            task_id=message.get("taskId", ""),
+            role=pb_role,
+            content=parts,
+        )
+        
+        # Create configuration from kwargs
+        config = pb.SendMessageConfiguration(
+            accepted_output_modes=kwargs.get("accepted_output_modes", []),
+            history_length=kwargs.get("history_length", 0),
+            blocking=kwargs.get("blocking", True)
+        )
+        
+        request = pb.SendMessageRequest(request=pb_msg, configuration=config)
+        
+        logger.debug(f"Converted JSON message to protobuf: {msg_id}")
+        return request
 
     def _map_state_enum_to_json(self, state_enum: int) -> str:
         try:
@@ -1246,12 +1415,26 @@ class GRPCClient(BaseTransportClient):
         """
         Convert protobuf message to JSON format.
 
-        NOTE: In actual implementation, this would handle real protobuf objects.
+        Args:
+            pb_message: Protobuf message object to convert
+
+        Returns:
+            Dict containing JSON representation of the protobuf message
         """
-        # This is a placeholder for the actual protobuf conversion
-        # In real implementation, would use MessageToDict from google.protobuf.json_format
-        logger.debug("Converting protobuf message to JSON")
-        return {}  # Placeholder return
+        from google.protobuf.json_format import MessageToDict
+        
+        # Convert protobuf message to dictionary using the standard library
+        json_dict = MessageToDict(
+            pb_message,
+            including_default_value_fields=True,
+            preserving_proto_field_name=False,
+            use_integers_for_enums=False,
+            descriptor_pool=None,
+            float_precision=None
+        )
+        
+        logger.debug(f"Converted protobuf message to JSON: {type(pb_message).__name__}")
+        return json_dict
 
     # Transport-specific capabilities
 
