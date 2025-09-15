@@ -220,7 +220,7 @@ class JSONRPCClient(BaseTransportClient):
                                 data_str = line[6:]  # Remove "data: " prefix
                                 if data_str == "[DONE]":
                                     break
-                                self._logger.info(f"******** Received SSE data: {data_str}")
+                                self._logger.info(f"Received SSE data: {data_str}")
                                 event_data = json.loads(data_str)
                                 # Check for JSON-RPC error in the event
                                 if "error" in event_data:
