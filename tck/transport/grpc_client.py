@@ -816,36 +816,7 @@ class GRPCClient(BaseTransportClient):
             resp = self.stub.GetAgentCard(req, timeout=self.timeout)
 
             # Convert protobuf response to JSON format
-            agent_card = {
-                "protocolVersion": resp.protocol_version,
-                "name": resp.name,
-                "description": resp.description,
-                "url": resp.url,
-                "version": resp.version,
-                "preferredTransport": resp.preferred_transport or "GRPC",
-                "capabilities": {
-                    "streaming": resp.capabilities.streaming if resp.capabilities else False,
-                    "pushNotifications": resp.capabilities.push_notifications if resp.capabilities else False,
-                },
-                "defaultInputModes": list(resp.default_input_modes),
-                "defaultOutputModes": list(resp.default_output_modes),
-                "additionalInterfaces": [
-                    {"url": iface.url, "transport": iface.transport} for iface in resp.additional_interfaces
-                ],
-                "skills": [
-                    {
-                        "id": skill.id,
-                        "name": skill.name,
-                        "description": skill.description,
-                        "tags": list(skill.tags),
-                        "examples": list(skill.examples),
-                    }
-                    for skill in resp.skills
-                ],
-            }
-
-            if resp.documentation_url:
-                agent_card["documentationUrl"] = resp.documentation_url
+            agent_card = self._convert_agent_card_to_json(resp)
 
             logger.debug("Retrieved agent card via gRPC")
             # Validate response conforms to A2A specification
@@ -904,47 +875,8 @@ class GRPCClient(BaseTransportClient):
                 stub = self._pb_grpc.A2AServiceStub(channel)
                 resp = stub.GetAgentCard(req, metadata=metadata, timeout=self.timeout)
 
-                # Convert protobuf response to JSON format (same as get_agent_card)
-                extended_card = {
-                    "protocolVersion": resp.protocol_version,
-                    "name": resp.name,
-                    "description": resp.description,
-                    "url": resp.url,
-                    "version": resp.version,
-                    "preferredTransport": resp.preferred_transport or "GRPC",
-                    "capabilities": {
-                        "streaming": resp.capabilities.streaming if resp.capabilities else False,
-                        "pushNotifications": resp.capabilities.push_notifications if resp.capabilities else False,
-                    },
-                    "defaultInputModes": list(resp.default_input_modes),
-                    "defaultOutputModes": list(resp.default_output_modes),
-                    "additionalInterfaces": [
-                        {"url": iface.url, "transport": iface.transport} for iface in resp.additional_interfaces
-                    ],
-                    "skills": [
-                        {
-                            "id": skill.id,
-                            "name": skill.name,
-                            "description": skill.description,
-                            "tags": list(skill.tags),
-                            "examples": list(skill.examples),
-                        }
-                        for skill in resp.skills
-                    ],
-                }
-                
-
-                if resp.documentation_url:
-                    extended_card["documentationUrl"] = resp.documentation_url
-                    
-                # Add security schemes if present (for extended card)
-                if resp.security_schemes:
-                    extended_card["securitySchemes"] = {}
-                    for scheme_name, scheme in resp.security_schemes.items():
-                        extended_card["securitySchemes"][scheme_name] = {
-                            "type": scheme.type,
-                            "scheme": scheme.scheme if hasattr(scheme, "scheme") else None,
-                        }
+                # Convert protobuf response to JSON format using shared helper
+                extended_card = self._convert_agent_card_to_json(resp)
 
             logger.debug("Retrieved authenticated extended agent card via gRPC")
             return extended_card
@@ -1180,6 +1112,59 @@ class GRPCClient(BaseTransportClient):
             raise TransportError(error_msg, TransportType.GRPC)
 
     # Helper Methods for Protocol Buffer Conversion
+
+    def _convert_agent_card_to_json(self, resp) -> Dict[str, Any]:
+        """
+        Convert AgentCard protobuf response to JSON format.
+
+        Args:
+            resp: Protobuf AgentCard response object
+
+        Returns:
+            Dict containing JSON representation of the AgentCard
+        """
+        agent_card = {
+            "protocolVersion": resp.protocol_version,
+            "name": resp.name,
+            "description": resp.description,
+            "url": resp.url,
+            "version": resp.version,
+            "preferredTransport": resp.preferred_transport or "GRPC",
+            "capabilities": {
+                "streaming": resp.capabilities.streaming if resp.capabilities else False,
+                "pushNotifications": resp.capabilities.push_notifications if resp.capabilities else False,
+            },
+            "defaultInputModes": list(resp.default_input_modes),
+            "defaultOutputModes": list(resp.default_output_modes),
+            "additionalInterfaces": [
+                {"url": iface.url, "transport": iface.transport} for iface in resp.additional_interfaces
+            ],
+            "skills": [
+                {
+                    "id": skill.id,
+                    "name": skill.name,
+                    "description": skill.description,
+                    "tags": list(skill.tags),
+                    "examples": list(skill.examples),
+                }
+                for skill in resp.skills
+            ],
+        }
+
+        # Add optional fields if present
+        if resp.documentation_url:
+            agent_card["documentationUrl"] = resp.documentation_url
+            
+        # Add security schemes if present (for extended card)
+        if resp.security_schemes:
+            agent_card["securitySchemes"] = {}
+            for scheme_name, scheme in resp.security_schemes.items():
+                agent_card["securitySchemes"][scheme_name] = {
+                    "type": scheme.type,
+                    "scheme": scheme.scheme if hasattr(scheme, "scheme") else None,
+                }
+
+        return agent_card
 
     def _json_to_send_message_request(self, message: Dict[str, Any], **kwargs):
         """
