@@ -17,9 +17,7 @@ import os
 import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union, cast, Iterator, AsyncIterator
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+import httpx
 
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
 
@@ -70,17 +68,12 @@ class JSONRPCClient(BaseTransportClient):
         base_timeout = float(os.getenv("TCK_STREAMING_TIMEOUT", "30.0"))
         self.streaming_timeout = base_timeout * 2  # Double the base timeout for streaming
 
-        # Configure session with retry strategy for reliable network communication
-        self.session = requests.Session()
-        retry_strategy = Retry(
-            total=max_retries,
-            status_forcelist=[429, 500, 502, 503, 504],
-            backoff_factor=1,
-            allowed_methods=["HEAD", "GET", "POST"],
+        # Configure httpx client with retry strategy for reliable network communication
+        transport = httpx.HTTPTransport(retries=max_retries)
+        self.client = httpx.Client(
+            timeout=timeout,
+            transport=transport
         )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
 
         self._logger.info(f"JSON-RPC client initialized for {base_url} (streaming timeout: {self.streaming_timeout}s)")
 
@@ -124,12 +117,16 @@ class JSONRPCClient(BaseTransportClient):
 
         try:
             # Make actual HTTP request to live SUT
-            response = self.session.post(self.base_url, json=jsonrpc_request, headers=headers, timeout=self.timeout)
+            response = self.client.post(self.base_url, json=jsonrpc_request, headers=headers)
 
             self._logger.info(f"SUT responded with {response.status_code}: {response.text}")
             response.raise_for_status()
 
-        except requests.RequestException as e:
+        except httpx.HTTPStatusError as e:
+            error_msg = f"HTTP status error communicating with SUT at {self.base_url}: {e.response.status_code} {e.response.text}"
+            self._logger.error(error_msg)
+            raise JSONRPCError(error_msg, original_error=e)
+        except httpx.RequestError as e:
             error_msg = f"HTTP error communicating with SUT at {self.base_url}: {e}"
             self._logger.error(error_msg)
             raise JSONRPCError(error_msg, original_error=e)
@@ -188,64 +185,68 @@ class JSONRPCClient(BaseTransportClient):
         self._logger.info(f"Sending streaming JSON-RPC request to {self.base_url}: {jsonrpc_request}")
 
         try:
-            # Use requests.Session for streaming with stream=True
-            response = self.session.post(
-                self.base_url, 
-                json=jsonrpc_request, 
-                headers=headers, 
-                timeout=self.streaming_timeout,
-                stream=True
-            )
-            
-            self._logger.info(f"SUT responded with {response.status_code}, content-type: {response.headers.get('content-type')}")
-            
-            # Validate response status
-            response.raise_for_status()
-            
-            # Validate content type for SSE
-            content_type = response.headers.get("content-type", "")
-            if not content_type.startswith("text/event-stream"):
-                raise JSONRPCError(f"Expected text/event-stream content type for streaming, got: {content_type}")
-
-            # Parse Server-Sent Events stream
-            for line in response.iter_lines(decode_unicode=True):
-                if line is None:
-                    continue
+            # Use httpx.AsyncClient for streaming
+            async with httpx.AsyncClient(timeout=self.streaming_timeout) as async_client:
+                async with async_client.stream(
+                    "POST",
+                    self.base_url,
+                    json=jsonrpc_request,
+                    headers=headers
+                ) as response:
                     
-                line = line.strip()
-                
-                if not line:
-                    continue
+                    self._logger.info(f"SUT responded with {response.status_code}, content-type: {response.headers.get('content-type')}")
                     
-                # Parse SSE format: "data: {json}"
-                if line.startswith("data: "):
-                    try:
-                        data_str = line[6:]  # Remove "data: " prefix
-                        if data_str == "[DONE]":
-                            break
-                        self._logger.info(f"******** Received SSE data: {data_str}")
-                        event_data = json.loads(data_str)
-                        # Check for JSON-RPC error in the event
-                        if "error" in event_data:
-                            error_msg = f"JSON-RPC error from streaming SUT: {event_data['error']}"
-                            self._logger.error(error_msg)
-                            raise JSONRPCError(error_msg, json_rpc_error=event_data["error"])
-                        
-                        yield event_data
-                        
-                    except json.JSONDecodeError as e:
-                        self._logger.warning(f"Failed to parse SSE data: {data_str}, error: {e}")
-                        continue
-                        
-                # Handle other SSE events (id, event, retry)
-                elif line.startswith("event: "):
-                    event_type = line[7:]
-                    self._logger.debug(f"Received SSE event type: {event_type}")
-                elif line.startswith("id: "):
-                    event_id = line[4:]
-                    self._logger.debug(f"Received SSE event ID: {event_id}")
+                    # Validate response status
+                    response.raise_for_status()
+                    
+                    # Validate content type for SSE
+                    content_type = response.headers.get("content-type", "")
+                    if not content_type.startswith("text/event-stream"):
+                        raise JSONRPCError(f"Expected text/event-stream content type for streaming, got: {content_type}")
 
-        except requests.RequestException as e:
+                    # Parse Server-Sent Events stream
+                    async for line in response.aiter_lines():
+                        if line is None:
+                            continue
+                            
+                        line = line.strip()
+                        
+                        if not line:
+                            continue
+                            
+                        # Parse SSE format: "data: {json}"
+                        if line.startswith("data: "):
+                            try:
+                                data_str = line[6:]  # Remove "data: " prefix
+                                if data_str == "[DONE]":
+                                    break
+                                self._logger.info(f"******** Received SSE data: {data_str}")
+                                event_data = json.loads(data_str)
+                                # Check for JSON-RPC error in the event
+                                if "error" in event_data:
+                                    error_msg = f"JSON-RPC error from streaming SUT: {event_data['error']}"
+                                    self._logger.error(error_msg)
+                                    raise JSONRPCError(error_msg, json_rpc_error=event_data["error"])
+                                
+                                yield event_data
+                                
+                            except json.JSONDecodeError as e:
+                                self._logger.warning(f"Failed to parse SSE data: {data_str}, error: {e}")
+                                continue
+                                
+                        # Handle other SSE events (id, event, retry)
+                        elif line.startswith("event: "):
+                            event_type = line[7:]
+                            self._logger.debug(f"Received SSE event type: {event_type}")
+                        elif line.startswith("id: "):
+                            event_id = line[4:]
+                            self._logger.debug(f"Received SSE event ID: {event_id}")
+
+        except httpx.HTTPStatusError as e:
+            error_msg = f"HTTP status error communicating with SUT at {self.base_url}: {e.response.status_code} {e.response.text}"
+            self._logger.error(error_msg)
+            raise JSONRPCError(error_msg, original_error=e)
+        except httpx.RequestError as e:
             error_msg = f"HTTP error communicating with SUT at {self.base_url}: {e}"
             self._logger.error(error_msg)
             raise JSONRPCError(error_msg, original_error=e)
@@ -647,10 +648,10 @@ class JSONRPCClient(BaseTransportClient):
         self._logger.info(f"Sending raw data to {self.base_url}: {raw_data}")
 
         try:
-            response = self.session.post(self.base_url, data=raw_data, headers=headers, timeout=self.timeout)
+            response = self.client.post(self.base_url, content=raw_data, headers=headers)
             self._logger.info(f"SUT responded with {response.status_code}: {response.text}")
             return response.status_code, response.text
-        except requests.exceptions.RequestException as e:
+        except httpx.RequestError as e:
             self._logger.error(f"HTTP request failed: {e}")
             raise
 
@@ -671,11 +672,14 @@ class JSONRPCClient(BaseTransportClient):
         self._logger.info(f"Sending raw JSON-RPC request to {self.base_url}: {json_request}")
 
         try:
-            response = self.session.post(self.base_url, json=json_request, headers=headers, timeout=self.timeout)
+            response = self.client.post(self.base_url, json=json_request, headers=headers)
             self._logger.info(f"SUT responded with {response.status_code}: {response.text}")
             response.raise_for_status()
             return cast(Dict[str, Any], response.json())
-        except requests.RequestException as e:
+        except httpx.HTTPStatusError as e:
+            self._logger.error(f"HTTP status error communicating with SUT: {e.response.status_code} {e.response.text}")
+            raise
+        except httpx.RequestError as e:
             self._logger.error(f"HTTP error communicating with SUT: {e}")
             raise
         except ValueError as e:
@@ -683,9 +687,9 @@ class JSONRPCClient(BaseTransportClient):
             raise
 
     def close(self):
-        """Close the HTTP session."""
-        if hasattr(self, "session"):
-            self.session.close()
+        """Close the HTTP client."""
+        if hasattr(self, "client"):
+            self.client.close()
 
     def __enter__(self):
         return self
