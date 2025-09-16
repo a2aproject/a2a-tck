@@ -1,13 +1,9 @@
 import asyncio
-import json
 import logging
 import os
-from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, List, Optional
 import uuid
 
 import pytest
-import pytest_asyncio
 
 from tck import agent_card_utils, config, message_utils
 from tests.markers import optional_capability
@@ -15,8 +11,6 @@ from tests.capability_validator import CapabilityValidator, skip_if_capability_n
 from tests.utils.transport_helpers import (
     transport_send_streaming_message,
     transport_resubscribe_task,
-    transport_send_message,
-    extract_task_id_from_response,
     generate_test_message_id,
 )
 
@@ -334,8 +328,9 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
 
         # Wait for both tasks to complete with timeout
         try:
-            await asyncio.wait_for(asyncio.gather(initial_stream_task, resubscribe_task, return_exceptions=True), 
-                                 timeout=TIMEOUTS["async_wait_for"] * 2)
+            await asyncio.wait_for(
+                asyncio.gather(initial_stream_task, resubscribe_task, return_exceptions=True),
+                timeout=TIMEOUTS["async_wait_for"] * 2)
         except asyncio.TimeoutError:
             logger.warning("Timeout while waiting for stream processing and resubscribe")
             # Cancel tasks if they're still running
