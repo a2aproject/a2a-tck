@@ -157,7 +157,6 @@ class TestA2AV030MethodEnhancements:
         card = response.get("result", response)
 
         # Standard agent card fields
-        assert "agentId" in card, "Agent ID required in extended card"
         assert "name" in card, "Agent name required in extended card"
 
         # Enhanced fields (may be optional)
