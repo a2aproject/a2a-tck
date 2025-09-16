@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, List, Optional
 import uuid
 
@@ -36,7 +37,6 @@ TIMEOUTS = {
     "sse_client_normal": BASE_TIMEOUT * 1.0,  # 2.0s default (for normal streaming)
     "async_wait_for": BASE_TIMEOUT * 1.0,  # 2.0s default (for asyncio.wait_for)
 }
-
 
 # SimpleSSEClient class removed - now using transport-agnostic streaming
 
@@ -230,47 +230,128 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
     if not validator.is_capability_declared("streaming"):
         pytest.skip("Streaming capability not declared - test not applicable")
 
-    # First, create a task via message/stream to get a task ID
-    message_params = {
-        "message": {
-            "kind": "message",
-            "messageId": generate_test_message_id("resubscribe"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Test message for resubscribe"}],
-        }
-    }
-    task_id = None  # Initialize task_id
+    # Synchronization events
+    task_id_received = asyncio.Event()
 
+    task_id = None
+    resubscribe_events = []
+    stream_error = None
+    resubscribe_error = None
+    
     try:
+        # First, create a task via message/stream to get a task ID
+        message_params = {
+            "message": {
+                "kind": "message",
+                "messageId": "test-resubscribe-message-id-" + str(uuid.uuid4()),
+                "role": "user",
+                "parts": [{"kind": "text", "text": "Test message for resubscribe"}],
+            }
+        }
+
         # Use transport-agnostic streaming message sending
         stream = transport_send_streaming_message(sut_client, message_params)
-        
-        # Collect events to get task ID
-        try:
-            event_count = 0
-            async for event in stream:
-                event_count += 1
-                logger.info(f"Processing streaming event #{event_count}: {event}")
 
-                # Look for task ID in the event
-                if isinstance(event, dict):
-                    if "id" in event and "status" in event:
-                        # This looks like a Task object
-                        task_id = event["id"]
-                        logger.info(f"Captured task ID from stream: {task_id}")
+        # Background task to process the initial stream
+        async def process_initial_stream():
+            nonlocal task_id, stream_error
+            try:
+                event_count = 0
+                async for event in stream:
+                    event_count += 1
+                    logger.info(f"Processing streaming event #{event_count}: {event}")
+
+                    # Look for task ID in the event
+                    if isinstance(event, dict):
+                        if "id" in event and "status" in event:
+                            # This looks like a Task object
+                            task_id = event["id"]
+                            logger.info(f"Captured task ID from stream: {task_id}")
+                            # Signal that task ID is available. This means that the event queue is open
+                            task_id_received.set()
+
+                    # Safety break to prevent infinite loops
+                    if event_count >= 10:
+                        logger.warning("Hit event count limit while getting task ID")
                         break
 
-                # Safety break to prevent infinite loops
-                if event_count >= 10:
-                    logger.warning("Hit event count limit while getting task ID")
-                    break
+                    # Continue processing events even after getting task ID
+                    # to keep the stream alive for resubscribe testing
 
-                # Break after getting first event with task ID
-                if task_id:
-                    break
-                    
+            except Exception as e:
+                stream_error = e
+                logger.error(f"Error in initial stream processing: {e}")
+                task_id_received.set()  # Signal completion even on error
+
+        # Background task to handle resubscription once task ID is available
+        async def process_resubscribe():
+            nonlocal resubscribe_events, resubscribe_error
+            try:
+                # Wait for task ID to be available
+                await task_id_received.wait()
+                
+                if task_id is None:
+                    logger.warning("No task ID available for resubscribe")
+                    return
+
+                logger.info(f"Starting resubscribe for task ID: {task_id}")
+                
+                # Use transport-agnostic task resubscription
+                resubscribe_stream = transport_resubscribe_task(sut_client, task_id)
+
+                event_count = 0
+                async for event in resubscribe_stream:
+                    event_count += 1
+                    logger.info(f"Processing resubscribe event #{event_count}: {event}")
+                    resubscribe_events.append(event)
+
+                    # Safety break to prevent infinite loops
+                    if event_count >= 10:
+                        logger.warning("Hit event count limit in resubscribe test, breaking")
+                        break
+
+                    # Validate this is a proper A2A object
+                    assert isinstance(event, dict), "Resubscribe events must be objects"
+
+                    # Check if this is a terminal event
+                    if "status" in event and isinstance(event["status"], dict):
+                        state = event["status"].get("state")
+                        if state in ["completed", "failed", "canceled"]:
+                            logger.info("Detected terminal event in resubscribe, ending stream processing.")
+                            break
+
+                    # Collect a few events then break
+                    if len(resubscribe_events) >= 3:
+                        break
+                        
+            except Exception as e:
+                resubscribe_error = e
+                logger.error(f"Error in resubscribe processing: {e}")
+
+        # Start both background tasks
+        initial_stream_task = asyncio.create_task(process_initial_stream())
+        resubscribe_task = asyncio.create_task(process_resubscribe())
+
+        # Wait for both tasks to complete with timeout
+        try:
+            await asyncio.wait_for(asyncio.gather(initial_stream_task, resubscribe_task, return_exceptions=True), 
+                                 timeout=TIMEOUTS["async_wait_for"] * 2)
         except asyncio.TimeoutError:
-            logger.warning("Timeout while getting task ID from initial stream")
+            logger.warning("Timeout while waiting for stream processing and resubscribe")
+            # Cancel tasks if they're still running
+            initial_stream_task.cancel()
+            resubscribe_task.cancel()
+            
+        # Check for errors from the background tasks
+        if stream_error:
+            error_msg = str(stream_error).lower()
+            if "501" in error_msg or "not implemented" in error_msg:
+                pytest.fail(
+                    "Streaming capability declared in Agent Card but SUT returned error indicating not implemented. "
+                    "This is a specification violation - declared capabilities MUST be implemented."
+                )
+            else:
+                raise stream_error
 
     except Exception as e:
         error_msg = str(e).lower()
@@ -282,49 +363,13 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
         else:
             raise
 
-    # Now try to resubscribe to this task
+    # Now validate the resubscribe results
     if task_id is None:
         pytest.skip("Could not capture task ID from initial stream - cannot test resubscribe")
 
-    try:
-        # Use transport-agnostic task resubscription
-        resubscribe_stream = transport_resubscribe_task(sut_client, task_id)
-        events = []
-
-        try:
-            event_count = 0
-            async for event in resubscribe_stream:
-                event_count += 1
-                logger.info(f"Processing resubscribe event #{event_count}: {event}")
-                events.append(event)
-
-                # Safety break to prevent infinite loops
-                if event_count >= 10:
-                    logger.warning("Hit event count limit in resubscribe test, breaking")
-                    break
-
-                # Validate this is a proper A2A object
-                assert isinstance(event, dict), "Resubscribe events must be objects"
-
-                # Check if this is a terminal event
-                if "status" in event and isinstance(event["status"], dict):
-                    state = event["status"].get("state")
-                    if state in ["completed", "failed", "canceled"]:
-                        logger.info("Detected terminal event in resubscribe, ending stream processing.")
-                        break
-
-                # Collect a few events then break
-                if len(events) >= 3:
-                    break
-                    
-        except asyncio.TimeoutError:
-            logger.warning("Timeout while processing resubscribe stream")
-
-        # Validate that we got at least some events
-        assert len(events) > 0, "Streaming capability declared but no events received from resubscribe stream"
-
-    except Exception as e:
-        error_msg = str(e).lower()
+    # Check for resubscribe errors
+    if resubscribe_error:
+        error_msg = str(resubscribe_error).lower()
         if "501" in error_msg or "not implemented" in error_msg:
             pytest.fail(
                 "Streaming capability declared but tasks/resubscribe returned error indicating not implemented. "
@@ -333,7 +378,10 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
         elif "not found" in error_msg or "404" in error_msg:
             pytest.skip("Task expired before resubscribe test - this is implementation-dependent behavior")
         else:
-            raise
+            raise resubscribe_error
+
+    # Validate that we got at least some events from resubscribe
+    assert len(resubscribe_events) > 0, "Streaming capability declared but no events received from resubscribe stream"
 
 
 @optional_capability
