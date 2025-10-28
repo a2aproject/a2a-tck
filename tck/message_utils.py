@@ -65,7 +65,7 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
     {
         "message_id": "...",
         "role": "ROLE_USER",
-        "content": [{"text": "..."}]
+        "parts": [{"text": "..."}]
     }
     """
     protobuf_message = {}
@@ -90,9 +90,9 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
         }
         protobuf_message["role"] = role_map.get(message["role"], "ROLE_UNSPECIFIED")
 
-    # Map parts -> content (and convert part format)
+    # Map parts -> parts (and convert part format)
     if "parts" in message:
-        protobuf_message["content"] = []
+        protobuf_message["parts"] = []
         for part in message["parts"]:
             protobuf_part = {}
             if part.get("kind") == "text":
@@ -118,7 +118,7 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
             if "metadata" in part:
                 protobuf_part["metadata"] = part["metadata"]
 
-            protobuf_message["content"].append(protobuf_part)
+            protobuf_message["parts"].append(protobuf_part)
 
     # Map metadata if present
     if "metadata" in message:
@@ -140,7 +140,7 @@ def convert_protobuf_response_to_a2a_json(response: Dict[str, Any]) -> Dict[str,
             "id": "...",
             "context_id": "...",
             "status": {...},
-            "history": [{"message_id": "...", "role": "ROLE_USER", "content": [...]}]
+            "history": [{"message_id": "...", "role": "ROLE_USER", "parts": [...]}]
         }
     }
 
@@ -247,10 +247,10 @@ def convert_protobuf_message_to_a2a(message: Dict[str, Any]) -> Dict[str, Any]:
         }
         a2a_message["role"] = role_map.get(message["role"], "user")
 
-    # Convert content -> parts
-    if "content" in message:
+    # Convert parts -> parts
+    if "parts" in message:
         a2a_message["parts"] = []
-        for part in message["content"]:
+        for part in message["parts"]:
             a2a_part = {}
             if "text" in part:
                 a2a_part["kind"] = "text"

@@ -414,7 +414,7 @@ class GRPCClient(BaseTransportClient):
             pb = self._pb
             # Build parts - handle different part types appropriately
             parts = []
-            for p in message.get("parts", []) or message.get("content", []):
+            for p in message.get("parts", []):
                 if p.get("kind") == "text":
                     parts.append(pb.Part(text=p.get("text", "")))
                 elif p.get("kind") == "data" and "data" in p:
@@ -451,7 +451,7 @@ class GRPCClient(BaseTransportClient):
                 context_id=ctx_id,
                 task_id=message.get("taskId", ""),
                 role=pb_role,
-                content=parts,
+                parts=parts,
             )
             config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=True)
             request = pb.SendMessageRequest(request=pb_msg, configuration=config)
@@ -477,7 +477,7 @@ class GRPCClient(BaseTransportClient):
                     "kind": "message",
                     "role": "agent",
                     "messageId": m.message_id,
-                    "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
+                    "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
                 }
                 # Note: Message validation would need to be implemented for message responses
                 return result
@@ -560,7 +560,7 @@ class GRPCClient(BaseTransportClient):
                                 "kind": "message",
                                 "role": "agent",
                                 "messageId": m.message_id,
-                                "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
+                                "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
                             }
                         }
 
@@ -621,7 +621,7 @@ class GRPCClient(BaseTransportClient):
                 result["history"] = [
                     {
                         "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
-                        "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
+                        "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
                         "messageId": m.message_id,
                         "taskId": resp.id,
                         "contextId": resp.context_id,
@@ -1192,7 +1192,7 @@ class GRPCClient(BaseTransportClient):
 
         # Build parts - handle different part types appropriately
         parts = []
-        for p in message.get("parts", []) or message.get("content", []):
+        for p in message.get("parts", []):
             if p.get("kind") == "text":
                 parts.append(pb.Part(text=p.get("text", "")))
             elif p.get("kind") == "data" and "data" in p:
@@ -1234,7 +1234,7 @@ class GRPCClient(BaseTransportClient):
             context_id=ctx_id,
             task_id=message.get("taskId", ""),
             role=pb_role,
-            content=parts,
+            parts=parts,
         )
         
         # Create configuration from kwargs
