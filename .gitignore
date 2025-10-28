@@ -196,3 +196,4 @@ spec_tracker/cache
 # Reports
 reports/*.json
 
+.DS_Store
