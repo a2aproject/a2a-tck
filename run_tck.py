@@ -44,6 +44,7 @@ It explains the differences between test types and helps you choose what to run.
 Usage:
     ./run_tck.py --sut-url http://localhost:9999 --category mandatory
     ./run_tck.py --sut-url http://localhost:9999 --category all
+    ./run_tck.py --sut-url http://localhost:9999 --category all --quality-required --features-required
     ./run_tck.py --sut-url http://localhost:9999 --explain
 """
 
@@ -703,6 +704,9 @@ Examples:
   ./run_tck.py --sut-url http://localhost:9999 --category all --transport-strategy prefer_grpc
   ./run_tck.py --sut-url http://localhost:9999 --category all --transports "jsonrpc,grpc"
 
+  # Strict mode - fail CI on quality/features failures (useful for internal projects)
+  ./run_tck.py --sut-url http://localhost:9999 --category all --quality-required --features-required
+
 Categories:
   mandatory             - Core A2A compliance (MUST pass)
   capabilities          - Declared capability validation (conditional mandatory)
@@ -755,6 +759,18 @@ Categories:
         help="Enable transport equivalence testing for multi-transport SUTs (default: enabled)",
     )
 
+    parser.add_argument(
+        "--quality-required",
+        action="store_true",
+        help="Treat quality tests as required (fail CI on quality failures). Can also set A2A_TCK_FAIL_ON_QUALITY=1",
+    )
+
+    parser.add_argument(
+        "--features-required",
+        action="store_true",
+        help="Treat feature tests as required (fail CI on feature failures). Can also set A2A_TCK_FAIL_ON_FEATURES=1",
+    )
+
     args = parser.parse_args()
 
     if args.explain:
@@ -794,18 +810,38 @@ Categories:
             args.enable_equivalence_testing,
             args.transports,
         )
-        # Exit with failure if mandatory or capabilities failed
+        # Exit with failure if mandatory, capabilities, or transport-equivalence failed
         # Handle both single-transport keys ("mandatory") and multi-transport keys ("mandatory:jsonrpc")
-        mandatory_failures = 0
-        capabilities_failures = 0
+        # Transport-equivalence is conditional mandatory (if multiple transports declared)
+        # Quality and features can be made required via CLI flags or environment variables
 
+        # Determine which categories are critical (fail CI on failure)
+        critical_categories = ["mandatory", "capabilities", "transport-equivalence"]
+
+        # Check CLI flags and environment variables for quality/features
+        quality_required = (
+            args.quality_required or
+            os.getenv("A2A_TCK_FAIL_ON_QUALITY", "").lower() in ["1", "true", "yes"]
+        )
+        features_required = (
+            args.features_required or
+            os.getenv("A2A_TCK_FAIL_ON_FEATURES", "").lower() in ["1", "true", "yes"]
+        )
+
+        if quality_required:
+            critical_categories.append("quality")
+        if features_required:
+            critical_categories.append("features")
+
+        critical_failures = 0
         for key, exit_code in results.items():
-            if key == "mandatory" or key.startswith("mandatory:"):
-                mandatory_failures += exit_code
-            elif key == "capabilities" or key.startswith("capabilities:"):
-                capabilities_failures += exit_code
+            # Check if this result key matches any critical category
+            for category in critical_categories:
+                if key == category or key.startswith(f"{category}:"):
+                    critical_failures += exit_code
+                    break
 
-        if mandatory_failures != 0 or capabilities_failures != 0:
+        if critical_failures != 0:
             sys.exit(1)
     else:
         # If multiple transports provided and category is single-client, fan out per transport
