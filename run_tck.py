@@ -60,6 +60,9 @@ from dotenv import load_dotenv
 # Define the directory for all generated reports
 REPORTS_DIR = Path("reports")
 
+# Truthy values for environment variable checking
+TRUTHY_ENV_VALUES = {"1", "true", "yes"}
+
 
 def load_env_file():
     """Load environment variables from .env file if it exists."""
@@ -821,11 +824,11 @@ Categories:
         # Check CLI flags and environment variables for quality/features
         quality_required = (
             args.quality_required or
-            os.getenv("A2A_TCK_FAIL_ON_QUALITY", "").lower() in ["1", "true", "yes"]
+            os.getenv("A2A_TCK_FAIL_ON_QUALITY", "").lower() in TRUTHY_ENV_VALUES
         )
         features_required = (
             args.features_required or
-            os.getenv("A2A_TCK_FAIL_ON_FEATURES", "").lower() in ["1", "true", "yes"]
+            os.getenv("A2A_TCK_FAIL_ON_FEATURES", "").lower() in TRUTHY_ENV_VALUES
         )
 
         if quality_required:
@@ -833,13 +836,13 @@ Categories:
         if features_required:
             critical_categories.append("features")
 
-        critical_failures = 0
-        for key, exit_code in results.items():
-            # Check if this result key matches any critical category
-            for category in critical_categories:
-                if key == category or key.startswith(f"{category}:"):
-                    critical_failures += exit_code
-                    break
+        # Calculate critical failures using set for efficient lookup
+        critical_categories_set = set(critical_categories)
+        critical_failures = sum(
+            exit_code
+            for key, exit_code in results.items()
+            if key.split(":", 1)[0] in critical_categories_set
+        )
 
         if critical_failures != 0:
             sys.exit(1)
