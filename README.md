@@ -237,9 +237,42 @@ You can then proceed to run the TCK tests against your SUT.
 # Generate HTML report (additional)
 ./run_tck.py --sut-url URL --category all --report
 
-# Skip Agent Card fetching (for non-standard implementations)  
+# Skip Agent Card fetching (for non-standard implementations)
 ./run_tck.py --sut-url URL --category mandatory --skip-agent-card
+
+# Strict mode - fail CI on quality/features failures (useful for internal projects)
+./run_tck.py --sut-url URL --category all --quality-required --features-required
 ```
+
+### **Strict Mode for Internal Projects**
+
+By default, only `mandatory`, `capabilities`, and `transport-equivalence` tests will fail CI. The `quality` and `features` test categories are informational and won't cause CI failures even if they fail.
+
+For internal projects with higher quality bars, you can make these categories required:
+
+```bash
+# Fail CI if quality tests fail
+./run_tck.py --sut-url URL --category all --quality-required
+
+# Fail CI if feature tests fail
+./run_tck.py --sut-url URL --category all --features-required
+
+# Full strict mode (all categories required)
+./run_tck.py --sut-url URL --category all --quality-required --features-required
+```
+
+**Environment Variable Alternative**:
+```bash
+# Set environment variables for CI
+export A2A_TCK_FAIL_ON_QUALITY=1
+export A2A_TCK_FAIL_ON_FEATURES=1
+./run_tck.py --sut-url URL --category all
+```
+
+**Use Cases**:
+- **Internal SDKs**: Maintain high quality standards
+- **Reference Implementations**: Demonstrate best practices
+- **Enterprise Projects**: Ensure production excellence
 
 ### **A2A v0.3.0 Multi-Transport Testing**
 
@@ -347,6 +380,8 @@ nano .env  # or your preferred editor
 | Variable | Description | Default | Examples |
 |----------|-------------|---------|----------|
 | `TCK_STREAMING_TIMEOUT` | Base timeout for SSE streaming tests (seconds) | `2.0` | `1.0` (fast), `5.0` (slow), `10.0` (debug) |
+| `A2A_TCK_FAIL_ON_QUALITY` | Treat quality tests as required (fail CI on failure) | `false` | `1`, `true`, `yes` |
+| `A2A_TCK_FAIL_ON_FEATURES` | Treat feature tests as required (fail CI on failure) | `false` | `1`, `true`, `yes` |
 
 ### **A2A v0.3.0 Transport Environment Variables**
 
@@ -392,6 +427,16 @@ A2A_TRANSPORT_STRATEGY=all_supported
 A2A_ENABLE_EQUIVALENCE_TESTING=true
 A2A_GRPC_TIMEOUT=30
 A2A_JSONRPC_TIMEOUT=15
+EOF
+./run_tck.py --sut-url URL --category all
+
+# Strict mode for internal projects (via environment variables)
+A2A_TCK_FAIL_ON_QUALITY=1 A2A_TCK_FAIL_ON_FEATURES=1 ./run_tck.py --sut-url URL --category all
+
+# Or configure in .env file for CI
+cat > .env << EOF
+A2A_TCK_FAIL_ON_QUALITY=true
+A2A_TCK_FAIL_ON_FEATURES=true
 EOF
 ./run_tck.py --sut-url URL --category all
 ```
@@ -577,6 +622,36 @@ case $COMPLIANCE_LEVEL in
         echo "🏆 Full compliance - production approved"
         ;;
 esac
+```
+
+### **Strict CI Pipeline for Internal Projects**
+
+For internal projects like SDKs or reference implementations, use strict mode to enforce higher quality standards:
+
+```bash
+#!/bin/bash
+set -e  # Exit immediately if any command fails
+
+# Strict mode - all test categories must pass
+export A2A_TCK_FAIL_ON_QUALITY=1
+export A2A_TCK_FAIL_ON_FEATURES=1
+
+echo "Running TCK tests in strict mode..."
+./run_tck.py --sut-url $SUT_URL --category all --compliance-report compliance.json
+
+echo "✅ All TCK tests passed - production deployment approved"
+```
+
+Or using CLI flags:
+```bash
+#!/bin/bash
+set -e  # Exit immediately if any command fails
+
+echo "Running TCK tests in strict mode..."
+./run_tck.py --sut-url $SUT_URL --category all --compliance-report compliance.json --quality-required --features-required
+
+echo "✅ All TCK tests passed - production deployment approved"
+
 ```
 
 ## 🛠️ Troubleshooting
