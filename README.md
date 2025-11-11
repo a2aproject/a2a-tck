@@ -637,31 +637,21 @@ export A2A_TCK_FAIL_ON_QUALITY=1
 export A2A_TCK_FAIL_ON_FEATURES=1
 
 echo "Running TCK tests in strict mode..."
-./run_tck.py --sut-url $SUT_URL --category all
+./run_tck.py --sut-url $SUT_URL --category all --compliance-report compliance.json
 
 echo "✅ All TCK tests passed - production deployment approved"
 ```
 
-**Or using CLI flags in GitHub Actions**:
-```yaml
-name: A2A TCK Tests
+Or using CLI flags:
+```bash
+#!/bin/bash
+set -e  # Exit immediately if any command fails
 
-on: [push, pull_request]
+echo "Running TCK tests in strict mode..."
+./run_tck.py --sut-url $SUT_URL --category all --compliance-report compliance.json --quality-required --features-required
 
-jobs:
-  tck:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Start SUT
-        run: ./start_sut.sh
+echo "✅ All TCK tests passed - production deployment approved"
 
-      - name: Run TCK (Strict Mode)
-        run: |
-          cd ../a2a-tck
-          ./run_tck.py --sut-url http://localhost:9999 \
-            --category all \
-            --quality-required \
-            --features-required
 ```
 
 ## 🛠️ Troubleshooting
