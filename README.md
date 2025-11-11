@@ -630,16 +630,14 @@ For internal projects like SDKs or reference implementations, use strict mode to
 
 ```bash
 #!/bin/bash
+set -e  # Exit immediately if any command fails
+
 # Strict mode - all test categories must pass
 export A2A_TCK_FAIL_ON_QUALITY=1
 export A2A_TCK_FAIL_ON_FEATURES=1
 
+echo "Running TCK tests in strict mode..."
 ./run_tck.py --sut-url $SUT_URL --category all
-
-if [ $? -ne 0 ]; then
-    echo "❌ TCK tests failed - quality or features not meeting standards"
-    exit 1
-fi
 
 echo "✅ All TCK tests passed - production deployment approved"
 ```

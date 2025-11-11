@@ -821,20 +821,14 @@ Categories:
         # Determine which categories are critical (fail CI on failure)
         critical_categories = ["mandatory", "capabilities", "transport-equivalence"]
 
-        # Check CLI flags and environment variables for quality/features
-        quality_required = (
-            args.quality_required or
-            os.getenv("A2A_TCK_FAIL_ON_QUALITY", "").lower() in TRUTHY_ENV_VALUES
-        )
-        features_required = (
-            args.features_required or
-            os.getenv("A2A_TCK_FAIL_ON_FEATURES", "").lower() in TRUTHY_ENV_VALUES
-        )
-
-        if quality_required:
-            critical_categories.append("quality")
-        if features_required:
-            critical_categories.append("features")
+        # Check optional categories (quality/features) via CLI flags or environment variables
+        optional_categories_to_check = {
+            "quality": (args.quality_required, "A2A_TCK_FAIL_ON_QUALITY"),
+            "features": (args.features_required, "A2A_TCK_FAIL_ON_FEATURES"),
+        }
+        for category, (flag, env_var) in optional_categories_to_check.items():
+            if flag or os.getenv(env_var, "").lower() in TRUTHY_ENV_VALUES:
+                critical_categories.append(category)
 
         # Calculate critical failures using set for efficient lookup
         critical_categories_set = set(critical_categories)
