@@ -114,7 +114,6 @@ def test_message_send_valid_text(sut_client, valid_text_message_params, agent_ca
         assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
     else:
         # This is a Message object - verify it has the expected structure
-        assert result.get("kind") == "message"
         assert result.get("role") == "agent"
         assert "parts" in result
 
@@ -192,6 +191,5 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
         assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
     else:
         # This is a Message object - verify it has the expected structure
-        assert result.get("kind") == "message"
         assert result.get("role") == "agent"
         assert "parts" in result

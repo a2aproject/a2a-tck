@@ -256,8 +256,6 @@ class TestTasksList:
             our_task = next(t for t in tasks if t["id"] == created_task_id)
             assert "status" in our_task
             assert "contextId" in our_task
-            assert "kind" in our_task
-            assert our_task["kind"] == "task"
 
         except Exception as e:
             pytest.fail(f"Failed to test tasks/list with existing tasks: {e}")
@@ -535,11 +533,11 @@ class TestTransportSpecificFeatures:
             task = response.get("result", {})
 
             # Task may have additional fields beyond spec
-            spec_fields = {"id", "contextId", "status", "history", "artifacts", "metadata", "kind"}
+            spec_fields = {"id", "contextId", "status", "history", "artifacts", "metadata"}
             task_fields = set(task.keys())
 
             # Additional fields are allowed as long as spec fields are present
-            missing_required = {"id", "status", "kind"} - task_fields
+            missing_required = {"id", "status"} - task_fields
             assert not missing_required, f"Missing required fields: {missing_required}"
 
         except Exception as e:

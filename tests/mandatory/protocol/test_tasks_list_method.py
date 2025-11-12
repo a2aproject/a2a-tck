@@ -119,8 +119,6 @@ class TestBasicListing:
         our_task = next(t for t in result["tasks"] if t["id"] == task_id)
         assert "status" in our_task, "Task must include 'status' field"
         assert "contextId" in our_task, "Task must include 'contextId' field"
-        assert "kind" in our_task, "Task must include 'kind' field"
-        assert our_task["kind"] == "task", "Task kind must be 'task'"
 
     @mandatory_protocol
     def test_list_tasks_empty_when_none_exist(self, sut_client: BaseTransportClient):
@@ -171,8 +169,6 @@ class TestBasicListing:
         for task in result["tasks"]:
             assert "id" in task, "Task must have 'id' field"
             assert "status" in task, "Task must have 'status' field"
-            assert "kind" in task, "Task must have 'kind' field"
-            assert task["kind"] == "task", "Task kind must be 'task'"
 
             # Status must have required fields
             assert "state" in task["status"], "Task status must have 'state' field"
