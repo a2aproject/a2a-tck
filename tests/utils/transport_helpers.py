@@ -635,3 +635,77 @@ def transport_resubscribe_task(
         return client.resubscribe_task(task_id, extra_headers)
     else:
         raise ValueError(f"Client {type(client)} does not support task resubscription")
+
+
+def transport_list_tasks(
+    client: BaseTransportClient,
+    context_id: Optional[str] = None,
+    status: Optional[str] = None,
+    page_size: Optional[int] = None,
+    page_token: Optional[str] = None,
+    history_length: Optional[int] = None,
+    last_updated_after: Optional[int] = None,
+    include_artifacts: Optional[bool] = None,
+    extra_headers: Optional[Dict[str, str]] = None,
+) -> Dict[str, Any]:
+    """
+    List tasks with optional filtering and pagination using any transport client.
+
+    Args:
+        client: Transport client (BaseTransportClient)
+        context_id: Optional context ID to filter by
+        status: Optional task status to filter by
+        page_size: Optional number of tasks per page (1-100, default 50)
+        page_token: Optional pagination cursor
+        history_length: Optional number of messages to include in task history
+        last_updated_after: Optional timestamp filter (Unix milliseconds)
+        include_artifacts: Optional flag to include artifacts (default false)
+        extra_headers: Optional transport-specific headers
+
+    Returns:
+        Response from the server in JSON-RPC format for compatibility
+
+    Raises:
+        ValueError: If client doesn't support task listing
+        TransportError: If task listing fails
+
+    Specification Reference: A2A v0.4.0 §7.4 - Task Listing
+    """
+    # Check if client is a BaseTransportClient with list_tasks method
+    if hasattr(client, "list_tasks") and hasattr(client, "transport_type"):
+        logger.debug(f"Using transport-aware list_tasks for {client.transport_type.value}")
+        try:
+            # Call client.list_tasks with camelCase parameter names matching A2A spec
+            result = client.list_tasks(
+                contextId=context_id,
+                status=status,
+                pageSize=page_size,
+                pageToken=page_token,
+                historyLength=history_length,
+                lastUpdatedAfter=last_updated_after,
+                includeArtifacts=include_artifacts,
+                extra_headers=extra_headers,
+            )
+
+            # For JSON-RPC client, result is already the full response
+            # For gRPC/REST clients, result is the data, so wrap it
+            if isinstance(result, dict) and ("result" in result or "error" in result):
+                # Already in JSON-RPC format (from JSONRPCClient)
+                return result
+            else:
+                # Wrap in JSON-RPC format for compatibility
+                return {"result": result}
+
+        except Exception as e:
+            # Convert transport exceptions to JSON-RPC error format
+            logger.debug(f"Transport error: {e}")
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, "a2a_error") and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
+                return {"error": e.json_rpc_error}
+            return {"error": {"code": -32603, "message": str(e)}}
+
+    else:
+        raise ValueError(f"Client {type(client)} does not support task listing")

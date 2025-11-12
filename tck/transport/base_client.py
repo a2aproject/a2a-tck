@@ -294,25 +294,45 @@ class BaseTransportClient(ABC):
         """
         pass
 
-    # Optional method for gRPC/REST only
-    def list_tasks(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    # Optional method - now available in all transports as of v0.4.0
+    def list_tasks(
+        self,
+        contextId: Optional[str] = None,
+        status: Optional[str] = None,
+        pageSize: Optional[int] = None,
+        pageToken: Optional[str] = None,
+        historyLength: Optional[int] = None,
+        lastUpdatedAfter: Optional[int] = None,
+        includeArtifacts: Optional[bool] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """
-        List tasks (available in gRPC and REST transports only).
+        List tasks with optional filtering and pagination.
 
-        This is an optional method that may not be available in all transport types.
-        JSON-RPC transport does not support this method.
+        As of A2A v0.4.0, this method is available in all transports (JSON-RPC, gRPC, REST).
 
         Args:
+            contextId: Optional context ID to filter by
+            status: Optional task status to filter by
+            pageSize: Optional number of tasks per page (1-100, default 50)
+            pageToken: Optional pagination cursor
+            historyLength: Optional number of messages to include in task history (default 0)
+            lastUpdatedAfter: Optional timestamp filter (Unix milliseconds)
+            includeArtifacts: Optional flag to include artifacts (default false)
             extra_headers: Optional transport-specific headers
 
         Returns:
-            List of tasks
+            Dict containing:
+                - tasks: List of Task objects
+                - totalSize: Total number of matching tasks
+                - pageSize: Number of tasks in this response
+                - nextPageToken: Token for next page (None if no more results)
 
         Raises:
             TransportError: If task listing fails or is not supported
             NotImplementedError: If the transport doesn't support this method
 
-        Specification Reference: A2A Protocol v0.3.0 §3.5.6 - Method Mapping Reference Table
+        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
         """
         raise NotImplementedError(f"list_tasks is not supported by {self.transport_type.value} transport")
 

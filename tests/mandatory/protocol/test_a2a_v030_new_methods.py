@@ -1,18 +1,20 @@
 """
-A2A v0.3.0 New Methods Testing
+A2A v0.3.0+ New Methods Testing
 
 Tests for new methods introduced in A2A v0.3.0 specification:
 - agent/getAuthenticatedExtendedCard (§7.10)
-- tasks/list (§7.3.1 - gRPC/REST only)
+- tasks/list (§7.4 - ALL transports as of v0.4.0)
 - Method mapping compliance across transports (§3.5.6)
 - Transport-specific features validation
 
-These tests validate that SUTs correctly implement the new v0.3.0 methods
+These tests validate that SUTs correctly implement the new methods
 with proper authentication, transport mapping, and functional compliance.
+
+Note: For comprehensive tasks/list testing, see test_tasks_list_method.py
 
 References:
 - A2A v0.3.0 Specification §7.10: agent/getAuthenticatedExtendedCard
-- A2A v0.3.0 Specification §7.3.1: tasks/list
+- A2A v0.4.0 Specification §7.4: tasks/list (all transports)
 - A2A v0.3.0 Specification §3.5.6: Method Mapping Reference Table
 - A2A v0.3.0 Specification §3.2: Transport Protocol Requirements
 """
@@ -211,37 +213,31 @@ class TestAuthenticatedExtendedCard:
 
 class TestTasksList:
     """
-    Test suite for tasks/list method (§7.3.1)
+    Test suite for tasks/list method (§7.4)
 
-    Note: tasks/list is only available in gRPC and REST transports.
-    JSON-RPC transport does not support this method.
+    Note: As of A2A v0.4.0, tasks/list is available in ALL transports including JSON-RPC.
+    For comprehensive testing, see test_tasks_list_method.py
     """
 
-    
+
     @optional_capability
     @a2a_v030
     def test_tasks_list_with_existing_tasks(self, sut_client: BaseTransportClient):
         """
         Test tasks/list returns existing tasks when tasks are present.
 
-        A2A v0.3.0 Specification Reference: §7.3.1 & §3.5.6
-        Transport Support: gRPC, REST only (not available on JSON-RPC)
+        A2A v0.4.0 Specification Reference: §7.4
+        Transport Support: All transports (JSON-RPC, gRPC, REST)
 
         Validates:
         - List includes previously created tasks
         - Task objects follow proper schema
         - List is properly formatted
 
-        TRANSPORT-DEPENDENT: This test is MANDATORY for gRPC/REST transports if declared
-        in the Agent Card, skipped for JSON-RPC (which doesn't support tasks/list).
+        Note: This is a basic smoke test. See test_tasks_list_method.py for comprehensive testing.
         """
-        transport_type = get_client_transport_type(sut_client)
-
-        if transport_type == "jsonrpc":
-            pytest.skip("tasks/list not supported on JSON-RPC transport")
-
         if not hasattr(sut_client, "list_tasks"):
-            pytest.skip(f"list_tasks method not implemented on {transport_type} client")
+            pytest.skip(f"list_tasks method not implemented on client")
 
         # Create a task first
         try:
