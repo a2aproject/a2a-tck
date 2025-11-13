@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast, Iterator, Asyn
 
 import httpx
 
+from tck import message_utils
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
 
 logger = logging.getLogger(__name__)
@@ -685,6 +686,59 @@ class JSONRPCClient(BaseTransportClient):
         except ValueError as e:
             self._logger.error(f"Failed to parse JSON response from SUT: {e}")
             raise
+
+    def list_tasks(
+        self,
+        contextId: Optional[str] = None,
+        status: Optional[str] = None,
+        pageSize: Optional[int] = None,
+        pageToken: Optional[str] = None,
+        historyLength: Optional[int] = None,
+        lastUpdatedAfter: Optional[int] = None,
+        includeArtifacts: Optional[bool] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        List tasks with optional filtering and pagination for JSON-RPC transport.
+
+        Args:
+            contextId: Optional context ID to filter by
+            status: Optional task status to filter by
+            pageSize: Optional number of tasks per page (1-100, default 50)
+            pageToken: Optional pagination cursor
+            historyLength: Optional number of messages to include in task history (default 0)
+            lastUpdatedAfter: Optional timestamp filter (Unix milliseconds)
+            includeArtifacts: Optional flag to include artifacts (default false)
+            extra_headers: Optional transport-specific headers
+
+        Returns:
+            Dict containing ListTasksResult structure
+
+        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
+        """
+        # Build params dict (only include non-None values)
+        params = {}
+        if contextId is not None:
+            params["contextId"] = contextId
+        if status is not None:
+            params["status"] = status
+        if pageSize is not None:
+            params["pageSize"] = pageSize
+        if pageToken is not None:
+            params["pageToken"] = pageToken
+        if historyLength is not None:
+            params["historyLength"] = historyLength
+        if lastUpdatedAfter is not None:
+            params["lastUpdatedAfter"] = lastUpdatedAfter
+        if includeArtifacts is not None:
+            params["includeArtifacts"] = includeArtifacts
+
+        # Make JSON-RPC request
+        json_req = message_utils.make_json_rpc_request("tasks/list", params=params)
+        response = self.send_raw_json_rpc(json_req)
+
+        # Return the full response (with "result" or "error" key)
+        return response
 
     def close(self):
         """Close the HTTP client."""

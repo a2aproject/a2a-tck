@@ -1266,6 +1266,22 @@ class GRPCClient(BaseTransportClient):
         }
         return mapping.get(name, "completed")
 
+    def _map_json_to_state_enum(self, state_json: str) -> int:
+        """Convert JSON status string to protobuf TaskState enum."""
+        self._load_static_stubs()
+        pb = self._pb
+        mapping = {
+            "submitted": pb.TASK_STATE_SUBMITTED,
+            "working": pb.TASK_STATE_WORKING,
+            "completed": pb.TASK_STATE_COMPLETED,
+            "failed": pb.TASK_STATE_FAILED,
+            "canceled": pb.TASK_STATE_CANCELLED,
+            "input-required": pb.TASK_STATE_INPUT_REQUIRED,
+            "rejected": pb.TASK_STATE_REJECTED,
+            "auth-required": pb.TASK_STATE_AUTH_REQUIRED,
+        }
+        return mapping.get(state_json, pb.TASK_STATE_UNSPECIFIED)
+
     def _map_grpc_error_to_a2a(self, grpc_error: grpc.RpcError) -> Dict[str, Any]:
         """
         Map gRPC status codes to A2A error codes per specification.
@@ -1383,55 +1399,114 @@ class GRPCClient(BaseTransportClient):
         }
 
     # Optional method available on gRPC per spec mapping
-    def list_tasks(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def list_tasks(
+        self,
+        contextId: Optional[str] = None,
+        status: Optional[str] = None,
+        pageSize: Optional[int] = None,
+        pageToken: Optional[str] = None,
+        historyLength: Optional[int] = None,
+        lastUpdatedAfter: Optional[int] = None,
+        includeArtifacts: Optional[bool] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """
-        List tasks for gRPC transport per A2A v0.3.0 specification.
+        List tasks for gRPC transport per A2A v0.4.0 specification.
 
-        Maps to: A2AService.ListTask() RPC call (when implemented)
+        Maps to: A2AService.ListTasks() RPC call
 
-        Note: The current protobuf definition appears to be missing the ListTask method
-        that is defined in the A2A v0.3.0 specification section 7.3.
+        Args:
+            contextId: Optional context ID to filter by
+            status: Optional task status to filter by
+            pageSize: Optional number of tasks per page (1-100, default 50)
+            pageToken: Optional pagination cursor
+            historyLength: Optional number of messages to include in task history (default 0)
+            lastUpdatedAfter: Optional timestamp filter (Unix milliseconds)
+            includeArtifacts: Optional flag to include artifacts (default false)
+            extra_headers: Optional transport-specific headers
 
         Returns:
-            Dict with 'tasks' key containing list of Task objects
+            Dict containing ListTasksResult structure
 
         Raises:
             TransportError: If gRPC call fails or method not implemented
+
+        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
         """
         try:
             logger.info("Listing tasks via gRPC")
 
-            # According to A2A v0.3.0 spec, this should call ListTask method
-            # However, the current protobuf doesn't have this method defined
-            # This is a discrepancy between specification and implementation
-
             # Try to check if the method exists on the stub
-            if hasattr(self.stub, "ListTask"):
+            if hasattr(self.stub, "ListTasks"):
                 self._load_static_stubs()
                 pb = self._pb
-                # ListTask takes empty request per spec
-                req = pb.ListTaskRequest() if hasattr(pb, "ListTaskRequest") else None
+
+                # Build request with filter parameters
+                req_params = {}
+                if contextId is not None:
+                    req_params["context_id"] = contextId
+                if status is not None:
+                    # Convert JSON status string to protobuf enum
+                    req_params["status"] = self._map_json_to_state_enum(status)
+                if pageSize is not None:
+                    req_params["page_size"] = pageSize
+                if pageToken is not None:
+                    req_params["page_token"] = pageToken
+                if historyLength is not None:
+                    req_params["history_length"] = historyLength
+                if lastUpdatedAfter is not None:
+                    # Convert Unix milliseconds to protobuf Timestamp
+                    from google.protobuf.timestamp_pb2 import Timestamp
+                    timestamp = Timestamp()
+                    timestamp.FromMilliseconds(lastUpdatedAfter)
+                    req_params["last_updated_time"] = timestamp
+                if includeArtifacts is not None:
+                    req_params["include_artifacts"] = includeArtifacts
+
+                # Create request object
+                req = pb.ListTasksRequest(**req_params) if hasattr(pb, "ListTasksRequest") else None
+
                 if req is not None:
-                    resp = self.stub.ListTask(req, timeout=self.timeout)
-                    # Convert repeated Task to dict format
+                    resp = self.stub.ListTasks(req, timeout=self.timeout)
+
+                    # Convert response to dict format
+                    tasks_list = []
+                    for task in resp.tasks:
+                        task_dict = {
+                            "id": task.id,
+                            "contextId": task.context_id,
+                            "status": {"state": self._map_state_enum_to_json(task.status.state)},
+                            "kind": "task",
+                        }
+                        # Include history if present
+                        if task.history:
+                            task_dict["history"] = [
+                                {
+                                    "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
+                                    "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
+                                    "messageId": m.message_id,
+                                    "kind": "message",
+                                }
+                                for m in task.history
+                            ]
+                        # Include artifacts if present
+                        if hasattr(task, "artifacts") and task.artifacts:
+                            task_dict["artifacts"] = []  # TODO: Convert artifacts properly
+                        tasks_list.append(task_dict)
+
                     return {
-                        "tasks": [
-                            {
-                                "id": task.id,
-                                "contextId": task.context_id,
-                                "status": {"state": self._map_state_enum_to_json(task.status.state)},
-                                "kind": "task",
-                            }
-                            for task in resp  # resp should be repeated Task per spec
-                        ]
+                        "tasks": tasks_list,
+                        "totalSize": resp.total_size,
+                        "pageSize": len(tasks_list),  # Number of tasks in current response
+                        "nextPageToken": resp.next_page_token if resp.next_page_token else None,
                     }
 
-            # Method not implemented in current protobuf - return empty list
-            logger.warning("ListTask method not available in gRPC stub - this is a protobuf/spec discrepancy")
-            return {"tasks": []}
+            # Method not implemented in current protobuf
+            logger.warning("ListTasks method not available in gRPC stub")
+            raise NotImplementedError("ListTasks method not available in gRPC stub")
 
         except grpc.RpcError as e:
-            error_msg = f"gRPC ListTask failed: {e.code().name} - {e.details()}"
+            error_msg = f"gRPC ListTasks failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
             # Map gRPC status to A2A error code per specification
             a2a_error = self._map_grpc_error_to_a2a(e)

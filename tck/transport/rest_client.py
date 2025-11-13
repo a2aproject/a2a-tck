@@ -883,20 +883,39 @@ class RESTClient(BaseTransportClient):
 
     # Optional REST-specific methods
 
-    def list_tasks(self, **kwargs) -> Dict[str, Any]:
+    def list_tasks(
+        self,
+        contextId: Optional[str] = None,
+        status: Optional[str] = None,
+        pageSize: Optional[int] = None,
+        pageToken: Optional[str] = None,
+        historyLength: Optional[int] = None,
+        lastUpdatedAfter: Optional[int] = None,
+        includeArtifacts: Optional[bool] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """
-        List tasks via HTTP GET (REST transport supports this method).
+        List tasks via HTTP GET for REST transport per A2A v0.4.0 specification.
 
-        Maps to: GET v1/tasks HTTP request
+        Maps to: GET /v1/tasks HTTP request
 
         Args:
-            **kwargs: Additional configuration options (extra_headers, pagination)
+            contextId: Optional context ID to filter by
+            status: Optional task status to filter by
+            pageSize: Optional number of tasks per page (1-100, default 50)
+            pageToken: Optional pagination cursor
+            historyLength: Optional number of messages to include in task history (default 0)
+            lastUpdatedAfter: Optional timestamp filter (Unix milliseconds)
+            includeArtifacts: Optional flag to include artifacts (default false)
+            extra_headers: Optional transport-specific headers
 
         Returns:
-            Dict containing list of tasks from SUT
+            Dict containing ListTasksResult structure
 
         Raises:
             TransportError: If HTTP request fails
+
+        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
         """
         try:
             logger.info("Listing tasks via REST")
@@ -906,29 +925,39 @@ class RESTClient(BaseTransportClient):
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            if extra_headers is not None:
+                headers.update(extra_headers)
 
-            # Add query parameters for pagination, filtering, etc.
+            # Build query parameters
             params = {}
-            for key in ["page_size", "page_token", "filter"]:
-                if key in kwargs:
-                    params[key] = kwargs[key]
+            if contextId is not None:
+                params["contextId"] = contextId
+            if status is not None:
+                params["status"] = status
+            if pageSize is not None:
+                params["pageSize"] = pageSize
+            if pageToken is not None:
+                params["pageToken"] = pageToken
+            if historyLength is not None:
+                params["historyLength"] = historyLength
+            if lastUpdatedAfter is not None:
+                params["lastUpdatedAfter"] = lastUpdatedAfter
+            if includeArtifacts is not None:
+                params["includeArtifacts"] = str(includeArtifacts).lower()  # Convert boolean to string
 
             # Make real HTTP request to live SUT
             response = self.client.get(url, params=params, headers=headers)
 
             # Handle HTTP errors
             if response.status_code >= 400:
-                error_msg = f"HTTP {response.status_code}: {response.text}"
-                logger.error(f"REST list_tasks failed: {error_msg}")
-                raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
+                logger.error(f"REST list_tasks failed: HTTP {response.status_code}")
+                return handle_http_error_response(response)
 
             # Parse JSON response
-            tasks_list = response.json()
+            tasks_result = response.json()
 
             logger.debug("Listed tasks via REST")
-            return tasks_list
+            return tasks_result
 
         except httpx.RequestError as e:
             error_msg = f"HTTP request failed: {str(e)}"
