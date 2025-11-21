@@ -78,7 +78,12 @@ class BaseTransportClient(ABC):
         self._logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
     @abstractmethod
-    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def send_message(
+        self,
+        message: Dict[str, Any],
+        configuration: Optional[Dict[str, Any]] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """
         Send a message to the A2A server using the message/send method.
 
@@ -87,6 +92,8 @@ class BaseTransportClient(ABC):
 
         Args:
             message: The message object conforming to A2A Message schema
+            configuration: Optional SendMessageConfiguration object with fields like
+                          acceptedOutputModes, pushNotificationConfig, historyLength, blocking
             extra_headers: Optional transport-specific headers
 
         Returns:
@@ -100,7 +107,12 @@ class BaseTransportClient(ABC):
         pass
 
     @abstractmethod
-    def send_streaming_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Any:
+    def send_streaming_message(
+        self,
+        message: Dict[str, Any],
+        configuration: Optional[Dict[str, Any]] = None,
+        extra_headers: Optional[Dict[str, str]] = None
+    ) -> Any:
         """
         Send a message with streaming response using message/stream method.
 
@@ -109,6 +121,11 @@ class BaseTransportClient(ABC):
 
         Args:
             message: The message object conforming to A2A Message schema
+            configuration: Optional SendMessageConfiguration object with fields like:
+                - pushNotificationConfig: Push notification settings
+                - acceptedOutputModes: Accepted output formats
+                - historyLength: Number of history messages to include
+                - blocking: Whether to block until completion
             extra_headers: Optional transport-specific headers
 
         Returns:

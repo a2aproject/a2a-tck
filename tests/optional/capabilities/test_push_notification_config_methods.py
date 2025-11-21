@@ -1,5 +1,6 @@
 import logging
 import uuid
+import time
 
 import pytest
 
@@ -346,3 +347,228 @@ def test_delete_push_notification_config_nonexistent(sut_client, created_task_id
     else:
         # Error response is also acceptable for non-existent config
         assert transport_helpers.is_json_rpc_error_response(resp), "Delete non-existent config should return success or error"
+
+
+@optional_capability
+def test_send_message_with_push_notification_config(sut_client, agent_card_data):
+    """
+    CONDITIONAL MANDATORY: A2A Specification §7.1 - SendMessageConfiguration with pushNotificationConfig
+
+    Status: MANDATORY if capabilities.pushNotifications = true
+            SKIP if capabilities.pushNotifications = false/missing
+
+    Test validates that pushNotificationConfig in SendMessageConfiguration is actually
+    used and not ignored when sending a message.
+
+    This addresses GitHub issue #84 - ensuring the TCK tests that pushNotificationConfig
+    is processed when included in the message/send configuration.
+
+    Specification Reference: A2A Protocol v0.3.0 §7.1.2 - SendMessageConfiguration
+    """
+    validator = CapabilityValidator(agent_card_data)
+
+    if not validator.is_capability_declared("pushNotifications"):
+        pytest.skip("Push notifications capability not declared - test not applicable")
+
+    # Prepare a message with pushNotificationConfig in the configuration
+    message_id = "test-push-config-in-send-" + str(uuid.uuid4())
+    webhook_url = "https://example.com/webhook-from-send-config"
+
+    message_params = {
+        "message": {
+            "messageId": message_id,
+            "role": "user",
+            "parts": [{"kind": "text", "text": "Task with push notification config in send configuration"}],
+            "kind": "message",
+        }
+    }
+
+    configuration = {
+        "pushNotificationConfig": {
+            "url": webhook_url,
+            "token": "test-token-123",
+        }
+    }
+
+    # Send the message with configuration
+    resp = transport_helpers.transport_send_message(sut_client, message_params, configuration=configuration)
+
+    # Since push notifications capability is declared, message send should succeed
+    assert transport_helpers.is_json_rpc_success_response(resp), (
+        "Push notifications capability declared but message/send with pushNotificationConfig failed"
+    )
+
+    task_id = resp["result"]["id"]
+    logger.info(f"Task created with ID: {task_id}")
+
+    # Verify that the push notification config was actually used
+    # We can check this by attempting to retrieve the push notification config for the task
+    list_resp = transport_helpers.transport_list_push_notification_configs(sut_client, task_id)
+
+    if transport_helpers.is_json_rpc_success_response(list_resp):
+        configs = list_resp["result"]
+        assert isinstance(configs, list), "Push notification configs should be a list"
+
+        logger.info(f"Retrieved {len(configs)} push notification configs for task {task_id}")
+        for idx, config in enumerate(configs):
+            logger.info(f"Config {idx}: {config}")
+
+        # Verify that a configuration with our webhook URL exists
+        found_config = False
+        for config in configs:
+            if "pushNotificationConfig" in config:
+                config_url = config["pushNotificationConfig"].get("url")
+                logger.info(f"Checking config URL: {config_url}")
+                if config_url == webhook_url:
+                    found_config = True
+                    logger.info(f"✓ Found push notification config with URL: {webhook_url}")
+                    break
+
+        if not found_config:
+            logger.error(f"❌ Push notification config from SendMessageConfiguration was NOT found!")
+            logger.error(f"Expected URL: {webhook_url}")
+            logger.error(f"Available configs: {configs}")
+
+        assert found_config, (
+            f"Push notification config from SendMessageConfiguration was not found in task configs. "
+            f"Expected URL: {webhook_url}. "
+            f"Retrieved {len(configs)} config(s): {configs}. "
+            f"This indicates the pushNotificationConfig in SendMessageConfiguration was ignored."
+        )
+    else:
+        # If list fails, log the error details
+        logger.error(f"List push notification configs failed for task {task_id}")
+        logger.error(f"Response: {list_resp}")
+        pytest.fail(
+            f"Could not verify pushNotificationConfig was used. "
+            f"List configs failed with: {list_resp.get('error', 'Unknown error')}"
+        )
+
+
+@optional_capability
+def test_send_streaming_message_with_push_notification_config(sut_client, agent_card_data):
+    """
+    CONDITIONAL MANDATORY: A2A Specification §7.1 - SendMessageConfiguration with pushNotificationConfig (Streaming)
+
+    Status: MANDATORY if capabilities.pushNotifications = true AND capabilities.streaming = true
+            SKIP if either capability is false/missing
+
+    Test validates that pushNotificationConfig in SendMessageConfiguration is actually
+    used and not ignored when sending a streaming message.
+
+    This complements test_send_message_with_push_notification_config by testing the streaming variant,
+    since the server implementation (DefaultRequestHandler in a2a-java) supports configuration
+    for both onMessageSend() and onMessageSendStream() methods.
+
+    Specification Reference: A2A Protocol v0.3.0 §7.1.2 - SendMessageConfiguration, §8.1 - Streaming
+    """
+    import asyncio
+
+    validator = CapabilityValidator(agent_card_data)
+
+    if not validator.is_capability_declared("pushNotifications"):
+        pytest.skip("Push notifications capability not declared - test not applicable")
+
+    if not validator.is_capability_declared("streaming"):
+        pytest.skip("Streaming capability not declared - test not applicable")
+
+    # Prepare a streaming message with pushNotificationConfig in the configuration
+    message_id = "test-push-config-stream-" + str(uuid.uuid4())
+    webhook_url = "https://example.com/webhook-from-streaming-config"
+
+    message_params = {
+        "message": {
+            "messageId": message_id,
+            "role": "user",
+            "parts": [{"kind": "text", "text": "Task with push notification config in streaming send configuration"}],
+            "kind": "message",
+        }
+    }
+
+    configuration = {
+        "pushNotificationConfig": {
+            "url": webhook_url,
+            "token": "test-streaming-token-456",
+        },
+        "blocking": False,  # Streaming should be non-blocking
+    }
+
+    # Send the streaming message with configuration
+    async def run_streaming_test():
+        task_id = None
+        stream = transport_helpers.transport_send_streaming_message(
+            sut_client, message_params, configuration=configuration
+        )
+
+        # Collect streaming updates and extract task_id
+        # Different transports return different formats:
+        # - JSON-RPC: yields Task objects directly (with "id" and "status" fields)
+        # - gRPC/REST: yields wrapped objects with "task" or "status_update" keys
+        async for update in stream:
+            if isinstance(update, dict):
+                # Format 1: gRPC/REST - wrapped with "task" key
+                if "task" in update:
+                    task_id = update["task"]["id"]
+                    logger.info(f"Received task from streaming (wrapped): {task_id}")
+                    break  # Got the task, can stop streaming
+                # Format 2: gRPC/REST - status_update with taskId
+                elif "status_update" in update:
+                    if not task_id:
+                        task_id = update["status_update"]["taskId"]
+                        logger.info(f"Received task_id from status_update: {task_id}")
+                # Format 3: JSON-RPC - Task object directly
+                elif "id" in update and "status" in update and "kind" in update:
+                    task_id = update["id"]
+                    logger.info(f"Received task from streaming (direct): {task_id}")
+                    break  # Got the task, can stop streaming
+
+        return task_id
+
+    # Run the async streaming test
+    task_id = asyncio.run(run_streaming_test())
+
+    assert task_id is not None, "Streaming message should return a task"
+    logger.info(f"Streaming task created with ID: {task_id}")
+
+    # Verify that the push notification config was actually used
+    # We can check this by attempting to retrieve the push notification config for the task
+    list_resp = transport_helpers.transport_list_push_notification_configs(sut_client, task_id)
+
+    if transport_helpers.is_json_rpc_success_response(list_resp):
+        configs = list_resp["result"]
+        assert isinstance(configs, list), "Push notification configs should be a list"
+
+        logger.info(f"Retrieved {len(configs)} push notification configs for streaming task {task_id}")
+        for idx, config in enumerate(configs):
+            logger.info(f"Config {idx}: {config}")
+
+        # Verify that a configuration with our webhook URL exists
+        found_config = False
+        for config in configs:
+            if "pushNotificationConfig" in config:
+                config_url = config["pushNotificationConfig"].get("url")
+                logger.info(f"Checking config URL: {config_url}")
+                if config_url == webhook_url:
+                    found_config = True
+                    logger.info(f"✓ Found push notification config from streaming with URL: {webhook_url}")
+                    break
+
+        if not found_config:
+            logger.error(f"❌ Push notification config from streaming SendMessageConfiguration was NOT found!")
+            logger.error(f"Expected URL: {webhook_url}")
+            logger.error(f"Available configs: {configs}")
+
+        assert found_config, (
+            f"Push notification config from streaming SendMessageConfiguration was not found in task configs. "
+            f"Expected URL: {webhook_url}. "
+            f"Retrieved {len(configs)} config(s): {configs}. "
+            f"This indicates the pushNotificationConfig in streaming SendMessageConfiguration was ignored."
+        )
+    else:
+        # If list fails, log the error details
+        logger.error(f"List push notification configs failed for streaming task {task_id}")
+        logger.error(f"Response: {list_resp}")
+        pytest.fail(
+            f"Could not verify streaming pushNotificationConfig was used. "
+            f"List configs failed with: {list_resp.get('error', 'Unknown error')}"
+        )

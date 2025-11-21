@@ -381,7 +381,12 @@ class GRPCClient(BaseTransportClient):
 
     # A2A Protocol Method Implementations - Real Network Calls
 
-    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def send_message(
+        self,
+        message: Dict[str, Any],
+        configuration: Optional[Dict[str, Any]] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """
         Send message via gRPC and wait for completion.
 
@@ -389,7 +394,8 @@ class GRPCClient(BaseTransportClient):
 
         Args:
             message: A2A message in JSON format
-            **kwargs: Additional configuration options
+            configuration: Optional SendMessageConfiguration object
+            extra_headers: Additional headers (not used in gRPC)
 
         Returns:
             Dict containing task or message response from SUT
@@ -453,7 +459,30 @@ class GRPCClient(BaseTransportClient):
                 role=pb_role,
                 parts=parts,
             )
-            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=True)
+
+            # Build configuration from provided dict or use defaults
+            if configuration:
+                config_kwargs = {}
+                if "acceptedOutputModes" in configuration:
+                    config_kwargs["accepted_output_modes"] = configuration["acceptedOutputModes"]
+                if "historyLength" in configuration:
+                    config_kwargs["history_length"] = configuration["historyLength"]
+                if "blocking" in configuration:
+                    config_kwargs["blocking"] = configuration["blocking"]
+                if "pushNotificationConfig" in configuration:
+                    # Build PushNotificationConfig protobuf
+                    pnc = configuration["pushNotificationConfig"]
+                    push_config = pb.PushNotificationConfig(
+                        id=pnc.get("id", ""),
+                        url=pnc.get("url", ""),
+                        token=pnc.get("token", ""),
+                    )
+                    # Use the renamed field name from PR #482
+                    config_kwargs["push_notification_config"] = push_config
+                config = pb.SendMessageConfiguration(**config_kwargs) if config_kwargs else pb.SendMessageConfiguration()
+            else:
+                config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=True)
+
             request = pb.SendMessageRequest(request=pb_msg, configuration=config)
 
             # Real gRPC call
@@ -494,7 +523,10 @@ class GRPCClient(BaseTransportClient):
             raise TransportError(error_msg, TransportType.GRPC)
 
     async def send_streaming_message(
-        self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self,
+        message: Dict[str, Any],
+        configuration: Optional[Dict[str, Any]] = None,
+        extra_headers: Optional[Dict[str, str]] = None
     ) -> AsyncIterator[Dict[str, Any]]:
         """
         Send message via gRPC and stream responses.
@@ -503,7 +535,8 @@ class GRPCClient(BaseTransportClient):
 
         Args:
             message: A2A message in JSON format
-            **kwargs: Additional configuration options
+            configuration: Optional SendMessageConfiguration object
+            extra_headers: Optional transport-specific headers
 
         Yields:
             Dict containing streaming task updates from SUT
@@ -516,8 +549,67 @@ class GRPCClient(BaseTransportClient):
             ctx_id = message.get("contextId") or message.get("context_id") or "default-context"
             logger.info(f"Starting gRPC streaming for message: {msg_id}")
 
-            # Build protobuf request
-            request = self._json_to_send_message_request(message, blocking=False)
+            # Build protobuf request with configuration
+            self._load_static_stubs()
+            pb = self._pb
+
+            # Build message parts
+            parts = []
+            for p in message.get("parts", []):
+                if p.get("kind") == "text":
+                    parts.append(pb.Part(text=p.get("text", "")))
+                elif p.get("kind") == "data" and "data" in p:
+                    from google.protobuf.struct_pb2 import Struct
+                    struct_data = Struct()
+                    struct_data.update(p["data"])
+                    data_part = pb.DataPart(data=struct_data)
+                    parts.append(pb.Part(data=data_part))
+                elif p.get("kind") == "file":
+                    file_part = pb.FilePart()
+                    if "fileUri" in p:
+                        file_part.file_with_uri = p["fileUri"]
+                    elif "fileBytes" in p:
+                        file_part.file_with_bytes = p["fileBytes"]
+                    if "mimeType" in p:
+                        file_part.mime_type = p["mimeType"]
+                    parts.append(pb.Part(file=file_part))
+                else:
+                    parts.append(pb.Part())
+
+            role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
+            user_role = message.get("role")
+            pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
+
+            pb_msg = pb.Message(
+                message_id=msg_id,
+                context_id=ctx_id,
+                task_id=message.get("taskId", ""),
+                role=pb_role,
+                parts=parts,
+            )
+
+            # Build configuration
+            if configuration:
+                config_kwargs = {}
+                if "acceptedOutputModes" in configuration:
+                    config_kwargs["accepted_output_modes"] = configuration["acceptedOutputModes"]
+                if "historyLength" in configuration:
+                    config_kwargs["history_length"] = configuration["historyLength"]
+                if "blocking" in configuration:
+                    config_kwargs["blocking"] = configuration["blocking"]
+                if "pushNotificationConfig" in configuration:
+                    pnc = configuration["pushNotificationConfig"]
+                    push_config = pb.PushNotificationConfig(
+                        id=pnc.get("id", ""),
+                        url=pnc.get("url", ""),
+                        token=pnc.get("token", ""),
+                    )
+                    config_kwargs["push_notification_config"] = push_config
+                config = pb.SendMessageConfiguration(**config_kwargs) if config_kwargs else pb.SendMessageConfiguration()
+            else:
+                config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=False)
+
+            request = pb.SendMessageRequest(request=pb_msg, configuration=config)
 
             # Make real gRPC streaming call to live SUT
             if self.use_tls:
@@ -1238,11 +1330,17 @@ class GRPCClient(BaseTransportClient):
         )
         
         # Create configuration from kwargs
-        config = pb.SendMessageConfiguration(
-            accepted_output_modes=kwargs.get("accepted_output_modes", []),
-            history_length=kwargs.get("history_length", 0),
-            blocking=kwargs.get("blocking", True)
-        )
+        config_kwargs = {
+            "accepted_output_modes": kwargs.get("accepted_output_modes", []),
+            "history_length": kwargs.get("history_length", 0),
+            "blocking": kwargs.get("blocking", True)
+        }
+
+        # Handle pushNotificationConfig if provided
+        if "push_notification_config" in kwargs:
+            config_kwargs["push_notification_config"] = kwargs["push_notification_config"]
+
+        config = pb.SendMessageConfiguration(**config_kwargs)
         
         request = pb.SendMessageRequest(request=pb_msg, configuration=config)
         

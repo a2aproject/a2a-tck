@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 def transport_send_message(
-    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+    client: BaseTransportClient,
+    message_params: Dict[str, Any],
+    configuration: Optional[Dict[str, Any]] = None,
+    extra_headers: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     Send a message using any transport client, maintaining compatibility with existing tests.
@@ -29,6 +32,7 @@ def transport_send_message(
     Args:
         client: Transport client (BaseTransportClient or legacy SUTClient)
         message_params: Message parameters in A2A format
+        configuration: Optional SendMessageConfiguration with fields like pushNotificationConfig
         extra_headers: Optional transport-specific headers
 
     Returns:
@@ -41,7 +45,7 @@ def transport_send_message(
         logger.debug(f"Using transport-aware send_message for {client.transport_type.value}")
         message = message_params.get("message", message_params)
         try:
-            result = client.send_message(message, extra_headers)
+            result = client.send_message(message, configuration=configuration, extra_headers=extra_headers)
             # Check if result is already an error response
             if isinstance(result, dict) and "error" in result:
                 return result  # Return error response as-is
@@ -581,7 +585,10 @@ def transport_delete_push_notification_config(
 
 
 def transport_send_streaming_message(
-    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+    client: BaseTransportClient,
+    message_params: Dict[str, Any],
+    configuration: Optional[Dict[str, Any]] = None,
+    extra_headers: Optional[Dict[str, str]] = None
 ) -> Any:
     """
     Send a message with streaming response using any transport client.
@@ -589,6 +596,7 @@ def transport_send_streaming_message(
     Args:
         client: Transport client (BaseTransportClient)
         message_params: Message parameters in A2A format
+        configuration: Optional SendMessageConfiguration with fields like pushNotificationConfig
         extra_headers: Optional transport-specific headers
 
     Returns:
@@ -604,7 +612,7 @@ def transport_send_streaming_message(
     if hasattr(client, "send_streaming_message") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware send_streaming_message for {client.transport_type.value}")
         message = message_params.get("message", message_params)
-        return client.send_streaming_message(message, extra_headers)
+        return client.send_streaming_message(message, configuration=configuration, extra_headers=extra_headers)
     else:
         raise ValueError(f"Client {type(client)} does not support streaming message sending")
 
