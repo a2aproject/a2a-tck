@@ -41,6 +41,8 @@ dependencies = [
     "googleapis-common-protos>=1.63.0",
     # Enhanced TLS/certificate analysis
     "pyOpenSSL>=23.0.0",
+    # HTTP server for push notification testing
+    "aiohttp>=3.9.0",
 ]
 
 [project.optional-dependencies]
