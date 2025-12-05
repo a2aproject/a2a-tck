@@ -40,7 +40,7 @@ def valid_file_message_params():
                 {
                     "file": {
                         "name": "test.txt",
-                        "mediaType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §4.1.7
+                        "mimeType": "text/plain",
                         "fileWithUri": "https://example.com/test.txt",
                     },
                 }

@@ -46,7 +46,7 @@ def test_tasks_get_valid(sut_client, created_task_id):
 
     Failure Impact: Implementation is not A2A v1.0 compliant
 
-    Specification Reference: A2A v0.3.0 §3.1.3. Get Task
+    Specification Reference: A2A v1.0 §3.1.3. Get Task
     """
     # Use transport-agnostic task retrieval
     resp = transport_get_task(sut_client, created_task_id)

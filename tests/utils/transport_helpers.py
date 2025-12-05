@@ -264,7 +264,6 @@ def extract_task_id_from_response(response: Dict[str, Any]) -> Optional[str]:
         return None
 
     # For JSON-RPC responses, look in result
-    print(response)
     if "result" in response:
         result = response["result"]
         if isinstance(result, dict):

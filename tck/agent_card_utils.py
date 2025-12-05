@@ -194,6 +194,12 @@ def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str
 
 # A2A v0.3.0 Transport Discovery Functions
 
+def _iterate_supported_interfaces(agent_card_data: Dict[str, Any]):
+    interfaces = agent_card_data.get("supportedInterfaces", [])
+    if isinstance(interfaces, list):
+        for interface in interfaces:
+            if isinstance(interface, dict):
+                yield interface
 
 def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportType]:
     """
@@ -210,18 +216,16 @@ def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportT
 
     Specification Reference: A2A Protocol v1.0 §8.3. Protocol Declaration Requirements
     """
-    supported_transports: Set[TransportType] = set()
+    supported_transports: List[TransportType] = list()
 
     # Check supportedInterfaces
-    supported =  agent_card_data.get("supportedInterfaces", [])
-    if isinstance(supported, list):
-        for interface in supported:
-            if isinstance(interface, dict):
-                transport_name = interface.get("protocolBinding")
-                if transport_name and isinstance(transport_name, str):
-                    transport_type = _parse_transport_type(transport_name)
-                    if transport_type:
-                        supported_transports.add(transport_type)
+    for interface in _iterate_supported_interfaces(agent_card_data):
+        if isinstance(interface, dict):
+            transport_name = interface.get("protocolBinding")
+            if transport_name and isinstance(transport_name, str):
+                transport_type = _parse_transport_type(transport_name)
+                if transport_type:
+                    supported_transports.append(transport_type)
 
     # Check preferred transport
     # backwards compatibility with 0.3.0
@@ -229,7 +233,7 @@ def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportT
     if preferred and isinstance(preferred, str):
         transport_type = _parse_transport_type(preferred)
         if transport_type:
-            supported_transports.add(transport_type)
+            supported_transports.append(transport_type)
 
     # Check additional interfaces
     # backwards compatibility with 0.3.0
@@ -241,7 +245,7 @@ def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportT
                 if transport_name and isinstance(transport_name, str):
                     transport_type = _parse_transport_type(transport_name)
                     if transport_type:
-                        supported_transports.add(transport_type)
+                        supported_transports.append(transport_type)
 
     return list(supported_transports)
 
@@ -269,7 +273,6 @@ def get_preferred_transport(agent_card_data: Dict[str, Any]) -> Optional[Transpo
         return _parse_transport_type(preferred)
     return None
 
-
 def get_transport_endpoints(agent_card_data: Dict[str, Any]) -> Dict[TransportType, str]:
     """
     Extract transport-specific endpoints from the Agent Card.
@@ -288,17 +291,15 @@ def get_transport_endpoints(agent_card_data: Dict[str, Any]) -> Dict[TransportTy
     """
     endpoints: Dict[TransportType, str] = {}
 
-    supported = agent_card_data.get("supportedInterfaces", [])
-    if isinstance(supported, list):
-        for interface in supported:
-            if isinstance(interface, dict):
-                transport_name = interface.get("protocolBinding")
-                endpoint = interface.get("url")
+    for interface in _iterate_supported_interfaces(agent_card_data):
+        if isinstance(interface, dict):
+            transport_name = interface.get("protocolBinding")
+            endpoint = interface.get("url")
 
-                if transport_name and endpoint and isinstance(transport_name, str) and isinstance(endpoint, str):
-                    transport_type = _parse_transport_type(transport_name)
-                    if transport_type:
-                        endpoints[transport_type] = endpoint
+            if transport_name and endpoint and isinstance(transport_name, str) and isinstance(endpoint, str):
+                transport_type = _parse_transport_type(transport_name)
+                if transport_type:
+                    endpoints[transport_type] = endpoint
 
     # Check for main endpoint (usually JSON-RPC)
     # backwards compatibility with 0.3.0

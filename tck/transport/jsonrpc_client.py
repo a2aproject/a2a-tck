@@ -349,7 +349,7 @@ class JSONRPCClient(BaseTransportClient):
         self, task_id: str, history_length: Optional[int] = None, extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
-        Get task status and information using tasks/get method.
+        Get task status and information using GetTask method.
 
         Makes a real JSON-RPC call to retrieve task information from the SUT.
 
@@ -364,7 +364,7 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task retrieval fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.3 - Task Retrieval
+        Specification Reference: A2A Protocol v1.0 §3.1.3. Get Task
         """
         try:
             params = {"name": "tasks/"+task_id}
@@ -395,7 +395,7 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task cancellation fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.4 - Task Cancellation
+        Specification Reference: A2A Protocol v1.0 §3.1.5. Cancel Task
         """
         try:
             response = self._make_jsonrpc_request(method="CancelTask", params={"name": "tasks/"+task_id}, extra_headers=extra_headers)
