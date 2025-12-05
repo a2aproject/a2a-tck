@@ -367,11 +367,11 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §7.3 - Task Retrieval
         """
         try:
-            params = {"id": task_id}
+            params = {"name": "tasks/"+task_id}
             if history_length is not None:
                 params["historyLength"] = history_length
 
-            response = self._make_jsonrpc_request(method="tasks/get", params=params, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="GetTask", params=params, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:

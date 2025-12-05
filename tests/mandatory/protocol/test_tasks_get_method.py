@@ -18,10 +18,9 @@ def created_task_id(sut_client):
     # Create a task using transport-agnostic message/send and return its id
     params = {
         "message": {
-            "kind": "message",
             "messageId": generate_test_message_id("get-test"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for get test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for get test"}],
         }
     }
 
@@ -39,15 +38,15 @@ def created_task_id(sut_client):
 @mandatory_protocol
 def test_tasks_get_valid(sut_client, created_task_id):
     """
-    MANDATORY: A2A v0.3.0 §7.3 - Task Retrieval
+    MANDATORY: A2A v1.0 §3.1.3. Get Task
 
-    The A2A v0.3.0 specification requires all implementations to support
-    tasks/get for retrieving task state and history by ID.
+    The A2A v1.0 specification requires all implementations to support
+    GetTask for retrieving task state and history by ID.
     This test works across all transport types (JSON-RPC, gRPC, REST).
 
-    Failure Impact: Implementation is not A2A v0.3.0 compliant
+    Failure Impact: Implementation is not A2A v1.0 compliant
 
-    Specification Reference: A2A v0.3.0 §7.3 - Task Retrieval
+    Specification Reference: A2A v0.3.0 §3.1.3. Get Task
     """
     # Use transport-agnostic task retrieval
     resp = transport_get_task(sut_client, created_task_id)
