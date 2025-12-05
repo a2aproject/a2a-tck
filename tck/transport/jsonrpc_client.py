@@ -262,7 +262,7 @@ class JSONRPCClient(BaseTransportClient):
         extra_headers: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
-        Send a message to the A2A server using the message/send method.
+        Send a message to the A2A server using the Send method.
 
         Makes a real JSON-RPC call to validate the SUT's message handling capability.
 
@@ -277,14 +277,14 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If the message sending fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.1 - Core Message Protocol
+        Specification Reference: A2A Protocol v1.0 §9.4.1. SendMessage
         """
         try:
             params = {"message": message}
             if configuration is not None:
                 params["configuration"] = configuration
 
-            response = self._make_jsonrpc_request(method="message/send", params=params, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="SendMessage", params=params, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
@@ -381,7 +381,7 @@ class JSONRPCClient(BaseTransportClient):
 
     def cancel_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        Cancel a task using tasks/cancel method.
+        Cancel a task using CancelTask method.
 
         Makes a real JSON-RPC call to cancel a task on the SUT.
 
@@ -398,7 +398,7 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §7.4 - Task Cancellation
         """
         try:
-            response = self._make_jsonrpc_request(method="tasks/cancel", params={"id": task_id}, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="CancelTask", params={"name": "tasks/"+task_id}, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
