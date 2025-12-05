@@ -54,7 +54,7 @@ def test_tasks_cancel_valid(sut_client, created_task_id):
     # Extract result from transport response
     result = resp.get("result", resp)
 
-    # Validate cancellation response according to A2A v1.0.3.0 specification
+    # Validate cancellation response according to A2A v1.0 specification
     assert result["id"] == created_task_id, f"Task ID mismatch: expected {created_task_id}, got {result.get('id')}"
 
     # Check that task status indicates cancellation
