@@ -247,7 +247,7 @@ def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportT
                     if transport_type:
                         supported_transports.append(transport_type)
 
-    return list(supported_transports)
+    return list(dict.fromkeys(supported_transports))
 
 
 def get_preferred_transport(agent_card_data: Dict[str, Any]) -> Optional[TransportType]:
