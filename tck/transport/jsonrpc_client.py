@@ -262,7 +262,7 @@ class JSONRPCClient(BaseTransportClient):
         extra_headers: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
-        Send a message to the A2A server using the Send method.
+        Send a message to the A2A server using the SendMessage method.
 
         Makes a real JSON-RPC call to validate the SUT's message handling capability.
 
