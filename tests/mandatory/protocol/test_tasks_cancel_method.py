@@ -14,7 +14,7 @@ from tests.utils.transport_helpers import (
 
 @pytest.fixture
 def created_task_id(sut_client):
-    # Create a task using transport-agnostic message/send and return its id
+    # Create a task using transport-agnostic SendMessage and return its id
     params = {
         "message": {
             "messageId": generate_test_message_id("cancel-test"),

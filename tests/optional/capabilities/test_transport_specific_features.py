@@ -52,13 +52,12 @@ class TestJSONRPCSpecificFeatures:
         batch_requests = []
         for i in range(3):
             message = {
-                "kind": "message",
                 "messageId": generate_test_message_id(f"batch-{i}"),
-                "role": "user",
-                "parts": [{"kind": "text", "text": f"Batch message {i}"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": f"Batch message {i}"}],
             }
 
-            req = message_utils.make_json_rpc_request("message/send", params={"message": message}, id=f"batch-req-{i}")
+            req = message_utils.make_json_rpc_request("SendMessage", params={"message": message}, id=f"batch-req-{i}")
             batch_requests.append(req)
 
         # Test batch request (requires direct HTTP access)
@@ -113,13 +112,12 @@ class TestJSONRPCSpecificFeatures:
         # JSON-RPC notifications don't have IDs and expect no response
         notification_request = {
             "jsonrpc": "2.0",
-            "method": "message/send",
+            "method": "SendMessage",
             "params": {
                 "message": {
-                    "kind": "message",
                     "messageId": generate_test_message_id("notification"),
-                    "role": "user",
-                    "parts": [{"kind": "text", "text": "Notification test"}],
+                    "role": "ROLE_USER",
+                    "parts": [{"text": "Notification test"}],
                 }
             },
             # No "id" field = notification
@@ -393,10 +391,9 @@ class TestStreamingSpecificFeatures:
 
         # Create SSE request
         message = {
-            "kind": "message",
             "messageId": generate_test_message_id("sse-mgmt"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "SSE connection management test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "SSE connection management test"}],
         }
 
         request = message_utils.make_json_rpc_request("message/stream", params={"message": message})
@@ -454,14 +451,12 @@ class TestMultiModalFeatures:
         """
         # Test file reference part
         file_message = {
-            "kind": "message",
             "messageId": generate_test_message_id("file-ref"),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
-                {"kind": "text", "text": "Please analyze this file"},
+                {"text": "Please analyze this file"},
                 {
-                    "kind": "fileRef",
-                    "fileRef": {"uri": "https://example.com/test-file.txt", "mimeType": "text/plain", "name": "test-file.txt"},
+                    "file": {"fileWithUri": "https://example.com/test-file.txt", "mediaType": "text/plain", "name": "test-file.txt"},
                 },
             ],
         }
@@ -495,12 +490,11 @@ class TestMultiModalFeatures:
         encoded_data = base64.b64encode(binary_data).decode("ascii")
 
         data_message = {
-            "kind": "message",
             "messageId": generate_test_message_id("binary-data"),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
-                {"kind": "text", "text": "Processing binary data"},
-                {"kind": "data", "data": {"mimeType": "application/octet-stream", "data": encoded_data}},
+                {"text": "Processing binary data"},
+                {"data": {"mimeType": "application/octet-stream", "data": encoded_data}},
             ],
         }
 

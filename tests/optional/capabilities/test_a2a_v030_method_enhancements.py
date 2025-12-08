@@ -43,18 +43,16 @@ class TestA2AV030MethodEnhancements:
     @a2a_v030
     def test_message_send_enhanced_parts_support(self, sut_client: BaseTransportClient):
         """
-        A2A v0.3.0 §7.1 - Enhanced Parts Support in message/send
+        A2A v0.3.0 §7.1 - Enhanced Parts Support in SendMessage
 
         Tests support for enhanced message parts including file references,
         data parts, and complex message structures introduced in v0.3.0.
         """
         enhanced_message = {
-            "kind": "message",
             "messageId": generate_test_message_id("enhanced-parts"),
-            "role": "user",
             "parts": [
-                {"kind": "text", "text": "This message tests enhanced parts support in A2A v0.3.0"},
-                {"kind": "data", "data": {"type": "application/json", "content": {"test": "data", "version": "0.3.0"}}},
+                {"text": "This message tests enhanced parts support in A2A v0.3.0"},
+                {"data": {"type": "application/json", "content": {"test": "data", "version": "0.3.0"}}},
             ],
         }
 
@@ -84,10 +82,9 @@ class TestA2AV030MethodEnhancements:
         """
         # First create a task
         message = {
-            "kind": "message",
             "messageId": generate_test_message_id("enhanced-query"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for enhanced query testing"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for enhanced query testing"}],
         }
 
         create_response = transport_send_message(sut_client, {"message": message})
@@ -185,7 +182,7 @@ class TestA2AV030MethodEnhancements:
         introduced in A2A v0.3.0 methods.
         """
         test_cases = [
-            {"method": "message/send", "invalid_params": {"invalid": "structure"}, "expected_error": "Invalid message structure"},
+            {"method": "SendMessage", "invalid_params": {"invalid": "structure"}, "expected_error": "Invalid message structure"},
             {"method": "tasks/get", "invalid_params": {"invalid": "taskId"}, "expected_error": "Invalid task ID"},
             {"method": "tasks/cancel", "invalid_params": {"invalid": "params"}, "expected_error": "Invalid parameters"},
         ]
@@ -194,7 +191,7 @@ class TestA2AV030MethodEnhancements:
             method = test_case["method"]
             invalid_params = test_case["invalid_params"]
 
-            if method == "message/send":
+            if method == "SendMessage":
                 response = transport_send_message(sut_client, invalid_params)
             elif method == "tasks/get":
                 # Can't easily test with invalid params using transport helper
@@ -282,10 +279,9 @@ class TestTransportSpecificMethodBehavior:
 
         # Test JSON-RPC specific features
         message = {
-            "kind": "message",
             "messageId": generate_test_message_id("jsonrpc-specific"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "JSON-RPC transport test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "JSON-RPC transport test"}],
         }
 
         response = transport_send_message(sut_client, {"message": message})
@@ -365,10 +361,9 @@ class TestMethodPerformanceAndScaling:
         messages = []
         for i in range(3):  # Keep small for testing
             message = {
-                "kind": "message",
                 "messageId": generate_test_message_id(f"concurrent-{i}"),
-                "role": "user",
-                "parts": [{"kind": "text", "text": f"Concurrent test message {i}"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": f"Concurrent test message {i}"}],
             }
             messages.append(message)
 
@@ -405,10 +400,9 @@ class TestMethodPerformanceAndScaling:
         import time
 
         message = {
-            "kind": "message",
             "messageId": generate_test_message_id("response-time"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Response time test message"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Response time test message"}],
         }
 
         start_time = time.time()

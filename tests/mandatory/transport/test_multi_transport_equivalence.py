@@ -113,10 +113,9 @@ def test_message_sending_equivalence(sut_client: BaseTransportClient, transport_
     # Create test message for equivalence testing
     req_id = message_utils.generate_request_id()
     test_message = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Test message for transport equivalence validation"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Test message for transport equivalence validation"}],
         "messageId": f"equiv-test-msg-{req_id}",
-        "kind": "message",
     }
 
     transport_results = {}
@@ -220,10 +219,9 @@ def test_task_retrieval_equivalence(sut_client: BaseTransportClient, transport_c
     # Create a test task first
     req_id = message_utils.generate_request_id()
     test_message = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Task for transport equivalence testing"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Task for transport equivalence testing"}],
         "messageId": f"equiv-task-msg-{req_id}",
-        "kind": "message",
     }
 
     # Create task via primary transport
@@ -676,10 +674,9 @@ def test_concurrent_operation_equivalence(sut_client: BaseTransportClient, trans
         try:
             req_id = message_utils.generate_request_id()
             test_message = {
-                "role": "user",
-                "parts": [{"kind": "text", "text": f"Concurrent test message {i + 1} via {transport}"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": f"Concurrent test message {i + 1} via {transport}"}],
                 "messageId": f"concurrent-msg-{req_id}-{i}",
-                "kind": "message",
             }
 
             result = execute_equivalent_operation(

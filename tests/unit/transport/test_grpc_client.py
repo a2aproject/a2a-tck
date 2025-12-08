@@ -201,8 +201,8 @@ class TestGRPCClientSendMessage:
         message = {
             "message_id": "test-msg-1",
             "context_id": "test-context",
-            "role": "user",
-            "content": [{"text": "Hello via gRPC"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello via gRPC"}],
         }
 
         result = client.send_message(message)

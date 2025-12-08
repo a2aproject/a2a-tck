@@ -74,10 +74,9 @@ async def test_message_stream_basic(sut_client, agent_card_data):
     # Prepare the streaming request message
     message_params = {
         "message": {
-            "kind": "message",
             "messageId": generate_test_message_id("stream"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Stream test message"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Stream test message"}],
         }
     }
 
@@ -236,10 +235,9 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
         # First, create a task via message/stream to get a task ID
         message_params = {
             "message": {
-                "kind": "message",
                 "messageId": "test-resubscribe-message-id-" + str(uuid.uuid4()),
-                "role": "user",
-                "parts": [{"kind": "text", "text": "Test message for resubscribe"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": "Test message for resubscribe"}],
             }
         }
 
@@ -512,10 +510,9 @@ async def test_sse_header_compliance(sut_client, agent_card_data):
     # Prepare streaming request message
     message_params = {
         "message": {
-            "kind": "message",
             "messageId": generate_test_message_id("sse-headers"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Test SSE headers"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Test SSE headers"}],
         }
     }
 
@@ -574,10 +571,9 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
 
     message_params = {
         "message": {
-            "kind": "message",
             "messageId": generate_test_message_id("sse-format"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Test SSE event format"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Test SSE event format"}],
         }
     }
 
@@ -656,10 +652,9 @@ async def test_streaming_connection_resilience(sut_client, agent_card_data):
     # First create a task via streaming to get a task ID
     params = {
         "message": {
-            "kind": "message",
             "messageId": "test-resilience-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Simple task for resilience test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Simple task for resilience test"}],
         }
     }
 

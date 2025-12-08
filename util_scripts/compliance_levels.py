@@ -15,7 +15,7 @@ COMPLIANCE_LEVELS = {
             "All JSON-RPC 2.0 mandatory tests pass",
             "All A2A protocol mandatory tests pass",
             "Agent Card has all required fields with correct types",
-            "Core methods (message/send, tasks/get, tasks/cancel) work correctly",
+            "Core methods (SendMessage, tasks/get, tasks/cancel) work correctly",
             "Proper error handling for invalid requests",
             "No mandatory test failures",
         ],

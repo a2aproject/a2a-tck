@@ -35,9 +35,8 @@ def test_unsupported_part_kind(sut_client):
     # Create a message with an unsupported part type
     params = {
         "message": {
-            "kind": "message",
             "messageId": "test-unsupported-part-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
                 {
                     "type": "unsupported_type",  # Invalid/unsupported type
@@ -84,17 +83,14 @@ def test_invalid_file_part(sut_client):
     # Create a message with a file part containing an invalid URL
     params = {
         "message": {
-            "kind": "message",
             "messageId": "test-invalid-file-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
                 {
-                    "kind": "file",
                     "file": {
                         "name": "test.txt",
-                        "mimeType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
-                        "uri": "invalid://url.com/file.txt",  # Invalid URL (note: uri, not url)
-                        "sizeInBytes": 1024,
+                        "mediaType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
+                        "fileWithUri": "invalid://url.com/file.txt",  # Invalid URL (note: uri, not url)
                     },
                 }
             ],
@@ -133,7 +129,7 @@ def test_empty_message_parts(sut_client):
         - Implementation correctly validates required message structure
     """
     # Create a message with empty parts array (violates A2A MUST requirement)
-    params = {"message": {"kind": "message", "messageId": "test-empty-parts-message-id-" + str(uuid.uuid4()), "role": "user", "parts": []}}
+    params = {"message": {"messageId": "test-empty-parts-message-id-" + str(uuid.uuid4()), "role": "ROLE_USER", "parts": []}}
 
     # Replace with transport helper
     resp = transport_helpers.transport_send_message(sut_client, params)
@@ -175,10 +171,9 @@ def test_very_large_message(sut_client):
     large_text = "A" * 100000  # 100KB of text
     params = {
         "message": {
-            "kind": "message",
             "messageId": "test-large-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": large_text}],
+            "role": "ROLE_USER",
+            "parts": [{"text": large_text}],
         }
     }
 
@@ -217,10 +212,9 @@ def test_missing_required_message_fields(sut_client):
     # Test 1: Missing messageId (MUST requirement violation)
     params_no_message_id = {
         "message": {
-            "kind": "message",
             # messageId is missing - violates A2A MUST requirement
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Message without messageId"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Message without messageId"}],
         }
     }
 
@@ -237,10 +231,9 @@ def test_missing_required_message_fields(sut_client):
     # Test 2: Missing role (MUST requirement violation)
     params_no_role = {
         "message": {
-            "kind": "message",
             "messageId": "test-no-role-message-id-" + str(uuid.uuid4()),
             # role is missing - violates A2A MUST requirement
-            "parts": [{"kind": "text", "text": "Message without role"}],
+            "parts": [{"text": "Message without role"}],
         }
     }
 
@@ -257,9 +250,8 @@ def test_missing_required_message_fields(sut_client):
     # Test 3: Missing parts (MUST requirement violation)
     params_no_parts = {
         "message": {
-            "kind": "message",
             "messageId": "test-no-parts-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             # parts is missing - violates A2A MUST requirement
         }
     }
@@ -295,17 +287,14 @@ def test_file_part_without_mimetype(sut_client):
     # Create a message with a file part missing the RECOMMENDED mimeType field
     params = {
         "message": {
-            "kind": "message",
             "messageId": "test-no-mimetype-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
                 {
-                    "kind": "file",
                     "file": {
                         "name": "test.txt",
                         # mimeType is RECOMMENDED but not required per A2A Spec §6.6.2
-                        "url": "https://example.com/test.txt",
-                        "sizeInBytes": 1024,
+                        "fileWithUri": "https://example.com/test.txt",
                     },
                 }
             ],

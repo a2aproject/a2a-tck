@@ -60,10 +60,9 @@ def create_test_task_for_auth(sut_client, message_text: str = "Test task for in-
     try:
         req_id = message_utils.generate_request_id()
         test_message = {
-            "role": "user",
-            "parts": [{"kind": "text", "text": message_text}],
+            "role": "ROLE_USER",
+            "parts": [{"text": message_text}],
             "messageId": f"auth-test-msg-{req_id}",
-            "kind": "message",
         }
 
         message_response = transport_helpers.transport_send_message(sut_client, {"message": test_message})

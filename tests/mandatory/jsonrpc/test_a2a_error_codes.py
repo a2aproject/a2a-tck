@@ -95,10 +95,9 @@ def test_push_notification_not_supported_error_32003(sut_client):
     # Create a test message to get a task ID first
     req_id = message_utils.generate_request_id()
     test_message = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Test message for push notification error test"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Test message for push notification error test"}],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     # Send message to create a task
@@ -196,10 +195,9 @@ def test_unsupported_operation_error_32004(sut_client):
 
             req_id = message_utils.generate_request_id()
             message_data = {
-                "role": "user",
-                "parts": [{"kind": "text", "text": "test message for streaming"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": "test message for streaming"}],
                 "messageId": f"msg-{req_id}",
-                "kind": "message",
             }
 
             params = {"message": message_data}
@@ -223,8 +221,8 @@ def test_unsupported_operation_error_32004(sut_client):
     # Test 2: Try to use unsupported configuration options
     req_id = message_utils.generate_request_id()
 
-    # Attempt message/send with potentially unsupported configuration
-    message_data = {"role": "user", "parts": [{"kind": "text", "text": "test"}], "messageId": f"msg-{req_id}", "kind": "message"}
+    # Attempt SendMessage with potentially unsupported configuration
+    message_data = {"role": "ROLE_USER", "parts": [{"text": "test"}], "messageId": f"msg-{req_id}"}
 
     # Add configuration that might not be supported
     params = {
@@ -237,7 +235,7 @@ def test_unsupported_operation_error_32004(sut_client):
     }
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/send", params=params, id=req_id)
+        response = transport_helpers.transport_send_json_rpc_request(sut_client, "SendMessage", params=params, id=req_id)
 
         if "error" in response:
             error_code = response["error"]["code"]
@@ -286,26 +284,24 @@ def test_content_type_not_supported_error_32005(sut_client):
 
     # Test 1: Send message with unsupported file MIME type
     message_data = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [
-            {"kind": "text", "text": "Please process this file"},
+            {"text": "Please process this file"},
             {
-                "kind": "file",
                 "file": {
                     "name": "test.unsupported",
-                    "mimeType": "application/x-totally-unsupported-format",
-                    "bytes": "VGVzdCBkYXRh",  # "Test data" in base64
+                    "mediaType": "application/x-totally-unsupported-format",
+                    "fileWithBytes": "VGVzdCBkYXRh",  # "Test data" in base64
                 },
             },
         ],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     params = {"message": message_data}
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/send", params=params, id=req_id)
+        response = transport_helpers.transport_send_json_rpc_request(sut_client, "SendMessage", params=params, id=req_id)
 
         if "error" in response:
             error_code = response["error"]["code"]
@@ -327,10 +323,9 @@ def test_content_type_not_supported_error_32005(sut_client):
     req_id = message_utils.generate_request_id()
 
     message_data = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Generate output in unsupported format"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Generate output in unsupported format"}],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     params = {
@@ -339,7 +334,7 @@ def test_content_type_not_supported_error_32005(sut_client):
     }
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/send", params=params, id=req_id)
+        response = transport_helpers.transport_send_json_rpc_request(sut_client, "SendMessage", params=params, id=req_id)
 
         if "error" in response:
             error_code = response["error"]["code"]

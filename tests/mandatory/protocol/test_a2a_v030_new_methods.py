@@ -285,13 +285,13 @@ class TestMethodMappingCompliance:
         A2A v0.3.0 Specification Reference: §3.5.6 Method Mapping Reference Table
 
         Validates mapping for:
-        - message/send → SendMessage → POST /v1/message:send
+        - SendMessage → SendMessage → POST /v1/message:send
         - tasks/get → GetTask → GET /v1/tasks/{id}
         - tasks/cancel → CancelTask → POST /v1/tasks/{id}:cancel
         """
         transport_type = get_client_transport_type(sut_client)
 
-        # Test message/send mapping
+        # Test SendMessage mapping
         try:
             sample_message = {
                 "messageId": generate_test_message_id("mapping-test"),
@@ -326,33 +326,19 @@ class TestMethodMappingCompliance:
     @pytest.mark.a2a_v030
     def test_transport_specific_method_naming(self, sut_client: BaseTransportClient):
         """
-        Test that transport-specific method naming follows A2A v0.3.0 conventions.
+        Test that transport-specific method naming follows A2A v1.0 conventions.
 
-        A2A v0.3.0 Specification Reference: §3.5.1, §3.5.2, §3.5.3
+        A2A v1.0 Specification Reference: §5.3. Method Mapping Reference
 
         Validates:
-        - JSON-RPC: {category}/{action} pattern
+        - JSON-RPC: PascalCase compound words
         - gRPC: PascalCase compound words
         - REST: /v1/{resource}[/{id}][:{action}] pattern
         """
         transport_type = get_client_transport_type(sut_client)
 
-        if transport_type == "jsonrpc":
-            # Test JSON-RPC category/action naming pattern
-            test_methods = ["message/send", "tasks/get", "tasks/cancel", "agent/getAuthenticatedExtendedCard"]
-
-            for method in test_methods:
-                # Verify method follows category/action pattern
-                assert "/" in method, f"JSON-RPC method {method} should use category/action pattern"
-                parts = method.split("/")
-                assert len(parts) >= 2, f"Method {method} should have at least category/action"
-
-                # Category should be lowercase noun
-                category = parts[0]
-                assert category.islower(), f"Category {category} should be lowercase"
-
-        elif transport_type == "grpc":
-            # Test gRPC PascalCase naming
+        if transport_type == "jsonrpc" or transport_type == "grpc":
+            # Test gRPC & JSON-RPC PascalCase naming
             if hasattr(sut_client, "_get_method_mapping"):
                 method_mapping = sut_client._get_method_mapping()
                 for grpc_method in method_mapping.values():
@@ -505,9 +491,9 @@ class TestTransportSpecificFeatures:
                 batch_requests = [
                     {"method": "agent/getCard", "params": {}, "id": 1},
                     {
-                        "method": "message/send",
+                        "method": "SendMessage",
                         "params": {
-                            "message": {"kind": "message", "role": "user", "parts": [{"kind": "text", "text": "test"}], "messageId": "test-batch-1"}
+                            "message": {"role": "ROLE_USER", "parts": [{"text": "test"}], "messageId": "test-batch-1"}
                         },
                         "id": 2,
                     },
@@ -527,10 +513,9 @@ class TestTransportSpecificFeatures:
         try:
             message_params = {
                 "message": {
-                    "role": "user",
-                    "parts": [{"kind": "text", "text": "Test for additional fields"}],
+                    "role": "ROLE_USER",
+                    "parts": [{"text": "Test for additional fields"}],
                     "messageId": "test-additional-fields",
-                    "kind": "message",
                 }
             }
             response = transport_send_message(sut_client, message_params)

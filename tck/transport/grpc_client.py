@@ -428,10 +428,9 @@ class GRPCClient(BaseTransportClient):
                 m = response.msg
                 logger.debug(f"Received gRPC message for message {msg_id}")
                 result = {
-                    "kind": "message",
                     "role": "agent",
                     "messageId": m.message_id,
-                    "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
+                    "parts": ([{"text": m.parts[0].text}] if m.parts else []),
                 }
                 # Note: Message validation would need to be implemented for message responses
                 return result
@@ -514,10 +513,9 @@ class GRPCClient(BaseTransportClient):
                         m = response.msg
                         yield {
                             "message": {
-                                "kind": "message",
-                                "role": "agent",
+                                "role": "ROLE_AGENT",
                                 "messageId": m.message_id,
-                                "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
+                                "parts": ([{"text": m.parts[0].text}] if m.parts else []),
                             }
                         }
 
@@ -577,12 +575,11 @@ class GRPCClient(BaseTransportClient):
             if resp.history:
                 result["history"] = [
                     {
-                        "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
-                        "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
+                        "role": ("ROLE_AGENT" if m.role == pb.ROLE_AGENT else "ROLE_USER"),
+                        "parts": ([{"text": m.parts[0].text}] if m.parts else []),
                         "messageId": m.message_id,
                         "taskId": resp.id,
                         "contextId": resp.context_id,
-                        "kind": "message",
                     }
                     for m in resp.history
                 ]

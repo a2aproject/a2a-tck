@@ -85,7 +85,7 @@ class BaseTransportClient(ABC):
         extra_headers: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
-        Send a message to the A2A server using the message/send method.
+        Send a message to the A2A server using the SendMessage method.
 
         This method implements the core A2A message sending functionality.
         All transport implementations must provide functionally equivalent behavior.

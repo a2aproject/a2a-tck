@@ -34,7 +34,7 @@ class MockJSONRPCClient(JSONRPCClient):
         self.call_log.append(("_make_jsonrpc_request", method, params, request_id, extra_headers))
 
         # Return appropriate mock responses based on method
-        if method == "message/send":
+        if method == "SendMessage":
             return {
                 "jsonrpc": "2.0",
                 "result": {"taskId": "test-task-123", "state": "pending", "createdAt": "2025-08-02T10:00:00Z"},
@@ -66,7 +66,7 @@ class MockJSONRPCClient(JSONRPCClient):
 
     def send_message(self, message: Dict[str, Any], extra_headers=None):
         self.call_log.append(("send_message", message, extra_headers))
-        response = self._make_jsonrpc_request("message/send", {"message": message}, extra_headers=extra_headers)
+        response = self._make_jsonrpc_request("SendMessage", {"message": message}, extra_headers=extra_headers)
         return response["result"]
 
     def send_streaming_message(self, message: Dict[str, Any], extra_headers=None):

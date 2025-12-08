@@ -12,7 +12,7 @@
 
 #### Protocol Tests (`tests/mandatory/protocol/`)
 - `test_agent_card.py` - Agent Card structure and availability
-- `test_message_send_method.py` - Core message/send functionality
+- `test_message_send_method.py` - Core SendMessage functionality
 - `test_state_transitions.py` - Task state management  
 - `test_tasks_cancel_method.py` - Task cancellation
 - `test_tasks_get_method.py` - Task retrieval

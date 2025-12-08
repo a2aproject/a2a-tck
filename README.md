@@ -457,7 +457,7 @@ EOF
 - JSON-RPC 2.0 compliance (`tests/mandatory/jsonrpc/`)
 - A2A protocol core methods (`tests/mandatory/protocol/`)
 - Agent Card required fields
-- Core message/send functionality
+- Core SendMessage functionality
 - Task management (get/cancel)
 
 **Example Failures**:

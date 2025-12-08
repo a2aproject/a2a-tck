@@ -45,7 +45,7 @@ class MethodMappingValidator:
     # A2A v0.3.0 Method Mapping Reference Table (§3.5.6)
     CORE_METHOD_MAPPINGS = [
         MethodMapping(
-            jsonrpc_method="message/send",
+            jsonrpc_method="SendMessage",
             grpc_method="SendMessage",
             rest_endpoint="POST /v1/message:send",
             description="Send message to agent",
@@ -165,7 +165,7 @@ class MethodMappingValidator:
 
         # Test core methods that should be equivalent across transports
         equivalent_methods = [
-            ("message/send", "Send a test message"),
+            ("SendMessage", "Send a test message"),
             ("tasks/get", None),  # Requires existing task
             ("tasks/cancel", None),  # Requires existing task
         ]

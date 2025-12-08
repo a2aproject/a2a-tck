@@ -16,7 +16,7 @@
 - ❌ **test_authentication_structure** - Optional (auth schemes are capability-based)
 
 ### test_message_send_method.py - Core Message Protocol
-- ✅ **test_message_send_valid_text** - A2A §5.1 MUST support message/send with text
+- ✅ **test_message_send_valid_text** - A2A §5.1 MUST support SendMessage with text
 - ✅ **test_message_send_invalid_params** - A2A §5.1 MUST validate required fields
 - ✅ **test_message_send_continue_task** - A2A §5.1 MUST support task continuation
 - ✅ **test_message_send_continue_nonexistent_task** - A2A §5.1 MUST return TaskNotFoundError
@@ -120,7 +120,7 @@
 ### Mandatory Categories:
 - **✅ JSON-RPC 2.0 Compliance** (4 tests) - Hard requirement for any JSON-RPC server
 - **✅ Agent Card Mandatory Fields** (3 tests) - Required by A2A specification
-- **✅ Core Message Protocol** (4 tests) - message/send basic functionality
+- **✅ Core Message Protocol** (4 tests) - SendMessage basic functionality
 - **✅ Task Management Protocol** (5 tests) - tasks/get, tasks/cancel core functionality
 - **✅ Protocol Violations** (2 tests) - Protocol compliance enforcement
 

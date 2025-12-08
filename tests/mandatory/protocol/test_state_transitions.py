@@ -16,10 +16,9 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello from TCK state transition test!"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello from TCK state transition test!"}],
         }
     }
 
@@ -29,10 +28,9 @@ def follow_up_message_params(text_message_params):
     """Create a follow-up message params object"""
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Follow-up message for state transition test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Follow-up message for state transition test"}],
         }
     }
 

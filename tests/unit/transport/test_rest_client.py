@@ -194,7 +194,6 @@ class TestRESTClientSendMessage:
                 "status": {
                     "state": "TASK_STATE_SUBMITTED",
                     "message": {
-                        "kind": "message",
                         "message_id": "response-123",
                         "role": "ROLE_AGENT",
                         "content": [{"text": "Message received via REST"}],
@@ -212,10 +211,10 @@ class TestRESTClientSendMessage:
             client = RESTClient("https://example.com:8080")
 
             message = {
-                "message_id": "test-msg-1",
-                "context_id": "test-context",
-                "role": "user",
-                "content": [{"text": "Hello via REST"}],
+                "messageId": "test-msg-1",
+                "contextId": "test-context",
+                "role": "ROLE_USER",
+                "parts": [{"text": "Hello via REST"}],
             }
 
             result = client.send_message(message)
@@ -227,7 +226,7 @@ class TestRESTClientSendMessage:
 
             # Verify result
             assert result["task"]["id"] == "task-123"
-            assert result["task"]["context_id"] == "test-context"
+            assert result["task"]["contextId"] == "test-context"
 
     @patch("httpx.Client.post")
     def test_send_message_with_extra_headers(self, mock_post):
@@ -492,10 +491,9 @@ class TestRESTClientTaskOperations:
             "status": {
                 "state": "TASK_STATE_COMPLETED",
                 "message": {
-                    "kind": "message",
                     "message_id": "status-123",
                     "role": "ROLE_AGENT",
-                    "content": [{"text": "Task 123 retrieved via REST"}],
+                    "parts": [{"text": "Task 123 retrieved via REST"}],
                 },
             },
         }
@@ -547,10 +545,9 @@ class TestRESTClientTaskOperations:
             "status": {
                 "state": "TASK_STATE_CANCELLED",
                 "message": {
-                    "kind": "message",
                     "message_id": "cancel-456",
                     "role": "ROLE_AGENT",
-                    "content": [{"text": "Task 456 cancelled via REST"}],
+                    "parts": [{"text": "Task 456 cancelled via REST"}],
                 },
             },
         }

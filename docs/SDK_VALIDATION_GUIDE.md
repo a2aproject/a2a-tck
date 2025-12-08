@@ -50,7 +50,7 @@ This guide helps SDK developers understand how to use the A2A Technology Compati
 
 **Common Failures**:
 - `test_mandatory_fields_present` → Agent Card missing required fields
-- `test_message_send_valid_text` → message/send method not working
+- `test_message_send_valid_text` → SendMessage method not working
 - `test_tasks_get_valid` → tasks/get method not working
 - `test_task_history_length` → historyLength parameter not implemented
 
@@ -160,9 +160,9 @@ KeyError: Required field 'version' missing from Agent Card
 ```
 Expected InvalidParams error but got success response
 ```
-**Issue**: message/send not validating required parameters  
+**Issue**: SendMessage not validating required parameters  
 **Specification**: A2A §5.1 requires parameter validation  
-**Fix**: Add proper parameter validation to message/send method
+**Fix**: Add proper parameter validation to SendMessage method
 
 ### Capability Test Failures
 

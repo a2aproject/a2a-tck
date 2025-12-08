@@ -22,10 +22,9 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-sdk-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Test message for SDK limitation tests"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Test message for SDK limitation tests"}],
         }
     }
 
@@ -61,11 +60,10 @@ def test_history_length_parameter_compliance(sut_client, text_message_params):
     for i in range(5):
         follow_up_params = {
             "message": {
-                "kind": "message",
                 "taskId": task_id,
                 "messageId": f"sdk-test-msg-{i + 1}-" + str(uuid.uuid4()),
-                "role": "user",
-                "parts": [{"kind": "text", "text": f"SDK test message {i + 1}"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": f"SDK test message {i + 1}"}],
             }
         }
         update_resp = transport_helpers.transport_send_message(sut_client, follow_up_params)

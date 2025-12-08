@@ -95,7 +95,7 @@ class TransportComplianceValidator:
         """
         result = {
             "required_methods": [
-                "send_message",  # message/send
+                "send_message",  # SendMessage
                 "get_task",  # tasks/get
                 "cancel_task",  # tasks/cancel
                 "get_agent_card",  # agent/getAuthenticatedExtendedCard
@@ -209,7 +209,7 @@ class MethodMappingValidator:
     # Method mapping reference table from specification §3.5.6
     METHOD_MAPPING = {
         "send_message": {
-            "jsonrpc": "message/send",
+            "jsonrpc": "SendMessage",
             "grpc": "SendMessage",
             "rest": "POST /v1/message:send",
             "description": "Send message to agent",

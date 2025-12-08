@@ -19,13 +19,12 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def created_task_id(sut_client):
-    # Create a task using message/send and return its id
+    # Create a task using SendMessage and return its id
     message_params = {
         "message": {
             "messageId": "test-push-notification-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for push notification config test"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for push notification config test"}],
         }
     }
     resp = transport_helpers.transport_send_message(sut_client, message_params)
@@ -302,9 +301,8 @@ def test_list_push_notification_config_empty(sut_client, agent_card_data):
     message_params = {
         "message": {
             "messageId": "test-empty-list-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for empty push notification config list test"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for empty push notification config list test"}],
         }
     }
     resp = transport_helpers.transport_send_message(sut_client, message_params)
@@ -440,7 +438,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     2. Push notifications are actually sent to the configured webhook URL
 
     This addresses GitHub issue #84 - ensuring the TCK tests that pushNotificationConfig
-    is processed when included in the message/send configuration.
+    is processed when included in the SendMessage configuration.
 
     Specification Reference: A2A Protocol v0.3.0 §7.1.2 - SendMessageConfiguration
     """
@@ -456,9 +454,8 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     message_params = {
         "message": {
             "messageId": message_id,
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task with push notification config in send configuration"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task with push notification config in send configuration"}],
         }
     }
 
@@ -474,7 +471,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
 
     # Since push notifications capability is declared, message send should succeed
     assert transport_helpers.is_json_rpc_success_response(resp), (
-        "Push notifications capability declared but message/send with pushNotificationConfig failed"
+        "Push notifications capability declared but SendMessage with pushNotificationConfig failed"
     )
 
     task_id = resp["result"]["id"]
@@ -589,9 +586,8 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
     message_params = {
         "message": {
             "messageId": message_id,
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task with push notification config in streaming send configuration"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task with push notification config in streaming send configuration"}],
         }
     }
 

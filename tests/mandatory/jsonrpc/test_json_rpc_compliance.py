@@ -21,7 +21,7 @@ def test_rejects_malformed_json(sut_client):
 
     Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
-    malformed_json = '{"jsonrpc": "2.0", "method": "message/send", "params": {"foo": "bar"}'  # missing closing }
+    malformed_json = '{"jsonrpc": "2.0", "method": "SendMessage", "params": {"foo": "bar"}'  # missing closing }
     url = sut_client.base_url
     headers = {"Content-Type": "application/json"}
     # We expect a network error or HTTP error due to malformed JSON

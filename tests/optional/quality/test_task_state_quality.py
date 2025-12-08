@@ -23,9 +23,8 @@ def text_message_params():
     return {
         "message": {
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello from TCK state transition test!"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello from TCK state transition test!"}],
         }
     }
 
@@ -36,9 +35,8 @@ def follow_up_message_params(text_message_params):
     return {
         "message": {
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Follow-up message for state transition test"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Follow-up message for state transition test"}],
         }
     }
 
@@ -64,10 +62,9 @@ def test_task_state_transitions(sut_client):
     # Create a task
     create_params = {
         "message": {
-            "kind": "message",
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for state transition test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for state transition test"}],
         }
     }
 
@@ -91,11 +88,10 @@ def test_task_state_transitions(sut_client):
     # Send a follow-up message to continue the task
     follow_up_params = {
         "message": {
-            "kind": "message",
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "taskId": task_id,
-            "parts": [{"kind": "text", "text": "Follow-up for state test"}],
+            "parts": [{"text": "Follow-up for state test"}],
         }
     }
 
@@ -139,10 +135,9 @@ def test_task_cancel_state_handling(sut_client):
     # Create a task
     create_params = {
         "message": {
-            "kind": "message",
             "messageId": "test-cancel-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for cancel test"}],
+            "role": "uROLE_USERer",
+            "parts": [{"text": "Task for cancel test"}],
         }
     }
 

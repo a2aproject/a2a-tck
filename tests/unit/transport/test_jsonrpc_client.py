@@ -132,13 +132,13 @@ class TestJSONRPCClient:
         mock_post.return_value = mock_response
 
         # Test message
-        message = {"kind": "message", "messageId": "msg-123", "role": "user", "parts": [{"kind": "text", "text": "Hello"}]}
+        message = {"messageId": "msg-123", "role": "ROLE_USER", "parts": [{"text": "Hello"}]}
 
         result = self.client.send_message(message)
 
         # Verify correct method and params were used
         call_args = mock_post.call_args
-        assert call_args[1]["json"]["method"] == "message/send"
+        assert call_args[1]["json"]["method"] == "SendMessage"
         assert call_args[1]["json"]["params"] == {"message": message}
 
         # Verify result extraction

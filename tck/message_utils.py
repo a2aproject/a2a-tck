@@ -49,16 +49,16 @@ def is_json_rpc_error_response(resp: dict, expected_id: Union[str, int, None] = 
 
 # A2A Protocol Method Implementations - Real HTTP Calls
 
+# FIXME need to be updated for 1.0
 def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, Any]:
     """
     Convert A2A JSON message format to protobuf-compatible JSON format.
 
     A2A JSON format:
     {
-        "kind": "message",
         "messageId": "...",
-        "role": "user",
-        "parts": [{"kind": "text", "text": "..."}]
+        "role": "ROLE_USER",
+        "parts": [{"text": "..."}]
     }
 
     Protobuf JSON format:
@@ -81,14 +81,6 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
     # Map taskId -> task_id
     if "taskId" in message:
         protobuf_message["task_id"] = message["taskId"]
-
-    # Map role to protobuf enum format
-    if "role" in message:
-        role_map = {
-            "user": "ROLE_USER",
-            "agent": "ROLE_AGENT"
-        }
-        protobuf_message["role"] = role_map.get(message["role"], "ROLE_UNSPECIFIED")
 
     # Map parts -> parts (and convert part format)
     if "parts" in message:
@@ -150,8 +142,7 @@ def convert_protobuf_response_to_a2a_json(response: Dict[str, Any]) -> Dict[str,
             "id": "...",
             "contextId": "...",
             "status": {...},
-            "history": [{"messageId": "...", "role": "user", "parts": [...], "kind": "message"}],
-            "kind": "task"
+            "history": [{"messageId": "...", "role": "ROLE_USER", "parts": [...]}],
         }
     }
     """
@@ -224,7 +215,7 @@ def convert_protobuf_task_to_a2a(task: Dict[str, Any]) -> Dict[str, Any]:
 
 def convert_protobuf_message_to_a2a(message: Dict[str, Any]) -> Dict[str, Any]:
     """Convert protobuf message to A2A message format."""
-    a2a_message = {"kind": "message"}
+    a2a_message = {}
 
     # Map basic fields
     if "message_id" in message:
@@ -241,11 +232,11 @@ def convert_protobuf_message_to_a2a(message: Dict[str, Any]) -> Dict[str, Any]:
     # Convert role from protobuf enum to A2A format
     if "role" in message:
         role_map = {
-            "ROLE_USER": "user",
-            "ROLE_AGENT": "agent",
-            "ROLE_UNSPECIFIED": "user"  # default fallback
+            "ROLE_USER": "ROLE_USER",
+            "ROLE_AGENT": "ROLE_AGENT",
+            "ROLE_UNSPECIFIED": "ROLE_USER"  # default fallback
         }
-        a2a_message["role"] = role_map.get(message["role"], "user")
+        a2a_message["role"] = role_map.get(message["role"], "ROLE_USER")
 
     # Convert parts -> parts
     if "parts" in message:
@@ -253,10 +244,8 @@ def convert_protobuf_message_to_a2a(message: Dict[str, Any]) -> Dict[str, Any]:
         for part in message["parts"]:
             a2a_part = {}
             if "text" in part:
-                a2a_part["kind"] = "text"
                 a2a_part["text"] = part["text"]
             elif "file" in part:
-                a2a_part["kind"] = "file"
                 file_data = part["file"]
                 a2a_file = {}
                 if "name" in file_data:
@@ -271,7 +260,6 @@ def convert_protobuf_message_to_a2a(message: Dict[str, Any]) -> Dict[str, Any]:
                     a2a_file["bytes"] = file_data["bytes"]
                 a2a_part["file"] = a2a_file
             elif "data" in part:
-                a2a_part["kind"] = "data"
                 # Handle nested DataPart structure: {"data": {"data": <actual_data>}}
                 data_field = part["data"]
                 if isinstance(data_field, dict) and "data" in data_field:

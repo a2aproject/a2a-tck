@@ -33,13 +33,12 @@ def test_very_long_string(sut_client):
     params = {
         "message": {
             "messageId": "test-long-string-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": long_text}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": long_text}],
         }
     }
 
-    req = message_utils.make_json_rpc_request("message/send", params=params)
+    req = message_utils.make_json_rpc_request("SendMessage", params=params)
     resp = transport_helpers.transport_send_message(sut_client, params)
 
     # The SUT may handle this in different ways:
@@ -71,13 +70,12 @@ def test_empty_arrays(sut_client):
     params = {
         "message": {
             "messageId": "test-empty-array-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [],
-            "kind": "message",
         }
     }
 
-    req = message_utils.make_json_rpc_request("message/send", params=params)
+    req = message_utils.make_json_rpc_request("SendMessage", params=params)
     resp = transport_helpers.transport_send_message(sut_client, params)
 
     # The SUT should reject this with InvalidParams
@@ -102,16 +100,15 @@ def test_null_optional_fields(sut_client):
     params = {
         "message": {
             "messageId": "test-null-fields-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello with null fields"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello with null fields"}],
             "taskId": None,  # Explicitly null
             "contextId": None,  # Explicitly null
             "metadata": None,  # Explicitly null
-            "kind": "message",
         }
     }
 
-    req = message_utils.make_json_rpc_request("message/send", params=params)
+    req = message_utils.make_json_rpc_request("SendMessage", params=params)
     resp = transport_helpers.transport_send_message(sut_client, params)
 
     # The SUT should either:
@@ -175,15 +172,14 @@ def test_extra_fields(sut_client):
     params = {
         "message": {
             "messageId": "test-extra-fields-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Message with extra fields"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Message with extra fields"}],
             "_extra_field": "This field is not in the spec",
             "_debug_info": {"client_version": "1.0.0", "timestamp": 1234567890},
-            "kind": "message",
         }
     }
 
-    req = message_utils.make_json_rpc_request("message/send", params=params)
+    req = message_utils.make_json_rpc_request("SendMessage", params=params)
     resp = transport_helpers.transport_send_message(sut_client, params)
 
     # The SUT should either:
@@ -213,17 +209,16 @@ def test_unicode_and_special_chars(sut_client):
     params = {
         "message": {
             "messageId": "test-unicode-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Unicode: 你好, здравствуйте, مرحبا, こんにちは\nControl chars: \t\b\f\r\n"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Unicode: 你好, здравствуйте, مرحبا, こんにちは\nControl chars: \t\b\f\r\n"}],
         }
     }
 
-    req = message_utils.make_json_rpc_request("message/send", params=params)
+    req = message_utils.make_json_rpc_request("SendMessage", params=params)
     resp = transport_helpers.transport_send_message(sut_client, params)
 
     # The SUT should handle Unicode correctly
-    assert transport_helpers.is_json_rpc_success_response(resp), "Unicode characters should not cause message/send to fail"
+    assert transport_helpers.is_json_rpc_success_response(resp), "Unicode characters should not cause SendMessage to fail"
 
     # Get the task to verify it was stored correctly
     task_id = resp["result"]["id"]
@@ -276,13 +271,12 @@ def _create_simple_task(sut_client):
     params = {
         "message": {
             "messageId": "test-simple-task-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": f"Simple task for edge case testing {uuid.uuid4()}"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": f"Simple task for edge case testing {uuid.uuid4()}"}],
         }
     }
 
-    req = message_utils.make_json_rpc_request("message/send", params=params)
+    req = message_utils.make_json_rpc_request("SendMessage", params=params)
     resp = transport_helpers.transport_send_message(sut_client, params)
 
     if not transport_helpers.is_json_rpc_success_response(resp):

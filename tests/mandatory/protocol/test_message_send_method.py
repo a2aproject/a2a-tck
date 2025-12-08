@@ -119,7 +119,7 @@ def test_message_send_invalid_params(sut_client):
     """
     MANDATORY: A2A v1.0 §9.5. Error Handling
 
-    The A2A v1.0 specification requires proper validation of message/send parameters.
+    The A2A v1.0 specification requires proper validation of SendMessage parameters.
     Missing required fields MUST result in InvalidParamsError (-32602).
     This test works across all transport types.
 
