@@ -21,10 +21,9 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-protocol-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello from protocol violation test!"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello from protocol violation test!"}],
         }
     }
 
@@ -44,7 +43,7 @@ def test_duplicate_request_ids(sut_client, text_message_params):
     fixed_id = f"duplicate-{uuid.uuid4()}"
 
     # First request with the fixed ID
-    first_req = message_utils.make_json_rpc_request("message/send", params=text_message_params, id=fixed_id)
+    first_req = message_utils.make_json_rpc_request("SendMessage", params=text_message_params, id=fixed_id)
     first_resp = sut_client.send_raw_json_rpc(first_req)
     assert message_utils.is_json_rpc_success_response(first_resp, expected_id=fixed_id)
 
@@ -52,7 +51,7 @@ def test_duplicate_request_ids(sut_client, text_message_params):
     second_params = text_message_params.copy()
     second_params["message"]["parts"][0]["text"] = "This is a different message with the same ID"
 
-    second_req = message_utils.make_json_rpc_request("message/send", params=second_params, id=fixed_id)
+    second_req = message_utils.make_json_rpc_request("SendMessage", params=second_params, id=fixed_id)
     second_resp = sut_client.send_raw_json_rpc(second_req)
 
     # Various SUTs might handle this differently:

@@ -36,7 +36,7 @@ def test_rejects_malformed_json(sut_client):
 @pytest.mark.parametrize(
     "invalid_request,expected_code",
     [
-        ({"jsonrpc": "aaa", "method": "message/send", "params": {}}, -32600),  # missing jsonrpc
+        ({"jsonrpc": "aaa", "method": "SendMessage", "params": {}}, -32600),  # missing jsonrpc
         (
             {
                 "jsonrpc": "2.0",
@@ -47,13 +47,14 @@ def test_rejects_malformed_json(sut_client):
         (
             {
                 "jsonrpc": "2.0",
-                "method": "message/ssend",
+                "method": "SendMessageXXX",
+                "id": "3",
                 "params": {},
             },
             -32601,
         ),  # wrong method
-        ({"jsonrpc": "2.0", "method": "message/send", "params": {}, "id": {"bad": "type"}}, -32600),  # invalid id type
-        ({"jsonrpc": "2.0", "method": "message/send", "params": {"":"not_a_dict"}}, -32602),  # invalid params type
+        ({"jsonrpc": "2.0", "method": "SendMessage", "params": {}, "id": {"bad": "type"}}, -32600),  # invalid id type
+        ({"jsonrpc": "2.0", "method": "SendMessage", "id": "4", "params": {"":"not_a_dict"}}, -32602),  # invalid params type
     ],
 )
 def test_rejects_invalid_json_rpc_requests(sut_client, invalid_request, expected_code):
@@ -68,11 +69,13 @@ def test_rejects_invalid_json_rpc_requests(sut_client, invalid_request, expected
     """
     url = sut_client.base_url
     headers = {"Content-Type": "application/json"}
+    print(f"request => {invalid_request}")
     response = requests.post(url, json=invalid_request, headers=headers, timeout=10)
     assert response.status_code == 200  # JSON-RPC errors are returned with 200
     resp_json = response.json()
+    print(f"response => {resp_json}")
     assert "error" in resp_json
-    assert resp_json["error"]["code"] == expected_code
+    assert resp_json["error"]["code"] == expected_code, f"Expected {expected_code}, got {resp_json['error']['code']}"
 
 
 @mandatory_jsonrpc
@@ -101,6 +104,6 @@ def test_rejects_invalid_params(sut_client):
 
     Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
-    req = message_utils.make_json_rpc_request("message/send", params={"message": {"parts": "invalid"}})
+    req = message_utils.make_json_rpc_request("SendMessage", params={"message": {"parts": "invalid"}})
     resp = sut_client.send_raw_json_rpc(req)
     assert resp["error"]["code"] == -32602  # Spec: InvalidParamsError
