@@ -50,10 +50,9 @@ def test_task_history_length(sut_client):
     # Create a task and add multiple messages to build history
     create_params = {
         "message": {
-            "kind": "message",
             "messageId": "test-history-create-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Initial message for history test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Initial message for history test"}],
         }
     }
 
@@ -63,17 +62,16 @@ def test_task_history_length(sut_client):
     assert transport_helpers.is_json_rpc_success_response(create_resp)
 
     # Get the server-generated task ID
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
     # Add additional messages to the task to build history
     for i in range(3):
         follow_up_params = {
             "message": {
-                "kind": "message",
                 "messageId": f"test-history-message-{i + 1}-" + str(uuid.uuid4()),
-                "role": "user",
+                "role": "ROLE_USER",
                 "taskId": task_id,
-                "parts": [{"kind": "text", "text": f"Follow-up message {i + 1} for history test"}],
+                "parts": [{"text": f"Follow-up message {i + 1} for history test"}],
             }
         }
         update_resp = transport_helpers.transport_send_message(sut_client, follow_up_params)

@@ -294,30 +294,28 @@ class TestMethodMappingCompliance:
         # Test message/send mapping
         try:
             sample_message = {
-                "kind": "message",
                 "messageId": generate_test_message_id("mapping-test"),
-                "role": "user",
-                "parts": [{"kind": "text", "text": "Method mapping test"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": "Method mapping test"}],
             }
             response = transport_send_message(sut_client, {"message": sample_message})
             assert response is not None
 
             # Extract task from response
-            task = response.get("result", response)
+            task = response["result"]["task"]
             assert "id" in task
             task_id = task["id"]
 
             # Test tasks/get mapping
             get_response = transport_get_task(sut_client, task_id)
             assert get_response is not None
-            retrieved_task = get_response.get("result", get_response)
-
+            retrieved_task = get_response["result"]
             assert retrieved_task["id"] == task_id
 
             # Test tasks/cancel mapping
             cancel_response = transport_cancel_task(sut_client, task_id)
             assert cancel_response is not None
-            cancelled_task = cancel_response.get("result", cancel_response)
+            cancelled_task = cancel_response["result"]
             assert cancelled_task["id"] == task_id
 
         except Exception as e:

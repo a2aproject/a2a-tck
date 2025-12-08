@@ -62,7 +62,7 @@ def test_agent_card_available(fetched_agent_card):
 @mandatory_protocol
 def test_mandatory_fields_present(fetched_agent_card):
     """
-    MANDATORY: A2A Specification §2.1 - Agent Card Structure
+    MANDATORY: A2A Specification §4.4.1. AgentCard
 
     The A2A JSON Schema defines required fields in AgentCard.
     These fields are MANDATORY for A2A compliance.
@@ -77,8 +77,13 @@ def test_mandatory_fields_present(fetched_agent_card):
         "description",
         "name",
         "skills",
-        "url",
         "version",
+    ]
+
+    deprecatedFields = [
+        "url",
+        "preferredTransport",
+        "additionalInterfaces"
     ]
 
     # Fields that were previously expected but are NOT in the specification
@@ -97,6 +102,14 @@ def test_mandatory_fields_present(fetched_agent_card):
             # This is expected - these fields are not in the specification
             pass
 
+    # Document that these fields are DEPRECATED in the specification
+    for field in deprecatedFields:
+        if field in fetched_agent_card:
+            # If SDK provides them, that's fine but not required
+            pass
+        else:
+            # This is expected - these fields are not in the specification
+            pass
 
 @mandatory_protocol
 def test_mandatory_field_types(fetched_agent_card):
@@ -112,15 +125,9 @@ def test_mandatory_field_types(fetched_agent_card):
     assert isinstance(fetched_agent_card.get("name"), str), "name must be a string"
     assert isinstance(fetched_agent_card.get("description"), str), "description must be a string"
     assert isinstance(fetched_agent_card.get("version"), str), "version must be a string"
-    assert isinstance(fetched_agent_card.get("url"), str), "url must be a string"
     assert isinstance(fetched_agent_card.get("capabilities"), dict), "capabilities must be an object"
     assert isinstance(fetched_agent_card.get("defaultInputModes"), list), "defaultInputModes must be an array"
     assert isinstance(fetched_agent_card.get("defaultOutputModes"), list), "defaultOutputModes must be an array"
     assert isinstance(fetched_agent_card.get("skills"), list), "skills must be an array"
-
-    # Simple regex to check for a valid URL format
-    url = fetched_agent_card["url"]
-    url_pattern = r"^https?://[^\s/$.?#].[^\s]*$"
-    assert re.match(url_pattern, url), f"url is not a valid URL: {url}"
 
     # Note: protocolVersion and id are NOT in A2A specification
