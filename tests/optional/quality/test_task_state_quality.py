@@ -136,7 +136,7 @@ def test_task_cancel_state_handling(sut_client):
     create_params = {
         "message": {
             "messageId": "test-cancel-message-id-" + str(uuid.uuid4()),
-            "role": "uROLE_USERer",
+            "role": "ROLE_USER",
             "parts": [{"text": "Task for cancel test"}],
         }
     }
