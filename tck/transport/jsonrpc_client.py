@@ -198,9 +198,11 @@ class JSONRPCClient(BaseTransportClient):
                     
                     # Validate response status
                     response.raise_for_status()
-                    
+                    print(response)
+                    print(response.headers)
                     # Validate content type for SSE
                     content_type = response.headers.get("content-type", "")
+                    # FIXME a2a-java, regression likely caused by https://github.com/a2aproject/a2a-java/issues/486
                     if not content_type.startswith("text/event-stream"):
                         raise JSONRPCError(f"Expected text/event-stream content type for streaming, got: {content_type}")
 
@@ -327,7 +329,7 @@ class JSONRPCClient(BaseTransportClient):
             # Use the new streaming method that properly handles SSE
             event_count = 0
             async for event in self._make_streaming_jsonrpc_request(
-                method="message/stream", params=params, extra_headers=extra_headers
+                method="SendStreamingMessage", params=params, extra_headers=extra_headers
             ):
                 # Extract result from JSON-RPC response
                 result = event.get("result")
@@ -610,8 +612,8 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="tasks/pushNotificationConfig/delete",
-                params={"id": task_id, "pushNotificationConfigId": config_id},
+                method="DeleteTaskPushNotificationConfig",
+                params={"name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}"},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})

@@ -359,15 +359,21 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
         pytest.skip("Push notifications capability not declared - test not applicable")
 
     # First, set a push notification config
-    config = {"url": "https://example.com/webhook-to-delete"}
-    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config)
+    config = {
+        "pushNotificationConfig": {
+            "url": "https://example.com/webhook-to-delete"
+        }
+    }
+    config_id = "test_set_push_notification_config_nonexistent_" + str(uuid.uuid4())
+
+    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config_id, config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), (
         "Failed to set push notification config before testing delete"
     )
 
     # Extract the config ID from the response (if provided by server)
     set_result = set_resp["result"]
-    config_id = set_result["pushNotificationConfig"].get("id")
+    assert set_result["pushNotificationConfig"].get("id") == config_id
 
     if config_id:
         # If the server provides config ID, use it for deletion
@@ -380,7 +386,7 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
 
         # Result should be null for successful deletion
         result = resp["result"]
-        assert result is None, "Delete should return null result on success"
+        assert len(result) == 0, "Delete should return null result on success"
 
         # Verify deletion by trying to get the config
         get_resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id, config_id)
@@ -494,7 +500,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
         "Push notifications capability declared but SendMessage with pushNotificationConfig failed"
     )
 
-    task_id = resp["result"]["id"]
+    task_id = resp["result"]["task"]["id"]
     logger.info(f"Task created with ID: {task_id}")
 
     # Verify that the push notification config was actually used
@@ -502,7 +508,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     list_resp = transport_helpers.transport_list_push_notification_configs(sut_client, task_id)
 
     if transport_helpers.is_json_rpc_success_response(list_resp):
-        configs = list_resp["result"]
+        configs = list_resp["result"]["configs"]
         assert isinstance(configs, list), "Push notification configs should be a list"
 
         logger.info(f"Retrieved {len(configs)} push notification configs for task {task_id}")
@@ -661,7 +667,7 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
     list_resp = transport_helpers.transport_list_push_notification_configs(sut_client, task_id)
 
     if transport_helpers.is_json_rpc_success_response(list_resp):
-        configs = list_resp["result"]
+        configs = list_resp["result"]["configs"]
         assert isinstance(configs, list), "Push notification configs should be a list"
 
         logger.info(f"Retrieved {len(configs)} push notification configs for streaming task {task_id}")
