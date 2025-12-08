@@ -490,7 +490,7 @@ class JSONRPCClient(BaseTransportClient):
             raise JSONRPCError(f"Failed to get agent card: {e}", original_error=e)
 
     def set_push_notification_config(
-        self, task_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Set push notification configuration for a task.
@@ -499,6 +499,7 @@ class JSONRPCClient(BaseTransportClient):
 
         Args:
             task_id: The unique identifier of the task
+            config_id: The ID for the new config
             config: Push notification configuration object
             extra_headers: Optional HTTP headers
 
@@ -512,8 +513,8 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="tasks/pushNotificationConfig/set",
-                params={"taskId": task_id, "pushNotificationConfig": config},
+                method="SetTaskPushNotificationConfig",
+                params={"parent": f"tasks/{task_id}", "configId": config_id, "config": config},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
@@ -546,8 +547,8 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="tasks/pushNotificationConfig/get",
-                params={"id": task_id, "pushNotificationConfigId": config_id},
+                method="GetTaskPushNotificationConfig",
+                params={"name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}"},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
@@ -577,7 +578,7 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="tasks/pushNotificationConfig/list", params={"id": task_id}, extra_headers=extra_headers
+                method="ListTaskPushNotificationConfig", params={"parent": f"tasks/{task_id}"}, extra_headers=extra_headers
             )
             return response.get("result", {})
 

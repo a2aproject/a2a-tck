@@ -50,10 +50,22 @@ class TestA2AV030MethodEnhancements:
         """
         enhanced_message = {
             "messageId": generate_test_message_id("enhanced-parts"),
+            "role": "ROLE_USER",
             "parts": [
-                {"text": "This message tests enhanced parts support in A2A v0.3.0"},
-                {"data": {"type": "application/json", "content": {"test": "data", "version": "0.3.0"}}},
-            ],
+                {
+                    "text": "This message tests enhanced parts support in A2A v0.3.0"
+                },
+                {   "data": {
+                        "data": {
+                            "type": "application/json",
+                            "content": {
+                                "test": "data",
+                                "version": "0.3.0"
+                            },
+                        }
+                    }
+                }
+            ]
         }
 
         response = transport_send_message(sut_client, {"message": enhanced_message})
@@ -62,7 +74,7 @@ class TestA2AV030MethodEnhancements:
         assert "result" in response or "error" not in response, "Enhanced message parts should be supported in A2A v0.3.0"
 
         if "result" in response:
-            task = response["result"]
+            task = response["result"]["task"]
             assert "id" in task, "Task ID should be returned"
             logger.info(f"✅ Enhanced parts support validated with task: {task['id']}")
         elif "error" in response:
@@ -92,7 +104,7 @@ class TestA2AV030MethodEnhancements:
         if "error" in create_response:
             pytest.skip(f"Could not create task for testing: {create_response}")
 
-        task = create_response.get("result", create_response)
+        task = create_response["result"]["task"]
         task_id = task["id"]
 
         # Test enhanced query parameters
@@ -378,7 +390,7 @@ class TestMethodPerformanceAndScaling:
         for i, response in enumerate(responses):
             if "result" in response:
                 successful_tasks += 1
-                task = response["result"]
+                task = response["result"]["task"]
                 assert "id" in task, f"Task {i} missing ID"
             elif "error" in response:
                 # Errors are acceptable but log them
@@ -419,5 +431,5 @@ class TestMethodPerformanceAndScaling:
         logger.info(f"✅ Method response time: {response_time:.2f}s (within limits)")
 
         if "result" in response:
-            task = response["result"]
+            task = response["result"]["task"]
             assert "id" in task, "Task ID should be returned"

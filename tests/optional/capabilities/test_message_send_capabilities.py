@@ -107,12 +107,12 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     # First, create a task
     first_resp = transport_helpers.transport_send_message(sut_client, valid_text_message_params)
     assert transport_helpers.is_json_rpc_success_response(first_resp)
-    task_id = first_resp["result"]["id"]
+    task_id = first_resp["result"]["task"]["id"]
 
     # Check if the response contains a contextId we can use
     context_id = None
     if "result" in first_resp and isinstance(first_resp["result"], dict):
-        context_id = first_resp["result"].get("contextId")
+        context_id = first_resp["result"]["task"]["contextId"]
 
     # If no contextId was provided, create a dummy one
     if not context_id:
@@ -131,9 +131,9 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     }
     second_resp = transport_helpers.transport_send_message(sut_client, continuation_params)
     assert transport_helpers.is_json_rpc_success_response(second_resp)
-    result = second_resp["result"]
+    result = second_resp["result"]["task"]
     assert result["id"] == task_id  # Should be the same task ID
-    assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
+    assert result.get("status", {}).get("state") in {"TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_COMPLETED"}
 
 
 @optional_capability

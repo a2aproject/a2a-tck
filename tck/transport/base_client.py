@@ -205,13 +205,14 @@ class BaseTransportClient(ABC):
 
     @abstractmethod
     def set_push_notification_config(
-        self, task_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Set push notification configuration for a task.
 
         Args:
             task_id: The unique identifier of the task
+            config_id: The ID for the new config
             config: Push notification configuration object
             extra_headers: Optional transport-specific headers
 
@@ -221,7 +222,7 @@ class BaseTransportClient(ABC):
         Raises:
             TransportError: If configuration setting fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.3 - Push Notifications
+        Specification Reference: A2A Protocol v1.0 §3.1.7. Set or Update Push Notification Config
         """
         pass
 
