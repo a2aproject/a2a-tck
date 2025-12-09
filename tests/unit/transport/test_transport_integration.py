@@ -305,7 +305,7 @@ class TestTransportIntegration:
             def cancel_task(self, task_id, **kwargs):
                 pass
 
-            def task(self, task_id, **kwargs):
+            def subscribe_task(self, task_id, **kwargs):
                 pass
 
             def set_push_notification_config(self, task_id, config, **kwargs):

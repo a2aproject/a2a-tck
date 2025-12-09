@@ -69,11 +69,9 @@ def test_rejects_invalid_json_rpc_requests(sut_client, invalid_request, expected
     """
     url = sut_client.base_url
     headers = {"Content-Type": "application/json"}
-    print(f"request => {invalid_request}")
     response = requests.post(url, json=invalid_request, headers=headers, timeout=10)
     assert response.status_code == 200  # JSON-RPC errors are returned with 200
     resp_json = response.json()
-    print(f"response => {resp_json}")
     assert "error" in resp_json
     assert resp_json["error"]["code"] == expected_code, f"Expected {expected_code}, got {resp_json['error']['code']}"
 

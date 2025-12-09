@@ -198,8 +198,6 @@ class JSONRPCClient(BaseTransportClient):
                     
                     # Validate response status
                     response.raise_for_status()
-                    print(response)
-                    print(response.headers)
                     # Validate content type for SSE
                     content_type = response.headers.get("content-type", "")
                     # FIXME a2a-java, regression likely caused by https://github.com/a2aproject/a2a-java/issues/486
