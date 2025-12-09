@@ -34,7 +34,7 @@ A complete A2A agent implementation designed specifically for testing with the A
        "params": {
          "message": {
            "messageId": "test-123",
-           "role": "user",
+           "role": "ROLE_USER",
            "taskId": "my-task-123",
            "parts": [{"text": "Hello"}]
          }

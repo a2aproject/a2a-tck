@@ -136,7 +136,7 @@ def valid_text_message_params():
     return {
         "message": {
             "messageId": "test-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Hello from TCK!"}],
         }
     }
@@ -149,7 +149,7 @@ def valid_file_message_params():
     return {
         "message": {
             "messageId": "test-file-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
                 {
                     "file": {
@@ -169,7 +169,7 @@ def valid_data_message_params():
     return {
         "message": {
             "messageId": "test-data-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"data": {"key": "value", "number": 123, "nested": {"array": [1, 2, 3]}}}],
         }
     }

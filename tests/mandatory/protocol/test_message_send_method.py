@@ -22,7 +22,7 @@ def valid_text_message_params():
     return {
         "message": {
             "messageId": generate_test_message_id("text"),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Hello from TCK!"}],
         }
     }
@@ -35,7 +35,7 @@ def valid_file_message_params():
     return {
         "message": {
             "messageId": generate_test_message_id("file"),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
                 {
                     "file": {
@@ -55,7 +55,7 @@ def valid_data_message_params():
     return {
         "message": {
             "messageId": generate_test_message_id("data"),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"data": {"key": "value", "number": 123, "nested": {"array": [1, 2, 3]}}}],
         }
     }
@@ -106,9 +106,9 @@ def test_message_send_valid_text(sut_client, valid_text_message_params, agent_ca
     # According to A2A v1.0 spec, SendMessage can return either Task or Message
     if "task" in result:
         # This is a Task object
-        assert result["task"]["status"]["state"] in {"submitted", "working", "input-required", "completed"}
+        assert result["task"]["status"]["state"] in {"TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_COMPLETED"}
     elif "message" in result:
-        assert result["message"]["role"] == "agent"
+        assert result["message"]["role"] == "ROLE_AGENT"
         assert "parts" in result["message"]
     else:
         assert False, f"Unknown result to SendMessage: {result}"
@@ -169,7 +169,7 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
         "message": {
             "taskId": task_id,
             "messageId": generate_test_message_id("continuation"),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Follow-up message for the existing task"}],
         }
     }
@@ -184,9 +184,9 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
     if "task" in result:
         # This is a Task object
         assert result["task"]["id"] == task_id, f"Task ID mismatch: expected {task_id}, got {result['task']['id']}"
-        assert result["task"]["status"]["state"] in {"submitted", "working", "input-required", "completed"}
+        assert result["task"]["status"]["state"] in {"TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_COMPLETED"}
     elif "message" in result:
-        assert result["message"]["role"] == "agent"
+        assert result["message"]["role"] == "ROLE_AGENT"
         assert "parts" in result["message"]
     else:
         assert False, f"Unknown result to SendMessage: {result}"

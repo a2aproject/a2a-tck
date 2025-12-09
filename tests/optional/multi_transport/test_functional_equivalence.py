@@ -35,7 +35,7 @@ def sample_message():
     """Create a sample message for equivalence testing."""
     return {
         "messageId": generate_test_message_id("equivalence"),
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [{"text": "Multi-transport equivalence test message"}],
     }
 
@@ -778,7 +778,7 @@ def test_method_mapping_compliance(all_transport_clients):
                 # Test message send capability
                 sample_msg = {
                     "messageId": generate_test_message_id("mapping-test"),
-                    "role": "user",
+                    "role": "ROLE_USER",
                     "parts": [{"text": "Method mapping test"}],
                 }
                 resp = transport_send_message(client, {"message": sample_msg})

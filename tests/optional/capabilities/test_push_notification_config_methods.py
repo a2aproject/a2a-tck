@@ -23,7 +23,7 @@ def created_task_id(sut_client):
     message_params = {
         "message": {
             "messageId": "test-push-notification-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Task for push notification config test"}],
         }
     }
@@ -321,7 +321,7 @@ def test_list_push_notification_config_empty(sut_client, agent_card_data):
     message_params = {
         "message": {
             "messageId": "test-empty-list-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Task for empty push notification config list test"}],
         }
     }
@@ -480,7 +480,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     message_params = {
         "message": {
             "messageId": message_id,
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Task with push notification config in send configuration"}],
         }
     }
@@ -612,7 +612,7 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
     message_params = {
         "message": {
             "messageId": message_id,
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Task with push notification config in streaming send configuration"}],
         }
     }

@@ -56,7 +56,7 @@ def create_test_task(sut_client) -> Optional[str]:
     try:
         req_id = message_utils.generate_request_id()
         test_message = {
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Test message for error testing"}],
             "messageId": f"msg-{req_id}",
         }
@@ -169,7 +169,7 @@ def test_unsupported_operation_error_32004_enhanced(sut_client):
 
     # Strategy 1: Try to use unsupported configuration parameters
     test_message = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [{"text": "Test message with extreme parameters"}],
         "messageId": f"msg-{req_id}",
     }
@@ -242,7 +242,7 @@ def test_content_type_not_supported_error_32005_enhanced(sut_client):
 
     # Strategy 1: Try message with completely unsupported MIME types
     test_message = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [
             {"text": "Test message"},
             {
@@ -287,7 +287,7 @@ def test_content_type_not_supported_error_32005_enhanced(sut_client):
 
     # Strategy 2: Try with invalid file format that might not be supported
     test_message_2 = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [
             {
                 "file": {
@@ -334,7 +334,7 @@ def test_invalid_agent_response_error_32006_enhanced(sut_client):
 
     # Strategy 1: Try to trigger complex processing that might cause response generation issues
     complex_message = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [
             {"text": "Generate an extremely complex response with nested data"},
             {

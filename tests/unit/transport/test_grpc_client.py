@@ -201,7 +201,7 @@ class TestGRPCClientSendMessage:
         message = {
             "message_id": "test-msg-1",
             "context_id": "test-context",
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Hello via gRPC"}],
         }
 
@@ -211,7 +211,7 @@ class TestGRPCClientSendMessage:
         assert "task" in result
         assert result["task"]["id"] == "task-test-msg-1"
         assert result["task"]["context_id"] == "test-context"
-        assert result["task"]["status"]["state"] == "submitted"
+        assert result["task"]["status"]["state"] == "TASK_STATE_SUBMITTED"
 
         # Verify gRPC channel was used
         mock_channel_fn.assert_called_once_with("example.com:9000")
@@ -295,10 +295,10 @@ class TestGRPCClientStreamingMessage:
 
         # Subsequent responses should be status updates
         assert "status_update" in responses[1]
-        assert responses[1]["status_update"]["status"]["state"] == "working"
+        assert responses[1]["status_update"]["status"]["state"] == "TASK_STATE_WORKING"
 
         assert "status_update" in responses[2]
-        assert responses[2]["status_update"]["status"]["state"] == "completed"
+        assert responses[2]["status_update"]["status"]["state"] == "TASK_STATE_COMPLETED"
         assert responses[2]["status_update"]["final"] is True
 
         # Verify async gRPC channel was used
@@ -355,7 +355,7 @@ class TestGRPCClientTaskOperations:
 
         assert result["id"] == "task-123"
         assert result["context_id"] == "default-context"
-        assert result["status"]["state"] == "completed"
+        assert result["status"]["state"] == "TASK_STATE_COMPLETED"
         assert "message" in result["status"]
 
     @patch("grpc.insecure_channel")
@@ -386,7 +386,7 @@ class TestGRPCClientTaskOperations:
         result = client.cancel_task("task-456")
 
         assert result["id"] == "task-456"
-        assert result["status"]["state"] == "canceled"
+        assert result["status"]["state"] == "TASK_STATE_CANCELLED"
         assert "Task task-456 cancelled via gRPC" in result["status"]["message"]["content"][0]["text"]
 
     @patch("grpc.aio.insecure_channel")

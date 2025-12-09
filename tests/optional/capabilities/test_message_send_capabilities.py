@@ -76,7 +76,7 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
     combined_parts = {
         "message": {
             "messageId": "test-multiple-parts-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": valid_text_message_params["message"]["parts"] + valid_file_message_params["message"]["parts"],
         }
     }
@@ -125,7 +125,7 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
             "taskId": task_id,
             "contextId": context_id,
             "messageId": "test-contextid-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Follow-up message for the existing task with contextId"}],
         }
     }
@@ -133,7 +133,7 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     assert transport_helpers.is_json_rpc_success_response(second_resp)
     result = second_resp["result"]["task"]
     assert result["id"] == task_id  # Should be the same task ID
-    assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
+    assert result.get("status", {}).get("state") in {"TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_COMPLETED"}
 
 
 @optional_capability
@@ -193,7 +193,7 @@ def test_message_send_data_part_array(sut_client, agent_card_data):
     data_array_params = {
         "message": {
             "messageId": "test-data-array-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
                 {
                     "data": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}, {"name": "Charlie", "age": 35}],

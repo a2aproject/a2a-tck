@@ -295,7 +295,7 @@ class TestMethodMappingCompliance:
         try:
             sample_message = {
                 "messageId": generate_test_message_id("mapping-test"),
-                "role": "user",
+                "role": "ROLE_USER",
                 "parts": [{"text": "Method mapping test"}],
             }
             response = transport_send_message(sut_client, {"message": sample_message})
@@ -493,7 +493,7 @@ class TestTransportSpecificFeatures:
                     {
                         "method": "SendMessage",
                         "params": {
-                            "message": {"role": "user", "parts": [{"text": "test"}], "messageId": "test-batch-1"}
+                            "message": {"role": "ROLE_USER", "parts": [{"text": "test"}], "messageId": "test-batch-1"}
                         },
                         "id": 2,
                     },
@@ -513,7 +513,7 @@ class TestTransportSpecificFeatures:
         try:
             message_params = {
                 "message": {
-                    "role": "user",
+                    "role": "ROLE_USER",
                     "parts": [{"text": "Test for additional fields"}],
                     "messageId": "test-additional-fields",
                 }

@@ -513,7 +513,7 @@ class GRPCClient(BaseTransportClient):
                         m = response.msg
                         yield {
                             "message": {
-                                "role": "agent",
+                                "role": "ROLE_AGENT",
                                 "messageId": m.message_id,
                                 "parts": ([{"text": m.parts[0].text}] if m.parts else []),
                             }
@@ -575,7 +575,7 @@ class GRPCClient(BaseTransportClient):
             if resp.history:
                 result["history"] = [
                     {
-                        "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
+                        "role": ("ROLE_AGENT" if m.role == pb.ROLE_AGENT else "ROLE_USER"),
                         "parts": ([{"text": m.parts[0].text}] if m.parts else []),
                         "messageId": m.message_id,
                         "taskId": resp.id,

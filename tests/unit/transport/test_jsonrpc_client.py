@@ -132,7 +132,7 @@ class TestJSONRPCClient:
         mock_post.return_value = mock_response
 
         # Test message
-        message = {"messageId": "msg-123", "role": "user", "parts": [{"text": "Hello"}]}
+        message = {"messageId": "msg-123", "role": "ROLE_USER", "parts": [{"text": "Hello"}]}
 
         result = self.client.send_message(message)
 

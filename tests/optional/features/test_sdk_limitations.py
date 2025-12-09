@@ -23,7 +23,7 @@ def text_message_params():
     return {
         "message": {
             "messageId": "test-sdk-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [{"text": "Test message for SDK limitation tests"}],
         }
     }
@@ -62,7 +62,7 @@ def test_history_length_parameter_compliance(sut_client, text_message_params):
             "message": {
                 "taskId": task_id,
                 "messageId": f"sdk-test-msg-{i + 1}-" + str(uuid.uuid4()),
-                "role": "user",
+                "role": "ROLE_USER",
                 "parts": [{"text": f"SDK test message {i + 1}"}],
             }
         }
