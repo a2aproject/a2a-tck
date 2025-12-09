@@ -40,16 +40,12 @@ def _validate_task_object(task: Dict[str, Any]) -> None:
     Raises A2AValidationError if validation fails.
     """
     # Validate required fields per A2A specification
-    required_fields = ["id", "contextId", "status", "kind"]
+    required_fields = ["id", "contextId", "status"]
     for field in required_fields:
         if field not in task:
             raise A2AValidationError(f"Task missing required field '{field}'", TransportType.GRPC)
         if not task[field]:  # Check for empty string or None
             raise A2AValidationError(f"Task field '{field}' cannot be empty", TransportType.GRPC)
-
-    # Validate 'kind' field
-    if task["kind"] != "task":
-        raise A2AValidationError(f"Task 'kind' must be 'task', got '{task['kind']}'", TransportType.GRPC)
 
     # Validate 'id' field (must be non-empty string)
     if not isinstance(task["id"], str) or not task["id"].strip():
@@ -68,7 +64,7 @@ def _validate_task_object(task: Dict[str, Any]) -> None:
     if "state" not in status:
         raise A2AValidationError("Task status missing required field 'state'", TransportType.GRPC)
 
-    valid_states = ["submitted", "working", "completed", "failed", "canceled", "input-required", "rejected", "auth-required"]
+    valid_states = ["TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_COMPLETED", "TASK_STATE_FAILED", "TASK_STATE_CANCELLED", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_REJECTED", "TASK_STATE_AUTH_REQUIRED"]
     if status["state"] not in valid_states:
         raise A2AValidationError(
             f"Task status 'state' must be one of {valid_states}, got '{status['state']}'", TransportType.GRPC
@@ -92,17 +88,13 @@ def _validate_message_object(message: Dict[str, Any], context: str = "message") 
     """
     Validate that a Message object conforms to A2A specification.
     """
-    required_fields = ["role", "parts", "messageId", "kind"]
+    required_fields = ["role", "parts", "messageId"]
     for field in required_fields:
         if field not in message:
             raise A2AValidationError(f"{context} missing required field '{field}'", TransportType.GRPC)
 
-    # Validate 'kind' field
-    if message["kind"] != "message":
-        raise A2AValidationError(f"{context} 'kind' must be 'message', got '{message['kind']}'", TransportType.GRPC)
-
     # Validate 'role' field
-    valid_roles = ["user", "agent"]
+    valid_roles = ["ROLE_USER", "ROLE_AGENT"]
     if message["role"] not in valid_roles:
         raise A2AValidationError(f"{context} 'role' must be one of {valid_roles}, got '{message['role']}'", TransportType.GRPC)
 
@@ -122,23 +114,13 @@ def _validate_part_object(part: Dict[str, Any], context: str = "part") -> None:
     """
     Validate that a Part object conforms to A2A specification.
     """
-    if "kind" not in part:
-        raise A2AValidationError(f"{context} missing required field 'kind'", TransportType.GRPC)
-
-    valid_kinds = ["text", "file", "data"]
-    if part["kind"] not in valid_kinds:
-        raise A2AValidationError(f"{context} 'kind' must be one of {valid_kinds}, got '{part['kind']}'", TransportType.GRPC)
 
     # Validate specific part types
-    if part["kind"] == "text":
-        if "text" not in part:
-            raise A2AValidationError(f"{context} TextPart missing required field 'text'", TransportType.GRPC)
+    if "text" in part:
         if not isinstance(part["text"], str):
             raise A2AValidationError(f"{context} TextPart 'text' must be a string", TransportType.GRPC)
 
-    elif part["kind"] == "file":
-        if "file" not in part:
-            raise A2AValidationError(f"{context} FilePart missing required field 'file'", TransportType.GRPC)
+    elif "file" in part:
         file_obj = part["file"]
         if not isinstance(file_obj, dict):
             raise A2AValidationError(f"{context} FilePart 'file' must be an object", TransportType.GRPC)
@@ -147,8 +129,8 @@ def _validate_part_object(part: Dict[str, Any], context: str = "part") -> None:
         if "bytes" not in file_obj and "uri" not in file_obj:
             raise A2AValidationError(f"{context} FilePart must have either 'bytes' or 'uri'", TransportType.GRPC)
 
-    elif part["kind"] == "data":
-        if "data" not in part:
+    elif "data" in part:
+        if "data" not in part["data"]:
             raise A2AValidationError(f"{context} DataPart missing required field 'data'", TransportType.GRPC)
 
 
@@ -236,7 +218,12 @@ def _validate_a2a_response(response: Dict[str, Any], method_name: str) -> None:
         method_name: The A2A method name (e.g., 'send_message', 'get_task', etc.)
     """
     try:
-        if method_name in ["send_message", "get_task", "cancel_task"]:
+        if method_name == "send_message":
+            if "task" in response:
+                _validate_task_object(response["task"])
+            elif "message" in response:
+                _validate_message_object(response["message"])
+        elif method_name in ["get_task", "cancel_task"]:
             # These methods should return Task objects
             _validate_task_object(response)
 
@@ -409,6 +396,7 @@ class GRPCClient(BaseTransportClient):
 
             # Build protobuf request using helper method
             request = self._json_to_send_message_request(message, configuration, default_blocking=True)
+            print(request)
 
             # Real gRPC call
             response = self.stub.SendMessage(request, timeout=self.timeout)
@@ -416,10 +404,11 @@ class GRPCClient(BaseTransportClient):
                 t = response.task
                 logger.info(f"Received gRPC task for message {msg_id}: {t.id}")
                 result = {
-                    "id": t.id,
-                    "contextId": t.context_id,
-                    "status": {"state": self._map_state_enum_to_json(t.status.state)},
-                    "kind": "task",
+                    "task": {
+                        "id": t.id,
+                        "contextId": t.context_id,
+                        "status": {"state": self._map_state_enum_to_json(t.status.state)}
+                    }
                 }
                 # Validate response conforms to A2A specification
                 _validate_a2a_response(result, "send_message")
@@ -428,11 +417,14 @@ class GRPCClient(BaseTransportClient):
                 m = response.msg
                 logger.debug(f"Received gRPC message for message {msg_id}")
                 result = {
-                    "role": "agent",
-                    "messageId": m.message_id,
-                    "parts": ([{"text": m.parts[0].text}] if m.parts else []),
+                    "message": {
+                        "role": "agent",
+                        "messageId": m.message_id,
+                        "parts": ([{"text": m.parts[0].text}] if m.parts else []),
+                    }
                 }
-                # Note: Message validation would need to be implemented for message responses
+                # Validate response conforms to A2A specification
+                _validate_a2a_response(result, "send_message")
                 return result
 
         except grpc.RpcError as e:
@@ -568,8 +560,7 @@ class GRPCClient(BaseTransportClient):
             result = {
                 "id": resp.id,
                 "contextId": resp.context_id,
-                "status": {"state": self._map_state_enum_to_json(resp.status.state)},
-                "kind": "task",
+                "status": {"state": self._map_state_enum_to_json(resp.status.state)}
             }
             # Always include history if SUT returned it (regardless of history_length value)
             if resp.history:
@@ -626,8 +617,8 @@ class GRPCClient(BaseTransportClient):
             result = {
                 "id": resp.id,
                 "contextId": resp.context_id,
-                "status": {"state": "canceled"},
-                "kind": "task",
+                #FIXME we should return the state from the response, not override it
+                "status": {"state": "TASK_STATE_CANCELLED"}
             }
             # Validate response conforms to A2A specification
             _validate_a2a_response(result, "cancel_task")
@@ -1140,6 +1131,9 @@ class GRPCClient(BaseTransportClient):
         self._load_static_stubs()
         pb = self._pb
 
+        print("_json_to_send_message_request")
+        print(message)
+
         # Accept both A2A and internal naming - don't provide defaults for required fields
         msg_id = message.get("messageId") or message.get("message_id")
         ctx_id = message.get("contextId") or message.get("context_id")
@@ -1153,7 +1147,7 @@ class GRPCClient(BaseTransportClient):
         # Build parts - handle different part types appropriately
         parts = []
         for p in message.get("parts", []):
-            if p.get("kind") == "text":
+            if "text" in p:
                 parts.append(pb.Part(text=p.get("text", "")))
             elif p.get("kind") == "data" and "data" in p:
                 # Handle DataPart - convert JSON data to protobuf Struct
@@ -1184,7 +1178,7 @@ class GRPCClient(BaseTransportClient):
                 # Empty or unrecognized part structure
                 parts.append(pb.Part())
 
-        role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
+        role_map = {"ROLE_USER": pb.ROLE_USER, "ROLE_USER": pb.ROLE_AGENT}
         # Don't provide default role - let SUT validate required fields
         user_role = message.get("role")
         pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
@@ -1196,6 +1190,7 @@ class GRPCClient(BaseTransportClient):
             role=pb_role,
             parts=parts,
         )
+        print(f"pb_msg = {pb_msg}")
 
         # Build configuration from provided dict or use defaults
         if configuration:
@@ -1229,18 +1224,18 @@ class GRPCClient(BaseTransportClient):
         try:
             name = self._pb.TaskState.Name(state_enum)
         except Exception:
-            return "completed"
+            return "TASK_STATE_COMPLETED"
         mapping = {
-            "TASK_STATE_SUBMITTED": "submitted",
-            "TASK_STATE_WORKING": "working",
-            "TASK_STATE_COMPLETED": "completed",
-            "TASK_STATE_FAILED": "failed",
-            "TASK_STATE_CANCELLED": "canceled",
-            "TASK_STATE_INPUT_REQUIRED": "input-required",
-            "TASK_STATE_REJECTED": "rejected",
-            "TASK_STATE_AUTH_REQUIRED": "auth-required",
+            "TASK_STATE_SUBMITTED": "TASK_STATE_SUBMITTED",
+            "TASK_STATE_WORKING": "TASK_STATE_WORKING",
+            "TASK_STATE_COMPLETED": "TASK_STATE_COMPLETED",
+            "TASK_STATE_FAILED": "TASK_STATE_FAILED",
+            "TASK_STATE_CANCELLED": "TASK_STATE_CANCELLED",
+            "TASK_STATE_INPUT_REQUIRED": "TASK_STATE_INPUT_REQUIRED",
+            "TASK_STATE_REJECTED": "TASK_STATE_REJECTED",
+            "TASK_STATE_AUTH_REQUIRED": "TASK_STATE_AUTH_REQUIRED",
         }
-        return mapping.get(name, "completed")
+        return mapping.get(name, "TASK_STATE_COMPLETED")
 
     def _map_grpc_error_to_a2a(self, grpc_error: grpc.RpcError) -> Dict[str, Any]:
         """

@@ -26,6 +26,7 @@ def created_task_id(sut_client):
     # Use transport-agnostic message sending
     resp = transport_send_message(sut_client, params)
     assert is_json_rpc_success_response(resp), f"Task creation failed: {resp}"
+    print(f"resp = {resp}")
 
     # Extract task ID using transport-agnostic helper
     task_id = extract_task_id_from_response(resp)

@@ -259,6 +259,7 @@ def extract_task_id_from_response(response: Dict[str, Any]) -> Optional[str]:
     Returns:
         Task ID if found, None otherwise
     """
+    print(f"response = {response}")
     # Handle None responses
     if not response:
         return None
@@ -270,6 +271,8 @@ def extract_task_id_from_response(response: Dict[str, Any]) -> Optional[str]:
             task = result["task"]
             if isinstance(task, dict):
                 return task.get("id")
+        if isinstance(result, dict) and "id" in result:
+            return result["id"]
 
     # For direct task responses, look for id field
     if "id" in response:
