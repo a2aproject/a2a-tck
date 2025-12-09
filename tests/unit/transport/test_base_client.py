@@ -43,8 +43,8 @@ class MockTransportClient(BaseTransportClient):
     def cancel_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         return self._record_call("cancel_task", task_id=task_id, extra_headers=extra_headers)
 
-    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Any:
-        return self._record_call("resubscribe_task", task_id=task_id, extra_headers=extra_headers)
+    def subscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Any:
+        return self._record_call("subscribe_task", task_id=task_id, extra_headers=extra_headers)
 
     def set_push_notification_config(
         self, task_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
@@ -128,7 +128,7 @@ class TestBaseTransportClient:
             "send_streaming_message",
             "get_task",
             "cancel_task",
-            "resubscribe_task",
+            "subscribe_task",
             "set_push_notification_config",
             "get_push_notification_config",
             "list_push_notification_configs",

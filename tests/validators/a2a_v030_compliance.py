@@ -102,7 +102,7 @@ class TransportComplianceValidator:
             ],
             "optional_methods": [
                 "send_streaming_message",  # message/stream
-                "subscribe_to_task",  # tasks/resubscribe
+                "subscribe_to_task",  # SubscribeToTask
             ],
             "transport_specific_features": [
                 "sse_streaming",  # Server-Sent Events for streaming
@@ -234,7 +234,7 @@ class MethodMappingValidator:
             "description": "Cancel task",
         },
         "subscribe_to_task": {
-            "jsonrpc": "tasks/resubscribe",
+            "jsonrpc": "SubscribeToTask",
             "grpc": "TaskSubscription",
             "rest": "POST /v1/tasks/{id}:subscribe",
             "description": "Resume task streaming",

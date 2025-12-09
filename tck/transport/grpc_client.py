@@ -644,15 +644,15 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
 
-    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None,  **kwargs) -> AsyncIterator[Dict[str, Any]]:
+    def subscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None,  **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
-        Resubscribe to task updates via gRPC streaming.
+        Subscribe to task updates via gRPC streaming.
 
         Maps to: A2AService.TaskSubscription() RPC call
         This is an alias for subscribe_to_task for interface compatibility.
 
         Args:
-            task_id: ID of the task to resubscribe to
+            task_id: ID of the task to subscribe to
             **kwargs: Additional configuration options
 
         Returns:

@@ -38,8 +38,8 @@ class MockTransportClient(BaseTransportClient):
         self.call_log.append(("cancel_task", task_id, kwargs))
         return {"taskId": task_id, "state": "cancelled"}
 
-    def resubscribe_task(self, task_id: str, **kwargs):
-        self.call_log.append(("resubscribe_task", task_id, kwargs))
+    def subscribe_task(self, task_id: str, **kwargs):
+        self.call_log.append(("subscribe_task", task_id, kwargs))
         return iter([{"taskId": task_id, "state": "in-progress"}])
 
     def set_push_notification_config(self, task_id: str, config: Dict[str, Any], **kwargs):

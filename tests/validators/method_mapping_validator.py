@@ -80,7 +80,7 @@ class MethodMappingValidator:
             transport_support="all",
         ),
         MethodMapping(
-            jsonrpc_method="tasks/resubscribe",
+            jsonrpc_method="SubscribeToTask",
             grpc_method="TaskSubscription",
             rest_endpoint="POST /v1/tasks/{id}:subscribe",
             description="Resume task streaming",

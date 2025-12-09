@@ -180,24 +180,24 @@ class BaseTransportClient(ABC):
         pass
 
     @abstractmethod
-    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Any:
+    def subscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Any:
         """
-        Resubscribe to task updates using tasks/resubscribe method.
+        Subscribe to task updates using SubscribeToTaskmethod.
 
         This method allows resuming streaming updates for a task that was
         previously started but the stream was disconnected.
 
         Args:
-            task_id: The unique identifier of the task to resubscribe to
+            task_id: The unique identifier of the task to subscribe to
             extra_headers: Optional transport-specific headers
 
         Returns:
             A stream object that yields task updates (transport-specific type)
 
         Raises:
-            TransportError: If task resubscription fails
+            TransportError: If task subscription fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.2.4 - Task Resubscription
+        Specification Reference: A2A Protocol v1.0 §3.1.6. - Subscribe to Task
         """
         pass
 
@@ -350,7 +350,7 @@ class BaseTransportClient(ABC):
             "send_streaming_message",
             "get_task",
             "cancel_task",
-            "resubscribe_task",
+            "subscribe_task",
             "subscribe_to_task",
             "get_agent_card",
             "set_push_notification_config",
@@ -386,7 +386,7 @@ class BaseTransportClient(ABC):
                     "send_streaming_message",
                     "get_task",
                     "cancel_task",
-                    "resubscribe_task",
+                    "subscribe_task",
                     "subscribe_to_task",
                     "get_agent_card",
                     "set_push_notification_config",

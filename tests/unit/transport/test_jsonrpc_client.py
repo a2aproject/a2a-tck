@@ -63,7 +63,7 @@ class TestJSONRPCClient:
         assert self.client.supports_method("send_message") is True
         assert self.client.supports_method("get_task") is True
         assert self.client.supports_method("cancel_task") is True
-        assert self.client.supports_method("resubscribe_task") is True
+        assert self.client.supports_method("subscribe_task") is True
 
         # list_tasks is not supported by JSON-RPC transport
         assert self.client.supports_method("list_tasks") is False

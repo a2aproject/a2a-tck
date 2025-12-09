@@ -244,7 +244,7 @@ class TestTransportIntegration:
             "get_push_notification_config",
             "list_push_notification_configs",
             "delete_push_notification_config",
-            "resubscribe_task",
+            "subscribe_task",
         ]
 
         for transport_type, client in all_clients.items():
@@ -305,7 +305,7 @@ class TestTransportIntegration:
             def cancel_task(self, task_id, **kwargs):
                 pass
 
-            def resubscribe_task(self, task_id, **kwargs):
+            def task(self, task_id, **kwargs):
                 pass
 
             def set_push_notification_config(self, task_id, config, **kwargs):

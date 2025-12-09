@@ -150,7 +150,7 @@ def test_streaming_reconnection_simulation(sut_client, text_message_params):
     # Step 3: Simulate connection closed or interrupted
     sse_client.close()
 
-    # Step 4: Simulate reconnection (in a real test, this would use tasks/resubscribe)
+    # Step 4: Simulate reconnection (in a real test, this would use SubscribeToTask)
     new_sse_client = InterruptibleSSEClient(url=f"{sut_client.base_url}/stream")
     new_sse_client.start()
 

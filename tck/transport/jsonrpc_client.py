@@ -305,7 +305,7 @@ class JSONRPCClient(BaseTransportClient):
 
         Makes a real JSON-RPC call with Server-Sent Events to test streaming functionality.
         This method yields the initial task creation and initial updates, but doesn't consume
-        the entire stream to allow resubscribe_task to work properly.
+        the entire stream to allow subscribe_task to work properly.
 
         Args:
             message: The message object conforming to A2A Message schema
@@ -338,7 +338,7 @@ class JSONRPCClient(BaseTransportClient):
                     event_count += 1
                     
                     # Only yield the first few events to avoid consuming the entire stream
-                    # This allows resubscribe_task to work properly later
+                    # This allows subscribe_task to work properly later
                     if event_count >= 2:
                         break
 
@@ -408,14 +408,14 @@ class JSONRPCClient(BaseTransportClient):
                 raise
             raise JSONRPCError(f"Failed to cancel task {task_id}: {e}", original_error=e)
 
-    async def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
+    async def subscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
         """
-        Resubscribe to task updates using tasks/resubscribe method.
+        Subscribe to task updates using SubscribeToTask method.
 
-        Makes a real JSON-RPC call to resubscribe to task updates via SSE.
+        Makes a real JSON-RPC call to subscribe to task updates via SSE.
 
         Args:
-            task_id: The unique identifier of the task to resubscribe to
+            task_id: The unique identifier of the task to subscribe to
             extra_headers: Optional HTTP headers
 
         Returns:
@@ -424,12 +424,12 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task resubscription fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.9 - Task Resubscription
+        Specification Reference: A2A Protocol v1.0 §3.1.6. Subscribe to Task
         """
         try:
             # Use the new streaming method that properly handles SSE
             async for event in self._make_streaming_jsonrpc_request(
-                method="tasks/resubscribe", params={"id": task_id}, extra_headers=extra_headers
+                method="SubscribeToTask", params={"name": f"tasks/{task_id}"}, extra_headers=extra_headers
             ):
                 # Extract result from JSON-RPC response
                 result = event.get("result")
@@ -439,13 +439,13 @@ class JSONRPCClient(BaseTransportClient):
         except Exception as e:
             if isinstance(e, JSONRPCError):
                 raise
-            raise JSONRPCError(f"Failed to resubscribe to task {task_id}: {e}", original_error=e)
+            raise JSONRPCError(f"Failed to subscribe to task {task_id}: {e}", original_error=e)
 
     async def subscribe_to_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
         """
-        Subscribe to task updates using tasks/subscribe method.
+        Subscribe to task updates using SubscribeToTask method.
 
-        This is an alias for resubscribe_task to maintain interface compatibility
+        This is an alias for subscribe_task to maintain interface compatibility
         with other transport clients. JSON-RPC uses the same subscription mechanism
         for both initial subscription and resubscription.
 
@@ -459,10 +459,10 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task subscription fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.9 - Task Subscription
+        Specification Reference: A2A Protocol v1.0 §3.1.6. Subscribe to Task
         """
-        # JSON-RPC uses the same method for both subscribe and resubscribe
-        async for result in self.resubscribe_task(task_id, extra_headers):
+        # JSON-RPC uses the same method for both subscribe and subscribe
+        async for result in self.subscribe_task(task_id, extra_headers):
             yield result
 
     def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:

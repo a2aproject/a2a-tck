@@ -32,7 +32,7 @@ class MockTransportClient(BaseTransportClient):
     def cancel_task(self, task_id, extra_headers=None):
         return {"task_id": task_id, "status": "cancelled"}
 
-    def resubscribe_task(self, task_id, extra_headers=None):
+    def subscribe_task(self, task_id, extra_headers=None):
         return iter([{"status": "running"}])
 
     def set_push_notification_config(self, task_id, config, extra_headers=None):

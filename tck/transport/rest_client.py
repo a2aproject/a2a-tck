@@ -446,15 +446,15 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
-    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> AsyncIterator[Dict[str, Any]]:
+    def subscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
-        Resubscribe to task updates via HTTP SSE streaming.
+        Subscribe to task updates via HTTP SSE streaming.
 
         Maps to: GET v1/tasks/{task_id}:subscribe HTTP request with SSE response
         This is an alias for subscribe_to_task for interface compatibility.
 
         Args:
-            task_id: ID of the task to resubscribe to
+            task_id: ID of the task to subscribe to
             **kwargs: Additional configuration options
 
         Returns:

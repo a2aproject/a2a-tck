@@ -10,7 +10,7 @@ from tests.markers import optional_capability
 from tests.capability_validator import CapabilityValidator, skip_if_capability_not_declared
 from tests.utils.transport_helpers import (
     transport_send_streaming_message,
-    transport_resubscribe_task,
+    transport_subscribe_task,
     generate_test_message_id,
 )
 
@@ -208,15 +208,15 @@ async def test_message_stream_invalid_params(sut_client, agent_card_data):
 
 @optional_capability
 @pytest.mark.asyncio
-async def test_tasks_resubscribe(sut_client, agent_card_data):
+async def test_tasks_subscribe(sut_client, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §7.9 - Task Resubscription
+    CONDITIONAL MANDATORY: Specification Reference: A2A Protocol v1.0 §3.1.6. Subscribe to Task
 
     Status: MANDATORY if capabilities.streaming = true
             SKIP if capabilities.streaming = false/missing
 
-    Test validates the tasks/resubscribe method for existing tasks.
-    This method allows clients to resubscribe to SSE streams for ongoing tasks.
+    Test validates the SubscribeToTask method for existing tasks.
+    This method allows clients to subscribe to SSE streams for ongoing tasks.
     """
     validator = CapabilityValidator(agent_card_data)
 
@@ -227,17 +227,17 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
     task_id_received = asyncio.Event()
 
     task_id = None
-    resubscribe_events = []
+    subscribe_events = []
     stream_error = None
-    resubscribe_error = None
+    subscribe_error = None
     
     try:
         # First, create a task via message/stream to get a task ID
         message_params = {
             "message": {
-                "messageId": "test-resubscribe-message-id-" + str(uuid.uuid4()),
+                "messageId": "test-subscribe-message-id-" + str(uuid.uuid4()),
                 "role": "ROLE_USER",
-                "parts": [{"text": "Test message for resubscribe"}],
+                "parts": [{"text": "Test message for subscribe"}],
             }
         }
 
@@ -268,7 +268,7 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
                         break
 
                     # Continue processing events even after getting task ID
-                    # to keep the stream alive for resubscribe testing
+                    # to keep the stream alive for subscribe testing
 
             except Exception as e:
                 stream_error = e
@@ -276,64 +276,64 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
                 task_id_received.set()  # Signal completion even on error
 
         # Background task to handle resubscription once task ID is available
-        async def process_resubscribe():
-            nonlocal resubscribe_events, resubscribe_error
+        async def process_subscribe():
+            nonlocal subscribe_events, subscribe_error
             try:
                 # Wait for task ID to be available
                 await task_id_received.wait()
                 
                 if task_id is None:
-                    logger.warning("No task ID available for resubscribe")
+                    logger.warning("No task ID available for subscribe")
                     return
 
-                logger.info(f"Starting resubscribe for task ID: {task_id}")
+                logger.info(f"Starting subscribe for task ID: {task_id}")
                 
                 # Use transport-agnostic task resubscription
-                resubscribe_stream = transport_resubscribe_task(sut_client, task_id)
+                subscribe_stream = transport_subscribe_task(sut_client, task_id)
 
                 event_count = 0
-                async for event in resubscribe_stream:
+                async for event in subscribe_stream:
                     event_count += 1
-                    logger.info(f"Processing resubscribe event #{event_count}: {event}")
-                    resubscribe_events.append(event)
+                    logger.info(f"Processing subscribe event #{event_count}: {event}")
+                    subscribe_events.append(event)
 
                     # Safety break to prevent infinite loops
                     if event_count >= 10:
-                        logger.warning("Hit event count limit in resubscribe test, breaking")
+                        logger.warning("Hit event count limit in subscribe test, breaking")
                         break
 
                     # Validate this is a proper A2A object
-                    assert isinstance(event, dict), "Resubscribe events must be objects"
+                    assert isinstance(event, dict), "Subscribe events must be objects"
 
                     # Check if this is a terminal event
                     if "status" in event and isinstance(event["status"], dict):
                         state = event["status"].get("state")
                         if state in ["completed", "failed", "canceled"]:
-                            logger.info("Detected terminal event in resubscribe, ending stream processing.")
+                            logger.info("Detected terminal event in subscribe, ending stream processing.")
                             break
 
                     # Collect a few events then break
-                    if len(resubscribe_events) >= 3:
+                    if len(subscribe_events) >= 3:
                         break
                         
             except Exception as e:
-                resubscribe_error = e
-                logger.error(f"Error in resubscribe processing: {e}")
+                subscribe_error = e
+                logger.error(f"Error in subscribe processing: {e}")
 
         # Start both background tasks
         initial_stream_task = asyncio.create_task(process_initial_stream())
-        resubscribe_task = asyncio.create_task(process_resubscribe())
+        subscribe_task = asyncio.create_task(process_subscribe())
 
         # Wait for both tasks to complete with timeout
         try:
             await asyncio.wait_for(
-                asyncio.gather(initial_stream_task, resubscribe_task, return_exceptions=True),
+                asyncio.gather(initial_stream_task, subscribe_task, return_exceptions=True),
                 timeout=TIMEOUTS["async_wait_for"] * 2)
         except asyncio.TimeoutError:
-            logger.warning("Timeout while waiting for stream processing and resubscribe")
+            logger.warning("Timeout while waiting for stream processing and subscribe")
             # Cancel tasks if they're still running
             initial_stream_task.cancel()
-            resubscribe_task.cancel()
+            subscribe_task.cancel()
             
         # Check for errors from the background tasks
         if stream_error:
@@ -356,37 +356,37 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
         else:
             raise
 
-    # Now validate the resubscribe results
+    # Now validate the subscribe results
     if task_id is None:
-        pytest.skip("Could not capture task ID from initial stream - cannot test resubscribe")
+        pytest.skip("Could not capture task ID from initial stream - cannot test subscribe")
 
-    # Check for resubscribe errors
-    if resubscribe_error:
-        error_msg = str(resubscribe_error).lower()
+    # Check for subscribe errors
+    if subscribe_error:
+        error_msg = str(subscribe_error).lower()
         if "501" in error_msg or "not implemented" in error_msg:
             pytest.fail(
-                "Streaming capability declared but tasks/resubscribe returned error indicating not implemented. "
+                "Streaming capability declared but SubscribeToTask returned error indicating not implemented. "
                 "This violates the A2A specification - declared capabilities MUST be implemented."
             )
         elif "not found" in error_msg or "404" in error_msg:
-            pytest.skip("Task expired before resubscribe test - this is implementation-dependent behavior")
+            pytest.skip("Task expired before subscribe test - this is implementation-dependent behavior")
         else:
-            raise resubscribe_error
+            raise subscribe_error
 
-    # Validate that we got at least some events from resubscribe
-    assert len(resubscribe_events) > 0, "Streaming capability declared but no events received from resubscribe stream"
+    # Validate that we got at least some events from subscribe
+    assert len(subscribe_events) > 0, "Streaming capability declared but no events received from subscribe stream"
 
 
 @optional_capability
 @pytest.mark.asyncio
-async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
+async def test_tasks_subscribe_nonexistent(sut_client, agent_card_data):
     """
-    CONDITIONAL MANDATORY: A2A Specification §7.9 - Resubscribe Error Handling
+    CONDITIONAL MANDATORY: A2A Specification §7.9 - Subscribe Error Handling
 
     Status: MANDATORY if capabilities.streaming = true
             SKIP if capabilities.streaming = false/missing
 
-    Test validates that tasks/resubscribe properly handles non-existent task IDs
+    Test validates that SubscribeToTask properly handles non-existent task IDs
     with appropriate JSON-RPC error responses.
     """
     validator = CapabilityValidator(agent_card_data)
@@ -398,8 +398,8 @@ async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
     task_id = NON_EXISTENT_TASK_ID_PREFIX + message_utils.generate_request_id()
 
     try:
-        # Use transport-agnostic task resubscription with non-existent task ID
-        resubscribe_stream = transport_resubscribe_task(sut_client, task_id)
+        # Use transport-agnostic task subscription with non-existent task ID
+        subscribe_stream = transport_subscribe_task(sut_client, task_id)
         events = []
         error_found = False
 
@@ -409,7 +409,7 @@ async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
                 event_count = 0
                 error_event_found = False
 
-                async for event in resubscribe_stream:
+                async for event in subscribe_stream:
                     event_count += 1
                     logger.info(f"Processing nonexistent task event #{event_count}: {event}")
                     events.append(event)
@@ -451,7 +451,7 @@ async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
             error_found = await asyncio.wait_for(process_stream(), timeout=TIMEOUTS["async_wait_for"])
                     
         except asyncio.TimeoutError:
-            logger.warning("Timeout while processing resubscribe stream for nonexistent task - this may be expected")
+            logger.warning("Timeout while processing subscribe stream for nonexistent task - this may be expected")
         except RuntimeError as e:
             if "event loop is closed" in str(e).lower():
                 # This can happen when the transport client properly rejects the request
@@ -471,7 +471,7 @@ async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
         error_msg = str(e).lower()
         if "501" in error_msg or "not implemented" in error_msg:
             pytest.fail(
-                "Streaming capability declared but tasks/resubscribe returned error indicating not implemented. "
+                "Streaming capability declared but SuscribeToTask returned error indicating not implemented. "
                 "This violates the A2A specification - declared capabilities MUST be implemented."
             )
         elif ("not found" in error_msg or "404" in error_msg or "invalid" in error_msg or 
@@ -642,7 +642,7 @@ async def test_streaming_connection_resilience(sut_client, agent_card_data):
             SKIP if capabilities.streaming = false/missing
 
     Test validates that streaming connections handle interruptions gracefully
-    and that tasks/resubscribe allows resuming streams.
+    and that SubscribeToTask allows resuming streams.
     """
     validator = CapabilityValidator(agent_card_data)
 
@@ -666,6 +666,6 @@ async def test_streaming_connection_resilience(sut_client, agent_card_data):
     task_id = None
 
     # Note: This test is skipped due to flakiness and would need to be rewritten
-    # to use transport_send_streaming_message and transport_resubscribe_task
+    # to use transport_send_streaming_message and transport_subscribe_task
     # instead of direct HTTP client access.
     pytest.skip("Test needs rewrite to use transport-agnostic streaming methods")

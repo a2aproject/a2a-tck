@@ -53,9 +53,9 @@ class CapabilityValidator:
             "streaming": [
                 "test_message_stream_basic",
                 "test_message_stream_invalid_params",
-                "test_tasks_resubscribe",
-                "test_tasks_resubscribe_nonexistent",
-                "test_tasks_resubscribe_invalid_params",
+                "test_tasks_subscribe",
+                "test_tasks_subscribe_nonexistent",
+                "test_tasks_subscribe_invalid_params",
             ],
             "pushNotifications": [
                 "test_set_push_notification_config",
