@@ -281,10 +281,10 @@ def test_consistent_behavior_tasks_get(all_transport_clients, test_task_data):
 @transport_equivalence
 def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_data):
     """
-    TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for tasks/cancel
+    TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for CancelTask
 
     Validates that all transport implementations provide the same set of operations.
-    All transports MUST support tasks/cancel with the same functionality.
+    All transports MUST support CancelTask with the same functionality.
 
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence Requirements
     """
@@ -304,7 +304,7 @@ def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_d
 
             # Method not found (-32601) means transport doesn't support this operation
             assert error_code != -32601, (
-                f"Transport {transport_type.value} does not support tasks/cancel (violates Identical Functionality requirement)"
+                f"Transport {transport_type.value} does not support CancelTask (violates Identical Functionality requirement)"
             )
 
             # TaskNotFoundError (-32001) is acceptable
@@ -319,7 +319,7 @@ def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_d
             continue
 
         # Should be successful and contain task data
-        assert is_json_rpc_success_response(resp), f"tasks/cancel failed on {transport_type.value}: {resp}"
+        assert is_json_rpc_success_response(resp), f"CancelTask failed on {transport_type.value}: {resp}"
 
 
 @transport_equivalence
