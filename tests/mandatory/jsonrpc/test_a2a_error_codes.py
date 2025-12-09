@@ -95,7 +95,7 @@ def test_push_notification_not_supported_error_32003(sut_client):
     # Create a test message to get a task ID first
     req_id = message_utils.generate_request_id()
     test_message = {
-        "role": "ROLE_USER",
+        "role": "user",
         "parts": [{"text": "Test message for push notification error test"}],
         "messageId": f"msg-{req_id}",
     }
@@ -195,7 +195,7 @@ def test_unsupported_operation_error_32004(sut_client):
 
             req_id = message_utils.generate_request_id()
             message_data = {
-                "role": "ROLE_USER",
+                "role": "user",
                 "parts": [{"text": "test message for streaming"}],
                 "messageId": f"msg-{req_id}",
             }
@@ -222,7 +222,7 @@ def test_unsupported_operation_error_32004(sut_client):
     req_id = message_utils.generate_request_id()
 
     # Attempt SendMessage with potentially unsupported configuration
-    message_data = {"role": "ROLE_USER", "parts": [{"text": "test"}], "messageId": f"msg-{req_id}"}
+    message_data = {"role": "user", "parts": [{"text": "test"}], "messageId": f"msg-{req_id}"}
 
     # Add configuration that might not be supported
     params = {
@@ -284,7 +284,7 @@ def test_content_type_not_supported_error_32005(sut_client):
 
     # Test 1: Send message with unsupported file MIME type
     message_data = {
-        "role": "ROLE_USER",
+        "role": "user",
         "parts": [
             {"text": "Please process this file"},
             {
@@ -323,7 +323,7 @@ def test_content_type_not_supported_error_32005(sut_client):
     req_id = message_utils.generate_request_id()
 
     message_data = {
-        "role": "ROLE_USER",
+        "role": "user",
         "parts": [{"text": "Generate output in unsupported format"}],
         "messageId": f"msg-{req_id}",
     }

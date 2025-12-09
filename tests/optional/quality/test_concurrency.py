@@ -22,7 +22,7 @@ def text_message_params():
     return {
         "message": {
             "messageId": "test-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Hello from concurrency test!"}],
         }
     }
@@ -161,7 +161,7 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
             "message": {
                 "taskId": task_id,
                 "messageId": "test-update-message-id-" + str(uuid.uuid4()),
-                "role": "ROLE_USER",
+                "role": "user",
                 "parts": [{"text": f"Concurrent update {uuid.uuid4()}"}],
             }
         }

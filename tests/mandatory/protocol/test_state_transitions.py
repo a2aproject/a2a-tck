@@ -17,7 +17,7 @@ def text_message_params():
     return {
         "message": {
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Hello from TCK state transition test!"}],
         }
     }
@@ -29,7 +29,7 @@ def follow_up_message_params(text_message_params):
     return {
         "message": {
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Follow-up message for state transition test"}],
         }
     }
@@ -49,7 +49,7 @@ def test_task_history_length(sut_client):
     create_params = {
         "message": {
             "messageId": "test-history-create-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Initial message for history test"}],
         }
     }
@@ -67,7 +67,7 @@ def test_task_history_length(sut_client):
         follow_up_params = {
             "message": {
                 "messageId": f"test-history-message-{i + 1}-" + str(uuid.uuid4()),
-                "role": "ROLE_USER",
+                "role": "user",
                 "taskId": task_id,
                 "parts": [{"text": f"Follow-up message {i + 1} for history test"}],
             }

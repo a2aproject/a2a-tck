@@ -57,14 +57,14 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
     A2A JSON format:
     {
         "messageId": "...",
-        "role": "ROLE_USER",
+        "role": "user",
         "parts": [{"text": "..."}]
     }
 
     Protobuf JSON format:
     {
         "message_id": "...",
-        "role": "ROLE_USER",
+        "role": "user",
         "parts": [{"text": "..."}]
     }
     """
@@ -132,7 +132,7 @@ def convert_protobuf_response_to_a2a_json(response: Dict[str, Any]) -> Dict[str,
             "id": "...",
             "context_id": "...",
             "status": {...},
-            "history": [{"message_id": "...", "role": "ROLE_USER", "parts": [...]}]
+            "history": [{"message_id": "...", "role": "user", "parts": [...]}]
         }
     }
 
@@ -142,7 +142,7 @@ def convert_protobuf_response_to_a2a_json(response: Dict[str, Any]) -> Dict[str,
             "id": "...",
             "contextId": "...",
             "status": {...},
-            "history": [{"messageId": "...", "role": "ROLE_USER", "parts": [...]}],
+            "history": [{"messageId": "...", "role": "user", "parts": [...]}],
         }
     }
     """
@@ -232,11 +232,11 @@ def convert_protobuf_message_to_a2a(message: Dict[str, Any]) -> Dict[str, Any]:
     # Convert role from protobuf enum to A2A format
     if "role" in message:
         role_map = {
-            "ROLE_USER": "ROLE_USER",
-            "ROLE_AGENT": "ROLE_AGENT",
-            "ROLE_UNSPECIFIED": "ROLE_USER"  # default fallback
+            "ROLE_USER": "user",
+            "ROLE_AGENT": "agent",
+            "ROLE_UNSPECIFIED": "user"  # default fallback
         }
-        a2a_message["role"] = role_map.get(message["role"], "ROLE_USER")
+        a2a_message["role"] = role_map.get(message["role"], "user")
 
     # Convert parts -> parts
     if "parts" in message:

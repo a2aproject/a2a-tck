@@ -75,7 +75,7 @@ async def test_message_stream_basic(sut_client, agent_card_data):
     message_params = {
         "message": {
             "messageId": generate_test_message_id("stream"),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Stream test message"}],
         }
     }
@@ -236,7 +236,7 @@ async def test_tasks_subscribe(sut_client, agent_card_data):
         message_params = {
             "message": {
                 "messageId": "test-subscribe-message-id-" + str(uuid.uuid4()),
-                "role": "ROLE_USER",
+                "role": "user",
                 "parts": [{"text": "Test message for subscribe"}],
             }
         }
@@ -511,7 +511,7 @@ async def test_sse_header_compliance(sut_client, agent_card_data):
     message_params = {
         "message": {
             "messageId": generate_test_message_id("sse-headers"),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Test SSE headers"}],
         }
     }
@@ -572,7 +572,7 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
     message_params = {
         "message": {
             "messageId": generate_test_message_id("sse-format"),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Test SSE event format"}],
         }
     }
@@ -653,7 +653,7 @@ async def test_streaming_connection_resilience(sut_client, agent_card_data):
     params = {
         "message": {
             "messageId": "test-resilience-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Simple task for resilience test"}],
         }
     }

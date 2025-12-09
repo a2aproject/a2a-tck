@@ -23,7 +23,7 @@ def text_message_params():
     return {
         "message": {
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Hello from TCK state transition test!"}],
         }
     }
@@ -35,7 +35,7 @@ def follow_up_message_params(text_message_params):
     return {
         "message": {
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Follow-up message for state transition test"}],
         }
     }
@@ -63,7 +63,7 @@ def test_task_state_transitions(sut_client):
     create_params = {
         "message": {
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Task for state transition test"}],
         }
     }
@@ -80,7 +80,7 @@ def test_task_state_transitions(sut_client):
 
     task_after_creation = get_resp["result"]
     initial_state = task_after_creation["status"]["state"]
-    assert initial_state in {"TASK_STATE_SUBMITTED", "TASK_STATE_WORKING"}, f"Unexpected initial state: {initial_state}"
+    assert initial_state in {"submitted", "working"}, f"Unexpected initial state: {initial_state}"
 
     # Verify history exists and contains the initial message
     history = task_after_creation.get("history", [])
@@ -89,7 +89,7 @@ def test_task_state_transitions(sut_client):
     follow_up_params = {
         "message": {
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "taskId": task_id,
             "parts": [{"text": "Follow-up for state test"}],
         }
@@ -111,7 +111,7 @@ def test_task_state_transitions(sut_client):
 
     # Verify the state transitions - simple check that it's in an expected state
     current_state = get_resp2["result"]["status"]["state"]
-    assert current_state in {"TASK_STATE_WORKING", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_COMPLETED"}, f"Unexpected state: {current_state}"
+    assert current_state in {"working", "input-required", "completed"}, f"Unexpected state: {current_state}"
 
 
 @quality_basic
@@ -136,7 +136,7 @@ def test_task_cancel_state_handling(sut_client):
     create_params = {
         "message": {
             "messageId": "test-cancel-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Task for cancel test"}],
         }
     }

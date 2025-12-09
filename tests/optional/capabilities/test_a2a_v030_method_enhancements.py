@@ -50,7 +50,7 @@ class TestA2AV030MethodEnhancements:
         """
         enhanced_message = {
             "messageId": generate_test_message_id("enhanced-parts"),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [
                 {
                     "text": "This message tests enhanced parts support in A2A v0.3.0"
@@ -95,7 +95,7 @@ class TestA2AV030MethodEnhancements:
         # First create a task
         message = {
             "messageId": generate_test_message_id("enhanced-query"),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Task for enhanced query testing"}],
         }
 
@@ -292,7 +292,7 @@ class TestTransportSpecificMethodBehavior:
         # Test JSON-RPC specific features
         message = {
             "messageId": generate_test_message_id("jsonrpc-specific"),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "JSON-RPC transport test"}],
         }
 
@@ -374,7 +374,7 @@ class TestMethodPerformanceAndScaling:
         for i in range(3):  # Keep small for testing
             message = {
                 "messageId": generate_test_message_id(f"concurrent-{i}"),
-                "role": "ROLE_USER",
+                "role": "user",
                 "parts": [{"text": f"Concurrent test message {i}"}],
             }
             messages.append(message)
@@ -413,7 +413,7 @@ class TestMethodPerformanceAndScaling:
 
         message = {
             "messageId": generate_test_message_id("response-time"),
-            "role": "ROLE_USER",
+            "role": "user",
             "parts": [{"text": "Response time test message"}],
         }
 

@@ -192,10 +192,10 @@ class TestRESTClientSendMessage:
                 "id": "task-123",
                 "context_id": "test-context",
                 "status": {
-                    "state": "TASK_STATE_SUBMITTED",
+                    "state": "submitted",
                     "message": {
                         "message_id": "response-123",
-                        "role": "ROLE_AGENT",
+                        "role": "agent",
                         "content": [{"text": "Message received via REST"}],
                     },
                 },
@@ -213,7 +213,7 @@ class TestRESTClientSendMessage:
             message = {
                 "messageId": "test-msg-1",
                 "contextId": "test-context",
-                "role": "ROLE_USER",
+                "role": "user",
                 "parts": [{"text": "Hello via REST"}],
             }
 
@@ -344,11 +344,11 @@ class TestRESTClientStreamingMessage:
         """Test successful streaming message via REST."""
         # Mock SSE response lines
         sse_lines = [
-            'data: {"task": {"id": "task-stream-1", "status": {"state": "TASK_STATE_SUBMITTED"}}}',
+            'data: {"task": {"id": "task-stream-1", "status": {"state": "submitted"}}}',
             "",
-            'data: {"status_update": {"task_id": "task-stream-1", "status": {"state": "TASK_STATE_WORKING"}}}',
+            'data: {"status_update": {"task_id": "task-stream-1", "status": {"state": "working"}}}',
             "",
-            'data: {"status_update": {"task_id": "task-stream-1", "status": {"state": "TASK_STATE_COMPLETED"}, "final": true}}',
+            'data: {"status_update": {"task_id": "task-stream-1", "status": {"state": "completed"}, "final": true}}',
             "",
             "data: [DONE]",
         ]
@@ -389,10 +389,10 @@ class TestRESTClientStreamingMessage:
 
         # Subsequent responses should be status updates
         assert "status_update" in responses[1]
-        assert responses[1]["status_update"]["status"]["state"] == "TASK_STATE_WORKING"
+        assert responses[1]["status_update"]["status"]["state"] == "working"
 
         assert "status_update" in responses[2]
-        assert responses[2]["status_update"]["status"]["state"] == "TASK_STATE_COMPLETED"
+        assert responses[2]["status_update"]["status"]["state"] == "completed"
         assert responses[2]["status_update"]["final"] is True
 
         # Verify correct URL and headers were used
@@ -489,10 +489,10 @@ class TestRESTClientTaskOperations:
             "id": "task-123",
             "context_id": "default-context",
             "status": {
-                "state": "TASK_STATE_COMPLETED",
+                "state": "completed",
                 "message": {
                     "message_id": "status-123",
-                    "role": "ROLE_AGENT",
+                    "role": "agent",
                     "parts": [{"text": "Task 123 retrieved via REST"}],
                 },
             },
@@ -512,7 +512,7 @@ class TestRESTClientTaskOperations:
 
             assert result["id"] == "task-123"
             assert result["context_id"] == "default-context"
-            assert result["status"]["state"] == "TASK_STATE_COMPLETED"
+            assert result["status"]["state"] == "completed"
 
     @patch("httpx.Client.get")
     def test_get_task_with_history_length(self, mock_get):
@@ -543,10 +543,10 @@ class TestRESTClientTaskOperations:
         mock_response.json.return_value = {
             "id": "task-456",
             "status": {
-                "state": "TASK_STATE_CANCELLED",
+                "state": "canceled",
                 "message": {
                     "message_id": "cancel-456",
-                    "role": "ROLE_AGENT",
+                    "role": "agent",
                     "parts": [{"text": "Task 456 cancelled via REST"}],
                 },
             },
@@ -565,7 +565,7 @@ class TestRESTClientTaskOperations:
             mock_post.assert_called_once_with("https://example.com:8080/v1/tasks/task-456:cancel", headers=client.default_headers)
 
             assert result["id"] == "task-456"
-            assert result["status"]["state"] == "TASK_STATE_CANCELLED"
+            assert result["status"]["state"] == "canceled"
 
     @patch("tck.transport.rest_client.AsyncClient")
     @pytest.mark.asyncio
@@ -573,9 +573,9 @@ class TestRESTClientTaskOperations:
         """Test successful task subscription via REST."""
         # Mock SSE response for task subscription
         sse_lines = [
-            'data: {"task": {"id": "task-789", "status": {"state": "TASK_STATE_WORKING"}}}',
+            'data: {"task": {"id": "task-789", "status": {"state": "working"}}}',
             "",
-            'data: {"status_update": {"task_id": "task-789", "status": {"state": "TASK_STATE_COMPLETED"}, "final": true}}',
+            'data: {"status_update": {"task_id": "task-789", "status": {"state": "completed"}, "final": true}}',
             "",
             "data: [DONE]",
         ]
@@ -836,8 +836,8 @@ class TestRESTClientListTasks:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "tasks": [
-                {"id": "task-1", "context_id": "context-1", "status": {"state": "TASK_STATE_COMPLETED"}},
-                {"id": "task-2", "context_id": "context-2", "status": {"state": "TASK_STATE_WORKING"}},
+                {"id": "task-1", "context_id": "context-1", "status": {"state": "completed"}},
+                {"id": "task-2", "context_id": "context-2", "status": {"state": "working"}},
             ],
             "next_page_token": "",
         }
