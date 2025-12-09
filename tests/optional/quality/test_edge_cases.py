@@ -79,6 +79,7 @@ def test_empty_arrays(sut_client):
     resp = transport_helpers.transport_send_message(sut_client, params)
 
     # The SUT should reject this with InvalidParams
+    # FIXME a2a-java returns -32603 Internal error
     assert transport_helpers.is_json_rpc_error_response(resp), "Empty parts array should be rejected"
     assert resp["error"]["code"] == -32602, "Should return InvalidParams error code"
 
@@ -117,7 +118,7 @@ def test_null_optional_fields(sut_client):
 
     if transport_helpers.is_json_rpc_success_response(resp):
         # If success, should create a new task
-        assert "id" in resp["result"], "Successful response should include task ID"
+        assert "id" in resp["result"]["task"], "Successful response should include task ID"
     else:
         # If error, should be InvalidParams
         assert resp["error"]["code"] == -32602, "Null value rejection should use InvalidParams error"
@@ -221,8 +222,7 @@ def test_unicode_and_special_chars(sut_client):
     assert transport_helpers.is_json_rpc_success_response(resp), "Unicode characters should not cause SendMessage to fail"
 
     # Get the task to verify it was stored correctly
-    task_id = resp["result"]["id"]
-    get_req = message_utils.make_json_rpc_request("tasks/get", params={"id": task_id})
+    task_id = resp["result"]["task"]["id"]
     get_resp = transport_helpers.transport_get_task(sut_client, task_id)
 
     assert transport_helpers.is_json_rpc_success_response(get_resp), "Unicode characters should be preserved in task storage"
@@ -276,10 +276,9 @@ def _create_simple_task(sut_client):
         }
     }
 
-    req = message_utils.make_json_rpc_request("SendMessage", params=params)
     resp = transport_helpers.transport_send_message(sut_client, params)
 
     if not transport_helpers.is_json_rpc_success_response(resp):
         pytest.skip("Failed to create task for edge case test")
 
-    return resp["result"]["id"]
+    return resp["result"]["task"]["id"]

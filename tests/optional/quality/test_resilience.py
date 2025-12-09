@@ -131,7 +131,7 @@ def test_streaming_reconnection_simulation(sut_client, text_message_params):
     if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for streaming reconnection test")
 
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
     # Step 2: Simulate starting a streaming connection
     # In a real test, this would connect to the SUT's streaming endpoint
@@ -202,7 +202,7 @@ def test_partial_update_recovery(sut_client, text_message_params):
     if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for partial update test")
 
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
     # Step 2: Send a series of updates with delays between
     update_texts = [

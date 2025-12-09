@@ -149,7 +149,7 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for concurrent operations test")
 
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
     # Step 2: Define operations to perform concurrently on the task
     def get_task():
