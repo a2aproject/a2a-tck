@@ -184,14 +184,14 @@ def _validate_push_notification_config_list(config_list: List[Dict[str, Any]]) -
             raise A2AValidationError(f"Push notification config[{i}] must be an object", TransportType.GRPC)
 
         # Validate TaskPushNotificationConfig structure
-        required_fields = ["pushNotificationConfig", "taskId"]
+        required_fields = ["pushNotificationConfig", "name"]
         for field in required_fields:
             if field not in config:
                 raise A2AValidationError(f"Push notification config[{i}] missing required field '{field}'", TransportType.GRPC)
 
         # Validate taskId
-        if not isinstance(config["taskId"], str):
-            raise A2AValidationError(f"Push notification config[{i}] 'taskId' must be a string", TransportType.GRPC)
+        if not isinstance(config["name"], str):
+            raise A2AValidationError(f"Push notification config[{i}] 'name' must be a string", TransportType.GRPC)
 
         # Validate pushNotificationConfig structure
         push_config = config["pushNotificationConfig"]
@@ -396,7 +396,6 @@ class GRPCClient(BaseTransportClient):
 
             # Build protobuf request using helper method
             request = self._json_to_send_message_request(message, configuration, default_blocking=True)
-            print(request)
 
             # Real gRPC call
             response = self.stub.SendMessage(request, timeout=self.timeout)
@@ -881,18 +880,17 @@ class GRPCClient(BaseTransportClient):
                 parent=f"tasks/{task_id}", config_id=config_id, config=task_config
             )
 
-            print(f"req => {req}")
             resp = self.stub.SetTaskPushNotificationConfig(req, timeout=self.timeout)
-            print(f"resp => {resp}")
 
             # Convert response to JSON format that matches expected test format
             created_config = {
-                "pushNotificationConfig": {
-                    "id": resp.push_notification_config.id,
-                    "url": resp.push_notification_config.url,
-                    "token": resp.push_notification_config.token,
-                    "authentication": {},  # Convert authentication if present
-                }
+                    "name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}",
+                    "pushNotificationConfig": {
+                        "id": resp.push_notification_config.id,
+                        "url": resp.push_notification_config.url,
+                        "token": resp.push_notification_config.token,
+                        "authentication": {},  # Convert authentication if present
+                    }
             }
 
             logger.debug(f"Set push notification config via gRPC: {task_id}")
@@ -993,20 +991,24 @@ class GRPCClient(BaseTransportClient):
             for config in resp.configs:
                 configs_list.append(
                     {
+                        "name": config.name,
                         "pushNotificationConfig": {
                             "id": config.push_notification_config.id,
                             "url": config.push_notification_config.url,
                             "token": config.push_notification_config.token,
                             "authentication": {},
                         },
-                        "taskId": task_id,
                     }
                 )
+
+            response = {
+                "configs": configs_list
+            }
 
             logger.debug(f"Listed {len(configs_list)} push notification configs via gRPC: {task_id}")
             # Validate response conforms to A2A specification
             _validate_a2a_response(configs_list, "list_push_notification_configs")
-            return configs_list
+            return response
 
         except grpc.RpcError as e:
             error_msg = f"gRPC ListTaskPushNotificationConfig failed: {e.code().name} - {e.details()}"
@@ -1134,9 +1136,6 @@ class GRPCClient(BaseTransportClient):
         self._load_static_stubs()
         pb = self._pb
 
-        print("_json_to_send_message_request")
-        print(message)
-
         # Accept both A2A and internal naming - don't provide defaults for required fields
         msg_id = message.get("messageId") or message.get("message_id")
         ctx_id = message.get("contextId") or message.get("context_id")
@@ -1191,7 +1190,6 @@ class GRPCClient(BaseTransportClient):
             role=pb_role,
             parts=parts,
         )
-        print(f"pb_msg = {pb_msg}")
 
         # Build configuration from provided dict or use defaults
         if configuration:
