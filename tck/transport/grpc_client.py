@@ -677,8 +677,8 @@ class GRPCClient(BaseTransportClient):
             self._load_static_stubs()
             pb = self._pb
             
-            # Build TaskSubscriptionRequest
-            request = pb.TaskSubscriptionRequest(name=f"tasks/{task_id}")
+            # Build SubscribeToTaskRequest
+            request = pb.SubscribeToTaskRequest(name=f"tasks/{task_id}")
             
             # Create appropriate channel based on TLS setting
             if self.use_tls:
@@ -690,7 +690,7 @@ class GRPCClient(BaseTransportClient):
             async with channel:
                 # Use the generated protobuf stub for task subscription
                 stub = self._pb_grpc.A2AServiceStub(channel)
-                stream = stub.TaskSubscription(request, timeout=self.timeout)
+                stream = stub.SubscribeToTask(request, timeout=self.timeout)
                 
                 async for response in stream:
                     # Convert protobuf response to JSON format
