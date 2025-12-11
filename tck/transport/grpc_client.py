@@ -1149,13 +1149,14 @@ class GRPCClient(BaseTransportClient):
         for p in message.get("parts", []):
             if "text" in p:
                 parts.append(pb.Part(text=p.get("text", "")))
-            elif p.get("kind") == "data" and "data" in p:
+            elif "data" in p:
                 # Handle DataPart - convert JSON data to protobuf Struct
                 from google.protobuf.struct_pb2 import Struct
                 struct_data = Struct()
                 struct_data.update(p["data"])
                 data_part = pb.DataPart(data=struct_data)
                 parts.append(pb.Part(data=data_part))
+            #FIXME incorrect serialization of FilePart payload
             elif p.get("kind") == "file" and (("file" in p and "uri" in p["file"]) or ("file" in p and "bytes" in p["file"]) or "fileUri" in p or "fileBytes" in p):
                 # Handle FilePart
                 file_part = pb.FilePart()
@@ -1171,9 +1172,6 @@ class GRPCClient(BaseTransportClient):
                 if "mimeType" in p:
                     file_part.mime_type = p["mimeType"]
                 parts.append(pb.Part(file=file_part))
-            elif p.get("type") or p.get("kind"):
-                # Unsupported part type - create empty Part to let SUT handle validation
-                parts.append(pb.Part())
             else:
                 # Empty or unrecognized part structure
                 parts.append(pb.Part())

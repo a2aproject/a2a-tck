@@ -55,7 +55,8 @@ class TestA2AV030MethodEnhancements:
                 {
                     "text": "This message tests enhanced parts support in A2A v0.3.0"
                 },
-                {   "data": {
+                {
+                    "data": {
                         "data": {
                             "type": "application/json",
                             "content": {
