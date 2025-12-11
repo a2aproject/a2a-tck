@@ -221,6 +221,8 @@ def run_test_category(
         sys.executable,
         "-m",
         "pytest",
+        #"tests/optional/capabilities/test_streaming_methods.py::test_tasks_subscribe_nonexistent",
+        #"tests/optional/capabilities/test_push_notification_config_methods.py::test_set_push_notification_config",
         effective_path,
         f"--sut-url={sut_url}",
         "--test-scope=all",  # Bypass old core marking system

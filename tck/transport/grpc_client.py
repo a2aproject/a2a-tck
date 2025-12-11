@@ -701,7 +701,6 @@ class GRPCClient(BaseTransportClient):
                                 "id": t.id,
                                 "contextId": t.context_id,
                                 "status": {"state": self._map_state_enum_to_json(t.status.state)},
-                                "kind": "task",
                             }
                         }
                     elif response.WhichOneof("payload") == "status_update":
@@ -731,7 +730,7 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             # Map gRPC status to A2A error code per specification
             a2a_error = self._map_grpc_error_to_a2a(e)
-            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
+            raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC subscription: {str(e)}"
             logger.error(error_msg)
@@ -840,7 +839,7 @@ class GRPCClient(BaseTransportClient):
     # Push notification configuration methods
 
     def set_push_notification_config(
-        self, task_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Set push notification config for a task via gRPC.
@@ -866,21 +865,25 @@ class GRPCClient(BaseTransportClient):
 
             # Build push notification config
             push_config = pb.PushNotificationConfig(
-                id=config.get("id", "default"), url=config.get("url", ""), token=config.get("token", "")
+                id=config["pushNotificationConfig"].get("id", config_id),
+                url=config["pushNotificationConfig"].get("url", ""),
+                token=config["pushNotificationConfig"].get("token", "")
             )
 
             # Build task push notification config
             task_config = pb.TaskPushNotificationConfig(
-                name=f"tasks/{task_id}/pushNotificationConfigs/{config.get('id', 'default')}",
+                name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}",
                 push_notification_config=push_config,
             )
 
             # Build request
-            req = pb.CreateTaskPushNotificationConfigRequest(
-                parent=f"tasks/{task_id}", config_id=config.get("id", "default"), config=task_config
+            req = pb.SetTaskPushNotificationConfigRequest(
+                parent=f"tasks/{task_id}", config_id=config_id, config=task_config
             )
 
-            resp = self.stub.CreateTaskPushNotificationConfig(req, timeout=self.timeout)
+            print(f"req => {req}")
+            resp = self.stub.SetTaskPushNotificationConfig(req, timeout=self.timeout)
+            print(f"resp => {resp}")
 
             # Convert response to JSON format that matches expected test format
             created_config = {
