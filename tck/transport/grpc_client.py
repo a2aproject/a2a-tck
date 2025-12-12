@@ -1120,7 +1120,7 @@ class GRPCClient(BaseTransportClient):
         self,
         message: Dict[str, Any],
         configuration: Optional[Dict[str, Any]] = None,
-        default_blocking: bool = True
+        default_blocking: bool = False
     ):
         """
         Convert JSON message to SendMessageRequest protobuf.

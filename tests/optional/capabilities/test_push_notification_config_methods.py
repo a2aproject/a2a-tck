@@ -623,7 +623,6 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
             "url": webhook_url,
             "token": "test-streaming-token-456",
         },
-        "blocking": False,  # Streaming should be non-blocking
     }
 
     # Send the streaming message with configuration
