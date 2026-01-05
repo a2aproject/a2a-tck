@@ -549,11 +549,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
                 logger.info(f"Notification {idx}: {notification}")
 
             # Verify the notification is for our task
-            # Notification can be a Task object (with "id") or status update (with "taskId")
-            task_found_in_notifications = any(
-                notification.get("taskId") == task_id or notification.get("id") == task_id
-                for notification in push_notification_webhook['notifications']
-            )
+            task_found_in_notifications = find_push_notification_for_task_id(task_id, push_notification_webhook)
             assert task_found_in_notifications, (
                 f"Push notification was sent but did not contain our task ID {task_id}. "
                 f"Notifications received: {push_notification_webhook['notifications']}"
@@ -707,11 +703,7 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
                 logger.info(f"Notification {idx}: {notification}")
 
             # Verify the notification is for our task
-            # Notification can be a Task object (with "id") or status update (with "taskId")
-            task_found_in_notifications = any(
-                notification.get("taskId") == task_id or notification.get("id") == task_id
-                for notification in push_notification_webhook['notifications']
-            )
+            task_found_in_notifications = find_push_notification_for_task_id(task_id, push_notification_webhook)
             assert task_found_in_notifications, (
                 f"Push notification was sent but did not contain our task ID {task_id}. "
                 f"Notifications received: {push_notification_webhook['notifications']}"
@@ -733,3 +725,22 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
             f"Could not verify streaming pushNotificationConfig was used. "
             f"List configs failed with: {list_resp.get('error', 'Unknown error')}"
         )
+
+
+def find_push_notification_for_task_id(task_id: str, push_notification_webhook):
+    for current_notification in push_notification_webhook['notifications']:
+        id = None
+        key = "taskId"
+        # Payload is one of the following:
+        if current_notification.get("task"):
+            payload = current_notification["task"]
+            key = "id"
+        elif current_notification.get("statusUpdate"):
+            payload = current_notification["statusUpdate"]
+        elif current_notification.get("artifactUpdate"):
+            payload = current_notification["artifactUpdate"]
+        elif current_notification.get("message"):
+            payload = current_notification["message"]
+
+        if payload and payload.get(key) == task_id:
+            return True
