@@ -336,8 +336,11 @@ def test_list_push_notification_config_empty(sut_client, agent_card_data):
     # Should return empty list or appropriate error - both are valid
     if transport_helpers.is_json_rpc_success_response(resp):
         result = resp["result"]
-        # if there are no push notification configs, the configs field is not required
-        assert len(result) == 0, "Should be empty list for task with no configs"
+        assert result is not None, "Result should not be None"
+        if result.get("configs") is not None:
+            configs = result["configs"]
+            # if there are no push notification configs, the configs field is not required
+            assert len(configs) == 0, "Should be empty list for task with no configs"
     else:
         # Some implementations might return an error for no configs - this is acceptable
         assert transport_helpers.is_json_rpc_error_response(resp), "Response should be either success with empty list or error"
