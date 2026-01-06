@@ -550,10 +550,12 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
 
             # Verify the notification is for our task
             # Notification can be a Task object (with "id") or status update (with "taskId")
-            task_found_in_notifications = any(
-                notification.get("taskId") == task_id or notification.get("id") == task_id
-                for notification in push_notification_webhook['notifications']
-            )
+            task_found_in_notifications = False
+            if "task" in notification:
+                task_found_in_notifications = notification["task"]["id"] == task_id
+            elif "statusUpdate" in notification:
+                task_found_in_notifications = notification["statusUpdate"]["taskId"] == task_id
+
             assert task_found_in_notifications, (
                 f"Push notification was sent but did not contain our task ID {task_id}. "
                 f"Notifications received: {push_notification_webhook['notifications']}"
@@ -708,10 +710,12 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
 
             # Verify the notification is for our task
             # Notification can be a Task object (with "id") or status update (with "taskId")
-            task_found_in_notifications = any(
-                notification.get("taskId") == task_id or notification.get("id") == task_id
-                for notification in push_notification_webhook['notifications']
-            )
+            task_found_in_notifications = False
+            if "task" in notification:
+                task_found_in_notifications = notification["task"]["id"] == task_id
+            elif "statusUpdate" in notification:
+                task_found_in_notifications = notification["statusUpdate"]["taskId"] == task_id
+
             assert task_found_in_notifications, (
                 f"Push notification was sent but did not contain our task ID {task_id}. "
                 f"Notifications received: {push_notification_webhook['notifications']}"
