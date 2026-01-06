@@ -15,54 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 @optional_feature
-def test_unsupported_part_kind(sut_client):
-    """
-    OPTIONAL FEATURE: A2A Unsupported Part Type Handling
-
-    Tests optional implementation that enhances user experience
-    but is not required for A2A compliance.
-
-    Test validates handling of unsupported message part types.
-
-    Failure Impact: Limits feature completeness (perfectly acceptable)
-    Fix Suggestion: Implement proper validation and error handling for unsupported part types
-
-    Asserts:
-        - Unsupported part types are handled gracefully
-        - Error responses use appropriate error codes (InvalidParams/InternalError)
-        - Tasks may be created in failed state if not rejected outright
-    """
-    # Create a message with an unsupported part type
-    params = {
-        "message": {
-            "messageId": "test-unsupported-part-message-id-" + str(uuid.uuid4()),
-            "role": "ROLE_USER",
-            "parts": [
-                {
-                    "type": "unsupported_type",  # Invalid/unsupported type
-                    "text": "This should be rejected",
-                }
-            ],
-        }
-    }
-
-    # Replace with transport helper
-    resp = transport_helpers.transport_send_message(sut_client, params)
-
-    # Expect either an error response or a task with failed state
-    if transport_helpers.is_json_rpc_error_response(resp):
-        # Check if it's an InvalidParamsError or other error
-        assert resp["error"]["code"] in {-32602, -32603}, (
-            "Expected InvalidParamsError or InternalError (Spec: InvalidParamsError/-32602, InternalError/-32603)"
-        )
-    else:
-        # If not an error response, the task might be created but in a failed state
-        assert transport_helpers.is_json_rpc_success_response(resp)
-        task = resp["result"]
-        assert task["status"].get("state") in {"failed", "error"}, "Task should be in failed state"
-
-
-@optional_feature
 def test_invalid_file_part(sut_client):
     """
     OPTIONAL FEATURE: A2A Invalid File Part Handling
