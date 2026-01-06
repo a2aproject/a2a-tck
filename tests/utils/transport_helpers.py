@@ -394,6 +394,39 @@ def get_client_transport_type(client: Any) -> str:
         return "unknown"
 
 
+def transport_send_raw_json_rpc_request(
+    client: BaseTransportClient, req: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Send a raw JSON-RPC request dict using any transport client.
+
+    Internal helper function.
+
+    Args:
+        client: Transport client
+        req: JSON-RPC request dict
+
+    Returns:
+        JSON-RPC response from the server
+
+    Specification Reference: A2A v0.3.0 §3.2.1 - JSON-RPC 2.0 Transport
+    """
+    # Check if client has raw JSON-RPC support (preferred for arbitrary methods)
+    if hasattr(client, "send_raw_json_rpc"):
+        logger.debug(f"Using send_raw_json_rpc for method {req.get('method')}")
+        try:
+            return client.send_raw_json_rpc(req)
+        except Exception as e:
+            # Handle transport-specific JSON-RPC error exceptions
+            if hasattr(e, "json_rpc_error") and e.json_rpc_error:
+                # Return error in JSON-RPC format for consistency
+                return {"error": e.json_rpc_error, "id": req.get("id")}
+            raise
+
+    # Fallback for other transport implementations
+    else:
+        raise ValueError(f"Client {type(client)} does not support arbitrary JSON-RPC requests")
+
+
 def transport_send_json_rpc_request(
     client: BaseTransportClient, method: str, params: Optional[Dict[str, Any]] = None, id: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -417,21 +450,8 @@ def transport_send_json_rpc_request(
     # Create JSON-RPC request
     req = message_utils.make_json_rpc_request(method, params=params, id=id)
 
-    # Check if client has raw JSON-RPC support (preferred for arbitrary methods)
-    if hasattr(client, "send_raw_json_rpc"):
-        logger.debug(f"Using send_raw_json_rpc for method {method}")
-        try:
-            return client.send_raw_json_rpc(req)
-        except Exception as e:
-            # Handle transport-specific JSON-RPC error exceptions
-            if hasattr(e, "json_rpc_error") and e.json_rpc_error:
-                # Return error in JSON-RPC format for consistency
-                return {"error": e.json_rpc_error, "id": req.get("id")}
-            raise
-
-    # Fallback for other transport implementations
-    else:
-        raise ValueError(f"Client {type(client)} does not support arbitrary JSON-RPC requests")
+    # Delegate to the internal helper
+    return transport_send_raw_json_rpc_request(client, req)
 
 
 def transport_set_push_notification_config(
