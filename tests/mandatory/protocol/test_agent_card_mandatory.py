@@ -67,7 +67,6 @@ def test_agent_card_mandatory_fields(fetched_agent_card):
         "name",
         "protocolVersion",
         "skills",
-        "url",
         "version",
     ]
 
@@ -180,9 +179,8 @@ def test_agent_card_basic_info_mandatory(fetched_agent_card):
     Fix Suggestion: Include all required basic information fields
 
     Asserts:
-        - name, description, url, version are present
+        - name, description, version are present
         - fields are non-empty strings
-        - url appears to be a valid URL format
     """
     # Check name
     assert "name" in fetched_agent_card, "Agent Card must include name field"
@@ -195,14 +193,6 @@ def test_agent_card_basic_info_mandatory(fetched_agent_card):
     description = fetched_agent_card["description"]
     assert isinstance(description, str), "description must be a string"
     assert description.strip(), "description cannot be empty"
-
-    # Check url
-    assert "url" in fetched_agent_card, "Agent Card must include url field"
-    url = fetched_agent_card["url"]
-    assert isinstance(url, str), "url must be a string"
-    assert url.strip(), "url cannot be empty"
-    # Basic URL format validation
-    assert url.startswith(("http://", "https://")), "url must be a valid HTTP/HTTPS URL"
 
     # Check version
     assert "version" in fetched_agent_card, "Agent Card must include version field"

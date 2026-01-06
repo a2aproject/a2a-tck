@@ -62,11 +62,12 @@ def create_test_task(sut_client) -> Optional[str]:
         }
 
         message_response = transport_helpers.transport_send_message(sut_client, {"message": test_message})
-
         if "result" in message_response and isinstance(message_response["result"], dict):
-            task = message_response["result"]
-            if "id" in task:
-                return task["id"]
+            result = message_response["result"]
+            if "task" in result and isinstance(result["task"], dict):
+                task = result["task"]
+                if "id" in task:
+                    return task["id"]
     except Exception as e:
         logger.warning(f"Failed to create test task: {e}")
 
@@ -89,7 +90,11 @@ def test_push_notification_not_supported_error_32003_enhanced(sut_client):
     push_notifications_supported = False
 
     try:
-        agent_card = transport_helpers.transport_get_agent_card(sut_client)
+        result = transport_helpers.transport_get_agent_card(sut_client)
+        if "result" in result and isinstance(result["result"], dict):
+            agent_card = result["result"]
+        else:
+            agent_card = result
         capabilities = agent_card.get("capabilities", {})
         push_notifications_supported = capabilities.get("pushNotifications", False)
     except Exception as e:
@@ -98,12 +103,13 @@ def test_push_notification_not_supported_error_32003_enhanced(sut_client):
     if not push_notifications_supported:
         # Test direct rejection for unsupported feature
         task_id = create_test_task(sut_client) or f"test-task-{message_utils.generate_request_id()}"
-
+        config_id = str(uuid.uuid4())
         # Try to set push notification config on agent that doesn't support it
-        config = {"url": "https://test.example.com/webhook", "token": "test-token"}
+        name= f"tasks/{task_id}/pushNotificationConfigs/{config_id}"
+        config = {"name": name, "pushNotificationConfig":{"url": "https://test.example.com/webhook", "token": "test-token"}}
 
         try:
-            response = transport_helpers.transport_set_push_notification_config(sut_client, task_id, config)
+            response = transport_helpers.transport_set_push_notification_config(sut_client, task_id, config_id, config)
 
             if "error" in response:
                 error_code = response["error"]["code"]

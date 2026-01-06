@@ -465,7 +465,7 @@ class JSONRPCClient(BaseTransportClient):
 
     def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        Get agent card using agent/getAuthenticatedExtendedCard method.
+        Get agent card using GetExtendedAgentCard method.
 
         Makes a real JSON-RPC call to get the agent card information.
 
@@ -481,7 +481,7 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §5.5 - Agent Card Retrieval
         """
         try:
-            response = self._make_jsonrpc_request(method="agent/getAuthenticatedExtendedCard", params={}, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="GetExtendedAgentCard", params={}, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
@@ -623,7 +623,7 @@ class JSONRPCClient(BaseTransportClient):
 
     def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        Get the authenticated extended agent card.
+        Get the extended agent card.
 
         Makes a real JSON-RPC call to retrieve extended agent information.
 
@@ -631,16 +631,16 @@ class JSONRPCClient(BaseTransportClient):
             extra_headers: Optional HTTP headers (typically auth headers)
 
         Returns:
-            The extended agent card with additional authenticated information
+            The extended agent card with additional information
 
         Raises:
-            JSONRPCError: If authenticated card retrieval fails
+            JSONRPCError: If card retrieval fails
 
-        Specification Reference: A2A Protocol v0.3.0 §5.6 - Authenticated Extended Card
+        Specification Reference: A2A Protocol v0.3.0 §5.6 - Extended Card
         """
         try:
             response = self._make_jsonrpc_request(
-                method="agent/getAuthenticatedExtendedCard", params={}, extra_headers=extra_headers
+                method="GetExtendedAgentCard", params={}, extra_headers=extra_headers
             )
             return response.get("result", {})
 
