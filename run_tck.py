@@ -154,7 +154,7 @@ def run_test_category(
     category_configs = {
         "mandatory": {
             "path": "tests/mandatory/",
-            "markers": "mandatory_jsonrpc or mandatory_protocol",
+            "markers": "mandatory or mandatory_jsonrpc or mandatory_protocol",
             "description": "Mandatory A2A compliance tests",
         },
         "capabilities": {
@@ -214,7 +214,7 @@ def run_test_category(
         # If jsonrpc is not requested, exclude JSON-RPC compliance tests
         if "jsonrpc" not in norm:
             effective_path = "tests/mandatory/protocol/"
-            effective_markers = "mandatory_protocol"
+            effective_markers = "mandatory or mandatory_protocol"
 
     # Build pytest command
     cmd = [
