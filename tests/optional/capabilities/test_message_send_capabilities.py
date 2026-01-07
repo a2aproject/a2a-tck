@@ -106,6 +106,7 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     """
     # First, create a task
     first_resp = transport_helpers.transport_send_message(sut_client, valid_text_message_params)
+    logger.info(f"Response: {first_resp}")
     assert transport_helpers.is_json_rpc_success_response(first_resp)
     task_id = first_resp["result"]["task"]["id"]
 

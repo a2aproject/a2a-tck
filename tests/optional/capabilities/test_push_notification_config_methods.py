@@ -141,7 +141,6 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
     config_id = "test_set_push_notification_config_" + str(uuid.uuid4())
     resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config_id, config)
     # Since push notifications capability is declared, this MUST work
-    print(f"in test {resp}")
     assert transport_helpers.is_json_rpc_success_response(resp), "Push notifications capability declared but set config failed"
 
     result = resp["result"]

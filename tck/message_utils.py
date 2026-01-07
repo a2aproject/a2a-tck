@@ -69,6 +69,9 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
     }
     """
     protobuf_message = {}
+        # Map metadata if present
+    if "role" in message:
+        protobuf_message["role"] = message["role"]
 
     # Map messageId -> message_id
     if "messageId" in message:
@@ -105,7 +108,8 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
                 # DataPart has structure: {"data": {"data": <actual_data>}}
                 # The protobuf DataPart has a single field "data" of type google.protobuf.Struct
                 protobuf_part["data"] = {"data": part.get("data", {})}
-
+            else:
+                protobuf_part.update(part)
             # Add metadata if present
             if "metadata" in part:
                 protobuf_part["metadata"] = part["metadata"]
@@ -151,7 +155,7 @@ def convert_protobuf_response_to_a2a_json(response: Dict[str, Any]) -> Dict[str,
         # Convert task response (wrapped format)
         task = response["task"]
         a2a_task = convert_protobuf_task_to_a2a(task)
-        return a2a_task
+        return {"task": a2a_task}
     elif "message" in response:
         # Convert message response
         message = response["message"]
@@ -168,13 +172,15 @@ def convert_protobuf_response_to_a2a_json(response: Dict[str, Any]) -> Dict[str,
 
 def convert_protobuf_task_to_a2a(task: Dict[str, Any]) -> Dict[str, Any]:
     """Convert protobuf task to A2A task format."""
-    a2a_task = {"kind": "task"}
+    a2a_task = {}
 
     # Map basic fields
     if "id" in task:
         a2a_task["id"] = task["id"]
     if "context_id" in task:
         a2a_task["contextId"] = task["context_id"]
+    elif "contextId" in task:
+        a2a_task["contextId"] = task["contextId"]
     if "status" in task:
         # Convert protobuf status to A2A status format
         status = task["status"]
@@ -191,7 +197,7 @@ def convert_protobuf_task_to_a2a(task: Dict[str, Any]) -> Dict[str, Any]:
                 "TASK_STATE_REJECTED": "rejected",
                 "TASK_STATE_AUTH_REQUIRED": "auth-required"
             }
-            a2a_status["state"] = state_map.get(status["state"], status["state"])
+            a2a_status["state"] = status["state"]
         if "timestamp" in status:
             a2a_status["timestamp"] = status["timestamp"]
         if "message" in status:
@@ -220,10 +226,19 @@ def convert_protobuf_message_to_a2a(message: Dict[str, Any]) -> Dict[str, Any]:
     # Map basic fields
     if "message_id" in message:
         a2a_message["messageId"] = message["message_id"]
+    elif "messageId" in message:
+        a2a_message["messageId"] = message["messageId"]
+
     if "context_id" in message:
         a2a_message["contextId"] = message["context_id"]
+    elif "contextId" in message:
+        a2a_message["contextId"] = message["contextId"]
+
     if "task_id" in message:
         a2a_message["taskId"] = message["task_id"]
+    elif "taskId" in message:
+        a2a_message["taskId"] = message["taskId"]
+
     if "metadata" in message:
         a2a_message["metadata"] = message["metadata"]
     if "extensions" in message:

@@ -85,6 +85,7 @@ def test_task_history_length(sut_client):
     get_limited_resp = transport_helpers.transport_get_task(sut_client, task_id, history_length=2)
     assert transport_helpers.is_json_rpc_success_response(get_limited_resp)
     limited_history = get_limited_resp["result"].get("history", [])
+    assert len(limited_history) == 2
 
     # Verify that full history contains more entries than limited history (if available)
     if len(full_history) > 2:
