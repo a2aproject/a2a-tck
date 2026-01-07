@@ -52,7 +52,7 @@ import subprocess
 import sys
 import argparse
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 import json
 import os
 from dotenv import load_dotenv
@@ -62,6 +62,35 @@ REPORTS_DIR = Path("reports")
 
 # Truthy values for environment variable checking
 TRUTHY_ENV_VALUES = {"1", "true", "yes"}
+
+
+def normalize_transports(transports: str) -> "List[str]":
+    """Normalize transport names from comma-separated string to canonical list.
+
+    Converts transport aliases to canonical names and removes duplicates.
+    Examples: "json-rpc,grpc" -> ["jsonrpc", "grpc"]
+              "http+json,rest" -> ["rest"]
+
+    Args:
+        transports: Comma-separated transport names (case-insensitive)
+
+    Returns:
+        List of canonical transport names in order of appearance
+    """
+    if not transports:
+        return []
+
+    items = [t.strip().lower() for t in transports.split(",") if t.strip()]
+    mapping = {
+        "jsonrpc": "jsonrpc",
+        "json-rpc": "jsonrpc",
+        "grpc": "grpc",
+        "rest": "rest",
+        "http+json": "rest",
+        "http": "rest",
+    }
+    canonical_transports = [mapping[it] for it in items if it in mapping]
+    return list(dict.fromkeys(canonical_transports))
 
 
 def load_env_file():
@@ -197,20 +226,7 @@ def run_test_category(
     effective_markers = config["markers"]
 
     if category == "mandatory" and transports:
-        # Normalize transports
-        items = [t.strip().lower() for t in transports.split(",") if t.strip()]
-        norm = []
-        mapping = {
-            "jsonrpc": "jsonrpc",
-            "json-rpc": "jsonrpc",
-            "grpc": "grpc",
-            "rest": "rest",
-            "http+json": "rest",
-            "http": "rest",
-        }
-        for it in items:
-            if it in mapping and mapping[it] not in norm:
-                norm.append(mapping[it])
+        norm = normalize_transports(transports)
         # If jsonrpc is requested, include JSON-RPC compliance tests
         if "jsonrpc" in norm:
             effective_markers += " or mandatory_jsonrpc"
@@ -297,24 +313,7 @@ def run_all_categories(
     print("=" * 80)
     print()
 
-    def _normalize_transports(ts: str) -> list:
-        items = [t.strip().lower() for t in ts.split(",") if t.strip()]
-        norm = []
-        mapping = {
-            "jsonrpc": "jsonrpc",
-            "json-rpc": "jsonrpc",
-            "grpc": "grpc",
-            "rest": "rest",
-            "http+json": "rest",
-            "http": "rest",
-        }
-        for it in items:
-            if it in mapping:
-                if mapping[it] not in norm:
-                    norm.append(mapping[it])
-        return norm
-
-    multi_transports = _normalize_transports(transports) if transports else []
+    multi_transports = normalize_transports(transports) if transports else []
 
     if multi_transports and len(multi_transports) > 1:
         # Run single-client categories per transport (exclude transport-equivalence here)
@@ -748,7 +747,9 @@ Categories:
         default="agent_preferred",
         help="Transport selection strategy for A2A v0.3.0 multi-transport testing (default: agent_preferred)",
     )
-    parser.add_argument("--transports", help="Comma-separated list of transports to allow strictly: jsonrpc,grpc,rest")
+    parser.add_argument("--transports",
+        default="jsonrpc",
+        help="Comma-separated list of transports to allow strictly: jsonrpc,grpc,rest")
 
     # Removed --preferred-transport in favor of --transport-strategy
 
@@ -841,32 +842,16 @@ Categories:
             sys.exit(1)
     else:
         # If multiple transports provided and category is single-client, fan out per transport
-        def _normalize_transports(ts: str) -> list:
-            items = [t.strip().lower() for t in ts.split(",") if t.strip()]
-            norm = []
-            mapping = {
-                "jsonrpc": "jsonrpc",
-                "json-rpc": "jsonrpc",
-                "grpc": "grpc",
-                "rest": "rest",
-                "http+json": "rest",
-                "http": "rest",
-            }
-            for it in items:
-                if it in mapping and mapping[it] not in norm:
-                    norm.append(mapping[it])
-            return norm
+        multi_transports = normalize_transports(args.transports) if args.transports else []
 
-        mt = _normalize_transports(args.transports) if args.transports else []
-
-        if mt and len(mt) > 1 and args.category != "transport-equivalence":
+        if multi_transports and len(multi_transports) > 1 and args.category != "transport-equivalence":
             print("=" * 80)
-            print(f"🔁 Running category '{args.category}' per transport: {', '.join(mt)}")
+            print(f"🔁 Running category '{args.category}' per transport: {', '.join(multi_transports)}")
             print("=" * 80)
             print()
 
             aggregate_ok = True
-            for tr in mt:
+            for tr in multi_transports:
                 print(f"➡️  [{tr}] Running {args.category}...")
                 code = run_test_category(
                     args.category,
