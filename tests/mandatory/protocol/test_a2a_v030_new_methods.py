@@ -17,6 +17,7 @@ References:
 - A2A v0.3.0 Specification §3.2: Transport Protocol Requirements
 """
 
+import logging
 import pytest
 from typing import Dict, Any, List, Optional, Union
 
@@ -35,6 +36,7 @@ from tests.utils.transport_helpers import (
     generate_test_message_id,
 )
 
+logger = logging.getLogger(__name__)
 
 class TestAuthenticatedExtendedCard:
     """
@@ -298,9 +300,11 @@ class TestMethodMappingCompliance:
             }
             response = transport_send_message(sut_client, {"message": sample_message})
             assert response is not None
-
             # Extract task from response
-            task = response["result"]["task"]
+            if "result" in response and isinstance(response["result"], dict):
+                task = response["result"]["task"]
+            else:
+                task = response["task"]
             assert "id" in task
             task_id = task["id"]
 

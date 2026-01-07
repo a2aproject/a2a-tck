@@ -20,6 +20,7 @@ import pytest
 from tck import message_utils
 from tests.markers import mandatory
 from tests.utils import transport_helpers
+from tests.markers import mandatory_jsonrpc
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ def verify_a2a_error_response(response: Dict[str, Any], expected_code: int, expe
     logger.info(f"✅ A2A error code {expected_code} properly returned with message: {error_message}")
 
 
-@mandatory
+@mandatory_jsonrpc
 def test_push_notification_not_supported_error_32003(sut_client):
     """
     MANDATORY: A2A v0.3.0 Section 8.2 - PushNotificationNotSupportedError (-32003)

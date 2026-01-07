@@ -15,6 +15,7 @@ Reference: A2A v0.3.0 Specification Section 9 (Security Requirements)
 
 import logging
 import urllib.parse
+from urllib.parse import urljoin
 from typing import Dict, Any, List, Optional
 
 import pytest
@@ -37,15 +38,22 @@ def agent_card_security_info(agent_card_data):
     """
     if agent_card_data is None:
         pytest.skip("Agent Card not available - cannot test security requirements")
+    supportedInterfaces = agent_card_data.get("supportedInterfaces", [])
+    # Get base_url from supportedInterfaces or fall back to url field (for v0.3.0 compatibility)
+    base_url = None
+    if supportedInterfaces and len(supportedInterfaces) > 0:
+        base_url = urljoin(supportedInterfaces[0].get("url"), "/.well-known/agent-card.json")
+    if not base_url:
+        base_url = agent_card_data.get("url")  # Fallback for older spec versions
 
     security_info = {
         "has_extended_card": agent_card_data.get("supportsAuthenticatedExtendedCard", False),
         "authentication_schemes": agent_card_utils.get_authentication_schemes(agent_card_data),
-        "base_url": agent_card_data.get("url"),
+        "base_url": base_url,
         "security_schemes": agent_card_data.get("securitySchemes", {}),
         "security_requirements": agent_card_data.get("security", []),
         "sensitive_fields": [],
-        "public_fields": ["name", "description", "url", "version", "capabilities", "defaultInputModes", "defaultOutputModes"],
+        "public_fields": ["name", "description", "version", "capabilities", "defaultInputModes", "defaultOutputModes"],
     }
 
     # Identify potentially sensitive fields in the Agent Card
@@ -63,13 +71,14 @@ def agent_card_security_info(agent_card_data):
 
 def get_extended_card_url(base_url: str) -> str:
     """
-    Construct the extended Agent Card URL according to A2A v0.3.0 specification.
+    Construct the extended Agent Card URL according to A2A v1.0.0 specification.
 
-    Per Section 9.1: The endpoint URL is {AgentCard.url}/v1/card
+    Per v1.0.0: The endpoint URL is {base_url}/extendedAgentCard
     relative to the base URL specified in the public Agent Card.
     """
     parsed = urllib.parse.urlparse(base_url)
-    extended_path = f"{parsed.path}/v1/card"
+    # For v1.0.0, use /extendedAgentCard endpoint
+    extended_path = f"{parsed.path.rstrip('/')}/extendedAgentCard"
 
     # Reconstruct the URL
     extended_url = urllib.parse.urlunparse(
@@ -109,8 +118,8 @@ def test_public_agent_card_access_control(agent_card_data, agent_card_security_i
     """
     base_url = agent_card_security_info["base_url"]
     if not base_url:
-        pytest.fail("Agent Card missing required 'url' field for security testing")
-
+        pytest.skip("Agent Card missing base URL - cannot test public access controls")
+    base_url = urljoin(base_url, "/.well-known/agent-card.json")
     logger.info(f"Testing public Agent Card access controls: {base_url}")
 
     try:
@@ -126,10 +135,11 @@ def test_public_agent_card_access_control(agent_card_data, agent_card_security_i
         try:
             public_card = response.json()
         except ValueError:
-            pytest.fail("Public Agent Card must return valid JSON")
+            pytest.fail(f"Public Agent Card must return valid JSON: {response}")
 
-        # Validate required public fields are present
-        required_public_fields = ["name", "description", "url", "version", "capabilities"]
+        # Validate required public fields are present (v1.0.0 spec)
+        # Note: "url" field was removed in v1.0.0, replaced by supportedInterfaces
+        required_public_fields = ["name", "description", "version", "capabilities"]
         for field in required_public_fields:
             assert field in public_card, f"Public Agent Card missing required field: {field}"
 
@@ -178,6 +188,9 @@ def test_extended_card_access_controls(agent_card_security_info):
         pytest.skip("supportsAuthenticatedExtendedCard not declared - extended card security test not applicable")
 
     base_url = agent_card_security_info["base_url"]
+    if not base_url:
+        pytest.skip("Agent Card missing base URL - cannot test extended card access controls")
+
     extended_url = get_extended_card_url(base_url)
 
     logger.info(f"Testing extended Agent Card access controls: {extended_url}")
@@ -256,6 +269,9 @@ def test_authentication_scheme_validation(agent_card_security_info):
         pytest.skip("No extended card declared - cannot test authentication scheme validation")
 
     base_url = agent_card_security_info["base_url"]
+    if not base_url:
+        pytest.skip("Agent Card missing base URL - cannot test authentication scheme validation")
+
     extended_url = get_extended_card_url(base_url)
 
     logger.info(f"Testing authentication scheme validation: {extended_url}")

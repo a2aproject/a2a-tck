@@ -553,8 +553,10 @@ def transport_list_push_notification_configs(
         logger.debug(f"Using transport-aware list_push_notification_configs for {client.transport_type.value}")
         try:
             result = client.list_push_notification_configs(task_id, extra_headers=extra_headers)
+            if "configs" in result:
+                return {"result":result}
             # Wrap result in JSON-RPC format for compatibility with existing tests
-            return {"result": result}
+            return {"result": {"configs" : result}}
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format
             logger.debug(f"Transport error: {e}")
@@ -592,6 +594,8 @@ def transport_delete_push_notification_config(
         logger.debug(f"Using transport-aware delete_push_notification_config for {client.transport_type.value}")
         try:
             result = client.delete_push_notification_config(task_id, config_id, extra_headers=extra_headers)
+            if result is None:
+                result = {}
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:

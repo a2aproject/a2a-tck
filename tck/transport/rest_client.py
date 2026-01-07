@@ -181,7 +181,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Sending message via REST: {message.get('message_id', 'unknown')}")
 
             # Prepare request
-            url = urljoin(self.base_url, "message:send")
+            url = urljoin(self.base_url, "/message:send")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -199,6 +199,7 @@ class RESTClient(BaseTransportClient):
                 payload["configuration"] = configuration
 
             # Make real HTTP request to live SUT
+            logger.debug(f"Sending REST request with payload: {payload}")
             response = self.client.post(url, json=payload, headers=headers)
 
             # Handle HTTP errors
@@ -212,7 +213,7 @@ class RESTClient(BaseTransportClient):
             # Convert protobuf response back to A2A JSON format
             a2a_response = convert_protobuf_response_to_a2a_json(response_data)
 
-            logger.debug(f"Received REST response for message {message.get('message_id')}")
+            logger.debug(f"Received REST response {response_data} for message {message.get('message_id')}")
             return a2a_response
 
         except httpx.RequestError as e:
@@ -269,7 +270,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Starting REST streaming for message: {message.get('message_id', 'unknown')}")
 
             # Prepare request
-            url = urljoin(self.base_url, "message:stream")
+            url = urljoin(self.base_url, "/message:stream")
             headers = self.default_headers.copy()
             headers["Accept"] = "text/event-stream"  # SSE format
             # Add extra headers if provided
@@ -354,7 +355,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Getting task via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}")
+            url = urljoin(self.base_url, f"/tasks/{task_id}")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -365,7 +366,7 @@ class RESTClient(BaseTransportClient):
             params = {}
             if "history_length" in kwargs:
                 if kwargs["history_length"] is not None :
-                    params["history_length"] = kwargs["history_length"]
+                    params["historyLength"] = kwargs["history_length"]
 
             # Make real HTTP request to live SUT
             response = self.client.get(url, params=params, headers=headers)
@@ -413,7 +414,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Cancelling task via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}:cancel")
+            url = urljoin(self.base_url, f"/tasks/{task_id}:cancel")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -485,7 +486,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Subscribing to task via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}:subscribe")
+            url = urljoin(self.base_url, f"/tasks/{task_id}:subscribe")
             headers = self.default_headers.copy()
             headers["Accept"] = "text/event-stream"  # SSE format
             # Add extra headers if provided
@@ -540,14 +541,14 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
-    def get_agent_card(self, **kwargs) -> Dict[str, Any]:
+    def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get agent card via HTTP GET.
 
         Maps to: GET /card HTTP request
 
         Args:
-            **kwargs: Additional configuration options (extra_headers)
+            extra_headers: Optional HTTP headers
 
         Returns:
             Dict containing agent card data from SUT
@@ -559,12 +560,12 @@ class RESTClient(BaseTransportClient):
             logger.info("Getting agent card via REST")
 
             # Prepare request
-            url = urljoin(self.base_url, "card")
+            url = urljoin(self.base_url, "/card")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            if extra_headers is not None:
+                headers.update(extra_headers)
 
             # Make real HTTP request to live SUT
             response = self.client.get(url, headers=headers)
@@ -590,14 +591,14 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
-    def get_authenticated_extended_card(self, **kwargs) -> Dict[str, Any]:
+    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get authenticated extended agent card via HTTP GET.
 
         Maps to: GET /card HTTP request with authentication headers
 
         Args:
-            **kwargs: Additional configuration options (extra_headers with auth)
+            extra_headers: Optional HTTP headers (typically auth headers)
 
         Returns:
             Dict containing extended agent card data from SUT
@@ -609,12 +610,12 @@ class RESTClient(BaseTransportClient):
             logger.info("Getting authenticated extended agent card via REST")
 
             # Prepare request
-            url = urljoin(self.base_url, "card")
+            url = urljoin(self.base_url, "/extendedAgentCard")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided (should include authentication)
-            if "extra_headers" in kwargs:
-                headers.update(kwargs["extra_headers"])
+            if extra_headers:
+                headers.update(extra_headers)
 
             # Make real HTTP request to live SUT (with authentication headers)
             response = self.client.get(url, headers=headers)
@@ -642,7 +643,7 @@ class RESTClient(BaseTransportClient):
 
     # Push notification configuration methods
 
-    def set_push_notification_config(self, task_id: str, config: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def set_push_notification_config(self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Set push notification config for a task via HTTP POST.
 
@@ -651,7 +652,7 @@ class RESTClient(BaseTransportClient):
         Args:
             task_id: ID of the task to configure
             config: Push notification configuration
-            **kwargs: Additional configuration options (extra_headers)
+            extra_headers: Optional HTTP headers
 
         Returns:
             Dict containing created config data from SUT
@@ -663,32 +664,32 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Setting push notification config for task via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/pushNotificationConfigs")
+            url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            if extra_headers is not None:
+                headers.update(extra_headers)
 
             # Format request according to protobuf CreateTaskPushNotificationConfigRequest structure
             # Generate config_id if not provided
-            config_id = config.get("id", "default")
+            push_notification_config_id = config.get("pushNotificationConfig", {}).get("id", "default")
             
             # Build protobuf-compatible request structure
             protobuf_request = {
                 "parent": f"tasks/{task_id}",
-                "config_id": config_id,
+                "configId": config_id,
                 "config": {
                     "name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}",
                     "push_notification_config": {
-                        "id": config_id,
-                        "url": config.get("url", ""),
-                        "token": config.get("token", ""),
-                        "authentication": config.get("authentication", {})
+                        "id": push_notification_config_id,
+                        "url": config.get("pushNotificationConfig", {}).get("url", ""),
+                        "token": config.get("pushNotificationConfig", {}).get("token", ""),
+                        "authentication": config.get("pushNotificationConfig", {}).get("authentication", {})
                     }
                 }
             }
-
+            logger.debug(f"Set push notification config via REST: {protobuf_request}")
             # Make real HTTP request to live SUT
             response = self.client.post(url, json=protobuf_request, headers=headers)
 
@@ -734,7 +735,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Getting push notification config via REST: {task_id}/{config_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/pushNotificationConfigs/{config_id}")
+            url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs/{config_id}")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -785,7 +786,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Listing push notification configs via REST: {task_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/pushNotificationConfigs")
+            url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -850,7 +851,7 @@ class RESTClient(BaseTransportClient):
             logger.info(f"Deleting push notification config via REST: {task_id}/{config_id}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"tasks/{task_id}/pushNotificationConfigs/{config_id}")
+            url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs/{config_id}")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -908,7 +909,7 @@ class RESTClient(BaseTransportClient):
             logger.info("Listing tasks via REST")
 
             # Prepare request
-            url = urljoin(self.base_url, "tasks")
+            url = urljoin(self.base_url, "/tasks")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
