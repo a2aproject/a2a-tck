@@ -32,31 +32,17 @@ def sut_client():
     """Fixture to provide a SUTClient instance."""
     return SUTClient()
 
-
 @pytest.fixture(scope="module")
-def auth_capable_agent_card(agent_card_data):
-    """
-    Fixture that provides Agent Card data for authentication-capable agents.
-
-    Unlike other auth fixtures, this does NOT skip when no auth is declared.
-    Instead, it provides the card data so tests can validate proper auth handling
-    regardless of whether authentication is declared or not.
-    """
+def security_schemes(agent_card_data):
+    """Extract all security schemes from Agent Card."""
     if agent_card_data is None:
         pytest.skip("Agent Card not available - cannot test authentication compliance")
 
-    return agent_card_data
+    schemes = agent_card_utils.get_authentication_schemes(agent_card_data)
 
-
-@pytest.fixture(scope="module")
-def security_schemes(auth_capable_agent_card):
-    """Extract all security schemes from Agent Card."""
-    schemes = agent_card_utils.get_authentication_schemes(auth_capable_agent_card)
-
-    # Also check for A2A v0.3.0 securitySchemes field
-    security_schemes_v030 = auth_capable_agent_card.get("securitySchemes", {})
-    if security_schemes_v030:
-        schemes.extend(list(security_schemes_v030.values()))
+    if not schemes:
+        # No authentication schemes is acceptable - skip all the tests
+        pytest.skip("No security schemes declared")
 
     return schemes
 
@@ -84,80 +70,73 @@ def test_security_scheme_structure_compliance(security_schemes):
         - Scheme types are valid according to A2A v0.3.0
         - Type-specific validation passes
     """
-    if not security_schemes:
-        # No authentication schemes is acceptable - skip this test
-        pytest.skip("No security schemes declared - structure compliance test not applicable")
-
     logger.info(f"Validating security scheme structure compliance for {len(security_schemes)} schemes")
 
     valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
     valid_api_key_locations = ["query", "header", "cookie"]
     valid_http_schemes = ["basic", "bearer", "digest"]
 
-    for i, scheme in enumerate(security_schemes):
-        scheme_name = f"Security scheme {i + 1}"
+    for scheme_type in security_schemes:
+        scheme = security_schemes[scheme_type]
 
-        # MANDATORY: type field must be present
-        assert "type" in scheme, f"{scheme_name}: Missing required 'type' field"
-        scheme_type = scheme["type"]
-
-        # MANDATORY: type must be valid
+        # MANDATORY: scheme_type must be valid
         assert scheme_type in valid_scheme_types, (
-            f"{scheme_name}: Invalid type '{scheme_type}'. Valid types: {valid_scheme_types}"
+            f"Invalid type '{scheme_type}'. Valid types: {valid_scheme_types}"
         )
 
-        logger.info(f"Validating {scheme_name}: type='{scheme_type}'")
+        logger.info(f"Validating type='{scheme_type}'")
 
         # Type-specific mandatory validation
         if scheme_type == "apiKey":
-            assert "name" in scheme, f"{scheme_name}: apiKey missing required 'name' field"
-            assert "in" in scheme, f"{scheme_name}: apiKey missing required 'in' field"
+            assert "name" in scheme, f"{scheme_type}: missing required 'name' field"
+            assert "in" in scheme, f"{scheme_type}: missing required 'in' field"
 
             key_location = scheme["in"]
             assert key_location in valid_api_key_locations, (
-                f"{scheme_name}: apiKey invalid location '{key_location}'. Valid: {valid_api_key_locations}"
+                f"{scheme_type}: invalid location '{key_location}'. Valid: {valid_api_key_locations}"
             )
 
-            logger.info(f"✅ {scheme_name}: apiKey validation passed (name={scheme['name']}, in={key_location})")
+            logger.info(f"✅ {scheme_type}: validation passed (name={scheme['name']}, in={key_location})")
 
         elif scheme_type == "http":
-            assert "scheme" in scheme, f"{scheme_name}: http missing required 'scheme' field"
+            assert "scheme" in scheme, f"{scheme_type}: missing required 'scheme' field"
 
             http_scheme = scheme["scheme"].lower()
             assert http_scheme in valid_http_schemes, (
-                f"{scheme_name}: http invalid scheme '{http_scheme}'. Valid: {valid_http_schemes}"
+                f"{scheme_type}: invalid scheme '{http_scheme}'. Valid: {valid_http_schemes}"
             )
 
-            logger.info(f"✅ {scheme_name}: http validation passed (scheme={http_scheme})")
+            logger.info(f"✅ {scheme_type}: validation passed (scheme={http_scheme})")
 
         elif scheme_type == "oauth2":
-            assert "flows" in scheme, f"{scheme_name}: oauth2 missing required 'flows' field"
+            assert "flows" in scheme, f"{scheme_type}: missing required 'flows' field"
 
             flows = scheme["flows"]
-            assert isinstance(flows, dict), f"{scheme_name}: oauth2 'flows' must be an object"
+            assert isinstance(flows, dict), f"{scheme_type}: 'flows' must be an object"
 
             valid_flows = ["authorizationCode", "clientCredentials", "implicit", "password"]
             declared_flows = [flow for flow in valid_flows if flow in flows]
-            assert declared_flows, f"{scheme_name}: oauth2 must declare at least one valid flow from: {valid_flows}"
+            assert declared_flows, f"{scheme_type}: must declare at least one valid flow from: {valid_flows}"
 
-            logger.info(f"✅ {scheme_name}: oauth2 validation passed (flows={declared_flows})")
+            logger.info(f"✅ {scheme_type}: validation passed (flows={declared_flows})")
 
         elif scheme_type == "openIdConnect":
-            assert "openIdConnectUrl" in scheme, f"{scheme_name}: openIdConnect missing required 'openIdConnectUrl' field"
+            assert "openIdConnectUrl" in scheme, f"{scheme_type}: missing required 'openIdConnectUrl' field"
 
             oidc_url = scheme["openIdConnectUrl"]
-            assert isinstance(oidc_url, str), f"{scheme_name}: openIdConnectUrl must be a string"
-            assert oidc_url.startswith("https://"), f"{scheme_name}: openIdConnectUrl must use HTTPS, got: {oidc_url}"
+            assert isinstance(oidc_url, str), f"{scheme_type}: must be a string"
+            assert oidc_url.startswith("https://"), f"{scheme_type}: must use HTTPS, got: {oidc_url}"
 
-            logger.info(f"✅ {scheme_name}: openIdConnect validation passed")
+            logger.info(f"✅ {scheme_type}: validation passed")
 
         elif scheme_type == "mutualTLS":
             # mutualTLS schemes have minimal requirements (A2A v0.3.0 feature)
-            logger.info(f"✅ {scheme_name}: mutualTLS validation passed")
+            logger.info(f"✅ {scheme_type}: validation passed")
 
     logger.info("✅ All security schemes comply with OpenAPI 3.0 structure requirements")
 
 
+#FIXME this test only checks jsonrpc, and not REST and gRPC 
 @mandatory
 def test_authentication_transport_consistency(sut_client, security_schemes):
     """
@@ -179,9 +158,6 @@ def test_authentication_transport_consistency(sut_client, security_schemes):
         - Security enforcement is transport-independent
         - Error responses follow the same format
     """
-    if not security_schemes:
-        pytest.skip("No security schemes declared - transport consistency test not applicable")
-
     logger.info("Testing authentication transport consistency")
 
     # Get transport type information
@@ -198,7 +174,7 @@ def test_authentication_transport_consistency(sut_client, security_schemes):
     # Create test request without authentication
     req_id = message_utils.generate_request_id()
     json_rpc_request = message_utils.make_json_rpc_request(
-        "tasks/get", params={"id": f"transport-consistency-test-{req_id}"}, id=req_id
+        "GetTask", params={"id": f"transport-consistency-test-{req_id}"}, id=req_id
     )
 
     # Test unauthenticated request
@@ -265,9 +241,6 @@ def test_security_error_response_compliance(security_schemes):
         - Error response format follows A2A specification
         - Error messages provide adequate information
     """
-    if not security_schemes:
-        pytest.skip("No security schemes declared - error response compliance test not applicable")
-
     logger.info("Testing security error response compliance")
 
     sut_url = config.get_sut_url()
@@ -276,7 +249,7 @@ def test_security_error_response_compliance(security_schemes):
     logger.info("Testing missing authentication error response")
     headers = {"Content-Type": "application/json"}
     req_id = message_utils.generate_request_id()
-    json_rpc_request = message_utils.make_json_rpc_request("tasks/get", params={"id": f"missing-auth-test-{req_id}"}, id=req_id)
+    json_rpc_request = message_utils.make_json_rpc_request("GetTask", params={"id": f"missing-auth-test-{req_id}"}, id=req_id)
 
     try:
         response = requests.post(sut_url, json=json_rpc_request, headers=headers, timeout=10)
@@ -291,10 +264,9 @@ def test_security_error_response_compliance(security_schemes):
                 logger.info(f"✅ WWW-Authenticate header present: {www_auth}")
 
                 # Validate WWW-Authenticate content matches declared schemes
-                for scheme in security_schemes:
-                    scheme_type = scheme.get("type", "").lower()
+                for scheme_type in security_schemes:
                     if scheme_type == "http":
-                        http_scheme = scheme.get("scheme", "").lower()
+                        http_scheme = security_schemes[scheme_type].get("scheme", "").lower()
                         if http_scheme in www_auth.lower():
                             logger.info(f"✅ WWW-Authenticate matches declared {http_scheme} scheme")
             else:
@@ -330,9 +302,9 @@ def test_security_error_response_compliance(security_schemes):
         logger.error(f"Request failed during error response compliance test: {e}")
 
     # Test 2: Invalid authentication for each scheme type
-    for i, scheme in enumerate(security_schemes):
-        scheme_type = scheme.get("type", "unknown")
+    for scheme_type in security_schemes:
         logger.info(f"Testing invalid credentials for {scheme_type} scheme")
+        scheme = security_schemes[scheme_type]
 
         headers = {"Content-Type": "application/json"}
 
@@ -341,19 +313,19 @@ def test_security_error_response_compliance(security_schemes):
             key_name = scheme.get("name", "x-api-key")
             key_location = scheme.get("in", "header")
             if key_location == "header":
-                headers[key_name] = f"invalid-api-key-{i}"
+                headers[key_name] = f"invalid-api-key-{scheme_type}"
         elif scheme_type == "http":
             http_scheme = scheme.get("scheme", "bearer").lower()
             if http_scheme == "bearer":
-                headers["Authorization"] = f"Bearer invalid-token-{i}"
+                headers["Authorization"] = f"Bearer invalid-token-{scheme_type}"
             elif http_scheme == "basic":
                 headers["Authorization"] = "Basic aW52YWxpZDppbnZhbGlk"  # invalid:invalid
         elif scheme_type == "oauth2":
-            headers["Authorization"] = f"Bearer invalid-oauth2-token-{i}"
+            headers["Authorization"] = f"Bearer invalid-oauth2-token-{scheme_type}"
 
         req_id = message_utils.generate_request_id()
         json_rpc_request = message_utils.make_json_rpc_request(
-            "tasks/get", params={"id": f"invalid-auth-test-{req_id}-{i}"}, id=req_id
+            "GetTask", params={"id": f"invalid-auth-test-{scheme_type}-{req_id}"}, id=req_id
         )
 
         try:
@@ -398,58 +370,54 @@ def test_oauth2_metadata_url_validation(security_schemes):
         - URL format is valid
         - Metadata URL is accessible (when possible)
     """
-    if not security_schemes:
-        pytest.skip("No security schemes declared - OAuth2 metadata validation not applicable")
-
-    oauth2_schemes = [s for s in security_schemes if s.get("type") == "oauth2"]
+    oauth2_schemes = [s for s in security_schemes if s == "oauth2"]
 
     if not oauth2_schemes:
         pytest.skip("No OAuth2 security schemes declared - metadata URL validation not applicable")
 
     logger.info(f"Validating OAuth2 metadata URLs for {len(oauth2_schemes)} OAuth2 schemes")
 
-    metadata_url_schemes = [s for s in oauth2_schemes if "oauth2MetadataUrl" in s]
-
+    metadata_url_schemes = [s for s in oauth2_schemes if "oauth2MetadataUrl" in security_schemes[s]]
     if not metadata_url_schemes:
         logger.info("No OAuth2 schemes declare oauth2MetadataUrl - validation not required")
         return
 
-    for i, scheme in enumerate(metadata_url_schemes):
+    for scheme_type in oauth2_schemes:
+        scheme = security_schemes[scheme_type]
         metadata_url = scheme["oauth2MetadataUrl"]
-        scheme_name = f"OAuth2 scheme {i + 1}"
 
-        logger.info(f"Validating {scheme_name} metadata URL: {metadata_url}")
+        logger.info(f"Validating {scheme_type} metadata URL: {metadata_url}")
 
         # MANDATORY: Must be a string
-        assert isinstance(metadata_url, str), f"{scheme_name}: oauth2MetadataUrl must be a string, got {type(metadata_url)}"
+        assert isinstance(metadata_url, str), f"{scheme_type}: oauth2MetadataUrl must be a string, got {type(metadata_url)}"
 
         # MANDATORY: Must use HTTPS
-        assert metadata_url.startswith("https://"), f"{scheme_name}: oauth2MetadataUrl must use HTTPS, got: {metadata_url}"
+        assert metadata_url.startswith("https://"), f"{scheme_type}: oauth2MetadataUrl must use HTTPS, got: {metadata_url}"
 
         # MANDATORY: Must be a valid URL format
         assert "://" in metadata_url and len(metadata_url) > 8, (
-            f"{scheme_name}: oauth2MetadataUrl appears to be malformed: {metadata_url}"
+            f"{scheme_type}: oauth2MetadataUrl appears to be malformed: {metadata_url}"
         )
 
-        logger.info(f"✅ {scheme_name}: Metadata URL format validation passed")
+        logger.info(f"✅ {scheme_type}: Metadata URL format validation passed")
 
         # Optional: Test URL accessibility (may fail in test environments)
         try:
             response = requests.get(metadata_url, timeout=5)
             if response.status_code == 200:
-                logger.info(f"✅ {scheme_name}: Metadata URL is accessible")
+                logger.info(f"✅ {scheme_type}: Metadata URL is accessible")
 
                 # Check if it looks like OAuth2 metadata
                 try:
                     metadata = response.json()
                     if "authorization_endpoint" in metadata or "token_endpoint" in metadata:
-                        logger.info(f"✅ {scheme_name}: Metadata contains OAuth2 endpoints")
+                        logger.info(f"✅ {scheme_type}: Metadata contains OAuth2 endpoints")
                 except ValueError:
-                    logger.info(f"ℹ️ {scheme_name}: Metadata URL returned non-JSON content")
+                    logger.info(f"ℹ️ {scheme_type}: Metadata URL returned non-JSON content")
             else:
-                logger.warning(f"⚠️ {scheme_name}: Metadata URL returned HTTP {response.status_code}")
+                logger.warning(f"⚠️ {scheme_type}: Metadata URL returned HTTP {response.status_code}")
         except requests.RequestException:
-            logger.info(f"ℹ️ {scheme_name}: Metadata URL not accessible (may be expected in test environment)")
+            logger.info(f"ℹ️ {scheme_type}: Metadata URL not accessible (may be expected in test environment)")
 
     logger.info("✅ OAuth2 metadata URL validation completed")
 
@@ -475,24 +443,18 @@ def test_mutual_tls_scheme_declaration(security_schemes):
         - Optional fields are properly formatted
         - Scheme structure follows specification
     """
-    if not security_schemes:
-        pytest.skip("No security schemes declared - mutualTLS validation not applicable")
-
-    mutual_tls_schemes = [s for s in security_schemes if s.get("type") == "mutualTLS"]
+    mutual_tls_schemes = [s for s in security_schemes if s == "mutualTLS"]
 
     if not mutual_tls_schemes:
-        logger.info("No mutualTLS security schemes declared - validation not required")
-        return
+        pytest.skip("No mutualTLS security schemes declared - validation not required")
 
     logger.info(f"Validating {len(mutual_tls_schemes)} mutualTLS security schemes")
 
-    for i, scheme in enumerate(mutual_tls_schemes):
-        scheme_name = f"mutualTLS scheme {i + 1}"
+    for scheme_type in mutual_tls_schemes:
+        scheme = security_schemes[scheme_type]
+        scheme_name = f"{scheme_type} scheme"
 
         logger.info(f"Validating {scheme_name}")
-
-        # MANDATORY: type must be exactly "mutualTLS"
-        assert scheme["type"] == "mutualTLS", f"{scheme_name}: type must be 'mutualTLS', got '{scheme.get('type')}'"
 
         # Optional: description field validation
         if "description" in scheme:
@@ -507,5 +469,3 @@ def test_mutual_tls_scheme_declaration(security_schemes):
         assert not found_invalid, f"{scheme_name}: contains invalid fields for mutualTLS: {found_invalid}"
 
         logger.info(f"✅ {scheme_name}: validation passed")
-
-    logger.info("✅ Mutual TLS scheme declaration validation completed")

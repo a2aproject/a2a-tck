@@ -162,7 +162,7 @@ def get_supported_modalities(agent_card_data: Dict[str, Any], skill_id: Optional
     return list(modalities)
 
 
-def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Get the authentication schemes declared in the Agent Card.
 
@@ -173,23 +173,15 @@ def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str
         agent_card_data: The parsed Agent Card data
 
     Returns:
-        A list of authentication scheme objects from securitySchemes
+        A dictionary of authentication scheme objects from securitySchemes
     """
     # Look for securitySchemes as per A2A/OpenAPI specification
     if "securitySchemes" in agent_card_data:
         schemes = agent_card_data["securitySchemes"]
         if isinstance(schemes, dict):
-            # Convert dict of schemes to list of scheme objects
-            return list(schemes.values())
-
-    # Fallback: check for legacy 'authentication' field for backward compatibility
-    if "authentication" in agent_card_data:
-        auth = agent_card_data["authentication"]
-        if isinstance(auth, list):
-            return auth
-
-    # Return empty list if no authentication is declared
-    return []
+            return schemes
+    # Return empty dict if no authentication is declared
+    return {}
 
 
 # A2A v0.3.0 Transport Discovery Functions
