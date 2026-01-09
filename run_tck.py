@@ -747,7 +747,9 @@ Categories:
         default="agent_preferred",
         help="Transport selection strategy for A2A v0.3.0 multi-transport testing (default: agent_preferred)",
     )
-    parser.add_argument("--transports", help="Comma-separated list of transports to allow strictly: jsonrpc,grpc,rest")
+    parser.add_argument("--transports",
+        default="jsonrpc",
+        help="Comma-separated list of transports to allow strictly: jsonrpc,grpc,rest")
 
     # Removed --preferred-transport in favor of --transport-strategy
 
