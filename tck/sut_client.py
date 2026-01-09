@@ -16,7 +16,7 @@ class SUTClient:
     # Legacy send_json_rpc method removed - use transport-agnostic clients instead
     # See transport_helpers.py for modern alternatives
 
-    def raw_send(self, raw_data: str) -> Tuple[int, str]:
+    def raw_send(self, raw_data: str, extra_headers: Dict[str,str] = {}) -> Tuple[int, str]:
         """
         Send raw data to the SUT endpoint without JSON validation.
 
@@ -30,6 +30,7 @@ class SUTClient:
             A tuple of (status_code, response_text)
         """
         headers = {"Content-Type": "application/json"}
+        headers.update(extra_headers)
 
         logger.info(f"Sending raw data to {self.base_url}: {raw_data}")
 
@@ -41,7 +42,7 @@ class SUTClient:
             logger.error(f"HTTP request failed: {e}")
             raise
 
-    def send_raw_json_rpc(self, json_request: dict) -> Dict[str, Any]:
+    def send_raw_json_rpc(self, json_request: dict, extra_headers: Dict[str,str] = {}) -> Dict[str, Any]:
         """
         Send a JSON-RPC request without validation.
 
@@ -55,6 +56,7 @@ class SUTClient:
             The JSON response from the SUT
         """
         headers = {"Content-Type": "application/json"}
+        headers.update(extra_headers)
 
         logger.info(f"Sending raw JSON-RPC request to {self.base_url}: {json_request}")
 

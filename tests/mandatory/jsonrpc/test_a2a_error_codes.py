@@ -170,6 +170,7 @@ def test_push_notification_not_supported_error_32003(sut_client, agent_card_data
 
 
 @mandatory_jsonrpc
+@mandatory
 def test_unsupported_operation_error_32004(sut_client, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 8.2 - UnsupportedOperationError (-32004)
@@ -217,7 +218,7 @@ def test_unsupported_operation_error_32004(sut_client, agent_card_data):
 
             params = {"message": message_data}
 
-            response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/stream", params=params, id=req_id)
+            response = transport_helpers.transport_send_streaming_message(sut_client, params)
 
             if "error" in response:
                 error_code = response["error"]["code"]
@@ -237,20 +238,21 @@ def test_unsupported_operation_error_32004(sut_client, agent_card_data):
     req_id = message_utils.generate_request_id()
 
     # Attempt SendMessage with potentially unsupported configuration
-    message_data = {"role": "ROLE_USER", "parts": [{"text": "test"}], "messageId": f"msg-{req_id}"}
+    message = {
+        "message": {
+        "role": "ROLE_USER", "parts": [{"text": "test"}], "messageId": f"msg-{req_id}"
+        }
+    }
 
     # Add configuration that might not be supported
-    params = {
-        "message": message_data,
-        "configuration": {
-            "blocking": True,
-            "acceptedOutputModes": ["application/unsupported-format"],
-            "historyLength": 999999,  # Very large number that might be unsupported
-        },
+    configuration = {
+        "blocking": True,
+        "acceptedOutputModes": ["application/unsupported-format"],
+        "historyLength": 999999,  # Very large number that might be unsupported
     }
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "SendMessage", params=params, id=req_id)
+        response = transport_helpers.transport_send_message(sut_client, message, configuration)
 
         if "error" in response:
             error_code = response["error"]["code"]

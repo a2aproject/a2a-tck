@@ -42,7 +42,7 @@ def agent_with_auth_info(agent_card_data):
 
     auth_info = {
         "has_authentication": bool(agent_card_utils.get_authentication_schemes(agent_card_data)),
-        "authentication_schemes": agent_card_utils.get_authentication_schemes(agent_card_data),
+        "security_schemes": agent_card_utils.get_authentication_schemes(agent_card_data),
         "supports_auth_required_state": True,  # A2A v0.3.0 requirement
         "base_url": agent_card_data.get("url"),
         "capabilities": agent_card_data.get("capabilities", {}),
@@ -145,7 +145,7 @@ def test_auth_required_state_support(agent_with_auth_info):
     capabilities = agent_with_auth_info.get("capabilities", {})
 
     # The presence of authentication schemes suggests the agent may use auth-required state
-    has_auth_schemes = len(agent_with_auth_info.get("authentication_schemes", [])) > 0
+    has_auth_schemes = len(agent_with_auth_info.get("security_schemes", {})) > 0
 
     if has_auth_schemes:
         logger.info("✅ Agent declares authentication schemes - auth-required state support implied")
@@ -269,17 +269,13 @@ def test_authentication_challenge_headers(agent_with_auth_info):
         - WWW-Authenticate headers included when appropriate
         - Authentication challenge format follows specification
     """
-    auth_schemes = agent_with_auth_info.get("authentication_schemes", [])
+    security_schemes = agent_with_auth_info.get("security_schemes", [])
 
-    if not auth_schemes:
+    if not security_schemes:
         pytest.skip("No authentication schemes declared - cannot test authentication challenges")
 
-    base_url = agent_with_auth_info.get("base_url")
-    if not base_url:
-        pytest.skip("No base URL available for authentication challenge testing")
-
     logger.info("Testing authentication challenge headers")
-    logger.info(f"Testing against {len(auth_schemes)} declared authentication schemes")
+    logger.info(f"Testing against {len(security_schemes)} declared authentication schemes")
 
     # Test authentication challenge on main endpoint
     sut_url = config.get_sut_url()
@@ -305,15 +301,11 @@ def test_authentication_challenge_headers(agent_with_auth_info):
                 www_auth_lower = www_auth.lower()
                 scheme_matches = []
 
-                for scheme in auth_schemes:
-                    scheme_type = scheme.get("type", "").lower()
-                    scheme_name = scheme.get("scheme", "").lower()
+                for scheme_name in security_schemes:
 
-                    if scheme_type == "http":
+                    if scheme_name == "httpAuthSecurityScheme":
                         if scheme_name in www_auth_lower:
-                            scheme_matches.append(f"{scheme_type}({scheme_name})")
-                    elif scheme_type in www_auth_lower:
-                        scheme_matches.append(scheme_type)
+                            scheme_matches.append(f"({scheme_name})")
 
                 if scheme_matches:
                     logger.info(f"✅ WWW-Authenticate header matches declared schemes: {scheme_matches}")

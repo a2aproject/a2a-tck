@@ -180,11 +180,11 @@ def test_invalid_credentials_rejected(security_schemes):
         headers = {"Content-Type": "application/json"}
 
         # Add invalid authentication based on scheme type
-        if scheme_type == "http" and scheme.get("scheme") == "bearer":
+        if scheme_type == "httpAuthSecurityScheme" and scheme.get("scheme") == "bearer":
             headers["Authorization"] = "Bearer invalid-dummy-jwt-token-12345"
-        elif scheme_type == "http" and scheme.get("scheme") == "basic":
+        elif scheme_type == "httpAuthSecurityScheme" and scheme.get("scheme") == "basic":
             headers["Authorization"] = "Basic aW52YWxpZDppbnZhbGlk"  # invalid:invalid in base64
-        elif scheme_type == "apikey":
+        elif scheme_type == "apiKeySecurityScheme":
             key_name = scheme.get("name", "X-API-Key")
             key_location = scheme.get("in", "header")
 
@@ -194,9 +194,9 @@ def test_invalid_credentials_rejected(security_schemes):
                 # For query/cookie parameters, add to URL/cookies
                 logger.warning(f"API key location '{key_location}' not implemented in test")
                 continue
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             headers["Authorization"] = "Bearer invalid-oauth2-token-12345"
-        elif scheme_type == "openidconnect":
+        elif scheme_type == "openIdConnectSecurityScheme":
             headers["Authorization"] = "Bearer invalid-oidc-token-12345"
         else:
             # Generic fallback for unknown schemes
@@ -285,29 +285,29 @@ def test_authentication_scheme_consistency(security_schemes, auth_agent_card):
         scheme = security_schemes[scheme_type]
 
         # Validate known scheme types according to A2A v0.3.0 specification
-        valid_types = ["http", "apiKey", "oauth2", "openIdConnect", "mutualTLS"]
+        valid_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "", "mtlsSecurityScheme"]
         assert scheme_type in valid_types, f"Invalid scheme type '{scheme_type}'. Must be one of: {valid_types}"
 
         # Type-specific validation
-        if scheme_type == "http":
+        if scheme_type == "httpAuthSecurityScheme":
             assert "scheme" in scheme, f"HTTP auth missing required 'scheme' field"
             http_scheme = scheme["scheme"].lower()
             valid_http_schemes = ["basic", "bearer", "digest"]
             assert http_scheme in valid_http_schemes, f"Invalid HTTP scheme '{http_scheme}'"
 
-        elif scheme_type == "apiKey":
+        elif scheme_type == "apiKeySecurityScheme":
             assert "name" in scheme, f"API key auth missing required 'name' field"
             assert "in" in scheme, f"API key auth missing required 'in' field"
             key_location = scheme["in"]
             valid_locations = ["query", "header", "cookie"]
             assert key_location in valid_locations, f"Invalid API key location '{key_location}'"
 
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             assert "flows" in scheme, f"OAuth2 auth missing required 'flows' field"
             flows = scheme["flows"]
             assert isinstance(flows, dict), f"OAuth2 'flows' must be an object"
 
-        elif scheme_type == "openIdConnect":
+        elif scheme_type == "openIdConnectSecurityScheme":
             assert "openIdConnectUrl" in scheme, f"OpenID Connect missing required 'openIdConnectUrl' field"
             oidc_url = scheme["openIdConnectUrl"]
             assert oidc_url.startswith("https://"), f"OpenID Connect URL must use HTTPS"

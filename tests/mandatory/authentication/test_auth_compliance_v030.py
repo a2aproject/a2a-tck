@@ -72,7 +72,7 @@ def test_security_scheme_structure_compliance(security_schemes):
     """
     logger.info(f"Validating security scheme structure compliance for {len(security_schemes)} schemes")
 
-    valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
+    valid_scheme_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
     valid_api_key_locations = ["query", "header", "cookie"]
     valid_http_schemes = ["basic", "bearer", "digest"]
 
@@ -87,7 +87,7 @@ def test_security_scheme_structure_compliance(security_schemes):
         logger.info(f"Validating type='{scheme_type}'")
 
         # Type-specific mandatory validation
-        if scheme_type == "apiKey":
+        if scheme_type == "apiKeySecurityScheme":
             assert "name" in scheme, f"{scheme_type}: missing required 'name' field"
             assert "in" in scheme, f"{scheme_type}: missing required 'in' field"
 
@@ -98,7 +98,7 @@ def test_security_scheme_structure_compliance(security_schemes):
 
             logger.info(f"✅ {scheme_type}: validation passed (name={scheme['name']}, in={key_location})")
 
-        elif scheme_type == "http":
+        elif scheme_type == "httpAuthSecurityScheme":
             assert "scheme" in scheme, f"{scheme_type}: missing required 'scheme' field"
 
             http_scheme = scheme["scheme"].lower()
@@ -108,7 +108,7 @@ def test_security_scheme_structure_compliance(security_schemes):
 
             logger.info(f"✅ {scheme_type}: validation passed (scheme={http_scheme})")
 
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             assert "flows" in scheme, f"{scheme_type}: missing required 'flows' field"
 
             flows = scheme["flows"]
@@ -120,7 +120,7 @@ def test_security_scheme_structure_compliance(security_schemes):
 
             logger.info(f"✅ {scheme_type}: validation passed (flows={declared_flows})")
 
-        elif scheme_type == "openIdConnect":
+        elif scheme_type == "openIdConnectSecurityScheme":
             assert "openIdConnectUrl" in scheme, f"{scheme_type}: missing required 'openIdConnectUrl' field"
 
             oidc_url = scheme["openIdConnectUrl"]
@@ -129,9 +129,12 @@ def test_security_scheme_structure_compliance(security_schemes):
 
             logger.info(f"✅ {scheme_type}: validation passed")
 
-        elif scheme_type == "mutualTLS":
+        elif scheme_type == "mtlsSecurityScheme":
             # mutualTLS schemes have minimal requirements (A2A v0.3.0 feature)
             logger.info(f"✅ {scheme_type}: validation passed")
+
+        else:
+            pytest.fail(f"Invalid scheme type: {scheme_type}")
 
     logger.info("✅ All security schemes comply with OpenAPI 3.0 structure requirements")
 

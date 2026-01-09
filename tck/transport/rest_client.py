@@ -21,6 +21,7 @@ from httpx import AsyncClient, Client
 from tck.message_utils import convert_a2a_message_to_protobuf_json, handle_http_error_response, \
     convert_protobuf_response_to_a2a_json
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
+from tck import config
 
 logger = logging.getLogger(__name__)
 
@@ -153,8 +154,6 @@ class RESTClient(BaseTransportClient):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-
-
     def send_message(
         self,
         message: Dict[str, Any],
@@ -182,11 +181,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, "/message:send")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if extra_headers:
-                headers.update(extra_headers)
+            headers = self._prepare_headers(extra_headers)
 
             # Convert A2A JSON message to protobuf-compatible format
             protobuf_message = convert_a2a_message_to_protobuf_json(message)
@@ -271,11 +266,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, "/message:stream")
-            headers = self.default_headers.copy()
-            headers["Accept"] = "text/event-stream"  # SSE format
-            # Add extra headers if provided
-            if extra_headers:
-                headers.update(extra_headers)
+            headers = self._prepare_headers(extra_headers)
 
             # Convert A2A JSON message to protobuf-compatible format
             protobuf_message = convert_a2a_message_to_protobuf_json(message)
@@ -356,11 +347,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, f"/tasks/{task_id}")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            headers = self._prepare_headers(kwargs.get("extra_headers", {}))
 
             # Add query parameters
             params = {}
@@ -415,11 +402,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, f"/tasks/{task_id}:cancel")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            headers = self._prepare_headers(kwargs.get("extra_headers", {}))
 
             # Make real HTTP request to live SUT
             response = self.client.post(url, headers=headers)
@@ -487,11 +470,8 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, f"/tasks/{task_id}:subscribe")
-            headers = self.default_headers.copy()
+            headers = self._prepare_headers(extra_headers)
             headers["Accept"] = "text/event-stream"  # SSE format
-            # Add extra headers if provided
-            if extra_headers:
-                headers.update(extra_headers)
 
             # Make real HTTP streaming request to live SUT
             async with self.async_client.stream("POST", url, headers=headers) as response:
@@ -557,11 +537,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, "/.well-known/agent-card.json")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if extra_headers is not None:
-                headers.update(extra_headers)
+            headers = self._prepare_headers(extra_headers)
 
             # Make real HTTP request to live SUT
             response = self.client.get(url, headers=headers)
@@ -603,11 +579,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, "/extendedAgentCard")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided (should include authentication)
-            if extra_headers:
-                headers.update(extra_headers)
+            headers = self._prepare_headers(extra_headers)
 
             # Make real HTTP request to live SUT (with authentication headers)
             response = self.client.get(url, headers=headers)
@@ -657,11 +629,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if extra_headers is not None:
-                headers.update(extra_headers)
+            headers = self._prepare_headers(extra_headers)
 
             # Format request according to protobuf CreateTaskPushNotificationConfigRequest structure
             # Generate config_id if not provided
@@ -728,11 +696,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs/{config_id}")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            headers = self._prepare_headers(kwargs.get("extra_headers", {}))
 
             # Make real HTTP request to live SUT
             response = self.client.get(url, headers=headers)
@@ -779,11 +743,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            headers = self._prepare_headers(kwargs.get("extra_headers", {}))
 
             # Make real HTTP request to live SUT
             response = self.client.get(url, headers=headers)
@@ -844,11 +804,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs/{config_id}")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            headers = self._prepare_headers(kwargs.get("extra_headers", {}))
 
             # Make real HTTP request to live SUT
             response = self.client.delete(url, headers=headers)
@@ -902,11 +858,7 @@ class RESTClient(BaseTransportClient):
 
             # Prepare request
             url = urljoin(self.base_url, "/tasks")
-            headers = self.default_headers.copy()
-
-            # Add extra headers if provided
-            if "extra_headers" in kwargs and kwargs["extra_headers"] is not None:
-                headers.update(kwargs["extra_headers"])
+            headers = self._prepare_headers(kwargs.get("extra_headers", {}))
 
             # Add query parameters for pagination, filtering, etc.
             params = {}

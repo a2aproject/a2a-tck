@@ -13,6 +13,7 @@ import os
 import sys
 import tempfile
 import importlib
+import traceback
 from typing import Dict, List, Optional, Any, AsyncIterator, Union
 from urllib.parse import urlparse
 import asyncio
@@ -23,6 +24,7 @@ from google.protobuf.timestamp_pb2 import Timestamp
 
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
 from tests.optional.capabilities.test_streaming_methods import NON_EXISTENT_TASK_ID_PREFIX
+from tck import config
 
 logger = logging.getLogger(__name__)
 
@@ -366,6 +368,32 @@ class GRPCClient(BaseTransportClient):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    def _prepare_metadata(self, extra_headers: Optional[Dict[str, str]] = None) -> list:
+        """
+        Prepare gRPC metadata from config auth headers and extra headers.
+
+        Args:
+            extra_headers: Optional additional headers to include
+
+        Returns:
+            List of (key, value) tuples for gRPC metadata
+        """
+        headers = self.default_headers.copy()
+        auth_headers = config.get_auth_headers()
+        headers.update(auth_headers)
+
+        if extra_headers:
+            headers.update(extra_headers)
+            if "A2A_TCK_DONT_USE_AUTH" in extra_headers:
+                headers = {k: v for k, v in headers.items() if k not in auth_headers}
+
+        metadata = []
+        for key, value in headers.items():
+            if key != "A2A_TCK_DONT_USE_AUTH":
+                metadata.append((key.lower(), value))
+
+        return metadata
+
     # A2A Protocol Method Implementations - Real Network Calls
 
     def send_message(
@@ -396,9 +424,10 @@ class GRPCClient(BaseTransportClient):
 
             # Build protobuf request using helper method
             request = self._json_to_send_message_request(message, configuration, default_blocking=True)
+            metadata = self._prepare_metadata(extra_headers)
 
             # Real gRPC call
-            response = self.stub.SendMessage(request, timeout=self.timeout)
+            response = self.stub.SendMessage(request, timeout=self.timeout, metadata=metadata)
             if response.WhichOneof("payload") == "task":
                 t = response.task
                 logger.info(f"Received gRPC task for message {msg_id}: {t.id}")
@@ -465,11 +494,12 @@ class GRPCClient(BaseTransportClient):
 
             # Build protobuf request using helper method
             request = self._json_to_send_message_request(message, configuration, default_blocking=False)
+            metadata = self._prepare_metadata(extra_headers)
 
             # Make real gRPC streaming call to live SUT
             if self.use_tls:
                 credentials = grpc.ssl_channel_credentials()
-                channel = grpc.aio.secure_channel(self.grpc_target, credentials)
+                channel = grpc.aio.secure_channel(self.grpc_target, credentials, metadata=metadata)
             else:
                 channel = grpc.aio.insecure_channel(self.grpc_target)
                 
@@ -555,7 +585,9 @@ class GRPCClient(BaseTransportClient):
                 req_kwargs["history_length"] = 100  # Reasonable default
 
             req = pb.GetTaskRequest(**req_kwargs)
-            resp = self.stub.GetTask(req, timeout=self.timeout)
+            metadata = self._prepare_metadata(extra_headers)
+
+            resp = self.stub.GetTask(req, timeout=self.timeout, metadata=metadata)
             result = {
                 "id": resp.id,
                 "contextId": resp.context_id,
@@ -611,7 +643,9 @@ class GRPCClient(BaseTransportClient):
             self._load_static_stubs()
             pb = self._pb
             req = pb.CancelTaskRequest(name=f"tasks/{task_id}")
-            resp = self.stub.CancelTask(req, timeout=self.timeout)
+            metadata = self._prepare_metadata(extra_headers)
+
+            resp = self.stub.CancelTask(req, timeout=self.timeout, metadata=metadata)
             logger.debug(f"Cancelled task via gRPC: {task_id}")
             result = {
                 "id": resp.id,
@@ -678,7 +712,8 @@ class GRPCClient(BaseTransportClient):
             
             # Build SubscribeToTaskRequest
             request = pb.SubscribeToTaskRequest(name=f"tasks/{task_id}")
-            
+            metadata = self._prepare_metadata(extra_headers)
+
             # Create appropriate channel based on TLS setting
             if self.use_tls:
                 credentials = grpc.ssl_channel_credentials()
@@ -689,7 +724,7 @@ class GRPCClient(BaseTransportClient):
             async with channel:
                 # Use the generated protobuf stub for task subscription
                 stub = self._pb_grpc.A2AServiceStub(channel)
-                stream = stub.SubscribeToTask(request, timeout=self.timeout)
+                stream = stub.SubscribeToTask(request, timeout=self.timeout, metadata=metadata)
                 
                 async for response in stream:
                     # Convert protobuf response to JSON format
@@ -756,7 +791,9 @@ class GRPCClient(BaseTransportClient):
             self._load_static_stubs()
             pb = self._pb
             req = pb.GetAgentCardRequest()
-            resp = self.stub.GetAgentCard(req, timeout=self.timeout)
+            metadata = self._prepare_metadata(kwargs.get("extra_headers", {}))
+
+            resp = self.stub.GetAgentCard(req, timeout=self.timeout, metadata=metadata)
 
             # Convert protobuf response to JSON format
             agent_card = self._convert_agent_card_to_json(resp)
@@ -798,14 +835,9 @@ class GRPCClient(BaseTransportClient):
             self._load_static_stubs()
             pb = self._pb
             
-            # Create GetAgentCardRequest
-            req = pb.GetAgentCardRequest()
-            
-            # Prepare authentication metadata from extra_headers
-            metadata = []
-            if extra_headers:
-                for key, value in extra_headers.items():
-                    metadata.append((key.lower(), value))
+            # Create GetExtendedAgentCard
+            req = pb.GetExtendedAgentCardRequest()
+            metadata = self._prepare_metadata(extra_headers)
             
             # Make real gRPC call to live SUT with authentication metadata
             if self.use_tls:
@@ -816,7 +848,7 @@ class GRPCClient(BaseTransportClient):
                 
             with channel:
                 stub = self._pb_grpc.A2AServiceStub(channel)
-                resp = stub.GetAgentCard(req, metadata=metadata, timeout=self.timeout)
+                resp = stub.GetExtendedAgentCard(req, metadata=metadata, timeout=self.timeout)
 
                 # Convert protobuf response to JSON format using shared helper
                 extended_card = self._convert_agent_card_to_json(resp)
@@ -879,8 +911,9 @@ class GRPCClient(BaseTransportClient):
             req = pb.SetTaskPushNotificationConfigRequest(
                 parent=f"tasks/{task_id}", config_id=config_id, config=task_config
             )
+            metadata = self._prepare_metadata(extra_headers)
 
-            resp = self.stub.SetTaskPushNotificationConfig(req, timeout=self.timeout)
+            resp = self.stub.SetTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
             created_config = {
@@ -934,7 +967,9 @@ class GRPCClient(BaseTransportClient):
             self._load_static_stubs()
             pb = self._pb
             req = pb.GetTaskPushNotificationConfigRequest(name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}")
-            resp = self.stub.GetTaskPushNotificationConfig(req, timeout=self.timeout)
+            metadata = self._prepare_metadata(extra_headers)
+
+            resp = self.stub.GetTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
             config_data = {
@@ -984,7 +1019,9 @@ class GRPCClient(BaseTransportClient):
             self._load_static_stubs()
             pb = self._pb
             req = pb.ListTaskPushNotificationConfigRequest(parent=f"tasks/{task_id}")
-            resp = self.stub.ListTaskPushNotificationConfig(req, timeout=self.timeout)
+            metadata = self._prepare_metadata(extra_headers)
+
+            resp = self.stub.ListTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
             configs_list = []
@@ -1044,7 +1081,9 @@ class GRPCClient(BaseTransportClient):
             self._load_static_stubs()
             pb = self._pb
             req = pb.DeleteTaskPushNotificationConfigRequest(name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}")
-            resp = self.stub.DeleteTaskPushNotificationConfig(req, timeout=self.timeout)
+            metadata = self._prepare_metadata(extra_headers)
+
+            resp = self.stub.DeleteTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
 
             # gRPC DeleteTaskPushNotificationConfig returns Empty response
             deletion_result = None
@@ -1107,12 +1146,7 @@ class GRPCClient(BaseTransportClient):
             
         # Add security schemes if present (for extended card)
         if resp.security_schemes:
-            agent_card["securitySchemes"] = {}
-            for scheme_name, scheme in resp.security_schemes.items():
-                agent_card["securitySchemes"][scheme_name] = {
-                    "type": scheme.type,
-                    "scheme": scheme.scheme if hasattr(scheme, "scheme") else None,
-                }
+            agent_card["securitySchemes"] = resp.security_schemes
 
         return agent_card
 

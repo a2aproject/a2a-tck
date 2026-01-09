@@ -391,7 +391,7 @@ def get_client_transport_type(client: Any) -> str:
 
 
 def transport_send_raw_json_rpc_request(
-    client: BaseTransportClient, req: Dict[str, Any]) -> Dict[str, Any]:
+    client: BaseTransportClient, req: Dict[str, Any], extra_headers: Dict[str, Any] = {}) -> Dict[str, Any]:
     """
     Send a raw JSON-RPC request dict using any transport client.
 
@@ -410,7 +410,7 @@ def transport_send_raw_json_rpc_request(
     if hasattr(client, "send_raw_json_rpc"):
         logger.debug(f"Using send_raw_json_rpc for method {req.get('method')}")
         try:
-            return client.send_raw_json_rpc(req)
+            return client.send_raw_json_rpc(req, extra_headers)
         except Exception as e:
             # Handle transport-specific JSON-RPC error exceptions
             if hasattr(e, "json_rpc_error") and e.json_rpc_error:
