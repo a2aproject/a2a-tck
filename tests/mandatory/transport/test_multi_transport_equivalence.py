@@ -73,7 +73,7 @@ def execute_equivalent_operation(sut_client: BaseTransportClient, operation: str
     elif operation == "get_task":
         return transport_helpers.transport_get_task(sut_client, params.get("task_id"))
     elif operation == "get_agent_card":
-        return transport_helpers.transport_get_agent_card(sut_client)
+        return transport_helpers.transport_get_extended_agent_card(sut_client)
     elif operation == "list_tasks":
         return transport_helpers.transport_list_tasks(sut_client, params)
     else:
@@ -314,7 +314,7 @@ def test_task_retrieval_equivalence(sut_client: BaseTransportClient, transport_c
 
 
 @mandatory
-def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transport_capabilities):
+def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transport_capabilities, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Agent Card Access Transport Equivalence
 
@@ -336,6 +336,13 @@ def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transpor
         - No transport-specific data modifications
         - Consistent agent capability reporting
     """
+    if agent_card_data is None:
+        pytest.skip("Agent Card data not available")
+
+    supportsExtendedAgentCard = agent_card_data.get("supportsExtendedAgentCard", False)
+    if not supportsExtendedAgentCard:
+        pytest.skip("No extended agent card supported for Agent Card equivalence testing")
+
     available_transports = transport_capabilities["transports_detected"]
 
     if len(available_transports) < 1:

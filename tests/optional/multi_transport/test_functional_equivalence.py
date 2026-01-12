@@ -21,7 +21,7 @@ from tests.utils.transport_helpers import (
     transport_send_message,
     transport_get_task,
     transport_cancel_task,
-    transport_get_agent_card,
+    transport_get_extended_agent_card,
     is_json_rpc_success_response,
     is_json_rpc_error_response,
     extract_task_id_from_response,
@@ -688,7 +688,7 @@ def test_equivalent_authentication_agent_card(all_transport_clients):
 
     # Retrieve agent card using all available transports
     for transport_type, client in all_transport_clients.items():
-        resp = transport_get_agent_card(client)
+        resp = transport_get_extended_agent_card(client)
 
         # Agent card retrieval might not be supported on all transports
         if is_json_rpc_error_response(resp):

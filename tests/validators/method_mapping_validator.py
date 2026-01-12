@@ -115,8 +115,8 @@ class MethodMappingValidator:
             transport_support="all",
         ),
         MethodMapping(
-            jsonrpc_method="agent/getAuthenticatedExtendedCard",
-            grpc_method="GetAgentCard",
+            jsonrpc_method="GetExtendedAgentCard",
+            grpc_method="GetExtendedAgentCard",
             rest_endpoint="GET /extendedAgentCard",
             description="Get authenticated agent card",
             transport_support="all",

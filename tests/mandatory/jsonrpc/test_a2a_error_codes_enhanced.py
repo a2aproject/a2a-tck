@@ -75,8 +75,8 @@ def create_test_task(sut_client) -> Optional[str]:
     return None
 
 
-@mandatory_jsonrpc
-def test_push_notification_not_supported_error_32003_enhanced(sut_client):
+@mandatory
+def test_push_notification_not_supported_error_32003_enhanced(sut_client, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 8.2 - PushNotificationNotSupportedError (-32003)
 
@@ -91,13 +91,16 @@ def test_push_notification_not_supported_error_32003_enhanced(sut_client):
     push_notifications_supported = False
 
     try:
-        result = transport_helpers.transport_get_agent_card(sut_client)
+        result = transport_helpers.transport_get_extended_agent_card(sut_client)
         if "result" in result and isinstance(result["result"], dict):
             agent_card = result["result"]
         else:
-            agent_card = result
-        capabilities = agent_card.get("capabilities", {})
-        push_notifications_supported = capabilities.get("pushNotifications", False)
+            # Fallback to public agent card from fixture
+            agent_card = agent_card_data
+
+        if agent_card:
+            capabilities = agent_card.get("capabilities", {})
+            push_notifications_supported = capabilities.get("pushNotifications", False)
     except Exception as e:
         logger.warning(f"Could not retrieve agent card: {e}")
 

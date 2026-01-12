@@ -660,7 +660,7 @@ class TestRESTClientAgentCard:
             assert result["capabilities"]["streaming"] is True
 
     @patch("httpx.Client.get")
-    def test_get_authenticated_extended_card_success(self, mock_get):
+    def test_get_extended_agent_card_success(self, mock_get):
         """Test successful authenticated extended agent card retrieval via REST."""
         mock_response = Mock()
         mock_response.status_code = 200
@@ -684,7 +684,7 @@ class TestRESTClientAgentCard:
             client = RESTClient("https://example.com:8080")
 
             auth_headers = {"Authorization": "Bearer token123"}
-            result = client.get_authenticated_extended_card(extra_headers=auth_headers)
+            result = client.get_extended_agent_card(extra_headers=auth_headers)
 
             expected_headers = client.default_headers.copy()
             expected_headers.update(auth_headers)
@@ -906,7 +906,7 @@ def test_rest_client_interface_compatibility():
         "cancel_task",
         "subscribe_to_task",
         "get_agent_card",
-        "get_authenticated_extended_card",
+        "get_extended_agent_card",
         "set_push_notification_config",
         "get_push_notification_config",
         "list_push_notification_configs",
