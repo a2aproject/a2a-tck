@@ -777,7 +777,7 @@ class GRPCClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
 
-    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get authenticated extended agent card via gRPC.
 
@@ -831,7 +831,7 @@ class GRPCClient(BaseTransportClient):
             a2a_error = self._map_grpc_error_to_a2a(e)
             raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
-            error_msg = f"Unexpected error in gRPC get_authenticated_extended_card: {str(e)}"
+            error_msg = f"Unexpected error in gRPC get_extended_agent_card: {str(e)}"
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
 

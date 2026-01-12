@@ -68,8 +68,8 @@ class MockTransportClient(BaseTransportClient):
             "delete_push_notification_config", task_id=task_id, config_id=config_id, extra_headers=extra_headers
         )
 
-    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-        return self._record_call("get_authenticated_extended_card", extra_headers=extra_headers)
+    def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+        return self._record_call("get_extended_agent_card", extra_headers=extra_headers)
 
 
 class TestTransportType:
@@ -133,7 +133,7 @@ class TestBaseTransportClient:
             "get_push_notification_config",
             "list_push_notification_configs",
             "delete_push_notification_config",
-            "get_authenticated_extended_card",
+            "get_extended_agent_card",
         ]
 
         for method in core_methods:

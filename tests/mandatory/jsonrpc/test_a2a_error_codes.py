@@ -56,7 +56,7 @@ def verify_a2a_error_response(response: Dict[str, Any], expected_code: int, expe
 
 
 @mandatory_jsonrpc
-def test_push_notification_not_supported_error_32003(sut_client):
+def test_push_notification_not_supported_error_32003(sut_client, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 8.2 - PushNotificationNotSupportedError (-32003)
 
@@ -80,7 +80,14 @@ def test_push_notification_not_supported_error_32003(sut_client):
     """
     # First check if agent declares push notification support
     try:
-        agent_card = transport_helpers.transport_get_agent_card(sut_client)
+        agent_card = {}
+        # Try to get extended agent card first
+        result = transport_helpers.transport_get_extended_agent_card(sut_client)
+        if isinstance(result.get("result"), dict):
+            agent_card = result["result"]
+        else:
+            # Fallback to public agent card from fixture
+            agent_card = agent_card_data if agent_card_data else {}
         capabilities = agent_card.get("capabilities", {})
         push_notifications_supported = capabilities.get("pushNotifications", False)
 
@@ -128,7 +135,7 @@ def test_push_notification_not_supported_error_32003(sut_client):
         json_rpc_request = message_utils.make_json_rpc_request(
             "tasks/pushNotificationConfig/set", params=push_config_params, id=f"push-{req_id}"
         )
-
+        logger.info(f"Push notification request: {json_rpc_request}")
         try:
             response = sut_client.send_raw_json_rpc(json_rpc_request)
             # If we reach here, the request succeeded unexpectedly
@@ -162,8 +169,8 @@ def test_push_notification_not_supported_error_32003(sut_client):
         pytest.fail(f"Failed to test push notification error: {e}")
 
 
-@mandatory
-def test_unsupported_operation_error_32004(sut_client):
+@mandatory_jsonrpc
+def test_unsupported_operation_error_32004(sut_client, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 8.2 - UnsupportedOperationError (-32004)
 
@@ -187,7 +194,14 @@ def test_unsupported_operation_error_32004(sut_client):
     """
     # Test 1: Try streaming operation on agent that doesn't support streaming
     try:
-        agent_card = transport_helpers.transport_get_agent_card(sut_client)
+        agent_card = {}
+        # Try to get extended agent card first
+        result = transport_helpers.transport_get_extended_agent_card(sut_client)
+        if isinstance(result.get("result"), dict):
+            agent_card = result["result"]
+        else:
+            # Fallback to public agent card from fixture
+            agent_card = agent_card_data if agent_card_data else {}
         capabilities = agent_card.get("capabilities", {})
         streaming_supported = capabilities.get("streaming", False)
 

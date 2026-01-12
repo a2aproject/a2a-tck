@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional, Union
 import uuid
 
 from tck import message_utils
+from tck import agent_card_utils
 from tck.transport.base_client import BaseTransportClient
 
 logger = logging.getLogger(__name__)
@@ -151,26 +152,21 @@ def transport_cancel_task(
     else:
         raise ValueError(f"Client {type(client)} does not support task cancellation")
 
-
-def transport_get_agent_card(client: BaseTransportClient, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+def transport_get_extended_agent_card(client: BaseTransportClient, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """
     Get authenticated extended agent card using any transport client.
-
     Args:
         client: Transport client
         extra_headers: Optional transport-specific headers
-
     Returns:
-        Agent card from the server in JSON-RPC format for compatibility
-
-    Specification Reference: A2A v0.3.0 §9.1 - Authenticated Extended Agent Card
+        Extended agent card from the server in JSON-RPC format for compatibility
+    Specification Reference: A2A v1.0.0 - Extended Agent Card Retrieval
     """
-    # Check if client is a BaseTransportClient with get_authenticated_extended_card method
-    if hasattr(client, "get_authenticated_extended_card") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware get_authenticated_extended_card for {client.transport_type.value}")
+    # Check if client is a BaseTransportClient with get_extended_agent_card method
+    if hasattr(client, "get_extended_agent_card") and hasattr(client, "transport_type"):
+        logger.debug(f"Using transport-aware get_extended_agent_card for {client.transport_type.value}")
         try:
-            result = client.get_authenticated_extended_card(extra_headers)
-            # Wrap result in JSON-RPC format for compatibility with existing tests
+            result = client.get_extended_agent_card(extra_headers)
             return {"result": result}
         except Exception as e:
             # Convert transport exceptions to JSON-RPC error format

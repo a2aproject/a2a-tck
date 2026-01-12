@@ -15,7 +15,7 @@ import base64
 import json
 
 from tests.markers import optional_capability, a2a_v030
-from tests.utils.transport_helpers import transport_get_agent_card, is_transport_client, get_client_transport_type
+from tests.utils.transport_helpers import transport_get_extended_agent_card, is_transport_client, get_client_transport_type
 from tck import config, message_utils
 from tck.transport.base_client import BaseTransportClient
 
@@ -28,7 +28,7 @@ def auth_agent_card(sut_client):
     Fixture to get agent card and extract authentication information.
     """
     try:
-        response = transport_get_agent_card(sut_client)
+        response = transport_get_extended_agent_card(sut_client)
         if "result" in response:
             return response["result"]
         elif "error" not in response:
@@ -184,7 +184,7 @@ class TestMultiTransportAuthentication:
         # would require valid credentials which are out-of-band
         try:
             # Attempt to get agent card (should work regardless of auth)
-            response = transport_get_agent_card(sut_client)
+            response = transport_get_extended_agent_card(sut_client)
 
             # Verify response structure
             assert isinstance(response, dict)

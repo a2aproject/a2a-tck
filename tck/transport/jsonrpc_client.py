@@ -466,15 +466,11 @@ class JSONRPCClient(BaseTransportClient):
     def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get agent card using GetExtendedAgentCard method.
-
         Makes a real JSON-RPC call to get the agent card information.
-
         Args:
             extra_headers: Optional HTTP headers
-
         Returns:
             Dict containing agent card data from the real SUT
-
         Raises:
             JSONRPCError: If agent card retrieval fails
 
@@ -621,7 +617,7 @@ class JSONRPCClient(BaseTransportClient):
                 raise
             raise JSONRPCError(f"Failed to delete push notification config {config_id} for task {task_id}: {e}", original_error=e)
 
-    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get the extended agent card.
 

@@ -19,7 +19,7 @@ from tests.utils.transport_helpers import (
     transport_send_message,
     transport_get_task,
     transport_cancel_task,
-    transport_get_agent_card,
+    transport_get_extended_agent_card,
     is_transport_client,
     get_client_transport_type,
     generate_test_message_id,
@@ -144,7 +144,7 @@ class TestA2AV030MethodEnhancements:
         Tests the new authenticated extended agent card method with comprehensive
         validation of enhanced features and security aspects.
         """
-        response = transport_get_agent_card(sut_client)
+        response = transport_get_extended_agent_card(sut_client)
 
         if "error" in response:
             error = response["error"]

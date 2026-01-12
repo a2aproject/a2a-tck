@@ -108,7 +108,7 @@ class MockJSONRPCClient(JSONRPCClient):
     def delete_push_notification_config(self, task_id: str, config_id: str, extra_headers=None):
         return {"success": True}
 
-    def get_authenticated_extended_card(self, extra_headers=None):
+    def get_extended_agent_card(self, extra_headers=None):
         return {"name": "Test Agent", "protocol_version": "0.3.0", "endpoint": self.base_url}
 
 

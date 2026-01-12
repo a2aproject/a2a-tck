@@ -292,9 +292,9 @@ class BaseTransportClient(ABC):
     # v0.3.0 new methods
 
     @abstractmethod
-    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        Get the authenticated extended agent card.
+        Get the  extended agent card.
 
         This method returns additional agent information that may only be available
         to authenticated clients.
@@ -357,7 +357,7 @@ class BaseTransportClient(ABC):
             "get_push_notification_config",
             "list_push_notification_configs",
             "delete_push_notification_config",
-            "get_authenticated_extended_card",
+            "get_extended_agent_card",
         }
 
         if method_name in core_methods:
@@ -393,7 +393,7 @@ class BaseTransportClient(ABC):
                     "get_push_notification_config",
                     "list_push_notification_configs",
                     "delete_push_notification_config",
-                    "get_authenticated_extended_card",
+                    "get_extended_agent_card",
                     "list_tasks",
                 ]
                 if self.supports_method(method)

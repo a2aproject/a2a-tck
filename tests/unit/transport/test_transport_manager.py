@@ -47,7 +47,7 @@ class MockTransportClient(BaseTransportClient):
     def delete_push_notification_config(self, task_id, config_id, extra_headers=None):
         return {"config_id": config_id, "deleted": True}
 
-    def get_authenticated_extended_card(self, extra_headers=None):
+    def get_extended_agent_card(self, extra_headers=None):
         return {"extended": True}
 
     def close(self):

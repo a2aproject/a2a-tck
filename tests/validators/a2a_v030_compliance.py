@@ -98,7 +98,7 @@ class TransportComplianceValidator:
                 "send_message",  # SendMessage
                 "get_task",  # tasks/get
                 "cancel_task",  # tasks/cancel
-                "get_agent_card",  # agent/getAuthenticatedExtendedCard
+                "get_extended_agent_card",  # agent/getAuthenticatedExtendedCard
             ],
             "optional_methods": [
                 "send_streaming_message",  # message/stream
@@ -133,7 +133,7 @@ class TransportComplianceValidator:
                 "send_message",  # SendMessage
                 "get_task",  # GetTask
                 "cancel_task",  # CancelTask
-                "get_agent_card",  # GetAgentCard
+                "get_extended_agent_card",  # GetAgentCard
                 "list_tasks",  # ListTask (gRPC/REST specific)
             ],
             "optional_methods": [
@@ -171,7 +171,7 @@ class TransportComplianceValidator:
                 "send_message",  # POST /v1/message:send
                 "get_task",  # GET /v1/tasks/{id}
                 "cancel_task",  # POST /v1/tasks/{id}:cancel
-                "get_agent_card",  # GET /v1/card
+                "get_extended_agent_card",  # GET /v1/card
                 "list_tasks",  # GET /v1/tasks (gRPC/REST specific)
             ],
             "optional_methods": [

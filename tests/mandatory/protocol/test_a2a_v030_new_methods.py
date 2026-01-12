@@ -30,7 +30,7 @@ from tests.utils.transport_helpers import (
     transport_send_message,
     transport_get_task,
     transport_cancel_task,
-    transport_get_agent_card,
+    transport_get_extended_agent_card,
     is_transport_client,
     get_client_transport_type,
     generate_test_message_id,
@@ -71,7 +71,7 @@ class TestAuthenticatedExtendedCard:
         if transport_type == "jsonrpc":
             # JSON-RPC: agent/getAuthenticatedExtendedCard method
             try:
-                response = transport_get_agent_card(sut_client)
+                response = transport_get_extended_agent_card(sut_client)
                 assert "result" in response or "error" in response
 
                 # If error, should be authentication-related (401/403)
@@ -87,7 +87,7 @@ class TestAuthenticatedExtendedCard:
             # gRPC: GetAgentCard method
             try:
                 # For gRPC, the method should exist as GetAgentCard
-                response = sut_client.get_authenticated_extended_card()
+                response = sut_client.get_extended_agent_card()
                 assert response is not None
 
             except Exception as e:
@@ -97,7 +97,7 @@ class TestAuthenticatedExtendedCard:
         elif transport_type == "rest":
             # REST: GET /v1/card
             try:
-                response = sut_client.get_authenticated_extended_card()
+                response = sut_client.get_extended_agent_card()
                 assert response is not None
 
             except Exception as e:
@@ -137,7 +137,7 @@ class TestAuthenticatedExtendedCard:
                         sut_client.headers.pop(header.title(), None)
                         sut_client.headers.pop(header.upper(), None)
 
-                response = transport_get_agent_card(sut_client)
+                response = transport_get_extended_agent_card(sut_client)
 
                 # Should return error
                 assert "error" in response
@@ -154,7 +154,7 @@ class TestAuthenticatedExtendedCard:
         else:
             # For gRPC/REST, test without auth should fail
             with pytest.raises(Exception) as exc_info:
-                sut_client.get_authenticated_extended_card()
+                sut_client.get_extended_agent_card()
 
             error_msg = str(exc_info.value).lower()
             assert any(keyword in error_msg for keyword in ["unauthorized", "authentication", "401", "403"]), (
@@ -189,7 +189,7 @@ class TestAuthenticatedExtendedCard:
             pytest.skip("No authentication credentials configured for testing")
 
         try:
-            extended_card = sut_client.get_authenticated_extended_card()
+            extended_card = sut_client.get_extended_agent_card()
 
             # Validate it's a proper AgentCard
             assert isinstance(extended_card, dict)
@@ -457,10 +457,10 @@ class TestTransportSpecificFeatures:
         if hasattr(sut_client, "conditional_get"):
             try:
                 # First request to get ETag/Last-Modified
-                response1 = sut_client.get_agent_card()
+                response1 = sut_client.get_extended_agent_card()
 
                 # Second request with conditional headers
-                response2 = sut_client.conditional_get("/v1/card")
+                response2 = sut_client.conditional_get("/extendedAgentCard")
 
                 # Should handle conditional requests appropriately
                 assert response2 is not None

@@ -58,8 +58,8 @@ class MockTransportClient(BaseTransportClient):
         self.call_log.append(("delete_push_notification_config", task_id, config_id, kwargs))
         return {"success": True}
 
-    def get_authenticated_extended_card(self, **kwargs):
-        self.call_log.append(("get_authenticated_extended_card", kwargs))
+    def get_extended_agent_card(self, **kwargs):
+        self.call_log.append(("get_extended_agent_card", kwargs))
         return {"name": "Test Agent", "protocol_version": "0.3.0", "endpoint": "https://example.com/jsonrpc"}
 
 
@@ -150,7 +150,7 @@ class TestTransportAdapter(BaseTransportAdapter):
         try:
 
             def test_func():
-                return self.transport_client.get_authenticated_extended_card(extra_headers=context.extra_headers)
+                return self.transport_client.get_extended_agent_card(extra_headers=context.extra_headers)
 
             result, duration = self.execute_test_with_timing(test_func, context)
 

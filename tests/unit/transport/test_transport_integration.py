@@ -154,7 +154,7 @@ class TestTransportIntegration:
                 "cancel_task",
                 "subscribe_to_task",
                 "get_agent_card",
-                "get_authenticated_extended_card",
+                "get_extended_agent_card",
                 "set_push_notification_config",
                 "get_push_notification_config",
                 "list_push_notification_configs",
@@ -239,7 +239,7 @@ class TestTransportIntegration:
             "cancel_task",
             "subscribe_to_task",
             "get_agent_card",
-            "get_authenticated_extended_card",
+            "get_extended_agent_card",
             "set_push_notification_config",
             "get_push_notification_config",
             "list_push_notification_configs",
@@ -320,7 +320,7 @@ class TestTransportIntegration:
             def delete_push_notification_config(self, task_id, config_id, **kwargs):
                 pass
 
-            def get_authenticated_extended_card(self, **kwargs):
+            def get_extended_agent_card(self, **kwargs):
                 pass
 
         mock_clients = {

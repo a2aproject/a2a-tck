@@ -544,15 +544,11 @@ class RESTClient(BaseTransportClient):
     def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get agent card via HTTP GET.
-
-        Maps to: GET /card HTTP request
-
+        Maps to: GET /.well-known/agent-card.json HTTP request
         Args:
             extra_headers: Optional HTTP headers
-
         Returns:
             Dict containing agent card data from SUT
-
         Raises:
             TransportError: If HTTP request fails
         """
@@ -560,7 +556,7 @@ class RESTClient(BaseTransportClient):
             logger.info("Getting agent card via REST")
 
             # Prepare request
-            url = urljoin(self.base_url, "/card")
+            url = urljoin(self.base_url, "/.well-known/agent-card.json")
             headers = self.default_headers.copy()
 
             # Add extra headers if provided
@@ -591,18 +587,14 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
-    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get authenticated extended agent card via HTTP GET.
-
-        Maps to: GET /card HTTP request with authentication headers
-
+        Maps to: GET /extendedAgentCard HTTP request with authentication headers
         Args:
             extra_headers: Optional HTTP headers (typically auth headers)
-
         Returns:
             Dict containing extended agent card data from SUT
-
         Raises:
             TransportError: If HTTP request fails
         """
@@ -623,7 +615,7 @@ class RESTClient(BaseTransportClient):
             # Handle HTTP errors
             if response.status_code >= 400:
                 error_msg = f"HTTP {response.status_code}: {response.text}"
-                logger.error(f"REST get_authenticated_extended_card failed: {error_msg}")
+                logger.error(f"REST get_extended_agent_card failed: {error_msg}")
                 raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
 
             # Parse JSON response
@@ -637,7 +629,7 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
         except Exception as e:
-            error_msg = f"Unexpected error in REST get_authenticated_extended_card: {str(e)}"
+            error_msg = f"Unexpected error in REST get_extended_agent_card: {str(e)}"
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
