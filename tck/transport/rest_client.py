@@ -521,48 +521,6 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
-    def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-        """
-        Get agent card via HTTP GET.
-        Maps to: GET /.well-known/agent-card.json HTTP request
-        Args:
-            extra_headers: Optional HTTP headers
-        Returns:
-            Dict containing agent card data from SUT
-        Raises:
-            TransportError: If HTTP request fails
-        """
-        try:
-            logger.info("Getting agent card via REST")
-
-            # Prepare request
-            url = urljoin(self.base_url, "/.well-known/agent-card.json")
-            headers = self._prepare_headers(extra_headers)
-
-            # Make real HTTP request to live SUT
-            response = self.client.get(url, headers=headers)
-
-            # Handle HTTP errors
-            if response.status_code >= 400:
-                error_msg = f"HTTP {response.status_code}: {response.text}"
-                logger.error(f"REST get_agent_card failed: {error_msg}")
-                raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
-
-            # Parse JSON response
-            agent_card = response.json()
-
-            logger.debug("Retrieved agent card via REST")
-            return agent_card
-
-        except httpx.RequestError as e:
-            error_msg = f"HTTP request failed: {str(e)}"
-            logger.error(error_msg)
-            raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
-        except Exception as e:
-            error_msg = f"Unexpected error in REST get_agent_card: {str(e)}"
-            logger.error(error_msg)
-            raise TransportError(error_msg, TransportType.REST)
-
     def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Get authenticated extended agent card via HTTP GET.

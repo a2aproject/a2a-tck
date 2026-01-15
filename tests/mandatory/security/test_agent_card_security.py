@@ -412,7 +412,7 @@ def test_security_scheme_consistency(agent_card_security_info):
     logger.info(f"Security requirements defined: {len(security_requirements)}")
     logger.info(f"Security schemes available: {len(security_schemes)}")
 
-    valid_scheme_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
+    valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
 
     consistency_issues = []
 
@@ -429,7 +429,7 @@ def test_security_scheme_consistency(agent_card_security_info):
             consistency_issues.append(f"Security scheme '{scheme_name}' is not a valid type'")
 
         # Validate type-specific required fields
-        if scheme_name == "apiKeySecurityScheme":
+        if scheme_name == "apiKey":
             if "name" not in scheme_def:
                 consistency_issues.append(f"API Key scheme '{scheme_name}' missing required 'name' field")
             if "in" not in scheme_def:
@@ -437,17 +437,17 @@ def test_security_scheme_consistency(agent_card_security_info):
             elif scheme_def["in"] not in ["query", "header", "cookie"]:
                 consistency_issues.append(f"API Key scheme '{scheme_name}' has invalid 'in' value: {scheme_def['in']}")
 
-        elif scheme_name == "httpAuthSecurityScheme":
+        elif scheme_name == "http":
             if "scheme" not in scheme_def:
                 consistency_issues.append(f"HTTP scheme '{scheme_name}' missing required 'scheme' field")
             elif scheme_def["scheme"].lower() not in ["basic", "bearer", "digest"]:
                 logger.warning(f"HTTP scheme '{scheme_name}' uses non-standard scheme: {scheme_def['scheme']}")
 
-        elif scheme_name == "oauth2SecurityScheme":
+        elif scheme_name == "oauth2":
             if "flows" not in scheme_def:
                 consistency_issues.append(f"OAuth2 scheme '{scheme_name}' missing required 'flows' field")
 
-        elif scheme_name == "openIdConnectSecurityScheme":
+        elif scheme_name == "openIdConnect":
             if "openIdConnectUrl" not in scheme_def:
                 consistency_issues.append(f"OpenID Connect scheme '{scheme_name}' missing required 'openIdConnectUrl' field")
 

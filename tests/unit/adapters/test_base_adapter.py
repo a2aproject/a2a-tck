@@ -146,7 +146,7 @@ class TestTransportAdapter(BaseTransportAdapter):
         except Exception as e:
             return self.create_test_result(TestOutcome.ERROR, context, error_message=str(e))
 
-    def test_get_agent_card(self, context: TestContext) -> TestResult:
+    def test_get_extended_agent_card(self, context: TestContext) -> TestResult:
         try:
 
             def test_func():

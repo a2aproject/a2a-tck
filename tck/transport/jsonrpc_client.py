@@ -464,28 +464,6 @@ class JSONRPCClient(BaseTransportClient):
         async for result in self.subscribe_task(task_id, extra_headers):
             yield result
 
-    def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-        """
-        Get agent card using GetExtendedAgentCard method.
-        Makes a real JSON-RPC call to get the agent card information.
-        Args:
-            extra_headers: Optional HTTP headers
-        Returns:
-            Dict containing agent card data from the real SUT
-        Raises:
-            JSONRPCError: If agent card retrieval fails
-
-        Specification Reference: A2A Protocol v0.3.0 §5.5 - Agent Card Retrieval
-        """
-        try:
-            response = self._make_jsonrpc_request(method="GetExtendedAgentCard", params={}, extra_headers=extra_headers)
-            return response.get("result", {})
-
-        except Exception as e:
-            if isinstance(e, JSONRPCError):
-                raise
-            raise JSONRPCError(f"Failed to get agent card: {e}", original_error=e)
-
     def set_push_notification_config(
         self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:

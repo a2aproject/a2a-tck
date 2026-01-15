@@ -229,7 +229,7 @@ def _validate_a2a_response(response: Dict[str, Any], method_name: str) -> None:
             # These methods should return Task objects
             _validate_task_object(response)
 
-        elif method_name == "get_agent_card":
+        elif method_name == "get_extended_agent_card":
             # This method should return AgentCard object
             _validate_agent_card_object(response)
 
@@ -767,50 +767,6 @@ class GRPCClient(BaseTransportClient):
             raise TransportError(f"gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
             error_msg = f"Unexpected error in gRPC subscription: {str(e)}"
-            logger.error(error_msg)
-            raise TransportError(error_msg, TransportType.GRPC)
-
-    def get_agent_card(self, **kwargs) -> Dict[str, Any]:
-        """
-        Get agent card via gRPC.
-
-        Maps to: A2AService.GetAgentCard() RPC call
-
-        Args:
-            **kwargs: Additional configuration options
-
-        Returns:
-            Dict containing agent card data from SUT
-
-        Raises:
-            TransportError: If gRPC call fails
-        """
-        try:
-            logger.info("Getting agent card via gRPC")
-
-            self._load_static_stubs()
-            pb = self._pb
-            req = pb.GetAgentCardRequest()
-            metadata = self._prepare_metadata(kwargs.get("extra_headers", {}))
-
-            resp = self.stub.GetAgentCard(req, timeout=self.timeout, metadata=metadata)
-
-            # Convert protobuf response to JSON format
-            agent_card = self._convert_agent_card_to_json(resp)
-
-            logger.debug("Retrieved agent card via gRPC")
-            # Validate response conforms to A2A specification
-            _validate_a2a_response(agent_card, "get_agent_card")
-            return agent_card
-
-        except grpc.RpcError as e:
-            error_msg = f"gRPC GetAgentCard failed: {e.code().name} - {e.details()}"
-            logger.error(error_msg)
-            # Map gRPC status to A2A error code per specification
-            a2a_error = self._map_grpc_error_to_a2a(e)
-            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
-        except Exception as e:
-            error_msg = f"Unexpected error in gRPC get_agent_card: {str(e)}"
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
 

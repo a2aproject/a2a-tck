@@ -16,7 +16,7 @@ import json
 
 from tests.markers import optional_capability, a2a_v030
 from tests.utils.transport_helpers import transport_get_extended_agent_card, is_transport_client, get_client_transport_type
-from tck import config, message_utils
+from tck import agent_card_utils, config, message_utils
 from tck.transport.base_client import BaseTransportClient
 
 logger = logging.getLogger(__name__)
@@ -40,24 +40,19 @@ def auth_agent_card(sut_client):
         logger.warning(f"Failed to fetch agent card: {e}")
         return None
 
-
 @pytest.fixture
 def security_schemes(auth_agent_card):
-    """
-    Extract security schemes from the Agent Card.
-    """
-    if not auth_agent_card:
-        return []
+    """Extract all security schemes from Agent Card."""
+    if auth_agent_card is None:
+        pytest.skip("Agent Card not available - cannot test authentication compliance")
 
-    # A2A v0.3.0 uses securitySchemes field
-    security_schemes = auth_agent_card.get("securitySchemes", {})
-    if not security_schemes:
-        # Fallback to legacy authentication field
-        legacy_auth = auth_agent_card.get("authentication", [])
-        return legacy_auth
+    schemes = agent_card_utils.get_authentication_schemes(auth_agent_card)
 
-    return list(security_schemes.values())
+    if not schemes:
+        # No authentication schemes is acceptable - skip all the tests
+        pytest.skip("No security schemes declared")
 
+    return schemes
 
 class TestA2AV030SecuritySchemes:
     """
@@ -82,29 +77,29 @@ class TestA2AV030SecuritySchemes:
         valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
         valid_api_key_locations = ["query", "header", "cookie"]
 
-        for i, scheme in enumerate(security_schemes):
-            scheme_type = scheme.get("type")
-            assert scheme_type in valid_scheme_types, f"Security scheme {i} has invalid type: {scheme_type}"
+        for scheme_type in security_schemes:
+            scheme = security_schemes[scheme_type]
+            assert scheme_type in valid_scheme_types, f"Security scheme has invalid type: {scheme_type}"
 
             # Type-specific validation
             if scheme_type == "apiKey":
-                assert "name" in scheme, f"API Key scheme {i} missing 'name' field"
-                assert "in" in scheme, f"API Key scheme {i} missing 'in' field"
-                assert scheme["in"] in valid_api_key_locations, f"API Key scheme {i} has invalid location: {scheme['in']}"
+                assert "name" in scheme, f"{scheme_type}: missing 'name' field"
+                assert "in" in scheme, f"{scheme_type}: missing 'in' field"
+                assert scheme["in"] in valid_api_key_locations, f"{scheme_type}: invalid location {scheme['in']}"
 
             elif scheme_type == "http":
-                assert "scheme" in scheme, f"HTTP auth scheme {i} missing 'scheme' field"
+                assert "scheme" in scheme, f"{scheme_type}: missing 'scheme' field"
                 http_scheme = scheme["scheme"].lower()
-                assert http_scheme in ["basic", "bearer", "digest"], f"HTTP auth scheme {i} has unsupported scheme: {http_scheme}"
+                assert http_scheme in ["basic", "bearer", "digest"], f"{scheme_type}: unsupported scheme: {http_scheme}"
 
             elif scheme_type == "oauth2":
                 assert "flows" in scheme, f"OAuth2 scheme {i} missing 'flows' field"
                 flows = scheme["flows"]
                 valid_flows = ["authorizationCode", "clientCredentials", "implicit", "password"]
-                assert any(flow in flows for flow in valid_flows), f"OAuth2 scheme {i} has no valid flows"
+                assert any(flow in flows for flow in valid_flows), f"{scheme_type}: no valid flows"
 
             elif scheme_type == "openIdConnect":
-                assert "openIdConnectUrl" in scheme, f"OpenID Connect scheme {i} missing 'openIdConnectUrl' field"
+                assert "openIdConnectUrl" in scheme, f"{scheme_type}: missing 'openIdConnectUrl' field"
 
     @optional_capability
     @a2a_v030
