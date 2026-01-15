@@ -74,7 +74,7 @@ class TestA2AV030SecuritySchemes:
         if not security_schemes:
             pytest.skip("No security schemes declared in Agent Card")
 
-        valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
+        valid_scheme_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
         valid_api_key_locations = ["query", "header", "cookie"]
 
         for scheme_type in security_schemes:
@@ -82,23 +82,23 @@ class TestA2AV030SecuritySchemes:
             assert scheme_type in valid_scheme_types, f"Security scheme has invalid type: {scheme_type}"
 
             # Type-specific validation
-            if scheme_type == "apiKey":
+            if scheme_type == "apiKeySecurityScheme":
                 assert "name" in scheme, f"{scheme_type}: missing 'name' field"
                 assert "in" in scheme, f"{scheme_type}: missing 'in' field"
                 assert scheme["in"] in valid_api_key_locations, f"{scheme_type}: invalid location {scheme['in']}"
 
-            elif scheme_type == "http":
+            elif scheme_type == "httpAuthSecurityScheme":
                 assert "scheme" in scheme, f"{scheme_type}: missing 'scheme' field"
                 http_scheme = scheme["scheme"].lower()
                 assert http_scheme in ["basic", "bearer", "digest"], f"{scheme_type}: unsupported scheme: {http_scheme}"
 
-            elif scheme_type == "oauth2":
+            elif scheme_type == "oauth2SecurityScheme":
                 assert "flows" in scheme, f"OAuth2 scheme {i} missing 'flows' field"
                 flows = scheme["flows"]
                 valid_flows = ["authorizationCode", "clientCredentials", "implicit", "password"]
                 assert any(flow in flows for flow in valid_flows), f"{scheme_type}: no valid flows"
 
-            elif scheme_type == "openIdConnect":
+            elif scheme_type == "openIdConnectSecurityScheme":
                 assert "openIdConnectUrl" in scheme, f"{scheme_type}: missing 'openIdConnectUrl' field"
 
     @optional_capability
@@ -244,16 +244,16 @@ class TestEnhancedSecurityValidation:
             scheme_type = scheme.get("type")
 
             # Each scheme should have enough information for client implementation
-            if scheme_type == "apiKey":
+            if scheme_type == "apiKeySecurityScheme":
                 assert "name" in scheme and "in" in scheme
-            elif scheme_type == "http":
+            elif scheme_type == "httpAuthSecurityScheme":
                 assert "scheme" in scheme
-            elif scheme_type == "oauth2":
+            elif scheme_type == "oauth2SecurityScheme":
                 assert "flows" in scheme
                 # Check if metadata URL is provided for easier discovery
                 if "oauth2MetadataUrl" in scheme:
                     logger.info(f"OAuth2 metadata URL provided: {scheme['oauth2MetadataUrl']}")
-            elif scheme_type == "openIdConnect":
+            elif scheme_type == "openIdConnectSecurityScheme":
                 assert "openIdConnectUrl" in scheme
 
     @optional_capability
@@ -358,14 +358,14 @@ class TestAuthenticationErrorHandling:
             # Prepare invalid credentials based on scheme type
             headers = {"Content-Type": "application/json"}
 
-            if scheme_type == "apiKey":
+            if scheme_type == "apiKeySecurityScheme":
                 key_name = scheme.get("name", "x-api-key")
                 key_location = scheme.get("in", "header")
 
                 if key_location == "header":
                     headers[key_name] = "invalid-api-key-value"
 
-            elif scheme_type == "http":
+            elif scheme_type == "httpAuthSecurityScheme":
                 http_scheme = scheme.get("scheme", "bearer").lower()
                 if http_scheme == "bearer":
                     headers["Authorization"] = "Bearer invalid-token-12345"

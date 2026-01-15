@@ -387,17 +387,17 @@ def test_invalid_authentication_handling(agent_with_auth_info):
         # Prepare invalid credentials based on scheme type
         headers = {"Content-Type": "application/json"}
 
-        if scheme_type == "http" and scheme_name.lower() == "bearer":
+        if scheme_type == "httpAuthSecurityScheme" and scheme_name.lower() == "bearer":
             headers["Authorization"] = "Bearer invalid-in-task-auth-token-12345"
-        elif scheme_type == "http" and scheme_name.lower() == "basic":
+        elif scheme_type == "httpAuthSecurityScheme" and scheme_name.lower() == "basic":
             headers["Authorization"] = "Basic aW52YWxpZDppbnZhbGlk"  # invalid:invalid
-        elif scheme_type == "apikey":
+        elif scheme_type == "apiKeySecurityScheme":
             key_name = scheme.get("name", "X-API-Key")
             key_location = scheme.get("in", "header")
 
             if key_location == "header":
                 headers[key_name] = "invalid-in-task-api-key-12345"
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             headers["Authorization"] = "Bearer invalid-in-task-oauth2-token"
         else:
             headers["Authorization"] = f"Bearer invalid-in-task-{scheme_type}-token"

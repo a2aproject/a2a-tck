@@ -219,21 +219,21 @@ def test_authentication_scheme_validation(sut_client, agent_card_security_info):
         ]
 
         # Add scheme-specific invalid credentials
-        if scheme_type == "http" and scheme_name.lower() == "bearer":
+        if scheme_type == "httpAuthSecurityScheme" and scheme_name.lower() == "bearer":
             test_scenarios.extend(
                 [
                     ("invalid_bearer", {"Authorization": "Bearer invalid-bearer-token-12345"}),
                     ("expired_bearer", {"Authorization": "Bearer expired.token.signature"}),
                 ]
             )
-        elif scheme_type == "http" and scheme_name.lower() == "basic":
+        elif scheme_type == "httpAuthSecurityScheme" and scheme_name.lower() == "basic":
             test_scenarios.extend(
                 [
                     ("invalid_basic", {"Authorization": "Basic aW52YWxpZDppbnZhbGlk"}),  # invalid:invalid
                     ("malformed_basic", {"Authorization": "Basic not-base64-encoded"}),
                 ]
             )
-        elif scheme_type == "apikey":
+        elif scheme_type == "apiKeySecurityScheme":
             key_name = scheme.get("name", "X-API-Key")
             key_location = scheme.get("in", "header")
 
@@ -244,7 +244,7 @@ def test_authentication_scheme_validation(sut_client, agent_card_security_info):
                         ("empty_apikey", {key_name: ""}),
                     ]
                 )
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             test_scenarios.extend(
                 [
                     ("invalid_oauth2", {"Authorization": "Bearer invalid-oauth2-token"}),
@@ -412,7 +412,7 @@ def test_security_scheme_consistency(agent_card_security_info):
     logger.info(f"Security requirements defined: {len(security_requirements)}")
     logger.info(f"Security schemes available: {len(security_schemes)}")
 
-    valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
+    valid_scheme_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
 
     consistency_issues = []
 
@@ -429,7 +429,7 @@ def test_security_scheme_consistency(agent_card_security_info):
             consistency_issues.append(f"Security scheme '{scheme_name}' is not a valid type'")
 
         # Validate type-specific required fields
-        if scheme_name == "apiKey":
+        if scheme_name == "apiKeySecurityScheme":
             if "name" not in scheme_def:
                 consistency_issues.append(f"API Key scheme '{scheme_name}' missing required 'name' field")
             if "in" not in scheme_def:
@@ -437,17 +437,17 @@ def test_security_scheme_consistency(agent_card_security_info):
             elif scheme_def["in"] not in ["query", "header", "cookie"]:
                 consistency_issues.append(f"API Key scheme '{scheme_name}' has invalid 'in' value: {scheme_def['in']}")
 
-        elif scheme_name == "http":
+        elif scheme_name == "httpAuthSecurityScheme":
             if "scheme" not in scheme_def:
                 consistency_issues.append(f"HTTP scheme '{scheme_name}' missing required 'scheme' field")
             elif scheme_def["scheme"].lower() not in ["basic", "bearer", "digest"]:
                 logger.warning(f"HTTP scheme '{scheme_name}' uses non-standard scheme: {scheme_def['scheme']}")
 
-        elif scheme_name == "oauth2":
+        elif scheme_name == "oauth2SecurityScheme":
             if "flows" not in scheme_def:
                 consistency_issues.append(f"OAuth2 scheme '{scheme_name}' missing required 'flows' field")
 
-        elif scheme_name == "openIdConnect":
+        elif scheme_name == "openIdConnectSecurityScheme":
             if "openIdConnectUrl" not in scheme_def:
                 consistency_issues.append(f"OpenID Connect scheme '{scheme_name}' missing required 'openIdConnectUrl' field")
 

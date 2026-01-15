@@ -72,7 +72,7 @@ def test_security_scheme_structure_compliance(security_schemes):
     """
     logger.info(f"Validating security scheme structure compliance for {len(security_schemes)} schemes")
 
-    valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
+    valid_scheme_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
     valid_api_key_locations = ["query", "header", "cookie"]
     valid_http_schemes = ["basic", "bearer", "digest"]
 
@@ -91,7 +91,7 @@ def test_security_scheme_structure_compliance(security_schemes):
         logger.info(f"Validating type='{scheme_type}'")
 
         # Type-specific mandatory validation
-        if scheme_type == "apiKey":
+        if scheme_type == "apiKeySecurityScheme":
             assert "name" in scheme, f"{scheme_type}: missing required 'name' field"
             assert "in" in scheme, f"{scheme_type}: missing required 'in' field"
 
@@ -102,7 +102,7 @@ def test_security_scheme_structure_compliance(security_schemes):
 
             logger.info(f"✅ {scheme_type}: validation passed (name={scheme['name']}, in={key_location})")
 
-        elif scheme_type == "http":
+        elif scheme_type == "httpAuthSecurityScheme":
             assert "scheme" in scheme, f"{scheme_type}: missing required 'scheme' field"
 
             http_scheme = scheme["scheme"].lower()
@@ -112,7 +112,7 @@ def test_security_scheme_structure_compliance(security_schemes):
 
             logger.info(f"✅ {scheme_type}: validation passed (scheme={http_scheme})")
 
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             assert "flows" in scheme, f"{scheme_type}: missing required 'flows' field"
 
             flows = scheme["flows"]
@@ -127,13 +127,13 @@ def test_security_scheme_structure_compliance(security_schemes):
         elif scheme_type == "openIdConnectSecurityScheme":
             assert "openIdConnectUrl" in scheme, f"{scheme_type}: missing required 'openIdConnectUrl' field"
 
-            oidc_url = scheme["openIdConnect"]
+            oidc_url = scheme["openIdConnectUrl"]
             assert isinstance(oidc_url, str), f"{scheme_type}: must be a string"
             assert oidc_url.startswith("https://"), f"{scheme_type}: must use HTTPS, got: {oidc_url}"
 
             logger.info(f"✅ {scheme_type}: validation passed")
 
-        elif scheme_type == "mutualTLS":
+        elif scheme_type == "mtlsSecurityScheme":
             # mutualTLS schemes have minimal requirements (A2A v0.3.0 feature)
             logger.info(f"✅ {scheme_type}: validation passed")
 
@@ -272,7 +272,7 @@ def test_security_error_response_compliance(security_schemes):
 
                 # Validate WWW-Authenticate content matches declared schemes
                 for scheme_type in security_schemes:
-                    if scheme_type == "http":
+                    if scheme_type == "httpAuthSecurityScheme":
                         http_scheme = security_schemes[scheme_type].get("scheme", "").lower()
                         if http_scheme in www_auth.lower():
                             logger.info(f"✅ WWW-Authenticate matches declared {http_scheme} scheme")
@@ -316,18 +316,18 @@ def test_security_error_response_compliance(security_schemes):
         headers = {"Content-Type": "application/json"}
 
         # Add invalid credentials based on scheme type
-        if scheme_type == "apiKey":
+        if scheme_type == "apiKeySecurityScheme":
             key_name = scheme.get("name", "x-api-key")
             key_location = scheme.get("in", "header")
             if key_location == "header":
                 headers[key_name] = f"invalid-api-key-{scheme_type}"
-        elif scheme_type == "http":
+        elif scheme_type == "httpAuthSecurityScheme":
             http_scheme = scheme.get("scheme", "bearer").lower()
             if http_scheme == "bearer":
                 headers["Authorization"] = f"Bearer invalid-token-{scheme_type}"
             elif http_scheme == "basic":
                 headers["Authorization"] = "Basic aW52YWxpZDppbnZhbGlk"  # invalid:invalid
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             headers["Authorization"] = f"Bearer invalid-oauth2-token-{scheme_type}"
 
         req_id = message_utils.generate_request_id()
