@@ -280,9 +280,10 @@ def test_authentication_scheme_consistency(security_schemes, auth_agent_card):
     """
     logger.info(f"Validating authentication scheme consistency for {len(security_schemes)} schemes")
 
-    # Validate each security scheme structure
-    for scheme_type in security_schemes:
-        scheme = security_schemes[scheme_type]
+    for scheme_name in security_schemes:
+        security_scheme = security_schemes[scheme_name]
+        assert len(security_scheme.keys()) == 1
+        scheme_type, scheme = next(iter(security_scheme.items()))
 
         # Validate known scheme types according to A2A v0.3.0 specification
         valid_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]

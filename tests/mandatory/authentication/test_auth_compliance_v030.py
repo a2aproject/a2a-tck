@@ -76,12 +76,10 @@ def test_security_scheme_structure_compliance(security_schemes):
     valid_api_key_locations = ["query", "header", "cookie"]
     valid_http_schemes = ["basic", "bearer", "digest"]
 
-    print(security_schemes)
-    for scheme_type in security_schemes:
-        scheme = security_schemes[scheme_type]
-        print(scheme)
-        assert len(scheme.keys()) == 1
-        scheme_type = scheme.keys()[0]
+    for scheme_name in security_schemes:
+        security_scheme = security_schemes[scheme_name]
+        assert len(security_scheme.keys()) == 1
+        scheme_type, scheme = next(iter(security_scheme.items()))
 
         # MANDATORY: scheme_type must be valid
         assert scheme_type in valid_scheme_types, (

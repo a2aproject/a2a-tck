@@ -417,39 +417,40 @@ def test_security_scheme_consistency(agent_card_security_info):
     consistency_issues = []
 
     # Validate security scheme definitions
-    print(security_requirements)
-    for scheme_name, scheme_def in security_schemes.items():
-        print(scheme_name)
-        print(scheme_def)
+    for scheme_name in security_schemes:
+        security_scheme = security_schemes[scheme_name]
+        assert len(security_scheme.keys()) == 1
+        scheme_type, scheme_def = next(iter(security_scheme.items()))
+
         if not isinstance(scheme_def, dict):
-            consistency_issues.append(f"Security scheme '{scheme_name}' is not an object")
+            consistency_issues.append(f"Security scheme for '{scheme_name}' is not an object")
             continue
 
-        if scheme_name not in valid_scheme_types:
-            consistency_issues.append(f"Security scheme '{scheme_name}' is not a valid type'")
+        if scheme_type not in valid_scheme_types:
+            consistency_issues.append(f"Security scheme '{scheme_type}' is not a valid type'")
 
         # Validate type-specific required fields
-        if scheme_name == "apiKeySecurityScheme":
+        if scheme_type == "apiKeySecurityScheme":
             if "name" not in scheme_def:
-                consistency_issues.append(f"API Key scheme '{scheme_name}' missing required 'name' field")
+                consistency_issues.append(f"'{scheme_name}/{scheme_type}' missing required 'name' field")
             if "in" not in scheme_def:
-                consistency_issues.append(f"API Key scheme '{scheme_name}' missing required 'in' field")
+                consistency_issues.append(f"'{scheme_name}/{scheme_type}' missing required 'in' field")
             elif scheme_def["in"] not in ["query", "header", "cookie"]:
-                consistency_issues.append(f"API Key scheme '{scheme_name}' has invalid 'in' value: {scheme_def['in']}")
+                consistency_issues.append(f"'{scheme_name}/{scheme_type}' has invalid 'in' value: {scheme_def['in']}")
 
-        elif scheme_name == "httpAuthSecurityScheme":
+        elif scheme_type == "httpAuthSecurityScheme":
             if "scheme" not in scheme_def:
-                consistency_issues.append(f"HTTP scheme '{scheme_name}' missing required 'scheme' field")
+                consistency_issues.append(f"{scheme_name}/{scheme_type}' missing required 'scheme' field")
             elif scheme_def["scheme"].lower() not in ["basic", "bearer", "digest"]:
-                logger.warning(f"HTTP scheme '{scheme_name}' uses non-standard scheme: {scheme_def['scheme']}")
+                logger.warning(f"{scheme_name}/{scheme_type}' uses non-standard scheme: {scheme_def['scheme']}")
 
-        elif scheme_name == "oauth2SecurityScheme":
+        elif scheme_type == "oauth2SecurityScheme":
             if "flows" not in scheme_def:
-                consistency_issues.append(f"OAuth2 scheme '{scheme_name}' missing required 'flows' field")
+                consistency_issues.append(f"{scheme_name}/{scheme_type}' missing required 'flows' field")
 
-        elif scheme_name == "openIdConnectSecurityScheme":
+        elif scheme_type == "openIdConnectSecurityScheme":
             if "openIdConnectUrl" not in scheme_def:
-                consistency_issues.append(f"OpenID Connect scheme '{scheme_name}' missing required 'openIdConnectUrl' field")
+                consistency_issues.append(f"{scheme_name}/{scheme_type}' missing required 'openIdConnectUrl' field")
 
     # Check consistency between securitySchemes and available authentication schemes
     if security_schemes:

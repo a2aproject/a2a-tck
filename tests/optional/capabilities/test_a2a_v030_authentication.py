@@ -77,29 +77,32 @@ class TestA2AV030SecuritySchemes:
         valid_scheme_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
         valid_api_key_locations = ["query", "header", "cookie"]
 
-        for scheme_type in security_schemes:
-            scheme = security_schemes[scheme_type]
+        for scheme_name in security_schemes:
+            security_scheme = security_schemes[scheme_name]
+            assert len(security_scheme.keys()) == 1
+            scheme_type, scheme = next(iter(security_scheme.items()))
+            
             assert scheme_type in valid_scheme_types, f"Security scheme has invalid type: {scheme_type}"
 
             # Type-specific validation
             if scheme_type == "apiKeySecurityScheme":
-                assert "name" in scheme, f"{scheme_type}: missing 'name' field"
-                assert "in" in scheme, f"{scheme_type}: missing 'in' field"
-                assert scheme["in"] in valid_api_key_locations, f"{scheme_type}: invalid location {scheme['in']}"
+                assert "name" in scheme, f"{scheme_name}/{scheme_type}: missing 'name' field"
+                assert "in" in scheme, f"{scheme_name}/{scheme_type}: missing 'in' field"
+                assert scheme["in"] in valid_api_key_locations, f"{scheme_name}/{scheme_type}: invalid location {scheme['in']}"
 
             elif scheme_type == "httpAuthSecurityScheme":
-                assert "scheme" in scheme, f"{scheme_type}: missing 'scheme' field"
+                assert "scheme" in scheme, f"{scheme_name}/{scheme_type}: missing 'scheme' field"
                 http_scheme = scheme["scheme"].lower()
-                assert http_scheme in ["basic", "bearer", "digest"], f"{scheme_type}: unsupported scheme: {http_scheme}"
+                assert http_scheme in ["basic", "bearer", "digest"], f"{scheme_name}/{scheme_type}: unsupported scheme: {http_scheme}"
 
             elif scheme_type == "oauth2SecurityScheme":
-                assert "flows" in scheme, f"OAuth2 scheme {i} missing 'flows' field"
+                assert "flows" in scheme, f"{scheme_name}/{scheme_type}: missing 'flows' field"
                 flows = scheme["flows"]
                 valid_flows = ["authorizationCode", "clientCredentials", "implicit", "password"]
-                assert any(flow in flows for flow in valid_flows), f"{scheme_type}: no valid flows"
+                assert any(flow in flows for flow in valid_flows), f"{scheme_name}/{scheme_type}: no valid flows"
 
             elif scheme_type == "openIdConnectSecurityScheme":
-                assert "openIdConnectUrl" in scheme, f"{scheme_type}: missing 'openIdConnectUrl' field"
+                assert "openIdConnectUrl" in scheme, f"{scheme_name}/{scheme_type}: missing 'openIdConnectUrl' field"
 
     @optional_capability
     @a2a_v030
@@ -113,7 +116,7 @@ class TestA2AV030SecuritySchemes:
         if not security_schemes:
             pytest.skip("No security schemes declared in Agent Card")
 
-        mutual_tls_schemes = [s for s in security_schemes if s.get("type") == "mutualTLS"]
+        mutual_tls_schemes = [s for s in security_schemes if "mtlsSecurityScheme" in s]
 
         if not mutual_tls_schemes:
             pytest.skip("No mutualTLS security schemes declared")
@@ -137,8 +140,8 @@ class TestA2AV030SecuritySchemes:
         if not security_schemes:
             pytest.skip("No security schemes declared in Agent Card")
 
-        oauth2_schemes = [s for s in security_schemes if s.get("type") == "oauth2"]
-
+        oauth2_schemes = [s for s in security_schemes if "oauth2SecurityScheme" in s]
+        
         if not oauth2_schemes:
             pytest.skip("No OAuth2 security schemes declared")
 
@@ -240,7 +243,11 @@ class TestEnhancedSecurityValidation:
             pytest.skip("No security schemes declared in Agent Card")
 
         # Verify that security schemes are discoverable
-        for scheme in security_schemes:
+        for scheme_name in security_schemes:
+            security_scheme = security_schemes[scheme_name]
+            assert len(security_scheme.keys()) == 1
+            scheme_type, scheme = next(iter(security_scheme.items()))
+        
             scheme_type = scheme.get("type")
 
             # Each scheme should have enough information for client implementation
@@ -352,8 +359,10 @@ class TestAuthenticationErrorHandling:
 
         sut_url = config.get_sut_url()
 
-        for scheme in security_schemes:
-            scheme_type = scheme.get("type", "")
+        for scheme_name in security_schemes:
+            security_scheme = security_schemes[scheme_name]
+            assert len(security_scheme.keys()) == 1
+            scheme_type, scheme = next(iter(security_scheme.items()))
 
             # Prepare invalid credentials based on scheme type
             headers = {"Content-Type": "application/json"}
