@@ -21,6 +21,7 @@ import asyncio
 import grpc
 from google.protobuf.struct_pb2 import Struct
 from google.protobuf.timestamp_pb2 import Timestamp
+from google.protobuf.json_format import MessageToJson
 
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
 from tests.optional.capabilities.test_streaming_methods import NON_EXISTENT_TASK_ID_PREFIX
@@ -499,14 +500,14 @@ class GRPCClient(BaseTransportClient):
             # Make real gRPC streaming call to live SUT
             if self.use_tls:
                 credentials = grpc.ssl_channel_credentials()
-                channel = grpc.aio.secure_channel(self.grpc_target, credentials, metadata=metadata)
+                channel = grpc.aio.secure_channel(self.grpc_target, credentials)
             else:
                 channel = grpc.aio.insecure_channel(self.grpc_target)
                 
             async with channel:
                 # Use the generated protobuf stub for streaming
                 stub = self._pb_grpc.A2AServiceStub(channel)
-                stream = stub.SendStreamingMessage(request, timeout=self.timeout)
+                stream = stub.SendStreamingMessage(request, timeout=self.timeout, metadata=metadata)
                 
                 async for response in stream:
                     # Convert protobuf response to JSON format
@@ -1068,43 +1069,8 @@ class GRPCClient(BaseTransportClient):
         Returns:
             Dict containing JSON representation of the AgentCard
         """
-        agent_card = {
-            "protocolVersion": resp.protocol_version,
-            "name": resp.name,
-            "description": resp.description,
-            "url": resp.url,
-            "version": resp.version,
-            "preferredTransport": resp.preferred_transport or "GRPC",
-            "capabilities": {
-                "streaming": resp.capabilities.streaming if resp.capabilities else False,
-                "pushNotifications": resp.capabilities.push_notifications if resp.capabilities else False,
-            },
-            "defaultInputModes": list(resp.default_input_modes),
-            "defaultOutputModes": list(resp.default_output_modes),
-            "additionalInterfaces": [
-                {"url": iface.url, "transport": iface.transport} for iface in resp.additional_interfaces
-            ],
-            "skills": [
-                {
-                    "id": skill.id,
-                    "name": skill.name,
-                    "description": skill.description,
-                    "tags": list(skill.tags),
-                    "examples": list(skill.examples),
-                }
-                for skill in resp.skills
-            ],
-        }
-
-        # Add optional fields if present
-        if resp.documentation_url:
-            agent_card["documentationUrl"] = resp.documentation_url
-            
-        # Add security schemes if present (for extended card)
-        if resp.security_schemes:
-            agent_card["securitySchemes"] = resp.security_schemes
-
-        return agent_card
+        json_string = MessageToJson(resp)
+        return json.loads(json_string)
 
     def _json_to_send_message_request(
         self,

@@ -662,9 +662,7 @@ class JSONRPCClient(BaseTransportClient):
         Returns:
             The JSON response from the SUT
         """
-        headers = {"Content-Type": "application/json"}
-        headers.update(extra_headers)
-        self._prepare_headers(extra_headers)
+        headers = self._prepare_headers(extra_headers)
 
         self._logger.info(f"Sending raw JSON-RPC request to {self.base_url}: {json_request}")
 

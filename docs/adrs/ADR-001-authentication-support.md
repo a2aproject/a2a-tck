@@ -2,9 +2,9 @@
 
 ## Status
 
-**Accepted** - Implemented in `extended_security_tests` branch
+**Accepted**
 
-**Date**: 2024-01-14
+**Date**: 2026-01-15
 
 **Authors**: @jmesnil
 

@@ -2,11 +2,11 @@
 
 ## Status
 
-**Accepted** - Implemented in `extended_security_tests` branch
+**Accepted**
 
-**Date**: 2024-01-14
+**Date**: 2026-01-15
 
-**Authors**: TCK Development Team
+**Authors**: @jmesnil
 
 ## Context
 
@@ -51,8 +51,8 @@ Per A2A Specification v1.0.0 §5:
 
 We **separated agent card access into two distinct methods** with clear semantics and authentication expectations:
 
-1. `get_agent_card()` - Public, unauthenticated access
-2. `get_authenticated_extended_card()` - Extended, authenticated access
+1. `agent_card_utils.py:fetch_agent_card()` - Public, unauthenticated access, transport-agnostic (HTTP Get request)
+2. `get_authenticated_extended_card()` - Extended, authenticated access, transport-dependent
 
 ### Architecture
 
@@ -60,52 +60,23 @@ We **separated agent card access into two distinct methods** with clear semantic
 ┌─────────────────────────────────────────────────────┐
 │ BaseTransportClient (Abstract Interface)            │
 ├─────────────────────────────────────────────────────┤
-│ get_agent_card(extra_headers)                       │
-│   → Public card, no auth required                   │
-│   → Maps to: /.well-known/agent-card.json           │
-│                                                      │
+│                                                     │
 │ get_authenticated_extended_card(extra_headers)      │
 │   → Extended card, auth recommended/required        │
 │   → Maps to: GetExtendedAgentCard method/endpoint   │
 └─────────────────────────────────────────────────────┘
            │              │              │
            ▼              ▼              ▼
-    ┌──────────┐   ┌──────────┐   ┌──────────┐
-    │ JSON-RPC │   │   gRPC   │   │   REST   │
-    ├──────────┤   ├──────────┤   ├──────────┤
-    │ Public:  │   │ Public:  │   │ Public:  │
-    │ GET      │   │ GetAgent │   │ GET      │
-    │ /.well-  │   │ Card()   │   │ /.well-  │
-    │ known/   │   │          │   │ known/   │
-    │          │   │          │   │          │
-    │ Extended:│   │ Extended:│   │ Extended:│
-    │ GetExt.. │   │ GetAgent │   │ GET      │
-    │ AgentCa..│   │ Card()   │   │ /extende │
-    │          │   │ +metadata│   │ dAgentC..│
-    └──────────┘   └──────────┘   └──────────┘
+    ┌──────────┐   ┌──────────┐   ┌──────────────┐
+    │ JSON-RPC │   │   gRPC   │   │     REST.    │
+    ├──────────┤   ├──────────┤   ├──────────────┤
+    │ GetExt.. │   │ GetAgent │   │ GET          │
+    │ AgentCa..│   │ Card()   │   │ v1 /extended │
+    │          │   │ +metadata│   │ dAgentCard   │
+    └──────────┘   └──────────┘   └──────────────┘
 ```
 
 ### Method Signatures
-
-#### Public Agent Card (Unauthenticated)
-
-```python
-def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-    """
-    Get the public agent card from /.well-known/agent-card.json
-
-    This endpoint MUST be publicly accessible without authentication.
-    Contains basic agent information and capabilities.
-
-    Args:
-        extra_headers: Optional headers (typically not needed for public access)
-
-    Returns:
-        Public agent card data
-
-    Specification: A2A v1.0.0 §5.5 - Agent Card Discovery
-    """
-```
 
 #### Extended Agent Card (Authenticated)
 
@@ -131,29 +102,19 @@ def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]
 
 #### JSON-RPC Transport
 
-**Public Card**:
-- HTTP GET to `/.well-known/agent-card.json`
-- No JSON-RPC method, direct HTTP access
-
 **Extended Card**:
 - JSON-RPC method: `GetExtendedAgentCard`
 - Includes authentication headers from config
 
 #### gRPC Transport
 
-**Both use same RPC**: `A2AService.GetAgentCard()`
-
-**Differentiation**:
-- Public: Called without metadata (no auth headers)
-- Extended: Called with metadata containing auth headers
+- gRPC method: `GetExtendedAgentCard`
+- Includes authentication headers from config
 
 #### REST Transport
 
-**Public Card**:
-- HTTP GET to `/.well-known/agent-card.json`
-
 **Extended Card**:
-- HTTP GET to `/extendedAgentCard`
+- HTTP GET to `/v1/extendedAgentCard`
 - Includes authentication headers
 
 ### Design Principles
@@ -162,7 +123,6 @@ def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]
 2. **Consistent Interface**: Same method signatures across all transports
 3. **Spec Alignment**: Maps directly to A2A v1.0.0 specification sections
 4. **Testability**: Enables validation of authentication enforcement
-5. **Backward Compatible**: Old code using `get_agent_card()` still works for public access
 
 ## Consequences
 
@@ -179,7 +139,7 @@ def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]
 ### Negative
 
 ⚠️ **Breaking Change**: Code using old method names needs updates
-⚠️ **Migration Effort**: 22 test files required updates
+⚠️ **Migration Effort**: test files required updates
 ⚠️ **Complexity**: Two methods instead of one (more surface area)
 
 ### Neutral
@@ -204,43 +164,6 @@ def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]
 - Harder to test both paths
 - Doesn't allow explicit public card access with auth headers
 
-### Alternative 3: Keep Single Method, Update Internally
-**Approach**: Keep `get_agent_card()`, call different endpoints based on config
-**Rejected Because**:
-- Hides implementation details that should be explicit
-- Doesn't enable testing both paths
-- Specification calls for explicit separation
-
-## Implementation Details
-
-### Files Modified
-
-| File | Changes | Purpose |
-|------|---------|---------|
-| `tck/transport/base_client.py` | Method signature updates | Abstract interface definition |
-| `tck/transport/jsonrpc_client.py` | Implementation updates | JSON-RPC transport |
-| `tck/transport/grpc_client.py` | Implementation updates | gRPC transport |
-| `tck/transport/rest_client.py` | Implementation updates | REST transport |
-| Test files (22 files) | Method call updates | Use correct method names |
-
-### Migration Pattern
-
-**Before**:
-```python
-# Ambiguous - which card?
-agent_card = client.get_agent_card()
-```
-
-**After**:
-```python
-# Public card (no auth required)
-public_card = client.get_agent_card()
-
-# Extended card (may require auth)
-extended_card = client.get_authenticated_extended_card(
-    extra_headers={"Authorization": "Bearer token"}
-)
-```
 
 ### Test Updates
 
@@ -252,7 +175,8 @@ Updated test files to use appropriate methods:
 ### Related Commits
 
 - `7e51136` - fix: Separate public and extended agent card access for A2A v1.0.0 (#111)
-- `0a34293` - fix: update security tests for the extended agent card
+- `63a4d94` - remove get_agent_card from any transport
+- `8c19d0e` - fix: run mandatory tests for all transports (#110)
 
 ## Usage Examples
 
@@ -260,7 +184,7 @@ Updated test files to use appropriate methods:
 
 ```python
 # Get public agent card (no authentication)
-public_card = sut_client.get_agent_card()
+public_card = agent_card_utils.fetch_agent_card(sut_client.base_url)
 
 # Check capabilities
 capabilities = public_card.get("capabilities", {})
@@ -354,10 +278,3 @@ The separation enables comprehensive security testing:
 **Status**: ✅ Accepted and Implemented
 
 This ADR documents the accepted approach for separating public and extended agent card access in the A2A TCK. The implementation successfully aligns with A2A v1.0.0 specification requirements while enabling proper authentication testing.
-
-### Impact Summary
-
-- **22 test files updated** to use correct method names
-- **4 transport clients updated** with new method signatures
-- **Improved security testing** capabilities
-- **Full A2A v1.0.0 compliance** for agent card access patterns
