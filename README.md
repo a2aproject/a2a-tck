@@ -402,6 +402,13 @@ The TCK supports additional environment variables for A2A v0.3.0 multi-transport
 - **Normal timeout**: `TCK_STREAMING_TIMEOUT * 1.0` - Used for standard SSE client operations  
 - **Async timeout**: `TCK_STREAMING_TIMEOUT * 1.0` - Used for `asyncio.wait_for` operations
 
+### Authentication Environment Variables**
+
+If the SUT requires authentication, the TCK provides environment variables to set it up.
+
+Refer to [Authentication Setup](docs/AUTHENTICATION_SETUP.md) to properly configure the TCK so that it can
+connect to the SUT with the appropriate user credentials.
+
 **Usage examples**:
 ```bash
 # Use .env file (recommended)
@@ -721,6 +728,7 @@ python -m pytest tests/path/to/test.py --sut-url URL -s -v --log-cli-level=WARNI
 - **[SDK Validation Guide](docs/SDK_VALIDATION_GUIDE.md)** - Detailed usage guide for SDK developers
 - **[Specification Update Workflow](docs/SPEC_UPDATE_WORKFLOW.md)** - Monitor and manage A2A specification changes
 - **[Test Documentation Standards](docs/TEST_DOCUMENTATION_STANDARDS.md)** - Standards for test contributors
+- **[Authentication Setup](docs/AUTHENTICATION_SETUP.md)** - Authentication Setup for A2A TCK
 
 ## 🤝 Contributing
 

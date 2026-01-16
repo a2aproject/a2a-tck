@@ -204,10 +204,8 @@ def test_authentication_scheme_validation(sut_client, agent_card_security_info):
     validation_results = []
 
     for i, scheme_type in enumerate(security_schemes):
-        print(scheme_type)
         scheme = security_schemes[scheme_type]
         scheme_name = scheme.get("scheme", "unknown")
-        print(scheme_name)
 
         logger.info(f"Testing invalid credentials for scheme {i + 1}: {scheme_type}")
 
@@ -263,9 +261,6 @@ def test_authentication_scheme_validation(sut_client, agent_card_security_info):
                         f"✅ Invalid {scheme_type} credentials properly rejected ({scenario_name}): {response}"
                     )
                 else:
-                    print(f"scenarip_name: {scenario_name}")
-                    print(headers)
-                    print(response)
                     logger.error(f"SECURITY FAILURE: {scheme_type} scheme accepted invalid credentials ({scenario_name})")
                     scheme_validation_passed = False
 

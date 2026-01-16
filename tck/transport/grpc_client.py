@@ -13,7 +13,6 @@ import os
 import sys
 import tempfile
 import importlib
-import traceback
 from typing import Dict, List, Optional, Any, AsyncIterator, Union
 from urllib.parse import urlparse
 import asyncio

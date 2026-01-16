@@ -267,6 +267,7 @@ class RESTClient(BaseTransportClient):
             # Prepare request
             url = urljoin(self.base_url, "/message:stream")
             headers = self._prepare_headers(extra_headers)
+            headers["Accept"] = "text/event-stream"  # SSE format
 
             # Convert A2A JSON message to protobuf-compatible format
             protobuf_message = convert_a2a_message_to_protobuf_json(message)
