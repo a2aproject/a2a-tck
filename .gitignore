@@ -198,3 +198,4 @@ reports/*.json
 
 .DS_Store
 .serena
+.bob
