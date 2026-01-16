@@ -70,7 +70,7 @@ class MethodMappingValidator:
             grpc_method="ListTasks",
             rest_endpoint="GET /tasks",
             description="List tasks with optional filtering and pagination",
-            transport_support="grpc_rest_only",
+            transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="tasks/cancel",

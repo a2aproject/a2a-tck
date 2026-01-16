@@ -1175,21 +1175,62 @@ class GRPCClient(BaseTransportClient):
         return request
 
     def _map_state_enum_to_json(self, state_enum: int) -> str:
+        """
+        Convert protobuf TaskState enum to protobuf enum name string.
+
+        Returns protobuf enum names for gRPC transport internal use.
+        """
         try:
             name = self._pb.TaskState.Name(state_enum)
         except Exception:
-            return "TASK_STATE_COMPLETED"
-        mapping = {
-            "TASK_STATE_SUBMITTED": "TASK_STATE_SUBMITTED",
-            "TASK_STATE_WORKING": "TASK_STATE_WORKING",
-            "TASK_STATE_COMPLETED": "TASK_STATE_COMPLETED",
-            "TASK_STATE_FAILED": "TASK_STATE_FAILED",
-            "TASK_STATE_CANCELLED": "TASK_STATE_CANCELLED",
-            "TASK_STATE_INPUT_REQUIRED": "TASK_STATE_INPUT_REQUIRED",
-            "TASK_STATE_REJECTED": "TASK_STATE_REJECTED",
-            "TASK_STATE_AUTH_REQUIRED": "TASK_STATE_AUTH_REQUIRED",
-        }
-        return mapping.get(name, "TASK_STATE_COMPLETED")
+            return "TASK_STATE_UNSPECIFIED"
+        return name
+
+    def _convert_parts_to_json(self, parts) -> list:
+        """
+        Convert protobuf parts to JSON format, handling all part types.
+
+        Handles text, file, and data parts according to A2A v1.0 protobuf spec.
+        Part has oneof: text (string), file (FilePart), or data (DataPart).
+        """
+        if not parts:
+            return []
+
+        json_parts = []
+        for part in parts:
+            # Check which oneof field is set
+            if part.HasField('text'):
+                json_parts.append({"kind": "text", "text": part.text})
+            elif part.HasField('file'):
+                file_part = part.file
+                file_dict = {"kind": "file", "file": {}}
+
+                # FilePart has oneof: file_with_uri or file_with_bytes
+                if file_part.HasField('file_with_uri'):
+                    file_dict["file"]["fileWithUri"] = file_part.file_with_uri
+                elif file_part.HasField('file_with_bytes'):
+                    # Base64 encode bytes for JSON
+                    import base64
+                    file_dict["file"]["fileWithBytes"] = base64.b64encode(file_part.file_with_bytes).decode('utf-8')
+
+                # Add optional fields using spec-compliant camelCase names
+                if file_part.media_type:
+                    file_dict["file"]["mediaType"] = file_part.media_type
+                if file_part.name:
+                    file_dict["file"]["name"] = file_part.name
+
+                json_parts.append(file_dict)
+            elif part.HasField('data'):
+                # DataPart contains a google.protobuf.Struct
+                # Convert Struct to dict using existing gRPC JSON parsing
+                from google.protobuf import json_format
+                data_dict = json_format.MessageToDict(part.data.data, preserving_proto_field_name=False)
+                json_parts.append({
+                    "kind": "data",
+                    "data": data_dict
+                })
+
+        return json_parts
 
     def _map_json_to_state_enum(self, state_json: str) -> int:
         """
@@ -1435,7 +1476,7 @@ class GRPCClient(BaseTransportClient):
                             task_dict["history"] = [
                                 {
                                     "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
-                                    "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
+                                    "parts": self._convert_parts_to_json(m.parts),
                                     "messageId": m.message_id,
                                     "kind": "message",
                                 }
@@ -1448,7 +1489,7 @@ class GRPCClient(BaseTransportClient):
                                     "artifactId": artifact.artifact_id,
                                     "name": artifact.name if artifact.name else "",
                                     "description": artifact.description if artifact.description else "",
-                                    "parts": ([{"kind": "text", "text": p.text}] if artifact.parts else []),
+                                    "parts": self._convert_parts_to_json(artifact.parts),
                                     "kind": "artifact",
                                 }
                                 for artifact in task.artifacts
