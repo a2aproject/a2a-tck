@@ -7,6 +7,7 @@ This client makes actual network calls to live SUTs - NO MOCKING.
 Specification Reference: A2A Protocol v0.3.0 §4.2 - gRPC Transport
 """
 
+import base64
 import json
 import logging
 import os
@@ -18,6 +19,7 @@ from urllib.parse import urlparse
 import asyncio
 
 import grpc
+from google.protobuf import json_format
 from google.protobuf.struct_pb2 import Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.json_format import MessageToJson
@@ -1210,7 +1212,6 @@ class GRPCClient(BaseTransportClient):
                     file_dict["file"]["fileWithUri"] = file_part.file_with_uri
                 elif file_part.HasField('file_with_bytes'):
                     # Base64 encode bytes for JSON
-                    import base64
                     file_dict["file"]["fileWithBytes"] = base64.b64encode(file_part.file_with_bytes).decode('utf-8')
 
                 # Add optional fields using spec-compliant camelCase names
@@ -1223,7 +1224,6 @@ class GRPCClient(BaseTransportClient):
             elif part.HasField('data'):
                 # DataPart contains a google.protobuf.Struct
                 # Convert Struct to dict using existing gRPC JSON parsing
-                from google.protobuf import json_format
                 data_dict = json_format.MessageToDict(part.data.data, preserving_proto_field_name=False)
                 json_parts.append({
                     "kind": "data",

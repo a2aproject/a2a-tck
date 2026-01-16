@@ -726,7 +726,7 @@ class JSONRPCClient(BaseTransportClient):
         if includeArtifacts is not None:
             params["includeArtifacts"] = includeArtifacts
 
-        # Make JSON-RPC request
+        # Make JSON-RPC request using spec-compliant method name
         json_req = message_utils.make_json_rpc_request("ListTasks", params=params)
         response = self.send_raw_json_rpc(json_req)
 
