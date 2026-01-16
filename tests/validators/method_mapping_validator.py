@@ -67,9 +67,9 @@ class MethodMappingValidator:
         ),
         MethodMapping(
             jsonrpc_method="tasks/list",
-            grpc_method="ListTask",
+            grpc_method="ListTasks",
             rest_endpoint="GET /tasks",
-            description="List tasks (gRPC/REST only)",
+            description="List tasks with optional filtering and pagination",
             transport_support="grpc_rest_only",
         ),
         MethodMapping(
