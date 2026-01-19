@@ -1,8 +1,8 @@
 """
-A2A v0.4.0 tasks/list Method Testing
+A2A v1.0 ListTasks Method Testing
 
-Comprehensive test suite for the tasks/list endpoint as specified in
-A2A v0.4.0 specification Section 7.4.
+Comprehensive test suite for the ListTasks operation as specified in
+A2A v1.0 specification Section 3.1.4.
 
 Tests cover:
 - Basic listing functionality
@@ -14,9 +14,7 @@ Tests cover:
 - Cross-transport consistency (JSON-RPC, gRPC, REST)
 
 References:
-- A2A v0.4.0 Specification §7.4: tasks/list method
-- A2A v0.4.0 Specification §7.4.1: ListTasksParams
-- A2A v0.4.0 Specification §7.4.2: ListTasksResult
+- A2A v1.0 Specification §3.1.4: ListTasks
 """
 
 import time
@@ -86,7 +84,7 @@ def create_test_task(client: BaseTransportClient, text: str, context_id: Optiona
 
 class TestBasicListing:
     """
-    Test suite for basic tasks/list functionality.
+    Test suite for basic ListTasks functionality.
 
     Validates:
     - Listing all tasks
@@ -97,9 +95,9 @@ class TestBasicListing:
     @mandatory_protocol
     def test_list_all_tasks(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4 - List All Tasks
+        MANDATORY: A2A v1.0 §3.1.4 - List All Tasks
 
-        Test that tasks/list returns all accessible tasks when called without filters.
+        Test that ListTasks returns all accessible tasks when called without filters.
 
         Validates:
         - Method is available on all transports
@@ -107,7 +105,7 @@ class TestBasicListing:
         - Tasks array is returned
         - Response includes totalSize and pageSize
 
-        Specification Reference: A2A v0.4.0 §7.4.2 ListTasksResult
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksResult
         """
         # Create at least one task to ensure non-empty list
         task = create_test_task(sut_client, "Test task for listing")
@@ -119,7 +117,7 @@ class TestBasicListing:
 
         result = resp.get("result", resp)
 
-        # Validate ListTasksResult structure (§7.4.2)
+        # Validate ListTasksResult structure (§3.1.4)
         assert "tasks" in result, "Response must include 'tasks' array"
         assert "totalSize" in result, "Response must include 'totalSize'"
         assert "pageSize" in result, "Response must include 'pageSize'"
@@ -142,13 +140,13 @@ class TestBasicListing:
     @mandatory_protocol
     def test_list_tasks_empty_when_none_exist(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4 - Empty List Handling
+        MANDATORY: A2A v1.0 §3.1.4 - Empty List Handling
 
-        Test that tasks/list returns empty array when no tasks exist (or none match filters).
+        Test that ListTasks returns empty array when no tasks exist (or none match filters).
 
         Uses a unique contextId to ensure we get zero results.
 
-        Specification Reference: A2A v0.4.0 §7.4.2 ListTasksResult
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksResult
         """
         # Use a unique context ID that shouldn't have any tasks
         unique_context = f"empty-test-{int(time.time() * 1000)}"
@@ -169,11 +167,11 @@ class TestBasicListing:
     @mandatory_protocol
     def test_list_tasks_validates_required_fields(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Required Fields Validation
+        MANDATORY: A2A v1.0 §3.1.4 - Required Fields Validation
 
         Test that each task in the list contains all required fields per Task schema.
 
-        Specification Reference: A2A v0.4.0 §6.1 Task Object
+        Specification Reference: A2A v1.0 §6.1 Task Object
         """
         # Create a task
         task = create_test_task(sut_client, "Task for field validation")
@@ -197,12 +195,12 @@ class TestBasicListing:
     @mandatory_protocol
     def test_list_tasks_sorted_by_timestamp_descending(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4 - Sort Order Requirement
+        MANDATORY: A2A v1.0 §3.1.4 - Sort Order Requirement
 
         Test that tasks are sorted by last updated timestamp in descending order
         (most recently updated tasks first).
 
-        Specification Reference: A2A v0.4.0 §7.4 - "Tasks MUST be sorted by their
+        Specification Reference: A2A v1.0 §3.1.4 - "Tasks MUST be sorted by their
         status timestamp time in descending order"
         """
         # Create multiple tasks with slight delays to ensure different timestamps
@@ -238,7 +236,7 @@ class TestBasicListing:
 
 class TestFiltering:
     """
-    Test suite for tasks/list filtering parameters.
+    Test suite for ListTasks filtering parameters.
 
     Validates:
     - contextId filtering
@@ -250,11 +248,11 @@ class TestFiltering:
     @mandatory_protocol
     def test_filter_by_context_id(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - contextId Filter
+        MANDATORY: A2A v1.0 §3.1.4 - contextId Filter
 
         Test that contextId parameter correctly filters tasks to a specific context.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create tasks with different context IDs
         context1 = f"context-1-{int(time.time() * 1000)}"
@@ -282,11 +280,11 @@ class TestFiltering:
     @mandatory_protocol
     def test_filter_by_status(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - status Filter
+        MANDATORY: A2A v1.0 §3.1.4 - status Filter
 
         Test that status parameter correctly filters tasks by their current state.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create a task
         task = create_test_task(sut_client, "Task for status filtering")
@@ -311,11 +309,11 @@ class TestFiltering:
     @mandatory_protocol
     def test_filter_by_last_updated_after(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - lastUpdatedAfter Filter
+        MANDATORY: A2A v1.0 §3.1.4 - lastUpdatedAfter Filter
 
         Test that lastUpdatedAfter parameter filters tasks updated after a timestamp.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Get current timestamp in milliseconds
         timestamp_before = int(time.time() * 1000)
@@ -347,11 +345,11 @@ class TestFiltering:
     @mandatory_protocol
     def test_combined_filters(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Combined Filters
+        MANDATORY: A2A v1.0 §3.1.4 - Combined Filters
 
         Test that multiple filters can be applied together (AND logic).
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create tasks with specific context and status
         context_id = f"combined-test-{int(time.time() * 1000)}"
@@ -380,7 +378,7 @@ class TestFiltering:
 
 class TestPagination:
     """
-    Test suite for tasks/list pagination.
+    Test suite for ListTasks pagination.
 
     Validates:
     - Default page size (50)
@@ -393,14 +391,14 @@ class TestPagination:
     @mandatory_protocol
     def test_default_page_size(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Default Page Size
+        MANDATORY: A2A v1.0 §3.1.4 - Default Page Size
 
         Test that default pageSize is 50 when not specified.
 
         Note: This test only validates the behavior if there are enough tasks.
         If fewer than 50 tasks exist, pageSize will match the actual count.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # List tasks without specifying pageSize
         resp = transport_list_tasks(sut_client)
@@ -422,11 +420,11 @@ class TestPagination:
     @mandatory_protocol
     def test_custom_page_size(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Custom Page Size
+        MANDATORY: A2A v1.0 §3.1.4 - Custom Page Size
 
         Test that pageSize parameter controls the number of tasks returned.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create multiple tasks to ensure we have enough for pagination
         context_id = f"pagination-test-{int(time.time() * 1000)}"
@@ -453,11 +451,11 @@ class TestPagination:
     @mandatory_protocol
     def test_page_token_navigation(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Page Token Navigation
+        MANDATORY: A2A v1.0 §3.1.4 - Page Token Navigation
 
         Test that pageToken allows navigation through multiple pages of results.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create multiple tasks
         context_id = f"pagination-nav-test-{int(time.time() * 1000)}"
@@ -502,11 +500,11 @@ class TestPagination:
     @mandatory_protocol
     def test_last_page_detection(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Last Page Detection
+        MANDATORY: A2A v1.0 §3.1.4 - Last Page Detection
 
         Test that nextPageToken is None/empty on the last page of results.
 
-        Specification Reference: A2A v0.4.0 §7.4.2 ListTasksResult
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksResult
         """
         # Create exactly 3 tasks
         context_id = f"last-page-test-{int(time.time() * 1000)}"
@@ -530,11 +528,11 @@ class TestPagination:
     @mandatory_protocol
     def test_total_size_accuracy(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Total Size Accuracy
+        MANDATORY: A2A v1.0 §3.1.4 - Total Size Accuracy
 
         Test that totalSize accurately reflects all matching tasks before pagination.
 
-        Specification Reference: A2A v0.4.0 §7.4.2 ListTasksResult
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksResult
         """
         # Create known number of tasks
         context_id = f"total-size-test-{int(time.time() * 1000)}"
@@ -574,11 +572,11 @@ class TestHistoryLimiting:
     @mandatory_protocol
     def test_history_length_zero(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - History Length Zero (Default)
+        MANDATORY: A2A v1.0 §3.1.4 - History Length Zero (Default)
 
         Test that historyLength=0 returns tasks without history array (or empty).
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create a task
         task = create_test_task(sut_client, "Task for history test")
@@ -598,11 +596,11 @@ class TestHistoryLimiting:
     @mandatory_protocol
     def test_history_length_custom(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Custom History Length
+        MANDATORY: A2A v1.0 §3.1.4 - Custom History Length
 
         Test that historyLength parameter limits the number of messages returned.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create a task
         task = create_test_task(sut_client, "Task for history length test")
@@ -622,11 +620,11 @@ class TestHistoryLimiting:
     @mandatory_protocol
     def test_history_length_exceeds_actual(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - History Length Exceeds Actual
+        MANDATORY: A2A v1.0 §3.1.4 - History Length Exceeds Actual
 
         Test that requesting more history than exists returns all available history.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create a task (will have 1-2 messages in history typically)
         task = create_test_task(sut_client, "Task for history test")
@@ -655,11 +653,11 @@ class TestArtifactInclusion:
     @mandatory_protocol
     def test_artifacts_excluded_by_default(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Artifacts Excluded by Default
+        MANDATORY: A2A v1.0 §3.1.4 - Artifacts Excluded by Default
 
         Test that includeArtifacts defaults to false, excluding artifacts from response.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create a task
         task = create_test_task(sut_client, "Task for artifact test")
@@ -681,14 +679,14 @@ class TestArtifactInclusion:
     @mandatory_protocol
     def test_artifacts_included_when_requested(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Artifacts Included When Requested
+        MANDATORY: A2A v1.0 §3.1.4 - Artifacts Included When Requested
 
         Test that includeArtifacts=true includes artifacts in the response.
 
         Note: This test validates the parameter is accepted. Actual artifact presence
         depends on whether tasks have artifacts.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Create a task
         task = create_test_task(sut_client, "Task for artifact inclusion test")
@@ -724,11 +722,11 @@ class TestEdgeCasesAndErrors:
     @mandatory_protocol
     def test_invalid_page_token_error(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Invalid Page Token Error
+        MANDATORY: A2A v1.0 §3.1.4 - Invalid Page Token Error
 
         Test that invalid pageToken returns proper error (-32602 InvalidParamsError).
 
-        Specification Reference: A2A v0.4.0 §7.4.2 Error Cases
+        Specification Reference: A2A v1.0 §3.1.4 Error Cases
         """
         # Use obviously invalid page token
         resp = transport_list_tasks(sut_client, page_token="invalid-token-xyz")
@@ -744,11 +742,11 @@ class TestEdgeCasesAndErrors:
     @mandatory_protocol
     def test_invalid_status_error(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Invalid Status Error
+        MANDATORY: A2A v1.0 §3.1.4 - Invalid Status Error
 
         Test that invalid status value returns proper error (-32602 InvalidParamsError).
 
-        Specification Reference: A2A v0.4.0 §7.4.2 Error Cases
+        Specification Reference: A2A v1.0 §3.1.4 Error Cases
         """
         # Use invalid status value
         resp = transport_list_tasks(sut_client, status="INVALID_STATUS")
@@ -764,11 +762,11 @@ class TestEdgeCasesAndErrors:
     @mandatory_protocol
     def test_negative_page_size_error(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Negative Page Size Error
+        MANDATORY: A2A v1.0 §3.1.4 - Negative Page Size Error
 
         Test that negative pageSize returns proper error (-32602 InvalidParamsError).
 
-        Specification Reference: A2A v0.4.0 §7.4.2 Error Cases
+        Specification Reference: A2A v1.0 §3.1.4 Error Cases
         """
         # Use negative pageSize
         resp = transport_list_tasks(sut_client, page_size=-1)
@@ -784,12 +782,12 @@ class TestEdgeCasesAndErrors:
     @mandatory_protocol
     def test_zero_page_size_error(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Zero Page Size Error
+        MANDATORY: A2A v1.0 §3.1.4 - Zero Page Size Error
 
         Test that pageSize=0 returns proper error (-32602 InvalidParamsError).
         Per spec: "pageSize must be between 1 and 100"
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Use pageSize=0
         resp = transport_list_tasks(sut_client, page_size=0)
@@ -805,11 +803,11 @@ class TestEdgeCasesAndErrors:
     @mandatory_protocol
     def test_out_of_range_page_size_error(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Out of Range Page Size Error
+        MANDATORY: A2A v1.0 §3.1.4 - Out of Range Page Size Error
 
         Test that pageSize > 100 returns proper error (-32602 InvalidParamsError).
 
-        Specification Reference: A2A v0.4.0 §7.4.2 Error Cases
+        Specification Reference: A2A v1.0 §3.1.4 Error Cases
         """
         # Use pageSize > 100
         resp = transport_list_tasks(sut_client, page_size=101)
@@ -825,11 +823,11 @@ class TestEdgeCasesAndErrors:
     @mandatory_protocol
     def test_default_page_size_is_50(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.1 - Default Page Size
+        MANDATORY: A2A v1.0 §3.1.4 - Default Page Size
 
         Test that when pageSize is not specified, it defaults to 50.
 
-        Specification Reference: A2A v0.4.0 §7.4.1 ListTasksParams -
+        Specification Reference: A2A v1.0 §3.1.4 ListTasksParams -
         "Defaults to 50 if not specified"
         """
         # Create exactly 60 tasks to ensure we can test the default pageSize
@@ -855,11 +853,11 @@ class TestEdgeCasesAndErrors:
     @mandatory_protocol
     def test_negative_history_length_error(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Negative History Length Error
+        MANDATORY: A2A v1.0 §3.1.4 - Negative History Length Error
 
         Test that negative historyLength returns proper error (-32602 InvalidParamsError).
 
-        Specification Reference: A2A v0.4.0 §7.4.2 Error Cases
+        Specification Reference: A2A v1.0 §3.1.4 Error Cases
         """
         # Use negative historyLength
         resp = transport_list_tasks(sut_client, history_length=-1)
@@ -875,11 +873,11 @@ class TestEdgeCasesAndErrors:
     @mandatory_protocol
     def test_invalid_timestamp_error(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v0.4.0 §7.4.2 - Invalid Timestamp Error
+        MANDATORY: A2A v1.0 §3.1.4 - Invalid Timestamp Error
 
         Test that invalid lastUpdatedAfter timestamp returns proper error.
 
-        Specification Reference: A2A v0.4.0 §7.4.2 Error Cases
+        Specification Reference: A2A v1.0 §3.1.4 Error Cases
         """
         # Use invalid timestamp (negative value)
         resp = transport_list_tasks(sut_client, last_updated_after=-1)
@@ -906,13 +904,13 @@ class TestTransportConsistency:
     @optional_capability
     def test_same_results_across_transports(self, sut_client: BaseTransportClient):
         """
-        OPTIONAL: A2A v0.4.0 §3.4.1 - Cross-Transport Functional Equivalence
+        OPTIONAL: A2A v1.0 §3.4.1 - Cross-Transport Functional Equivalence
 
-        Test that tasks/list returns consistent results across all transports.
+        Test that ListTasks returns consistent results across all transports.
 
         Note: This test requires multiple transport implementations to be available.
 
-        Specification Reference: A2A v0.4.0 §3.4.1 Functional Equivalence
+        Specification Reference: A2A v1.0 §3.4.1 Functional Equivalence
         """
         # This test would require access to multiple transport clients
         # For now, we validate that the response structure is correct

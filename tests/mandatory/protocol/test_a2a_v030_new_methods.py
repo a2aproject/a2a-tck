@@ -3,18 +3,18 @@ A2A v0.3.0+ New Methods Testing
 
 Tests for new methods introduced in A2A v0.3.0 specification:
 - agent/getAuthenticatedExtendedCard (§7.10)
-- tasks/list (§7.4 - ALL transports as of v0.4.0)
+- ListTasks (§3.1.4 - ALL transports as of v1.0)
 - Method mapping compliance across transports (§3.5.6)
 - Transport-specific features validation
 
 These tests validate that SUTs correctly implement the new methods
 with proper authentication, transport mapping, and functional compliance.
 
-Note: For comprehensive tasks/list testing, see test_tasks_list_method.py
+Note: For comprehensive ListTasks testing, see test_tasks_list_method.py
 
 References:
 - A2A v0.3.0 Specification §7.10: agent/getAuthenticatedExtendedCard
-- A2A v0.4.0 Specification §7.4: tasks/list (all transports)
+- A2A v1.0 Specification §3.1.4: ListTasks (all transports)
 - A2A v0.3.0 Specification §3.5.6: Method Mapping Reference Table
 - A2A v0.3.0 Specification §3.2: Transport Protocol Requirements
 """
@@ -215,9 +215,9 @@ class TestAuthenticatedExtendedCard:
 
 class TestTasksList:
     """
-    Test suite for tasks/list method (§7.4)
+    Test suite for ListTasks method (§3.1.4)
 
-    Note: As of A2A v0.4.0, tasks/list is available in ALL transports including JSON-RPC.
+    Note: As of A2A v1.0, ListTasks is available in ALL transports including JSON-RPC.
     For comprehensive testing, see test_tasks_list_method.py
     """
 
@@ -226,9 +226,9 @@ class TestTasksList:
     @a2a_v030
     def test_tasks_list_with_existing_tasks(self, sut_client: BaseTransportClient):
         """
-        Test tasks/list returns existing tasks when tasks are present.
+        Test ListTasks returns existing tasks when tasks are present.
 
-        A2A v0.4.0 Specification Reference: §7.4
+        A2A v1.0 Specification Reference: §3.1.4
         Transport Support: All transports (JSON-RPC, gRPC, REST)
 
         Validates:
@@ -239,7 +239,7 @@ class TestTasksList:
         Note: This is a basic smoke test. See test_tasks_list_method.py for comprehensive testing.
         """
         if not hasattr(sut_client, "list_tasks"):
-            pytest.skip(f"list_tasks method not implemented on client")
+            pytest.fail(f"list_tasks method not implemented on client - this is MANDATORY for A2A v1.0 compliance")
 
         # Create a task first
         try:
@@ -260,7 +260,7 @@ class TestTasksList:
             assert "contextId" in our_task
 
         except Exception as e:
-            pytest.fail(f"Failed to test tasks/list with existing tasks: {e}")
+            pytest.fail(f"Failed to test ListTasks with existing tasks: {e}")
 
 
 class TestMethodMappingCompliance:

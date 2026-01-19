@@ -315,7 +315,7 @@ class BaseTransportClient(ABC):
         """
         pass
 
-    # Optional method - now available in all transports as of v0.4.0
+    # Available in all transports as of v1.0
     def list_tasks(
         self,
         contextId: Optional[str] = None,
@@ -329,7 +329,7 @@ class BaseTransportClient(ABC):
         """
         List tasks with optional filtering and pagination.
 
-        As of A2A v0.4.0, this method is available in all transports (JSON-RPC, gRPC, REST).
+        As of A2A v1.0, this method is available in all transports (JSON-RPC, gRPC, REST).
 
         Args:
             contextId: Optional context ID to filter by
@@ -351,7 +351,7 @@ class BaseTransportClient(ABC):
             TransportError: If task listing fails or is not supported
             NotImplementedError: If the transport doesn't support this method
 
-        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
+        Specification Reference: A2A Protocol v1.0 §3.1.4 - ListTasks
         """
         raise NotImplementedError(f"list_tasks is not supported by {self.transport_type.value} transport")
 
