@@ -76,7 +76,7 @@ class TestGRPCClientInterface:
         assert hasattr(client, "get_task")
         assert hasattr(client, "cancel_task")
         assert hasattr(client, "subscribe_to_task")
-        assert hasattr(client, "get_agent_card")
+        assert hasattr(client, "get_extended_agent_card")
         assert hasattr(client, "close")
 
     def test_transport_type_is_grpc(self):
@@ -415,58 +415,6 @@ class TestGRPCClientTaskOperations:
         assert events[1]["status_update"]["task_id"] == "task-789"
         assert events[1]["status_update"]["final"] is True
 
-
-@pytest.mark.core
-class TestGRPCClientAgentCard:
-    """Test agent card retrieval via gRPC."""
-
-    @patch("grpc.insecure_channel")
-    def test_get_agent_card_success(self, mock_channel_fn):
-        """Test successful agent card retrieval via gRPC."""
-        mock_channel = Mock()
-        mock_channel.__enter__ = Mock(return_value=mock_channel)
-        mock_channel.__exit__ = Mock(return_value=None)
-        mock_channel_fn.return_value = mock_channel
-
-        client = GRPCClient("grpc://example.com:9000")
-
-        result = client.get_agent_card()
-
-        assert result["protocol_version"] == "0.3.0"
-        assert result["name"] == "A2A gRPC Test Agent"
-        assert result["preferred_transport"] == "GRPC"
-        assert result["capabilities"]["streaming"] is True
-        assert len(result["additional_interfaces"]) > 0
-        assert result["additional_interfaces"][0]["transport"] == "GRPC"
-
-    @patch("grpc.insecure_channel")
-    def test_get_agent_card_with_grpc_error(self, mock_channel_fn):
-        """Test agent card retrieval handles gRPC errors."""
-        import grpc
-
-        # Create a mock gRPC error class that can be raised
-        class MockGrpcError(grpc.RpcError):
-            def code(self):
-                code_mock = Mock()
-                code_mock.name = "UNAVAILABLE"
-                return code_mock
-
-            def details(self):
-                return "Service unavailable"
-
-        mock_channel = Mock()
-        mock_channel.__enter__ = Mock(side_effect=MockGrpcError())
-        mock_channel.__exit__ = Mock(return_value=None)
-        mock_channel_fn.return_value = mock_channel
-
-        client = GRPCClient("grpc://example.com:9000")
-
-        with pytest.raises(TransportError) as exc_info:
-            client.get_agent_card()
-
-        assert "gRPC transport error" in str(exc_info.value)
-
-
 @pytest.mark.core
 class TestGRPCClientHelperMethods:
     """Test helper methods for protocol buffer conversion."""
@@ -513,7 +461,6 @@ def test_grpc_client_interface_compatibility():
         "get_task",
         "cancel_task",
         "subscribe_to_task",
-        "get_agent_card",
     ]
 
     for method_name in required_methods:

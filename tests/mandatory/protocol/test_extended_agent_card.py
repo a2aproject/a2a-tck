@@ -246,11 +246,11 @@ def test_extended_agent_card_invalid_authentication(extended_card_agent_card, ex
         headers = {}
 
         # Add invalid authentication based on scheme type
-        if scheme_type == "http" and scheme_name.lower() == "bearer":
+        if scheme_type == "httpAuthSecurityScheme" and scheme_name.lower() == "bearer":
             headers["Authorization"] = "Bearer invalid-extended-card-token-12345"
-        elif scheme_type == "http" and scheme_name.lower() == "basic":
+        elif scheme_type == "httpAuthSecurityScheme" and scheme_name.lower() == "basic":
             headers["Authorization"] = "Basic aW52YWxpZDppbnZhbGlk"  # invalid:invalid
-        elif scheme_type == "apikey":
+        elif scheme_type == "apiKeySecurityScheme":
             key_name = scheme.get("name", "X-API-Key")
             key_location = scheme.get("in", "header")
 
@@ -259,9 +259,9 @@ def test_extended_agent_card_invalid_authentication(extended_card_agent_card, ex
             else:
                 logger.warning(f"API key location '{key_location}' not implemented in test")
                 continue
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             headers["Authorization"] = "Bearer invalid-extended-oauth2-token-12345"
-        elif scheme_type == "openidconnect":
+        elif scheme_type == "openIdConnectSecurityScheme":
             headers["Authorization"] = "Bearer invalid-extended-oidc-token-12345"
         else:
             headers["Authorization"] = f"Bearer invalid-extended-token-{scheme_type}"

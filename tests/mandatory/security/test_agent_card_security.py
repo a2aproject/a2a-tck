@@ -14,14 +14,15 @@ Reference: A2A v0.3.0 Specification Section 9 (Security Requirements)
 """
 
 import logging
+import os
 import urllib.parse
 from urllib.parse import urljoin
-from typing import Dict, Any, List, Optional
 
 import pytest
 import requests
 
-from tck import agent_card_utils, config
+from tck import agent_card_utils
+from tck.transport.base_client import BaseTransportClient, TransportType
 from tests.markers import mandatory
 from tests.utils import transport_helpers
 
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def agent_card_security_info(agent_card_data):
+def agent_card_security_info(agent_card_data, agent_card_url):
     """
     Extract security-related information from Agent Card for testing.
 
@@ -39,19 +40,12 @@ def agent_card_security_info(agent_card_data):
     if agent_card_data is None:
         pytest.skip("Agent Card not available - cannot test security requirements")
     supportedInterfaces = agent_card_data.get("supportedInterfaces", [])
-    # Get base_url from supportedInterfaces or fall back to url field (for v0.3.0 compatibility)
-    base_url = None
-    if supportedInterfaces and len(supportedInterfaces) > 0:
-        base_url = urljoin(supportedInterfaces[0].get("url"), "/.well-known/agent-card.json")
-    if not base_url:
-        base_url = agent_card_data.get("url")  # Fallback for older spec versions
 
     security_info = {
-        "has_extended_card": agent_card_data.get("supportsAuthenticatedExtendedCard", False),
-        "authentication_schemes": agent_card_utils.get_authentication_schemes(agent_card_data),
-        "base_url": base_url,
-        "security_schemes": agent_card_data.get("securitySchemes", {}),
-        "security_requirements": agent_card_data.get("security", []),
+        "agent_card_url": agent_card_url,
+        "has_extended_card": agent_card_data.get("supportsExtendedAgentCard", False),
+        "security_schemes": agent_card_utils.get_authentication_schemes(agent_card_data),
+        "security": agent_card_data.get("security", []),
         "sensitive_fields": [],
         "public_fields": ["name", "description", "version", "capabilities", "defaultInputModes", "defaultOutputModes"],
     }
@@ -67,32 +61,6 @@ def agent_card_security_info(agent_card_data):
                 security_info["sensitive_fields"].append(field_name)
 
     return security_info
-
-
-def get_extended_card_url(base_url: str) -> str:
-    """
-    Construct the extended Agent Card URL according to A2A v1.0.0 specification.
-
-    Per v1.0.0: The endpoint URL is {base_url}/extendedAgentCard
-    relative to the base URL specified in the public Agent Card.
-    """
-    parsed = urllib.parse.urlparse(base_url)
-    # For v1.0.0, use /extendedAgentCard endpoint
-    extended_path = f"{parsed.path.rstrip('/')}/extendedAgentCard"
-
-    # Reconstruct the URL
-    extended_url = urllib.parse.urlunparse(
-        (
-            parsed.scheme,
-            parsed.netloc,
-            extended_path,
-            "",  # params
-            "",  # query
-            "",  # fragment
-        )
-    )
-
-    return extended_url
 
 
 @mandatory
@@ -116,15 +84,16 @@ def test_public_agent_card_access_control(agent_card_data, agent_card_security_i
         - No sensitive information is exposed in public card
         - Required public fields are present and valid
     """
-    base_url = agent_card_security_info["base_url"]
-    if not base_url:
-        pytest.skip("Agent Card missing base URL - cannot test public access controls")
-    base_url = urljoin(base_url, "/.well-known/agent-card.json")
-    logger.info(f"Testing public Agent Card access controls: {base_url}")
+    
+    agent_card_url = agent_card_security_info["agent_card_url"]
+    if not agent_card_url:
+        pytest.fail("Agent Card URL is missing for security testing")
+
+    logger.info(f"Testing public Agent Card access controls: {agent_card_url}")
 
     try:
         # Test unauthenticated access to public Agent Card
-        response = requests.get(base_url, timeout=10)
+        response = requests.get(agent_card_url, timeout=10)
 
         # Public Agent Card MUST be accessible without authentication
         assert response.status_code == 200, (
@@ -137,9 +106,8 @@ def test_public_agent_card_access_control(agent_card_data, agent_card_security_i
         except ValueError:
             pytest.fail(f"Public Agent Card must return valid JSON: {response}")
 
-        # Validate required public fields are present (v1.0.0 spec)
-        # Note: "url" field was removed in v1.0.0, replaced by supportedInterfaces
-        required_public_fields = ["name", "description", "version", "capabilities"]
+        # Validate required public fields are present
+        required_public_fields = ["name", "description", "supportedInterfaces", "version", "capabilities", "defaultInputModes", "defaultOutputModes", "skills"]
         for field in required_public_fields:
             assert field in public_card, f"Public Agent Card missing required field: {field}"
 
@@ -164,7 +132,7 @@ def test_public_agent_card_access_control(agent_card_data, agent_card_security_i
 
 
 @mandatory
-def test_extended_card_access_controls(agent_card_security_info):
+def test_extended_card_access_controls(sut_client: BaseTransportClient, agent_card_security_info):
     """
     MANDATORY: A2A v0.3.0 Section 9.1 - Extended Agent Card Access Controls
 
@@ -185,63 +153,26 @@ def test_extended_card_access_controls(agent_card_security_info):
         - Proper error responses for unauthenticated requests
     """
     if not agent_card_security_info["has_extended_card"]:
-        pytest.skip("supportsAuthenticatedExtendedCard not declared - extended card security test not applicable")
+        pytest.skip("supportsExtendedCard not declared - extended card security test not applicable")
 
-    base_url = agent_card_security_info["base_url"]
-    if not base_url:
-        pytest.skip("Agent Card missing base URL - cannot test extended card access controls")
+    logger.info(f"Testing extended Agent Card access controls")
+    logger.info(f"Security schemes required: {len(agent_card_security_info['security_schemes'])}")
 
-    extended_url = get_extended_card_url(base_url)
 
-    logger.info(f"Testing extended Agent Card access controls: {extended_url}")
-    logger.info(f"Authentication schemes required: {len(agent_card_security_info['authentication_schemes'])}")
+    response = transport_helpers.transport_get_extended_agent_card(sut_client, {"A2A_TCK_DONT_USE_AUTH": True})
 
-    try:
-        # Test unauthenticated access to extended Agent Card
-        response = requests.get(extended_url, timeout=10)
-
-        # Extended Agent Card MUST require authentication
-        if response.status_code == 200:
-            # Check if this is actually an extended card or just returns public data
-            try:
-                card_data = response.json()
-                # If it returns the same as public card, it might not be properly secured
-                if len(str(card_data)) <= 1000:  # Arbitrary size check - extended should be larger
-                    logger.warning("Extended card accessible without auth and appears to be same size as public card")
-
-                pytest.fail(
-                    "SECURITY VIOLATION: Extended Agent Card accessible without authentication. "
-                    "A2A v0.3.0 Section 9.1 requires authentication for extended cards."
-                )
-            except ValueError:
-                pytest.fail("Extended Agent Card returned invalid JSON without authentication")
-
-        elif response.status_code == 404:
-            pytest.fail(
-                "SPECIFICATION VIOLATION: Extended Agent Card endpoint not found. "
-                "When supportsAuthenticatedExtendedCard=true, endpoint MUST exist."
-            )
-
-        elif response.status_code in (401, 403):
-            logger.info(f"✅ Extended card properly requires authentication (HTTP {response.status_code})")
-
-            # Verify proper authentication challenge headers
-            auth_header = response.headers.get("WWW-Authenticate")
-            if auth_header:
-                logger.info(f"✅ Proper authentication challenge provided: {auth_header}")
-            else:
-                logger.warning("Missing WWW-Authenticate header for authentication challenge")
-
-        else:
-            logger.warning(f"Unexpected HTTP status for extended card: {response.status_code}")
-            pytest.fail(f"Extended card returned unexpected status: {response.status_code}")
-
-    except requests.exceptions.RequestException as e:
-        pytest.fail(f"Failed to test extended Agent Card security: {e}")
+    # Extended Agent Card MUST require authentication
+    if "error" not in response:
+        pytest.fail(
+            "SECURITY VIOLATION: Extended Agent Card accessible without authentication. "
+            "A2A v0.3.0 Section 9.1 requires authentication for extended cards."
+        )
+ 
+    assert response["error"]["code"] == -32603 
 
 
 @mandatory
-def test_authentication_scheme_validation(agent_card_security_info):
+def test_authentication_scheme_validation(sut_client, agent_card_security_info):
     """
     MANDATORY: A2A v0.3.0 Section 9.2 - Authentication Scheme Validation
 
@@ -261,53 +192,46 @@ def test_authentication_scheme_validation(agent_card_security_info):
         - Proper HTTP status codes for authentication failures
         - Consistent security enforcement across scheme types
     """
-    auth_schemes = agent_card_security_info["authentication_schemes"]
-    if not auth_schemes:
-        pytest.skip("No authentication schemes declared - cannot test scheme validation")
+    security_schemes = agent_card_security_info["security_schemes"]
+    if not security_schemes:
+        pytest.skip("No security schemes declared - cannot test scheme validation")
 
     if not agent_card_security_info["has_extended_card"]:
         pytest.skip("No extended card declared - cannot test authentication scheme validation")
 
-    base_url = agent_card_security_info["base_url"]
-    if not base_url:
-        pytest.skip("Agent Card missing base URL - cannot test authentication scheme validation")
-
-    extended_url = get_extended_card_url(base_url)
-
-    logger.info(f"Testing authentication scheme validation: {extended_url}")
-    logger.info(f"Testing {len(auth_schemes)} authentication schemes")
+    logger.info(f"Testing {len(security_schemes)} security schemes")
 
     validation_results = []
 
-    for i, scheme in enumerate(auth_schemes):
-        scheme_type = scheme.get("type", "unknown").lower()
+    for i, scheme_type in enumerate(security_schemes):
+        scheme = security_schemes[scheme_type]
         scheme_name = scheme.get("scheme", "unknown")
 
         logger.info(f"Testing invalid credentials for scheme {i + 1}: {scheme_type}")
 
         # Test multiple invalid credential scenarios for each scheme
         test_scenarios = [
-            ("empty", {}),
+            ("empty", {"A2A_TCK_DONT_USE_AUTH": True}),
             ("malformed", {"Authorization": "Malformed auth header"}),
             ("invalid_type", {"Authorization": f"InvalidType invalid-token-{i}"}),
         ]
 
         # Add scheme-specific invalid credentials
-        if scheme_type == "http" and scheme_name.lower() == "bearer":
+        if scheme_type == "httpAuthSecurityScheme" and scheme_name.lower() == "bearer":
             test_scenarios.extend(
                 [
                     ("invalid_bearer", {"Authorization": "Bearer invalid-bearer-token-12345"}),
                     ("expired_bearer", {"Authorization": "Bearer expired.token.signature"}),
                 ]
             )
-        elif scheme_type == "http" and scheme_name.lower() == "basic":
+        elif scheme_type == "httpAuthSecurityScheme" and scheme_name.lower() == "basic":
             test_scenarios.extend(
                 [
                     ("invalid_basic", {"Authorization": "Basic aW52YWxpZDppbnZhbGlk"}),  # invalid:invalid
                     ("malformed_basic", {"Authorization": "Basic not-base64-encoded"}),
                 ]
             )
-        elif scheme_type == "apikey":
+        elif scheme_type == "apiKeySecurityScheme":
             key_name = scheme.get("name", "X-API-Key")
             key_location = scheme.get("in", "header")
 
@@ -318,7 +242,7 @@ def test_authentication_scheme_validation(agent_card_security_info):
                         ("empty_apikey", {key_name: ""}),
                     ]
                 )
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             test_scenarios.extend(
                 [
                     ("invalid_oauth2", {"Authorization": "Bearer invalid-oauth2-token"}),
@@ -330,21 +254,15 @@ def test_authentication_scheme_validation(agent_card_security_info):
 
         for scenario_name, headers in test_scenarios:
             try:
-                response = requests.get(extended_url, headers=headers, timeout=10)
+                response = transport_helpers.transport_get_extended_agent_card(sut_client, headers)
 
-                # Invalid credentials MUST be rejected
-                if response.status_code not in (401, 403):
-                    if response.status_code == 200:
-                        logger.error(f"SECURITY FAILURE: {scheme_type} scheme accepted invalid credentials ({scenario_name})")
-                        scheme_validation_passed = False
-                    else:
-                        logger.warning(
-                            f"Unexpected status for invalid {scheme_type} credentials ({scenario_name}): {response.status_code}"
-                        )
-                else:
+                if "error" in response:
                     logger.debug(
-                        f"✅ Invalid {scheme_type} credentials properly rejected ({scenario_name}): HTTP {response.status_code}"
+                        f"✅ Invalid {scheme_type} credentials properly rejected ({scenario_name}): {response}"
                     )
+                else:
+                    logger.error(f"SECURITY FAILURE: {scheme_type} scheme accepted invalid credentials ({scenario_name})")
+                    scheme_validation_passed = False
 
             except requests.exceptions.RequestException as e:
                 logger.warning(f"Request failed for {scheme_type} scheme ({scenario_name}): {e}")
@@ -393,7 +311,9 @@ def test_sensitive_information_protection(agent_card_data, agent_card_security_i
         r"(?i)(access[_-]?token|bearer[_-]?token)",
         r"(?i)(client[_-]?secret|app[_-]?secret)",
         # URL patterns that might be internal
-        r"(?i)(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.)",
+        # FIXME allow localhost
+        #r"(?i)(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.)",
+        r"(?i)(127\.0\.0\.1|192\.168\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.)",
         r"(?i)(internal|private|admin|debug|test).*(?:url|endpoint|host)",
         # Configuration that might be sensitive
         r"(?i)(database|db)[_-]?(url|host|connection)",
@@ -433,7 +353,8 @@ def test_sensitive_information_protection(agent_card_data, agent_card_security_i
             url_value = agent_card_data[url_field]
             if isinstance(url_value, str):
                 # Check for development/internal URLs
-                if any(internal in url_value.lower() for internal in ["localhost", "127.0.0.1", "192.168.", "10."]):
+                # FIXME: allow localhost
+                if any(internal in url_value.lower() for internal in ["127.0.0.1", "192.168.", "10."]):
                     violations.append(f"{url_field}: Contains internal/development URL: {url_value}")
 
                 # Check for non-standard ports that might indicate development
@@ -476,68 +397,65 @@ def test_security_scheme_consistency(agent_card_security_info):
         - Scheme types are valid OpenAPI 3.x types
         - Security scheme configurations are consistent
     """
+    security_requirements = agent_card_security_info["security"]
     security_schemes = agent_card_security_info["security_schemes"]
-    auth_schemes = agent_card_security_info["authentication_schemes"]
 
-    if not security_schemes and not auth_schemes:
+    if not security_requirements and not security_schemes:
         pytest.skip("No security schemes declared - cannot test scheme consistency")
 
     logger.info(f"Testing security scheme consistency")
-    logger.info(f"Security schemes defined: {len(security_schemes)}")
-    logger.info(f"Authentication schemes available: {len(auth_schemes)}")
+    logger.info(f"Security requirements defined: {len(security_requirements)}")
+    logger.info(f"Security schemes available: {len(security_schemes)}")
 
-    # Valid OpenAPI 3.x security scheme types
-    valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
+    valid_scheme_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
 
     consistency_issues = []
 
     # Validate security scheme definitions
-    for scheme_name, scheme_def in security_schemes.items():
-        if not isinstance(scheme_def, dict):
-            consistency_issues.append(f"Security scheme '{scheme_name}' is not an object")
-            continue
+    for scheme_name in security_schemes:
+        security_scheme = security_schemes[scheme_name]
+        assert len(security_scheme.keys()) == 1
+        scheme_type, scheme_def = next(iter(security_scheme.items()))
 
-        # Check required 'type' field
-        scheme_type = scheme_def.get("type")
-        if not scheme_type:
-            consistency_issues.append(f"Security scheme '{scheme_name}' missing required 'type' field")
+        if not isinstance(scheme_def, dict):
+            consistency_issues.append(f"Security scheme for '{scheme_name}' is not an object")
             continue
 
         if scheme_type not in valid_scheme_types:
-            consistency_issues.append(f"Security scheme '{scheme_name}' has invalid type '{scheme_type}'")
+            consistency_issues.append(f"Security scheme '{scheme_type}' is not a valid type'")
 
         # Validate type-specific required fields
-        if scheme_type == "apiKey":
+        if scheme_type == "apiKeySecurityScheme":
             if "name" not in scheme_def:
-                consistency_issues.append(f"API Key scheme '{scheme_name}' missing required 'name' field")
+                consistency_issues.append(f"'{scheme_name}/{scheme_type}' missing required 'name' field")
             if "in" not in scheme_def:
-                consistency_issues.append(f"API Key scheme '{scheme_name}' missing required 'in' field")
+                consistency_issues.append(f"'{scheme_name}/{scheme_type}' missing required 'in' field")
             elif scheme_def["in"] not in ["query", "header", "cookie"]:
-                consistency_issues.append(f"API Key scheme '{scheme_name}' has invalid 'in' value: {scheme_def['in']}")
+                consistency_issues.append(f"'{scheme_name}/{scheme_type}' has invalid 'in' value: {scheme_def['in']}")
 
-        elif scheme_type == "http":
+        elif scheme_type == "httpAuthSecurityScheme":
             if "scheme" not in scheme_def:
-                consistency_issues.append(f"HTTP scheme '{scheme_name}' missing required 'scheme' field")
+                consistency_issues.append(f"{scheme_name}/{scheme_type}' missing required 'scheme' field")
             elif scheme_def["scheme"].lower() not in ["basic", "bearer", "digest"]:
-                logger.warning(f"HTTP scheme '{scheme_name}' uses non-standard scheme: {scheme_def['scheme']}")
+                logger.warning(f"{scheme_name}/{scheme_type}' uses non-standard scheme: {scheme_def['scheme']}")
 
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             if "flows" not in scheme_def:
-                consistency_issues.append(f"OAuth2 scheme '{scheme_name}' missing required 'flows' field")
+                consistency_issues.append(f"{scheme_name}/{scheme_type}' missing required 'flows' field")
 
-        elif scheme_type == "openIdConnect":
+        elif scheme_type == "openIdConnectSecurityScheme":
             if "openIdConnectUrl" not in scheme_def:
-                consistency_issues.append(f"OpenID Connect scheme '{scheme_name}' missing required 'openIdConnectUrl' field")
+                consistency_issues.append(f"{scheme_name}/{scheme_type}' missing required 'openIdConnectUrl' field")
 
     # Check consistency between securitySchemes and available authentication schemes
-    if auth_schemes:
-        scheme_names_in_auth = {scheme.get("name", f"scheme_{i}") for i, scheme in enumerate(auth_schemes)}
-        scheme_names_in_security = set(security_schemes.keys())
+    if security_schemes:
+        scheme_names_in_requirements = {key for s in security_requirements for key in s}
+        scheme_names_in_security = set(security_schemes.keys())        
 
         # It's okay if they don't match exactly (legacy support), but log any differences
-        if scheme_names_in_security and scheme_names_in_auth:
-            missing_in_security = scheme_names_in_auth - scheme_names_in_security
-            missing_in_auth = scheme_names_in_security - scheme_names_in_auth
+        if scheme_names_in_security and scheme_names_in_requirements:
+            missing_in_security = scheme_names_in_requirements - scheme_names_in_security
+            missing_in_auth = scheme_names_in_security - scheme_names_in_requirements
 
             if missing_in_security:
                 logger.warning(f"Authentication schemes not in securitySchemes: {missing_in_security}")

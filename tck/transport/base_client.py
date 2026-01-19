@@ -13,6 +13,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
+from tck import config
+
 logger = logging.getLogger(__name__)
 
 
@@ -75,6 +77,7 @@ class BaseTransportClient(ABC):
         """
         self.base_url = base_url
         self.transport_type = transport_type
+        self.default_headers = {}
         self._logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
     @abstractmethod
@@ -352,7 +355,6 @@ class BaseTransportClient(ABC):
             "cancel_task",
             "subscribe_task",
             "subscribe_to_task",
-            "get_agent_card",
             "set_push_notification_config",
             "get_push_notification_config",
             "list_push_notification_configs",
@@ -368,6 +370,31 @@ class BaseTransportClient(ABC):
             return self.transport_type in [TransportType.GRPC, TransportType.REST]
 
         return False
+
+    def _prepare_headers(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+        """
+        Prepare HTTP headers from default, config auth headers, and extra headers.
+
+        Args:
+            extra_headers: Optional additional headers to include
+
+        Returns:
+            Dictionary of HTTP headers
+        """
+        headers = self.default_headers.copy()
+
+        # Add auth headers from configuration
+        auth_headers = config.get_auth_headers()
+        if auth_headers:
+            headers.update(auth_headers)
+        # Add/override with extra headers if provided
+        if extra_headers:
+            headers.update(extra_headers)
+            if "A2A_TCK_DONT_USE_AUTH" in extra_headers:
+                # remove the auth headers
+                headers = {k: v for k, v in headers if k not in auth_headers}
+
+        return headers
 
     def get_transport_info(self) -> Dict[str, Any]:
         """
@@ -388,7 +415,6 @@ class BaseTransportClient(ABC):
                     "cancel_task",
                     "subscribe_task",
                     "subscribe_to_task",
-                    "get_agent_card",
                     "set_push_notification_config",
                     "get_push_notification_config",
                     "list_push_notification_configs",

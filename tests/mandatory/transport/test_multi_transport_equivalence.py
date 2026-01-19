@@ -72,7 +72,7 @@ def execute_equivalent_operation(sut_client: BaseTransportClient, operation: str
         return transport_helpers.transport_send_message(sut_client, params)
     elif operation == "get_task":
         return transport_helpers.transport_get_task(sut_client, params.get("task_id"))
-    elif operation == "get_agent_card":
+    elif operation == "get_extended_agent_card":
         return transport_helpers.transport_get_extended_agent_card(sut_client)
     elif operation == "list_tasks":
         return transport_helpers.transport_list_tasks(sut_client, params)
@@ -358,7 +358,7 @@ def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transpor
 
         try:
             result = execute_equivalent_operation(
-                sut_client, "get_agent_card", {}, transport.lower().replace("/", "_").replace("-", "_")
+                sut_client, "get_extended_agent_card", {}, transport.lower().replace("/", "_").replace("-", "_")
             )
 
             transport_results[transport] = {
@@ -556,7 +556,7 @@ def test_performance_equivalence(sut_client: BaseTransportClient, transport_capa
     logger.info(f"Testing performance equivalence across {len(available_transports)} transports")
 
     # Performance test operations
-    perf_operations = [{"name": "Agent Card Access", "operation": "get_agent_card", "params": {}}]
+    perf_operations = [{"name": "Agent Card Access", "operation": "get_extended_agent_card", "params": {}}]
 
     transport_performance = {}
 

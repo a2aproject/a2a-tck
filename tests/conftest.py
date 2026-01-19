@@ -78,6 +78,21 @@ def pytest_configure(config):
 
     tck.config.set_enable_transport_equivalence_testing(enable_equivalence)
 
+@pytest.fixture(scope="session")
+def agent_card_url(request):
+    """
+    Pytest fixture to get the Agent Card URL.
+    """
+    if request.config.getoption("--skip-agent-card"):
+        print("Skipping Agent Card fetch due to --skip-agent-card flag.")
+        return None
+
+    sut_url = request.config.getoption("--sut-url") or os.getenv("SUT_URL")
+    if not sut_url:
+        # This case should ideally be caught earlier, but as a fallback:
+        pytest.fail("SUT URL not provided. Cannot fetch Agent Card.")
+
+    return sut_url + "/.well-known/agent-card.json"
 
 @pytest.fixture(scope="session")
 def agent_card_data(request):

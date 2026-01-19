@@ -239,11 +239,11 @@ class MethodMappingValidator:
             "rest": "POST /v1/tasks/{id}:subscribe",
             "description": "Resume task streaming",
         },
-        "get_agent_card": {
-            "jsonrpc": "agent/getAuthenticatedExtendedCard",
-            "grpc": "GetAgentCard",
-            "rest": "GET /v1/card",
-            "description": "Get authenticated agent card",
+        "get_extended_agent_card": {
+            "jsonrpc": "getExtendedCard",
+            "grpc": "GetExtendedAgentCard",
+            "rest": "GET /v1/extendedAgentCard",
+            "description": "Get extended agent card",
         },
     }
 

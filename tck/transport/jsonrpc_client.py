@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast, Iterator, Asyn
 import httpx
 
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
+from tck import config
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,10 @@ class JSONRPCClient(BaseTransportClient):
             transport=transport
         )
 
+        self.default_headers = {
+            "Content-Type": "application/json"
+        }
+
         self._logger.info(f"JSON-RPC client initialized for {base_url} (streaming timeout: {self.streaming_timeout}s)")
 
     def _generate_id(self) -> str:
@@ -108,10 +113,7 @@ class JSONRPCClient(BaseTransportClient):
         # Build JSON-RPC 2.0 request
         jsonrpc_request = {"jsonrpc": "2.0", "method": method, "params": params or {}, "id": request_id or self._generate_id()}
 
-        # Prepare headers
-        headers = {"Content-Type": "application/json"}
-        if extra_headers:
-            headers.update(extra_headers)
+        headers = self._prepare_headers(extra_headers)
 
         self._logger.info(f"Sending JSON-RPC request to {self.base_url}: {jsonrpc_request}")
 
@@ -177,10 +179,9 @@ class JSONRPCClient(BaseTransportClient):
         # Build JSON-RPC 2.0 request
         jsonrpc_request = {"jsonrpc": "2.0", "method": method, "params": params or {}, "id": request_id or self._generate_id()}
 
-        # Prepare headers
-        headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
-        if extra_headers:
-            headers.update(extra_headers)
+        headers = self._prepare_headers(extra_headers)
+        headers["Accept"] = "text/event-stream"
+
 
         self._logger.info(f"Sending streaming JSON-RPC request to {self.base_url}: {jsonrpc_request}")
 
@@ -463,28 +464,6 @@ class JSONRPCClient(BaseTransportClient):
         async for result in self.subscribe_task(task_id, extra_headers):
             yield result
 
-    def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-        """
-        Get agent card using GetExtendedAgentCard method.
-        Makes a real JSON-RPC call to get the agent card information.
-        Args:
-            extra_headers: Optional HTTP headers
-        Returns:
-            Dict containing agent card data from the real SUT
-        Raises:
-            JSONRPCError: If agent card retrieval fails
-
-        Specification Reference: A2A Protocol v0.3.0 §5.5 - Agent Card Retrieval
-        """
-        try:
-            response = self._make_jsonrpc_request(method="GetExtendedAgentCard", params={}, extra_headers=extra_headers)
-            return response.get("result", {})
-
-        except Exception as e:
-            if isinstance(e, JSONRPCError):
-                raise
-            raise JSONRPCError(f"Failed to get agent card: {e}", original_error=e)
-
     def set_push_notification_config(
         self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
@@ -671,7 +650,7 @@ class JSONRPCClient(BaseTransportClient):
             self._logger.error(f"HTTP request failed: {e}")
             raise
 
-    def send_raw_json_rpc(self, json_request: dict) -> Dict[str, Any]:
+    def send_raw_json_rpc(self, json_request: dict, extra_headers: Dict[str, Any] = {}) -> Dict[str, Any]:
         """
         Send a JSON-RPC request without validation.
 
@@ -683,7 +662,7 @@ class JSONRPCClient(BaseTransportClient):
         Returns:
             The JSON response from the SUT
         """
-        headers = {"Content-Type": "application/json"}
+        headers = self._prepare_headers(extra_headers)
 
         self._logger.info(f"Sending raw JSON-RPC request to {self.base_url}: {json_request}")
 

@@ -9,6 +9,10 @@ Specification Reference: A2A Protocol v0.3.0 §3.4 - Transport Configuration
 """
 
 import os
+import base64
+import json
+import logging
+
 from typing import Optional, Dict, List
 from tck.transport.base_client import TransportType
 
@@ -64,6 +68,83 @@ def get_test_scope() -> str:
         Test scope string ('core' or 'all')
     """
     return _test_scope
+
+
+# Authentication Configuration
+
+_auth_headers: Optional[Dict[str, str]] = None
+
+
+def set_auth_headers(headers: Optional[Dict[str, str]]):
+    """
+    Set authentication headers to be included in all requests.
+
+    Args:
+        headers: Dictionary of authentication headers (e.g., {"Authorization": "Bearer token"})
+    """
+    global _auth_headers
+    _auth_headers = headers.copy() if headers else None
+
+
+def get_auth_headers() -> Dict[str, str]:
+    """
+    Get authentication headers from configuration or environment variables.
+
+    Supports the following environment variables:
+    - A2A_AUTH_TYPE: Type of authentication (bearer, basic, apikey, custom)
+    - A2A_AUTH_TOKEN: Token/credential value
+    - A2A_AUTH_HEADER: Custom header name (for apikey or custom auth)
+    - A2A_AUTH_USERNAME: Username (for basic auth)
+    - A2A_AUTH_PASSWORD: Password (for basic auth)
+
+    Returns:
+        Dictionary of authentication headers
+    """
+    global _auth_headers
+
+    # Start with configured headers
+    headers = _auth_headers.copy() if _auth_headers else {}
+
+    # Check for environment variable configuration
+    auth_type = os.getenv("A2A_AUTH_TYPE", "").lower()
+
+    if auth_type == "bearer":
+        # Bearer token authentication
+        token = os.getenv("A2A_AUTH_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+    elif auth_type == "basic":
+        username = os.getenv("A2A_AUTH_USERNAME", "")
+        password = os.getenv("A2A_AUTH_PASSWORD", "")
+        if username or password:
+            credentials = base64.b64encode(f"{username}:{password}".encode()).decode()
+            headers["Authorization"] = f"Basic {credentials}"
+
+    elif auth_type == "apikey":
+        # API Key authentication
+        token = os.getenv("A2A_AUTH_TOKEN")
+        header_name = os.getenv("A2A_AUTH_HEADER", "X-API-Key")
+        if token:
+            headers[header_name] = token
+
+    elif auth_type == "custom":
+        # Custom header authentication
+        token = os.getenv("A2A_AUTH_TOKEN")
+        header_name = os.getenv("A2A_AUTH_HEADER")
+        if token and header_name:
+            headers[header_name] = token
+
+    # Allow direct header specification via A2A_AUTH_HEADERS (JSON format)
+    auth_headers_json = os.getenv("A2A_AUTH_HEADERS")
+    if auth_headers_json:
+        try:
+            custom_headers = json.loads(auth_headers_json)
+            headers.update(custom_headers)
+        except (json.JSONDecodeError, ValueError) as e:
+            logging.getLogger(__name__).warning(f"Failed to parse A2A_AUTH_HEADERS: {e}")
+
+    return headers
 
 
 # A2A v0.3.0 Transport Configuration Functions
@@ -244,7 +325,7 @@ def set_enable_transport_equivalence_testing(enabled: bool):
     _enable_transport_equivalence_testing = enabled
 
 
-def is_transport_equivalence_testing_enabled() -> bool:
+def get_enable_transport_equivalence_testing() -> bool:
     """
     Check if transport equivalence testing is enabled.
 
@@ -256,6 +337,13 @@ def is_transport_equivalence_testing_enabled() -> bool:
     if env_enabled is not None:
         return env_enabled.lower() in ("true", "1", "yes", "on")
     return _enable_transport_equivalence_testing
+
+
+def is_transport_equivalence_testing_enabled() -> bool:
+    """
+    Deprecated: Use get_enable_transport_equivalence_testing() instead.
+    """
+    return get_enable_transport_equivalence_testing()
 
 
 def get_transport_capabilities() -> Dict[str, bool]:
@@ -322,7 +410,7 @@ def reset_transport_config():
     """
     global _transport_selection_strategy, _preferred_transport
     global _disabled_transports, _required_transports, _transport_specific_config
-    global _enable_transport_equivalence_testing
+    global _enable_transport_equivalence_testing, _auth_headers
 
     _transport_selection_strategy = "agent_preferred"
     _preferred_transport = None
@@ -330,3 +418,4 @@ def reset_transport_config():
     _required_transports = None
     _transport_specific_config = {}
     _enable_transport_equivalence_testing = True
+    _auth_headers = None

@@ -135,7 +135,7 @@ def test_invalid_method_error_validation(sut_client):
     req_id = message_utils.generate_request_id()
     invalid_request = message_utils.make_json_rpc_request("invalid/nonexistent/method", params={}, id=req_id)
 
-    response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, invalid_request)
+    response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, invalid_request, config.get_auth_headers())
 
     # Should be an error response
     assert "error" in response, "Invalid method should return JSON-RPC error response"
@@ -225,7 +225,7 @@ def test_invalid_params_error_validation(sut_client):
         req_id = message_utils.generate_request_id()
         invalid_request = message_utils.make_json_rpc_request(test_case["method"], params=test_case["params"], id=req_id)
 
-        response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, invalid_request)
+        response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, invalid_request, config.get_auth_headers())
 
         # Should be an error response
         if "error" not in response:
@@ -296,7 +296,7 @@ def test_nonexistent_resource_error_validation(sut_client):
         req_id = message_utils.generate_request_id()
         request = message_utils.make_json_rpc_request(test_case["method"], params=test_case["params"], id=req_id)
 
-        response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, request)
+        response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, request, config.get_auth_headers())
 
         # Should be an error response
         if "error" not in response:
@@ -388,7 +388,7 @@ def test_error_consistency_across_methods(sut_client):
             request = message_utils.make_json_rpc_request(test["method"], params=test["params"], id=req_id)
 
             try:
-                response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, request)
+                response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, request, config.get_auth_headers())
 
                 if "error" in response:
                     error_analysis = validate_json_rpc_error_structure(response)
@@ -483,7 +483,7 @@ def test_error_response_completeness(sut_client):
         req_id = message_utils.generate_request_id()
         request = message_utils.make_json_rpc_request(test_case["method"], params=test_case["params"], id=req_id)
 
-        response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, request)
+        response = transport_helpers.transport_send_raw_json_rpc_request(sut_client, request, config.get_auth_headers())
 
         if "error" not in response:
             logger.warning(f"⚠️ {test_case['name']}: No error returned")
