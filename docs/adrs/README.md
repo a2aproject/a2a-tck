@@ -12,6 +12,12 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 - Avoid repeating discussions
 - Document trade-offs and alternatives
 
+## ADR Index
+
+- [ADR-001: Authentication Support](ADR-001-authentication-support.md) - Environment-based authentication for testing authenticated SUTs
+- [ADR-002: Extended Agent Card Separation](ADR-002-extended-agent-card-separation.md) - Separation of public and extended agent card access
+- [ADR-003: Proto-First Code Generation](ADR-003-proto-first-code-generation.md) - Using a2a.proto as source of truth with buf for code generation
+
 ## ADR Format
 
 Each ADR follows this structure:

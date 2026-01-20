@@ -1,0 +1,10 @@
+{
+  "downloadTime": "2026-01-20T09:37:55Z",
+  "organization": "a2aproject",
+  "branch": "main",
+  "repository": "A2A",
+  "files": [
+    "a2a.proto",
+    "specification.md"
+  ]
+}
