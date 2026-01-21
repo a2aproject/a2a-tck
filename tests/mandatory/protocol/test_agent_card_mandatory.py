@@ -10,6 +10,7 @@ import pytest
 
 from tck import agent_card_utils
 from tck.sut_client import SUTClient
+from tests.markers import mandatory
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ def fetched_agent_card(sut_client, agent_card_data):
 
     return agent_card
 
-
+@mandatory
 def test_agent_card_mandatory_fields(fetched_agent_card):
     """
     MANDATORY: A2A Specification §5.5 - AgentCard Required Fields
@@ -74,7 +75,7 @@ def test_agent_card_mandatory_fields(fetched_agent_card):
         assert field in fetched_agent_card, f"Required field '{field}' missing from Agent Card"
         assert fetched_agent_card[field] is not None, f"Required field '{field}' cannot be null"
 
-
+@mandatory
 def test_agent_card_capabilities_mandatory(fetched_agent_card):
     """
     MANDATORY: A2A Specification §5.5.2 - AgentCapabilities Field Required
@@ -97,7 +98,7 @@ def test_agent_card_capabilities_mandatory(fetched_agent_card):
     assert capabilities is not None, "capabilities field cannot be null"
     assert isinstance(capabilities, dict), "capabilities must be an object"
 
-
+@mandatory
 def test_agent_card_skills_mandatory(fetched_agent_card):
     """
     MANDATORY: A2A Specification §5.5.6 - Skills Array Required
@@ -131,7 +132,7 @@ def test_agent_card_skills_mandatory(fetched_agent_card):
             assert field in skill, f"skill at index {i} missing required field '{field}'"
             assert skill[field] is not None, f"skill at index {i} field '{field}' cannot be null"
 
-
+@mandatory
 def test_agent_card_input_output_modes_mandatory(fetched_agent_card):
     """
     MANDATORY: A2A Specification §5.5.3/5.5.4 - Input/Output Modes Required
@@ -167,7 +168,7 @@ def test_agent_card_input_output_modes_mandatory(fetched_agent_card):
         assert isinstance(mode, str), f"defaultOutputModes[{i}] must be a string"
         assert mode.strip(), f"defaultOutputModes[{i}] cannot be empty"
 
-
+@mandatory
 def test_agent_card_basic_info_mandatory(fetched_agent_card):
     """
     MANDATORY: A2A Specification §5.5.1 - Basic Agent Information Required
