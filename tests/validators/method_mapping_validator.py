@@ -303,12 +303,12 @@ class MethodMappingValidator:
         """
         Validate REST endpoint naming conventions (§3.5.3).
 
-        REST endpoints MUST follow /v1/{resource}[/{id}][:{action}] pattern.
+        REST endpoints MUST follow /{resource}[/{id}][:{action}] pattern.
         """
         results = {
             "transport": "rest",
             "compliant": True,
-            "naming_convention": "/v1/{resource}[/{id}][:{action}]",
+            "naming_convention": "/{resource}[/{id}][:{action}]",
             "violations": [],
             "valid_endpoints": [],
         }
@@ -336,13 +336,13 @@ class MethodMappingValidator:
         return bool(re.match(pattern, method))
 
     def _validate_rest_endpoint_pattern(self, endpoint: str) -> bool:
-        """Validate REST endpoint follows /v1/{resource} pattern."""
-        # Must start with /v1/
-        if not endpoint.startswith("/v1/"):
+        """Validate REST endpoint follows /{resource} pattern."""
+        # Must start with /
+        if not endpoint.startswith("/"):
             return False
 
         # Should follow resource-based pattern
-        pattern = r"^/v1/[a-z]+(/\{[a-zA-Z]+\}|:[a-z]+)?$"
+        pattern = r"^/[a-z]+(/\{[a-zA-Z]+\}|:[a-z]+)?$"
         return bool(re.match(pattern, endpoint))
 
     def _get_available_jsonrpc_methods(self, client: JSONRPCClient) -> List[str]:

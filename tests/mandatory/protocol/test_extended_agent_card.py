@@ -3,7 +3,7 @@ A2A v0.3.0 Protocol: Mandatory Extended Agent Card Tests
 
 SPECIFICATION REQUIREMENTS (Section 7.10):
 - agent/getAuthenticatedExtendedCard JSON-RPC method, or GetAgentCard gRPC
-  method or v1/card JSON+HTTP endpoint MUST be available when declared
+  method or /card JSON+HTTP endpoint MUST be available when declared
 - Client MUST authenticate using declared security schemes
 - Server SHOULD include WWW-Authenticate header on 401 responses
 - Clients SHOULD replace cached Agent Card with extended card content
@@ -60,11 +60,11 @@ def get_extended_card_url(base_url: str) -> str:
     """
     Construct the extended Agent Card URL according to A2A v0.3.0 specification.
 
-    Per Section 7.10: The endpoint URL is {AgentCard.url}/v1/card
+    Per Section 7.10: The endpoint URL is {AgentCard.url}/card
     relative to the base URL specified in the public Agent Card.
     """
     parsed = urllib.parse.urlparse(base_url)
-    extended_path = f"{parsed.path}/v1/card"
+    extended_path = f"{parsed.path}/card"
 
     # Reconstruct the URL
     extended_url = urllib.parse.urlunparse(
