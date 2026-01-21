@@ -168,15 +168,15 @@ class TransportComplianceValidator:
         """
         result = {
             "required_methods": [
-                "send_message",  # POST /v1/message:send
-                "get_task",  # GET /v1/tasks/{id}
-                "cancel_task",  # POST /v1/tasks/{id}:cancel
-                "get_extended_agent_card",  # GET /v1/card
-                "list_tasks",  # GET /v1/tasks (gRPC/REST specific)
+                "send_message",  # POST /message:send
+                "get_task",  # GET /tasks/{id}
+                "cancel_task",  # POST /tasks/{id}:cancel
+                "get_extended_agent_card",  # GET /extendedAgentCard
+                "list_tasks",  # GET /tasks (gRPC/REST specific)
             ],
             "optional_methods": [
-                "send_streaming_message",  # POST /v1/message:stream
-                "subscribe_to_task",  # POST /v1/tasks/{id}:subscribe
+                "send_streaming_message",  # POST /message:stream
+                "subscribe_to_task",  # POST /tasks/{id}:subscribe
             ],
             "transport_specific_features": [
                 "http_status_codes",  # Proper HTTP status codes
@@ -211,38 +211,38 @@ class MethodMappingValidator:
         "send_message": {
             "jsonrpc": "SendMessage",
             "grpc": "SendMessage",
-            "rest": "POST /v1/message:send",
+            "rest": "POST /message:send",
             "description": "Send message to agent",
         },
         "send_streaming_message": {
             "jsonrpc": "message/stream",
             "grpc": "SendStreamingMessage",
-            "rest": "POST /v1/message:stream",
+            "rest": "POST /message:stream",
             "description": "Send message with streaming",
         },
-        "get_task": {"jsonrpc": "tasks/get", "grpc": "GetTask", "rest": "GET /v1/tasks/{id}", "description": "Get task status"},
+        "get_task": {"jsonrpc": "tasks/get", "grpc": "GetTask", "rest": "GET /tasks/{id}", "description": "Get task status"},
         "list_tasks": {
             "jsonrpc": None,  # Not available in JSON-RPC
             "grpc": "ListTask",
-            "rest": "GET /v1/tasks",
+            "rest": "GET /tasks",
             "description": "List tasks (gRPC/REST only)",
         },
         "cancel_task": {
             "jsonrpc": "tasks/cancel",
             "grpc": "CancelTask",
-            "rest": "POST /v1/tasks/{id}:cancel",
+            "rest": "POST /tasks/{id}:cancel",
             "description": "Cancel task",
         },
         "subscribe_to_task": {
             "jsonrpc": "SubscribeToTask",
             "grpc": "TaskSubscription",
-            "rest": "POST /v1/tasks/{id}:subscribe",
+            "rest": "POST /tasks/{id}:subscribe",
             "description": "Resume task streaming",
         },
         "get_extended_agent_card": {
             "jsonrpc": "getExtendedCard",
             "grpc": "GetExtendedAgentCard",
-            "rest": "GET /v1/extendedAgentCard",
+            "rest": "GET /extendedAgentCard",
             "description": "Get extended agent card",
         },
     }

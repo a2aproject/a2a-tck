@@ -97,7 +97,7 @@ class TestAuthenticatedExtendedCard:
                 assert "authentication" in str(e).lower() or "unauthorized" in str(e).lower()
 
         elif transport_type == "rest":
-            # REST: GET /v1/card
+            # REST: GET /card
             try:
                 response = sut_client.get_extended_agent_card()
                 assert response is not None
@@ -282,9 +282,9 @@ class TestMethodMappingCompliance:
         A2A v0.3.0 Specification Reference: §3.5.6 Method Mapping Reference Table
 
         Validates mapping for:
-        - SendMessage → SendMessage → POST /v1/message:send
-        - tasks/get → GetTask → GET /v1/tasks/{id}
-        - tasks/cancel → CancelTask → POST /v1/tasks/{id}:cancel
+        - SendMessage → SendMessage → POST /message:send
+        - tasks/get → GetTask → GET /tasks/{id}
+        - tasks/cancel → CancelTask → POST /tasks/{id}:cancel
         """
         transport_type = get_client_transport_type(sut_client)
 
@@ -332,7 +332,7 @@ class TestMethodMappingCompliance:
         Validates:
         - JSON-RPC: PascalCase compound words
         - gRPC: PascalCase compound words
-        - REST: /v1/{resource}[/{id}][:{action}] pattern
+        - REST: /{resource}[/{id}][:{action}] pattern
         """
         transport_type = get_client_transport_type(sut_client)
 
@@ -350,8 +350,8 @@ class TestMethodMappingCompliance:
             if hasattr(sut_client, "_get_url_patterns"):
                 url_patterns = sut_client._get_url_patterns()
                 for pattern in url_patterns.values():
-                    # Should start with /v1/
-                    assert pattern.startswith("/v1/"), f"REST URL {pattern} should start with /v1/"
+                    # Should start with /
+                    assert pattern.startswith("/"), f"REST URL {pattern} should start with /"
 
                     # Should follow resource-based pattern
                     if ":send" in pattern:
@@ -433,7 +433,7 @@ class TestTransportSpecificFeatures:
         # Test HTTP caching headers
         if hasattr(sut_client, "get_with_caching"):
             try:
-                response = sut_client.get_with_caching("/v1/card")
+                response = sut_client.get_with_caching("/card")
 
                 # Should include caching headers
                 headers = getattr(response, "headers", {})
