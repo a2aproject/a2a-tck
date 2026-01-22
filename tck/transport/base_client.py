@@ -410,8 +410,8 @@ class BaseTransportClient(ABC):
             headers.update(extra_headers)
             if "A2A_TCK_DONT_USE_AUTH" in extra_headers:
                 # remove the auth headers
-                headers = {k: v for k, v in headers if k not in auth_headers}
-
+                headers = {k: v for k, v in headers.items() if k not in auth_headers}
+                del headers["A2A_TCK_DONT_USE_AUTH"]
         return headers
 
     def get_transport_info(self) -> Dict[str, Any]:

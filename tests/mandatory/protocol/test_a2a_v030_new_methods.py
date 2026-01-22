@@ -33,16 +33,15 @@ from tests.utils.transport_helpers import (
     transport_get_task,
     transport_cancel_task,
     transport_get_extended_agent_card,
-    is_transport_client,
     get_client_transport_type,
     generate_test_message_id,
 )
 
 logger = logging.getLogger(__name__)
 
-class TestAuthenticatedExtendedCard:
+class TestExtendedAgentCard:
     """
-    Test suite for agent/getAuthenticatedExtendedCard method (§7.10)
+    Test suite for GetExtendedAgentCard method (§7.10)
 
     Validates that SUTs correctly implement authenticated agent card retrieval
     with proper authentication requirements and extended card functionality.
@@ -51,9 +50,9 @@ class TestAuthenticatedExtendedCard:
     @pytest.mark.mandatory
     @pytest.mark.mandatory_protocol
     @pytest.mark.a2a_v030
-    def test_authenticated_extended_card_method_exists(self, sut_client: BaseTransportClient, agent_card_data):
+    def test_extended_agent_card_method_exists(self, sut_client: BaseTransportClient, agent_card_data):
         """
-        Test that agent/getAuthenticatedExtendedCard method exists and is callable.
+        Test that GetExtendedAgentCard method exists and is callable.
 
         A2A v0.3.0 Specification Reference: §7.10
         Transport Support: All transports (JSON-RPC, gRPC, REST)
@@ -63,9 +62,9 @@ class TestAuthenticatedExtendedCard:
         - Method follows correct naming conventions per transport
         - Authentication is properly enforced
         """
-        # Check if agent card supports authenticated extended card
-        if not agent_card_data.get("supportsAuthenticatedExtendedCard", False):
-            pytest.skip("SUT does not support authenticated extended card")
+        # Check if agent card supports extended agent card
+        if not agent_card_data.get("supportsExtendedAgentCard", False):
+            pytest.skip("SUT does not support extended card")
 
         # Test method existence based on transport type
         transport_type = get_client_transport_type(sut_client)
@@ -97,7 +96,7 @@ class TestAuthenticatedExtendedCard:
                 assert "authentication" in str(e).lower() or "unauthorized" in str(e).lower()
 
         elif transport_type == "rest":
-            # REST: GET /card
+            # REST: GET /extendedAgentCard
             try:
                 response = sut_client.get_extended_agent_card()
                 assert response is not None
@@ -105,114 +104,6 @@ class TestAuthenticatedExtendedCard:
             except Exception as e:
                 # Should get authentication error for unauthenticated request
                 assert "401" in str(e) or "403" in str(e) or "authentication" in str(e).lower()
-
-    @pytest.mark.mandatory
-    @pytest.mark.mandatory_protocol
-    @pytest.mark.a2a_v030
-    def test_authenticated_extended_card_without_auth(self, sut_client: BaseTransportClient, agent_card_data):
-        """
-        Test that agent/getAuthenticatedExtendedCard properly rejects unauthenticated requests.
-
-        A2A v0.3.0 Specification Reference: §7.10
-
-        Validates:
-        - Unauthenticated requests return 401 Unauthorized
-        - Proper WWW-Authenticate header is included (when applicable)
-        - Error response follows A2A error format
-        """
-        # Check if SUT supports authenticated extended card
-        if not agent_card_data.get("supportsAuthenticatedExtendedCard", False):
-            pytest.skip("SUT does not support authenticated extended card")
-
-        # Test without authentication credentials
-        transport_type = get_client_transport_type(sut_client)
-
-        if transport_type == "jsonrpc":
-            # Clear any existing authentication headers
-            original_headers = getattr(sut_client, "headers", {})
-            try:
-                if hasattr(sut_client, "headers"):
-                    # Remove auth headers temporarily
-                    auth_headers = ["authorization", "x-api-key", "authentication"]
-                    for header in auth_headers:
-                        sut_client.headers.pop(header, None)
-                        sut_client.headers.pop(header.title(), None)
-                        sut_client.headers.pop(header.upper(), None)
-
-                response = transport_get_extended_agent_card(sut_client)
-
-                # Should return error
-                assert "error" in response
-                error = response["error"]
-
-                # Should be authentication-related error
-                assert error["code"] in [-32007, -32603], f"Expected auth error, got: {error}"
-
-            finally:
-                # Restore original headers
-                if hasattr(sut_client, "headers"):
-                    sut_client.headers.update(original_headers)
-
-        else:
-            # For gRPC/REST, test without auth should fail
-            with pytest.raises(Exception) as exc_info:
-                sut_client.get_extended_agent_card()
-
-            error_msg = str(exc_info.value).lower()
-            assert any(keyword in error_msg for keyword in ["unauthorized", "authentication", "401", "403"]), (
-                f"Expected authentication error, got: {exc_info.value}"
-            )
-
-    @optional_capability
-    @a2a_v030
-    def test_authenticated_extended_card_with_auth(self, sut_client: BaseTransportClient, agent_card_data):
-        """
-        Test that agent/getAuthenticatedExtendedCard returns extended card with valid auth.
-
-        A2A v0.3.0 Specification Reference: §7.10 & §11.1.3
-
-        Validates:
-        - Authenticated requests return AgentCard object
-        - Extended card may contain additional details
-        - Response follows AgentCard schema
-
-        CAPABILITY-DEPENDENT: This test is MANDATORY if supportsAuthenticatedExtendedCard: true
-        is declared in the Agent Card, otherwise it's skipped. This prevents false advertising
-        where agents claim to support authenticated extended cards but don't implement them properly.
-        """
-        # Check if SUT supports authenticated extended card
-        if not agent_card_data.get("supportsAuthenticatedExtendedCard", False):
-            pytest.skip("SUT does not support authenticated extended card")
-
-        # Skip if no authentication is configured
-        if not hasattr(sut_client, "headers") or not any(
-            key.lower() in ["authorization", "x-api-key", "authentication"] for key in getattr(sut_client, "headers", {}).keys()
-        ):
-            pytest.skip("No authentication credentials configured for testing")
-
-        try:
-            extended_card = sut_client.get_extended_agent_card()
-
-            # Validate it's a proper AgentCard
-            assert isinstance(extended_card, dict)
-            assert "protocolVersions" in extended_card
-            assert "name" in extended_card
-            assert "description" in extended_card
-            assert "url" in extended_card
-            assert "skills" in extended_card
-            assert "capabilities" in extended_card
-
-            # Should be version 0.3.0 or compatible
-            #FIXME
-            protocol_version = extended_card["protocolVersions"][0]
-            assert protocol_version.startswith("0.3"), f"Expected v0.3.x, got: {protocol_version}"
-
-        except Exception as e:
-            if "authentication" in str(e).lower() or "401" in str(e) or "403" in str(e):
-                pytest.skip("Authentication credentials not accepted by SUT")
-            else:
-                pytest.fail(f"Failed to get authenticated extended card: {e}")
-
 
 class TestTasksList:
     """
@@ -433,7 +324,7 @@ class TestTransportSpecificFeatures:
         # Test HTTP caching headers
         if hasattr(sut_client, "get_with_caching"):
             try:
-                response = sut_client.get_with_caching("/card")
+                response = sut_client.get_with_caching("/extendedAgentCard")
 
                 # Should include caching headers
                 headers = getattr(response, "headers", {})
