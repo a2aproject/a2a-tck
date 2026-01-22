@@ -13,6 +13,20 @@ Analyzes and reports the differences between the current baseline A2A specificat
 *   **Usage**: `util_scripts/check_spec_changes.py [options]`
 *   **Detailed Documentation**: See the [Specification Update Workflow](../docs/SPEC_UPDATE_WORKFLOW.md).
 
+### `update_current_spec.py`
+
+Downloads and updates the local baseline specification files (`current_spec/`) to a newer version. This script is typically run after analyzing changes and updating the test suite accordingly.
+
+*   **Usage**: `util_scripts/update_current_spec.py [options]`
+*   **Detailed Documentation**: See the [Specification Update Workflow](../docs/SPEC_UPDATE_WORKFLOW.md).
+
+### `find_unmarked_tests.py`
+
+Check all tests that are without pytest markers and reports them in a `unmarked_tests_report.txt` file.
+This script is typically run after adding new tests to the TCK to verify they belong to the appropriate categories.
+
+*   **Usage**: `util_scripts/find_unmarked_tests.py`
+
 ## Internal Modules
 
 The following files are not intended to be executed directly. They are modules imported by other scripts (`run_tck.py`).

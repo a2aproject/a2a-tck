@@ -41,7 +41,7 @@ def sample_message():
 
 
 @pytest.fixture
-def test_task_data(sut_client, sample_message):
+def task_data(sut_client, sample_message):
     """Create a task for cross-transport testing."""
     params = {"message": sample_message}
     resp = transport_send_message(sut_client, params)
@@ -102,7 +102,7 @@ def test_identical_functionality_message_send(all_transport_clients, sample_mess
 
 
 @transport_equivalence
-def test_identical_functionality_tasks_get(all_transport_clients, test_task_data):
+def test_identical_functionality_tasks_get(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for tasks/get
 
@@ -114,7 +114,7 @@ def test_identical_functionality_tasks_get(all_transport_clients, test_task_data
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
 
     # Test that all transports support tasks/get
     for transport_type, client in all_transport_clients.items():
@@ -213,7 +213,7 @@ def test_consistent_behavior_message_send(all_transport_clients, sample_message)
 
 
 @transport_equivalence
-def test_consistent_behavior_tasks_get(all_transport_clients, test_task_data):
+def test_consistent_behavior_tasks_get(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Consistent Behavior for tasks/get
 
@@ -225,7 +225,7 @@ def test_consistent_behavior_tasks_get(all_transport_clients, test_task_data):
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
     results = []
     transport_types = []
 
@@ -279,7 +279,7 @@ def test_consistent_behavior_tasks_get(all_transport_clients, test_task_data):
 
 
 @transport_equivalence
-def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_data):
+def test_identical_functionality_tasks_cancel(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for CancelTask
 
@@ -291,7 +291,7 @@ def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_d
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
 
     # Test that all transports support tasks/cancel
     for transport_type, client in all_transport_clients.items():
@@ -323,7 +323,7 @@ def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_d
 
 
 @transport_equivalence
-def test_consistent_behavior_tasks_cancel(all_transport_clients, test_task_data):
+def test_consistent_behavior_tasks_cancel(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Consistent Behavior for tasks/cancel
 
@@ -335,7 +335,7 @@ def test_consistent_behavior_tasks_cancel(all_transport_clients, test_task_data)
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
     results = []
     transport_types = []
 
@@ -533,7 +533,7 @@ def test_same_error_handling_invalid_params(all_transport_clients):
 
 
 @transport_equivalence
-def test_same_error_handling_task_not_cancelable(all_transport_clients, test_task_data):
+def test_same_error_handling_task_not_cancelable(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Same Error Handling for TaskNotCancelableError
 
@@ -545,7 +545,7 @@ def test_same_error_handling_task_not_cancelable(all_transport_clients, test_tas
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
     error_responses = []
     transport_types = []
 
@@ -866,7 +866,7 @@ def test_identical_functionality_message_stream(all_transport_clients, sample_me
 
 
 @transport_equivalence
-def test_identical_functionality_tasks_resubscribe(all_transport_clients, test_task_data):
+def test_identical_functionality_tasks_resubscribe(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for tasks/resubscribe
 
@@ -880,7 +880,7 @@ def test_identical_functionality_tasks_resubscribe(all_transport_clients, test_t
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
     resubscribe_transports = []
 
     # Test that streaming-capable transports support tasks/resubscribe
