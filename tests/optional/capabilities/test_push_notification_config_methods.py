@@ -630,29 +630,33 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
             sut_client, message_params, configuration=configuration
         )
 
-        # Collect streaming updates and extract task_id
-        # Different transports return different formats:
-        # - JSON-RPC: yields Task objects directly (with "id" and "status" fields)
-        # - gRPC/REST: yields wrapped objects with "task" or "status_update" keys
-        async for update in stream:
-            if isinstance(update, dict):
-                # Format 1: gRPC/REST - wrapped with "task" key
-                if "task" in update:
-                    task_id = update["task"]["id"]
-                    logger.info(f"Received task from streaming (wrapped): {task_id}")
-                    break  # Got the task, can stop streaming
-                # Format 2: gRPC/REST - status_update with taskId
-                elif "status_update" in update:
-                    if not task_id:
-                        task_id = update["status_update"]["taskId"]
-                        logger.info(f"Received task_id from status_update: {task_id}")
-                # Format 3: JSON-RPC - Task object directly
-                elif "id" in update and "status" in update and "kind" in update:
-                    task_id = update["id"]
-                    logger.info(f"Received task from streaming (direct): {task_id}")
-                    break  # Got the task, can stop streaming
+        try:
+            # Collect streaming updates and extract task_id
+            # Different transports return different formats:
+            # - JSON-RPC: yields Task objects directly (with "id" and "status" fields)
+            # - gRPC/REST: yields wrapped objects with "task" or "status_update" keys
+            async for update in stream:
+                if isinstance(update, dict):
+                    # Format 1: gRPC/REST - wrapped with "task" key
+                    if "task" in update:
+                        task_id = update["task"]["id"]
+                        logger.info(f"Received task from streaming (wrapped): {task_id}")
+                        break  # Got the task, can stop streaming
+                    # Format 2: gRPC/REST - status_update with taskId
+                    elif "status_update" in update:
+                        if not task_id:
+                            task_id = update["status_update"]["taskId"]
+                            logger.info(f"Received task_id from status_update: {task_id}")
+                    # Format 3: JSON-RPC - Task object directly
+                    elif "id" in update and "status" in update and "kind" in update:
+                        task_id = update["id"]
+                        logger.info(f"Received task from streaming (direct): {task_id}")
+                        break  # Got the task, can stop streaming
 
-        return task_id
+            return task_id
+        finally:
+            # Close the streaming subscription to free server resources
+            await stream.aclose()
 
     # Run the async streaming test
     task_id = asyncio.run(run_streaming_test())
