@@ -9,7 +9,7 @@ SPECIFICATION REQUIREMENTS (Section 7.10):
 
 These tests verify the mandatory getExtendedAgentCard method
 when supportsAuthenticatedExtendedCard is declared in the Agent Card.
-
+when supportsExtendedAgentCard is declared in the Agent Card.
 Reference: A2A v0.3.0 Specification Section 7.10 (agent/getAuthenticatedExtendedCard)
 """
 
