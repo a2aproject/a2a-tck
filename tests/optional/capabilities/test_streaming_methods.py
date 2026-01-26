@@ -113,6 +113,9 @@ async def test_message_stream_basic(sut_client, agent_card_data):
 
         except asyncio.TimeoutError:
             logger.warning("Timeout while processing streaming events")
+        finally:
+            # Close the streaming subscription to free server resources
+            await stream.aclose()
 
         # Validate the collected events
         assert len(events) > 0, "Streaming capability declared but no events received from stream"
@@ -174,7 +177,7 @@ async def test_message_stream_invalid_params(sut_client, agent_card_data):
     try:
         # This should fail at the transport level or return an error stream
         stream = transport_send_streaming_message(sut_client, invalid_message_params)
-        
+
         # If we get a stream, check if it returns error events
         events = []
         try:
@@ -186,13 +189,16 @@ async def test_message_stream_invalid_params(sut_client, agent_card_data):
         except Exception:
             # Expected - invalid params should cause an error
             pass
-        
+        finally:
+            # Close the streaming subscription to free server resources
+            await stream.aclose()
+
         # If we got events, they should indicate error
         if events:
             # Check if any event indicates an error
             has_error = any(
                 isinstance(event, dict) and (
-                    "error" in event or 
+                    "error" in event or
                     ("status" in event and event.get("status", {}).get("state") == "failed")
                 )
                 for event in events
@@ -274,20 +280,24 @@ async def test_tasks_subscribe(sut_client, agent_card_data):
                 stream_error = e
                 logger.error(f"Error in initial stream processing: {e}")
                 task_id_received.set()  # Signal completion even on error
+            finally:
+                # Close the initial streaming subscription to free server resources
+                await stream.aclose()
 
         # Background task to handle resubscription once task ID is available
         async def process_subscribe():
             nonlocal subscribe_events, subscribe_error
+            subscribe_stream = None
             try:
                 # Wait for task ID to be available
                 await task_id_received.wait()
-                
+
                 if task_id is None:
                     logger.warning("No task ID available for subscribe")
                     return
 
                 logger.info(f"Starting subscribe for task ID: {task_id}")
-                
+
                 # Use transport-agnostic task resubscription
                 subscribe_stream = transport_subscribe_task(sut_client, task_id)
 
@@ -315,10 +325,14 @@ async def test_tasks_subscribe(sut_client, agent_card_data):
                     # Collect a few events then break
                     if len(subscribe_events) >= 3:
                         break
-                        
+
             except Exception as e:
                 subscribe_error = e
                 logger.error(f"Error in subscribe processing: {e}")
+            finally:
+                # Close the subscribe streaming subscription to free server resources
+                if subscribe_stream is not None:
+                    await subscribe_stream.aclose()
 
         # Start both background tasks
         initial_stream_task = asyncio.create_task(process_initial_stream())
@@ -444,12 +458,12 @@ async def test_tasks_subscribe_nonexistent(sut_client, agent_card_data):
                     if len(events) >= 5:
                         logger.info("Collected 5 events, ending stream processing.")
                         break
-                
+
                 return error_event_found
 
             # Add timeout to prevent hanging on bad streams
             error_found = await asyncio.wait_for(process_stream(), timeout=TIMEOUTS["async_wait_for"])
-                    
+
         except asyncio.TimeoutError:
             logger.warning("Timeout while processing subscribe stream for nonexistent task - this may be expected")
         except RuntimeError as e:
@@ -459,6 +473,9 @@ async def test_tasks_subscribe_nonexistent(sut_client, agent_card_data):
                 error_found = True
             else:
                 raise
+        finally:
+            # Close the subscribe streaming subscription to free server resources
+            await subscribe_stream.aclose()
 
         # Should have received an error or failed status for non-existent task
         if events and not error_found:
@@ -523,21 +540,25 @@ async def test_sse_header_compliance(sut_client, agent_card_data):
             # Create JSON-RPC request for message/stream
             req_id = message_utils.generate_request_id()
             json_rpc_request = message_utils.make_json_rpc_request("message/stream", params=message_params, id=req_id)
-            
+
             # This will depend on the specific implementation
             # For now, we'll just validate that streaming works
             stream = transport_send_streaming_message(sut_client, message_params)
-            
-            # Validate we can get streaming events (headers are transport-specific)
-            event_count = 0
-            async for event in stream:
-                event_count += 1
-                logger.info(f"Received streaming event for header test: {event}")
-                if event_count >= 1:  # Just need to confirm streaming works
-                    break
-            
-            assert event_count > 0, "Should receive at least one streaming event"
-            logger.info("SSE streaming functionality confirmed (header validation is transport-specific)")
+
+            try:
+                # Validate we can get streaming events (headers are transport-specific)
+                event_count = 0
+                async for event in stream:
+                    event_count += 1
+                    logger.info(f"Received streaming event for header test: {event}")
+                    if event_count >= 1:  # Just need to confirm streaming works
+                        break
+
+                assert event_count > 0, "Should receive at least one streaming event"
+                logger.info("SSE streaming functionality confirmed (header validation is transport-specific)")
+            finally:
+                # Close the streaming subscription to free server resources
+                await stream.aclose()
         else:
             pytest.skip("Cannot access raw HTTP response for header validation with this transport client")
             
@@ -582,44 +603,48 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
         stream = transport_send_streaming_message(sut_client, message_params)
         events_processed = 0
 
-        async for event in stream:
-            events_processed += 1
-            logger.info(f"Processing event format validation #{events_processed}: {event}")
+        try:
+            async for event in stream:
+                events_processed += 1
+                logger.info(f"Processing event format validation #{events_processed}: {event}")
 
-            # Validate streaming event structure per A2A specification
-            assert isinstance(event, dict), "Streaming event should be a dictionary/object"
+                # Validate streaming event structure per A2A specification
+                assert isinstance(event, dict), "Streaming event should be a dictionary/object"
 
-            # For A2A streaming, events should be Task, Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent objects
-            # Validate basic A2A object structure
-            if "kind" in event:
-                # This is likely a Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
-                valid_kinds = ["task", "message", "status-update", "artifact-update"]
-                assert event["kind"] in valid_kinds, (
-                    f"Event kind must be one of {valid_kinds}, got: {event.get('kind')}"
-                )
-                
-                if event["kind"] == "message":
-                    assert "role" in event, "Message events must have role field"
-                    assert "parts" in event, "Message events must have parts field"
-                elif event["kind"] == "status-update":
-                    assert "taskId" in event, "Status update events must have taskId field"
-                elif event["kind"] == "artifact-update":
-                    assert "taskId" in event, "Artifact update events must have taskId field"
-                    assert "artifact" in event, "Artifact update events must have artifact field"
-            elif "status" in event and "id" in event:
-                # This looks like a Task object
-                assert isinstance(event["status"], dict), "Task status must be an object"
-                assert "state" in event["status"], "Task status must have state field"
-            else:
-                # Unknown event type - log for debugging but don't fail
-                logger.warning(f"Unknown event structure: {event}")
+                # For A2A streaming, events should be Task, Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent objects
+                # Validate basic A2A object structure
+                if "kind" in event:
+                    # This is likely a Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
+                    valid_kinds = ["task", "message", "status-update", "artifact-update"]
+                    assert event["kind"] in valid_kinds, (
+                        f"Event kind must be one of {valid_kinds}, got: {event.get('kind')}"
+                    )
 
-            # Process a few events then break
-            if events_processed >= 3:
-                break
+                    if event["kind"] == "message":
+                        assert "role" in event, "Message events must have role field"
+                        assert "parts" in event, "Message events must have parts field"
+                    elif event["kind"] == "status-update":
+                        assert "taskId" in event, "Status update events must have taskId field"
+                    elif event["kind"] == "artifact-update":
+                        assert "taskId" in event, "Artifact update events must have taskId field"
+                        assert "artifact" in event, "Artifact update events must have artifact field"
+                elif "status" in event and "id" in event:
+                    # This looks like a Task object
+                    assert isinstance(event["status"], dict), "Task status must be an object"
+                    assert "state" in event["status"], "Task status must have state field"
+                else:
+                    # Unknown event type - log for debugging but don't fail
+                    logger.warning(f"Unknown event structure: {event}")
 
-        assert events_processed > 0, "Streaming should produce at least one event"
-        
+                # Process a few events then break
+                if events_processed >= 3:
+                    break
+
+            assert events_processed > 0, "Streaming should produce at least one event"
+        finally:
+            # Close the streaming subscription to free server resources
+            await stream.aclose()
+
     except Exception as e:
         error_msg = str(e).lower()
         if "501" in error_msg or "not implemented" in error_msg:
