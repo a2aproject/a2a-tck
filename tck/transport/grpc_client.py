@@ -7,6 +7,7 @@ This client makes actual network calls to live SUTs - NO MOCKING.
 Specification Reference: A2A Protocol v0.3.0 §4.2 - gRPC Transport
 """
 
+import base64
 import json
 import logging
 import os
@@ -18,6 +19,7 @@ from urllib.parse import urlparse
 import asyncio
 
 import grpc
+from google.protobuf import json_format
 from google.protobuf.struct_pb2 import Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.json_format import MessageToJson
@@ -1175,21 +1177,108 @@ class GRPCClient(BaseTransportClient):
         return request
 
     def _map_state_enum_to_json(self, state_enum: int) -> str:
+        """
+        Convert protobuf TaskState enum to protobuf enum name string.
+
+        Returns protobuf enum names for gRPC transport internal use.
+        """
         try:
             name = self._pb.TaskState.Name(state_enum)
         except Exception:
-            return "TASK_STATE_COMPLETED"
+            return "TASK_STATE_UNSPECIFIED"
+        return name
+
+    def _convert_parts_to_json(self, parts) -> list:
+        """
+        Convert protobuf parts to JSON format, handling all part types.
+
+        Handles text, file, and data parts according to A2A v1.0 protobuf spec.
+        Part has oneof: text (string), file (FilePart), or data (DataPart).
+        """
+        if not parts:
+            return []
+
+        json_parts = []
+        for part in parts:
+            # Check which oneof field is set
+            if part.HasField('text'):
+                json_parts.append({"kind": "text", "text": part.text})
+            elif part.HasField('file'):
+                file_part = part.file
+                file_dict = {"kind": "file", "file": {}}
+
+                # FilePart has oneof: file_with_uri or file_with_bytes
+                if file_part.HasField('file_with_uri'):
+                    file_dict["file"]["fileWithUri"] = file_part.file_with_uri
+                elif file_part.HasField('file_with_bytes'):
+                    # Base64 encode bytes for JSON
+                    file_dict["file"]["fileWithBytes"] = base64.b64encode(file_part.file_with_bytes).decode('utf-8')
+
+                # Add optional fields using spec-compliant camelCase names
+                if file_part.media_type:
+                    file_dict["file"]["mediaType"] = file_part.media_type
+                if file_part.name:
+                    file_dict["file"]["name"] = file_part.name
+
+                json_parts.append(file_dict)
+            elif part.HasField('data'):
+                # DataPart contains a google.protobuf.Struct
+                # Convert Struct to dict using existing gRPC JSON parsing
+                data_dict = json_format.MessageToDict(part.data.data, preserving_proto_field_name=False)
+                json_parts.append({
+                    "kind": "data",
+                    "data": data_dict
+                })
+
+        return json_parts
+
+    def _map_json_to_state_enum(self, state_json: str) -> int:
+        """
+        Convert JSON status string to protobuf TaskState enum.
+
+        Accepts both JSON format (lowercase-hyphenated) and protobuf enum names.
+
+        Raises:
+            TransportError: If the status string is not a valid enum value
+        """
+        self._load_static_stubs()
+        pb = self._pb
+
+        # Mapping for both JSON format and protobuf enum names
         mapping = {
-            "TASK_STATE_SUBMITTED": "TASK_STATE_SUBMITTED",
-            "TASK_STATE_WORKING": "TASK_STATE_WORKING",
-            "TASK_STATE_COMPLETED": "TASK_STATE_COMPLETED",
-            "TASK_STATE_FAILED": "TASK_STATE_FAILED",
-            "TASK_STATE_CANCELLED": "TASK_STATE_CANCELLED",
-            "TASK_STATE_INPUT_REQUIRED": "TASK_STATE_INPUT_REQUIRED",
-            "TASK_STATE_REJECTED": "TASK_STATE_REJECTED",
-            "TASK_STATE_AUTH_REQUIRED": "TASK_STATE_AUTH_REQUIRED",
+            # JSON format (lowercase-hyphenated)
+            "submitted": pb.TASK_STATE_SUBMITTED,
+            "working": pb.TASK_STATE_WORKING,
+            "completed": pb.TASK_STATE_COMPLETED,
+            "failed": pb.TASK_STATE_FAILED,
+            "canceled": pb.TASK_STATE_CANCELLED,
+            "input-required": pb.TASK_STATE_INPUT_REQUIRED,
+            "rejected": pb.TASK_STATE_REJECTED,
+            "auth-required": pb.TASK_STATE_AUTH_REQUIRED,
+            # Protobuf enum names (TASK_STATE_*)
+            "TASK_STATE_SUBMITTED": pb.TASK_STATE_SUBMITTED,
+            "TASK_STATE_WORKING": pb.TASK_STATE_WORKING,
+            "TASK_STATE_COMPLETED": pb.TASK_STATE_COMPLETED,
+            "TASK_STATE_FAILED": pb.TASK_STATE_FAILED,
+            "TASK_STATE_CANCELLED": pb.TASK_STATE_CANCELLED,
+            "TASK_STATE_INPUT_REQUIRED": pb.TASK_STATE_INPUT_REQUIRED,
+            "TASK_STATE_REJECTED": pb.TASK_STATE_REJECTED,
+            "TASK_STATE_AUTH_REQUIRED": pb.TASK_STATE_AUTH_REQUIRED,
         }
-        return mapping.get(name, "TASK_STATE_COMPLETED")
+
+        if state_json not in mapping:
+            # Raise error for invalid enum values (matches JSON-RPC behavior)
+            raise TransportError(
+                message=f"Invalid task state value. Must be one of: {', '.join(sorted(set(mapping.keys())))}",
+                transport_type=TransportType.GRPC,
+                a2a_error={
+                    "code": -32602,
+                    "message": f"Invalid task state value",
+                    "data": {"invalid_value": state_json}
+                }
+            )
+
+        return mapping[state_json]
 
     def _map_grpc_error_to_a2a(self, grpc_error: grpc.RpcError) -> Dict[str, Any]:
         """
@@ -1308,55 +1397,122 @@ class GRPCClient(BaseTransportClient):
         }
 
     # Optional method available on gRPC per spec mapping
-    def list_tasks(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def list_tasks(
+        self,
+        contextId: Optional[str] = None,
+        status: Optional[str] = None,
+        pageSize: Optional[int] = None,
+        pageToken: Optional[str] = None,
+        historyLength: Optional[int] = None,
+        lastUpdatedAfter: Optional[int] = None,
+        includeArtifacts: Optional[bool] = None
+    ) -> Dict[str, Any]:
         """
-        List tasks for gRPC transport per A2A v0.3.0 specification.
+        List tasks for gRPC transport per A2A v0.4.0 specification.
 
-        Maps to: A2AService.ListTask() RPC call (when implemented)
+        Maps to: A2AService.ListTasks() RPC call
 
-        Note: The current protobuf definition appears to be missing the ListTask method
-        that is defined in the A2A v0.3.0 specification section 7.3.
+        Args:
+            contextId: Optional context ID to filter by
+            status: Optional task status to filter by
+            pageSize: Optional number of tasks per page (1-100, default 50)
+            pageToken: Optional pagination cursor
+            historyLength: Optional number of messages to include in task history (default 0)
+            lastUpdatedAfter: Optional timestamp filter (Unix milliseconds)
+            includeArtifacts: Optional flag to include artifacts (default false)
 
         Returns:
-            Dict with 'tasks' key containing list of Task objects
+            Dict containing ListTasksResult structure
 
         Raises:
             TransportError: If gRPC call fails or method not implemented
+
+        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
         """
         try:
             logger.info("Listing tasks via gRPC")
 
-            # According to A2A v0.3.0 spec, this should call ListTask method
-            # However, the current protobuf doesn't have this method defined
-            # This is a discrepancy between specification and implementation
-
             # Try to check if the method exists on the stub
-            if hasattr(self.stub, "ListTask"):
+            if hasattr(self.stub, "ListTasks"):
                 self._load_static_stubs()
                 pb = self._pb
-                # ListTask takes empty request per spec
-                req = pb.ListTaskRequest() if hasattr(pb, "ListTaskRequest") else None
+
+                # Build request with filter parameters
+                req_params = {}
+                if contextId is not None:
+                    req_params["context_id"] = contextId
+                if status is not None:
+                    # Convert JSON status string to protobuf enum
+                    req_params["status"] = self._map_json_to_state_enum(status)
+                if pageSize is not None:
+                    req_params["page_size"] = pageSize
+                if pageToken is not None:
+                    req_params["page_token"] = pageToken
+                if historyLength is not None:
+                    req_params["history_length"] = historyLength
+                if lastUpdatedAfter is not None:
+                    # Proto field is int64 milliseconds, not Timestamp
+                    req_params["last_updated_after"] = lastUpdatedAfter
+                if includeArtifacts is not None:
+                    req_params["include_artifacts"] = includeArtifacts
+
+                # Create request object
+                req = pb.ListTasksRequest(**req_params) if hasattr(pb, "ListTasksRequest") else None
+
                 if req is not None:
-                    resp = self.stub.ListTask(req, timeout=self.timeout)
-                    # Convert repeated Task to dict format
+                    resp = self.stub.ListTasks(req, timeout=self.timeout)
+
+                    # Convert response to dict format
+                    tasks_list = []
+                    for task in resp.tasks:
+                        task_dict = {
+                            "id": task.id,
+                            "contextId": task.context_id,
+                            "status": {"state": self._map_state_enum_to_json(task.status.state)},
+                            "kind": "task",
+                        }
+                        # Include history if present
+                        if task.history:
+                            task_dict["history"] = [
+                                {
+                                    "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
+                                    "parts": self._convert_parts_to_json(m.parts),
+                                    "messageId": m.message_id,
+                                    "kind": "message",
+                                }
+                                for m in task.history
+                            ]
+                        # Include artifacts if present
+                        if hasattr(task, "artifacts") and task.artifacts:
+                            task_dict["artifacts"] = [
+                                {
+                                    "artifactId": artifact.artifact_id,
+                                    "name": artifact.name if artifact.name else "",
+                                    "description": artifact.description if artifact.description else "",
+                                    "parts": self._convert_parts_to_json(artifact.parts),
+                                    "kind": "artifact",
+                                }
+                                for artifact in task.artifacts
+                            ]
+                        tasks_list.append(task_dict)
+
                     return {
-                        "tasks": [
-                            {
-                                "id": task.id,
-                                "contextId": task.context_id,
-                                "status": {"state": self._map_state_enum_to_json(task.status.state)},
-                                "kind": "task",
-                            }
-                            for task in resp  # resp should be repeated Task per spec
-                        ]
+                        "tasks": tasks_list,
+                        "totalSize": resp.total_size,
+                        "pageSize": len(tasks_list),  # Number of tasks in current response
+                        # Per A2A spec: nextPageToken MUST be empty string when no more results, not None
+                        "nextPageToken": resp.next_page_token,
                     }
 
-            # Method not implemented in current protobuf - return empty list
-            logger.warning("ListTask method not available in gRPC stub - this is a protobuf/spec discrepancy")
-            return {"tasks": []}
+            # Method not implemented in current protobuf
+            logger.warning("ListTasks method not available in gRPC stub")
+            raise NotImplementedError("ListTasks method not available in gRPC stub")
 
+        except TransportError:
+            # Re-raise TransportError as-is (from validation, etc.)
+            raise
         except grpc.RpcError as e:
-            error_msg = f"gRPC ListTask failed: {e.code().name} - {e.details()}"
+            error_msg = f"gRPC ListTasks failed: {e.code().name} - {e.details()}"
             logger.error(error_msg)
             # Map gRPC status to A2A error code per specification
             a2a_error = self._map_grpc_error_to_a2a(e)
