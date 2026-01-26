@@ -43,7 +43,7 @@ def agent_card_security_info(agent_card_data, agent_card_url):
 
     security_info = {
         "agent_card_url": agent_card_url,
-        "has_extended_card": agent_card_data.get("supportsExtendedAgentCard", False),
+        "has_extended_card": "extendedAgentCard" in agent_card_data["capabilities"],
         "security_schemes": agent_card_utils.get_authentication_schemes(agent_card_data),
         "security": agent_card_data.get("security", []),
         "sensitive_fields": [],

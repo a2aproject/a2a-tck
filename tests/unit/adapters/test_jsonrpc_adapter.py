@@ -96,7 +96,7 @@ class MockJSONRPCClient(JSONRPCClient):
     def subscribe_task(self, task_id: str, extra_headers=None):
         return iter([{"taskId": task_id, "state": "in-progress"}])
 
-    def set_push_notification_config(self, task_id: str, config: Dict[str, Any], extra_headers=None):
+    def create_task_push_notification_config(self, task_id: str, config: Dict[str, Any], extra_headers=None):
         return {"configId": "config-123"}
 
     def get_push_notification_config(self, task_id: str, config_id: str, extra_headers=None):

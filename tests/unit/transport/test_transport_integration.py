@@ -154,7 +154,7 @@ class TestTransportIntegration:
                 "cancel_task",
                 "subscribe_to_task",
                 "get_extended_agent_card",
-                "set_push_notification_config",
+                "create_task_push_notification_config",
                 "get_push_notification_config",
                 "list_push_notification_configs",
                 "delete_push_notification_config",
@@ -238,7 +238,7 @@ class TestTransportIntegration:
             "cancel_task",
             "subscribe_to_task",
             "get_extended_agent_card",
-            "set_push_notification_config",
+            "create_task_push_notification_config",
             "get_push_notification_config",
             "list_push_notification_configs",
             "delete_push_notification_config",
@@ -306,7 +306,7 @@ class TestTransportIntegration:
             def subscribe_task(self, task_id, **kwargs):
                 pass
 
-            def set_push_notification_config(self, task_id, config, **kwargs):
+            def create_task_push_notification_config(self, task_id, config, **kwargs):
                 pass
 
             def get_push_notification_config(self, task_id, config_id, **kwargs):

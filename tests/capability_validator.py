@@ -58,7 +58,7 @@ class CapabilityValidator:
                 "test_tasks_subscribe_invalid_params",
             ],
             "pushNotifications": [
-                "test_set_push_notification_config",
+                "test_create_task_push_notification_config",
                 "test_get_push_notification_config",
                 "test_push_notification_nonexistent",
                 "test_push_notification_invalid_params",

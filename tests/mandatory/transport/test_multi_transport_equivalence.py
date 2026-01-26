@@ -339,7 +339,7 @@ def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transpor
     if agent_card_data is None:
         pytest.skip("Agent Card data not available")
 
-    supportsExtendedAgentCard = agent_card_data.get("supportsExtendedAgentCard", False)
+    supportsExtendedAgentCard = "extendedAgentCard" in agent_card_data["capabilities"]
     if not supportsExtendedAgentCard:
         pytest.skip("No extended agent card supported for Agent Card equivalence testing")
 

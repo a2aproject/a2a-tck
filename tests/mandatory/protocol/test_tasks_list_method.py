@@ -6,7 +6,7 @@ A2A v1.0 specification Section 3.1.4.
 
 Tests cover:
 - Basic listing functionality
-- Filtering (contextId, status, lastUpdatedAfter)
+- Filtering (contextId, status, statusTimestampAfter)
 - Pagination (pageSize, pageToken, totalSize)
 - History limiting (historyLength parameter)
 - Artifact inclusion (includeArtifacts parameter)
@@ -241,7 +241,7 @@ class TestFiltering:
     Validates:
     - contextId filtering
     - status filtering
-    - lastUpdatedAfter filtering
+    - statusTimestampAfter filtering
     - Combined filters
     """
 
@@ -309,9 +309,9 @@ class TestFiltering:
     @mandatory_protocol
     def test_filter_by_last_updated_after(self, sut_client: BaseTransportClient):
         """
-        MANDATORY: A2A v1.0 §3.1.4 - lastUpdatedAfter Filter
+        MANDATORY: A2A v1.0 §3.1.4 - statusTimestampAfter Filter
 
-        Test that lastUpdatedAfter parameter filters tasks updated after a timestamp.
+        Test that statusTimestampAfter parameter filters tasks updated after a timestamp.
 
         Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
@@ -325,9 +325,9 @@ class TestFiltering:
         task = create_test_task(sut_client, "Task created after timestamp")
         task_id = task["id"]
 
-        # Filter by lastUpdatedAfter
+        # Filter by statusTimestampAfter
         resp = transport_list_tasks(sut_client, last_updated_after=timestamp_before)
-        assert is_json_rpc_success_response(resp), f"tasks/list with lastUpdatedAfter failed: {resp}"
+        assert is_json_rpc_success_response(resp), f"tasks/list with statusTimestampAfter failed: {resp}"
 
         result = resp.get("result", resp)
 
@@ -335,7 +335,7 @@ class TestFiltering:
         task_ids = [t["id"] for t in result["tasks"]]
         assert task_id in task_ids, f"Task {task_id} created after timestamp should be in results"
 
-        # All tasks should have status.timestamp >= lastUpdatedAfter
+        # All tasks should have status.timestamp >= statusTimestampAfter
         for task in result["tasks"]:
             # Parse timestamp from ISO 8601 string to compare
             # Note: This assumes status.timestamp is in ISO 8601 format
@@ -716,7 +716,7 @@ class TestEdgeCasesAndErrors:
     - Negative pageSize
     - Negative historyLength
     - Out-of-range pageSize
-    - Invalid lastUpdatedAfter
+    - Invalid statusTimestampAfter
     """
 
     @mandatory_protocol
@@ -875,7 +875,7 @@ class TestEdgeCasesAndErrors:
         """
         MANDATORY: A2A v1.0 §3.1.4 - Invalid Timestamp Error
 
-        Test that invalid lastUpdatedAfter timestamp returns proper error.
+        Test that invalid statusTimestampAfter timestamp returns proper error.
 
         Specification Reference: A2A v1.0 §3.1.4 Error Cases
         """

@@ -50,9 +50,9 @@
 - 🔄 **test_message_stream_basic** - MANDATORY if capabilities.streaming = true
 
 ### test_push_notification_config_methods.py - Push Notifications Capability
-- 🔄 **test_set_push_notification_config** - MANDATORY if capabilities.pushNotifications = true
+- 🔄 **test_create_task_push_notification_config** - MANDATORY if capabilities.pushNotifications = true
 - 🔄 **test_get_push_notification_config** - MANDATORY if capabilities.pushNotifications = true
-- 🔄 **test_set_push_notification_config_nonexistent** - MANDATORY if declared
+- 🔄 **test_create_task_push_notification_config_nonexistent** - MANDATORY if declared
 - 🔄 **test_get_push_notification_config_nonexistent** - MANDATORY if declared
 
 ### test_message_send_method.py - Modality-Based Tests

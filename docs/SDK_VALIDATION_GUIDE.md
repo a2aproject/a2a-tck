@@ -177,7 +177,7 @@ streaming: true declared but test_message_stream_basic failed
 
 #### Push notification tests fail but capability is declared
 ```
-pushNotifications: true declared but test_set_push_notification_config failed
+pushNotifications: true declared but test_create_task_push_notification_config failed
 ```
 **Issue**: False advertising - push notifications declared but not implemented  
 **Solutions**:

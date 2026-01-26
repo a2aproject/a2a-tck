@@ -566,7 +566,7 @@ class RESTClient(BaseTransportClient):
 
     # Push notification configuration methods
 
-    def set_push_notification_config(self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def create_task_push_notification_config(self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Set push notification config for a task via HTTP POST.
 
@@ -615,7 +615,7 @@ class RESTClient(BaseTransportClient):
             # Handle HTTP errors
             if response.status_code >= 400:
                 error_msg = f"HTTP {response.status_code}: {response.text}"
-                logger.error(f"REST set_push_notification_config failed: {error_msg}")
+                logger.error(f"REST create_task_push_notification_config failed: {error_msg}")
                 raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
 
             # Parse JSON response
@@ -629,7 +629,7 @@ class RESTClient(BaseTransportClient):
             logger.error(error_msg)
             raise TransportError(f"REST transport error: {error_msg}", TransportType.REST)
         except Exception as e:
-            error_msg = f"Unexpected error in REST set_push_notification_config: {str(e)}"
+            error_msg = f"Unexpected error in REST create_task_push_notification_config: {str(e)}"
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.REST)
 
@@ -804,7 +804,7 @@ class RESTClient(BaseTransportClient):
         pageSize: Optional[int] = None,
         pageToken: Optional[str] = None,
         historyLength: Optional[int] = None,
-        lastUpdatedAfter: Optional[int] = None,
+        statusTimestampAfter: Optional[int] = None,
         includeArtifacts: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
@@ -818,7 +818,7 @@ class RESTClient(BaseTransportClient):
             pageSize: Optional number of tasks per page (1-100, default 50)
             pageToken: Optional pagination cursor
             historyLength: Optional number of messages to include in task history (default 0)
-            lastUpdatedAfter: Optional timestamp filter (Unix milliseconds)
+            statusTimestampAfter: Optional timestamp filter (Unix milliseconds)
             includeArtifacts: Optional flag to include artifacts (default false)
 
         Returns:
@@ -848,8 +848,8 @@ class RESTClient(BaseTransportClient):
                 params["pageToken"] = pageToken
             if historyLength is not None:
                 params["historyLength"] = historyLength
-            if lastUpdatedAfter is not None:
-                params["lastUpdatedAfter"] = lastUpdatedAfter
+            if statusTimestampAfter is not None:
+                params["statusTimestampAfter"] = statusTimestampAfter
             if includeArtifacts is not None:
                 params["includeArtifacts"] = str(includeArtifacts).lower()  # Convert boolean to string
 

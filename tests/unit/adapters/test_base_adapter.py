@@ -42,8 +42,8 @@ class MockTransportClient(BaseTransportClient):
         self.call_log.append(("subscribe_task", task_id, kwargs))
         return iter([{"taskId": task_id, "state": "in-progress"}])
 
-    def set_push_notification_config(self, task_id: str, config: Dict[str, Any], **kwargs):
-        self.call_log.append(("set_push_notification_config", task_id, config, kwargs))
+    def create_task_push_notification_config(self, task_id: str, config: Dict[str, Any], **kwargs):
+        self.call_log.append(("create_task_push_notification_config", task_id, config, kwargs))
         return {"configId": "config-123"}
 
     def get_push_notification_config(self, task_id: str, config_id: str, **kwargs):
