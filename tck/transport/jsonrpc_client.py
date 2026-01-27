@@ -465,7 +465,7 @@ class JSONRPCClient(BaseTransportClient):
         async for result in self.subscribe_task(task_id, extra_headers):
             yield result
 
-    def set_push_notification_config(
+    def create_task_push_notification_config(
         self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
@@ -489,7 +489,7 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="SetTaskPushNotificationConfig",
+                method="CreateTaskPushNotificationConfig",
                 params={"parent": f"tasks/{task_id}", "configId": config_id, "config": config},
                 extra_headers=extra_headers,
             )
@@ -689,7 +689,7 @@ class JSONRPCClient(BaseTransportClient):
         pageSize: Optional[int] = None,
         pageToken: Optional[str] = None,
         historyLength: Optional[int] = None,
-        lastUpdatedAfter: Optional[int] = None,
+        statusTimestampAfter: Optional[int] = None,
         includeArtifacts: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
@@ -701,7 +701,7 @@ class JSONRPCClient(BaseTransportClient):
             pageSize: Optional number of tasks per page (1-100, default 50)
             pageToken: Optional pagination cursor
             historyLength: Optional number of messages to include in task history (default 0)
-            lastUpdatedAfter: Optional timestamp filter (Unix milliseconds)
+            statusTimestampAfter: Optional timestamp filter (Unix milliseconds)
             includeArtifacts: Optional flag to include artifacts (default false)
 
         Returns:
@@ -721,8 +721,8 @@ class JSONRPCClient(BaseTransportClient):
             params["pageToken"] = pageToken
         if historyLength is not None:
             params["historyLength"] = historyLength
-        if lastUpdatedAfter is not None:
-            params["lastUpdatedAfter"] = lastUpdatedAfter
+        if statusTimestampAfter is not None:
+            params["statusTimestampAfter"] = statusTimestampAfter
         if includeArtifacts is not None:
             params["includeArtifacts"] = includeArtifacts
 

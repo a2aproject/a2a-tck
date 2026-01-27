@@ -670,7 +670,7 @@ class TestRESTClientPushNotifications:
     """Test push notification configuration methods."""
 
     @patch("httpx.Client.post")
-    def test_set_push_notification_config_success(self, mock_post):
+    def test_create_task_push_notification_config_success(self, mock_post):
         """Test successful push notification config creation via REST."""
         mock_response = Mock()
         mock_response.status_code = 201
@@ -693,7 +693,7 @@ class TestRESTClientPushNotifications:
 
             config = {"id": "config1", "url": "https://webhook.example.com/notify", "token": "webhook-token-123"}
 
-            result = client.set_push_notification_config("task-123", config)
+            result = client.create_task_push_notification_config("task-123", config)
 
             mock_post.assert_called_once_with(
                 "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs", json=config, headers=client.default_headers
@@ -874,7 +874,7 @@ def test_rest_client_interface_compatibility():
         "cancel_task",
         "subscribe_to_task",
         "get_extended_agent_card",
-        "set_push_notification_config",
+        "create_task_push_notification_config",
         "get_push_notification_config",
         "list_push_notification_configs",
         "delete_push_notification_config",

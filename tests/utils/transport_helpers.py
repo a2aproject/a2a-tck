@@ -450,7 +450,7 @@ def transport_send_json_rpc_request(
     return transport_send_raw_json_rpc_request(client, req)
 
 
-def transport_set_push_notification_config(
+def transport_create_task_push_notification_config(
     client: BaseTransportClient, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
@@ -468,10 +468,10 @@ def transport_set_push_notification_config(
     Specification Reference: A2A v0.3.0 §7.5 - Push Notification Configuration
     """
     # Check if client is a BaseTransportClient with push notification methods
-    if hasattr(client, "set_push_notification_config") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware set_push_notification_config for {client.transport_type.value}")
+    if hasattr(client, "create_task_push_notification_config") and hasattr(client, "transport_type"):
+        logger.debug(f"Using transport-aware create_task_push_notification_config for {client.transport_type.value}")
         try:
-            result = client.set_push_notification_config(task_id, config_id, config, extra_headers=extra_headers)
+            result = client.create_task_push_notification_config(task_id, config_id, config, extra_headers=extra_headers)
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
@@ -713,7 +713,7 @@ def transport_list_tasks(
                 pageSize=page_size,
                 pageToken=page_token,
                 historyLength=history_length,
-                lastUpdatedAfter=last_updated_after,
+                statusTimestampAfter=last_updated_after,
                 includeArtifacts=include_artifacts,
             )
 

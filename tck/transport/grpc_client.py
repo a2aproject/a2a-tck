@@ -243,7 +243,7 @@ def _validate_a2a_response(response: Dict[str, Any], method_name: str) -> None:
             # This method should return a list of TaskPushNotificationConfig objects
             _validate_push_notification_config_list(response)
 
-        elif method_name in ["set_push_notification_config", "get_push_notification_config"]:
+        elif method_name in ["create_task_push_notification_config", "get_push_notification_config"]:
             # These methods should return TaskPushNotificationConfig objects
             required_fields = ["pushNotificationConfig"]
             for field in required_fields:
@@ -827,7 +827,7 @@ class GRPCClient(BaseTransportClient):
 
     # Push notification configuration methods
 
-    def set_push_notification_config(
+    def create_task_push_notification_config(
         self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
@@ -866,12 +866,12 @@ class GRPCClient(BaseTransportClient):
             )
 
             # Build request
-            req = pb.SetTaskPushNotificationConfigRequest(
+            req = pb.CreateTaskPushNotificationConfigRequest(
                 parent=f"tasks/{task_id}", config_id=config_id, config=task_config
             )
             metadata = self._prepare_metadata(extra_headers)
 
-            resp = self.stub.SetTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
+            resp = self.stub.CreateTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
             created_config = {
@@ -886,7 +886,7 @@ class GRPCClient(BaseTransportClient):
 
             logger.debug(f"Set push notification config via gRPC: {task_id}")
             # Validate response conforms to A2A specification
-            _validate_a2a_response(created_config, "set_push_notification_config")
+            _validate_a2a_response(created_config, "create_task_push_notification_config")
             return created_config
 
         except grpc.RpcError as e:
@@ -896,7 +896,7 @@ class GRPCClient(BaseTransportClient):
             a2a_error = self._map_grpc_error_to_a2a(e)
             raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
         except Exception as e:
-            error_msg = f"Unexpected error in gRPC set_push_notification_config: {str(e)}"
+            error_msg = f"Unexpected error in gRPC create_task_push_notification_config: {str(e)}"
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
 
@@ -1171,7 +1171,7 @@ class GRPCClient(BaseTransportClient):
         else:
             config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=default_blocking)
 
-        request = pb.SendMessageRequest(request=pb_msg, configuration=config)
+        request = pb.SendMessageRequest(message=pb_msg, configuration=config)
 
         logger.debug(f"Converted JSON message to protobuf: {msg_id}")
         return request
@@ -1404,7 +1404,7 @@ class GRPCClient(BaseTransportClient):
         pageSize: Optional[int] = None,
         pageToken: Optional[str] = None,
         historyLength: Optional[int] = None,
-        lastUpdatedAfter: Optional[int] = None,
+        statusTimestampAfter: Optional[int] = None,
         includeArtifacts: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
@@ -1418,7 +1418,7 @@ class GRPCClient(BaseTransportClient):
             pageSize: Optional number of tasks per page (1-100, default 50)
             pageToken: Optional pagination cursor
             historyLength: Optional number of messages to include in task history (default 0)
-            lastUpdatedAfter: Optional timestamp filter (Unix milliseconds)
+            statusTimestampAfter: Optional timestamp filter (Unix milliseconds)
             includeArtifacts: Optional flag to include artifacts (default false)
 
         Returns:
@@ -1450,9 +1450,9 @@ class GRPCClient(BaseTransportClient):
                     req_params["page_token"] = pageToken
                 if historyLength is not None:
                     req_params["history_length"] = historyLength
-                if lastUpdatedAfter is not None:
+                if statusTimestampAfter is not None:
                     # Proto field is int64 milliseconds, not Timestamp
-                    req_params["last_updated_after"] = lastUpdatedAfter
+                    req_params["last_updated_after"] = statusTimestampAfter
                 if includeArtifacts is not None:
                     req_params["include_artifacts"] = includeArtifacts
 

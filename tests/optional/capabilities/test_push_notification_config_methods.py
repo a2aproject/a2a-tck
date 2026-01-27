@@ -117,7 +117,7 @@ def has_push_notification_support(agent_card_data):
 
 
 @optional_capability
-def test_set_push_notification_config(sut_client, created_task_id, agent_card_data):
+def test_create_task_push_notification_config(sut_client, created_task_id, agent_card_data):
     """
     CONDITIONAL MANDATORY: A2A Specification §7.5 - Push Notification Configuration
 
@@ -138,8 +138,8 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
         }
     }
 
-    config_id = "test_set_push_notification_config_" + str(uuid.uuid4())
-    resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config_id, config)
+    config_id = "test_create_task_push_notification_config_" + str(uuid.uuid4())
+    resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
     # Since push notifications capability is declared, this MUST work
     assert transport_helpers.is_json_rpc_success_response(resp), "Push notifications capability declared but set config failed"
 
@@ -173,7 +173,7 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
     }
     config_id = "test_get_push_notification_config_" + str(uuid.uuid4())
 
-    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config_id, config)
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), "Failed to set push notification config before testing get"
 
     # Now, get the config we just set
@@ -189,7 +189,7 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
 
 
 @optional_capability
-def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
+def test_create_task_push_notification_config_nonexistent(sut_client, agent_card_data):
     """
     CONDITIONAL MANDATORY: A2A Specification §7.5 - Push Notification Error Handling
 
@@ -210,8 +210,8 @@ def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
         }
     }
 
-    config_id = "test_set_push_notification_config_nonexistent_" + str(uuid.uuid4())
-    resp = transport_helpers.transport_set_push_notification_config(sut_client, "nonexistent-task-id", config_id, config)
+    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
+    resp = transport_helpers.transport_create_task_push_notification_config(sut_client, "nonexistent-task-id", config_id, config)
 
     # Should return proper JSON-RPC error for non-existent task
     assert transport_helpers.is_json_rpc_error_response(resp), (
@@ -272,10 +272,10 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
             "url": "https://example.com/webhook1"
         }
     }
-    config_id = "test_set_push_notification_config_nonexistent_" + str(uuid.uuid4())
+    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
 
     # First, set one or more push notification configs
-    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config_id, config)
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), "Failed to set push notification config before testing list"
 
     # Now, list the configs for this task
@@ -367,9 +367,9 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
             "url": "https://example.com/webhook-to-delete"
         }
     }
-    config_id = "test_set_push_notification_config_nonexistent_" + str(uuid.uuid4())
+    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
 
-    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config_id, config)
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), (
         "Failed to set push notification config before testing delete"
     )

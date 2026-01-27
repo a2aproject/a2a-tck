@@ -1,0 +1,11 @@
+{
+  "downloadTime": "2026-01-26T13:03:05Z",
+  "organization": "a2aproject",
+  "branch": "main",
+  "files": [
+    "a2a.proto",
+    "buf.lock",
+    "buf.yaml",
+    "specification.md"
+  ]
+}

@@ -35,7 +35,7 @@ class MockTransportClient(BaseTransportClient):
     def subscribe_task(self, task_id, extra_headers=None):
         return iter([{"status": "running"}])
 
-    def set_push_notification_config(self, task_id, config, extra_headers=None):
+    def create_task_push_notification_config(self, task_id, config, extra_headers=None):
         return {"config_id": "test-config-123"}
 
     def get_push_notification_config(self, task_id, config_id, extra_headers=None):

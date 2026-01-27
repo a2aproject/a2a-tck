@@ -113,7 +113,7 @@ def test_push_notification_not_supported_error_32003_enhanced(sut_client, agent_
         config = {"name": name, "pushNotificationConfig":{"url": "https://test.example.com/webhook", "token": "test-token"}}
 
         try:
-            response = transport_helpers.transport_set_push_notification_config(sut_client, task_id, config_id, config)
+            response = transport_helpers.transport_create_task_push_notification_config(sut_client, task_id, config_id, config)
 
             if "error" in response:
                 error_code = response["error"]["code"]
