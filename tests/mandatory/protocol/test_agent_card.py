@@ -78,6 +78,7 @@ def test_mandatory_fields_present(fetched_agent_card):
         "name",
         "skills",
         "version",
+        "protocolVersions",
     ]
 
     deprecatedFields = [

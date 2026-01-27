@@ -17,7 +17,7 @@ SAMPLE_AGENT_CARD = {
     "name": "Test Agent",
     "description": "A test agent for TCK",
     "id": "test-agent-id",
-    "protocolVersion": "1.0",
+    "protocolVersions": ["1.0"],
     "url": "https://example.com/agent",
     "endpoint": "https://example.com/agent/jsonrpc",
     "capabilities": {
