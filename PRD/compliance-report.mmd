@@ -1,0 +1,72 @@
+%%{init: {'theme': 'base'}}%%
+
+flowchart TB
+    subgraph "Test Execution"
+        PYTEST["pytest<br/>--compliance-report"]
+        HOOK["pytest_runtest_makereport<br/>hook"]
+    end
+
+    PYTEST --> HOOK
+
+    subgraph "Result Collection"
+        REQ_RESULTS["Requirement Results<br/>{req_id: {transport: status}}"]
+        CORNER_RESULTS["Corner Case Results<br/>{category: {test: status}}"]
+    end
+
+    HOOK --> REQ_RESULTS
+    HOOK --> CORNER_RESULTS
+
+    subgraph "Report Generation"
+        AGGREGATOR["ComplianceAggregator"]
+
+        PER_REQ["Per-Requirement View"]
+        PER_TRANS["Per-Transport View"]
+        CORNER_VIEW["Corner Cases View"]
+        SUMMARY["Executive Summary"]
+    end
+
+    REQ_RESULTS --> AGGREGATOR
+    CORNER_RESULTS --> AGGREGATOR
+
+    AGGREGATOR --> PER_REQ
+    AGGREGATOR --> PER_TRANS
+    AGGREGATOR --> CORNER_VIEW
+    AGGREGATOR --> SUMMARY
+
+    subgraph "Output Formats"
+        JSON_OUT["compliance.json<br/>Machine-readable"]
+        HTML_OUT["compliance.html<br/>Human-readable"]
+        CONSOLE["Console Summary<br/>Quick overview"]
+    end
+
+    PER_REQ --> JSON_OUT
+    PER_TRANS --> JSON_OUT
+    CORNER_VIEW --> JSON_OUT
+    SUMMARY --> JSON_OUT
+
+    JSON_OUT --> HTML_OUT
+    SUMMARY --> CONSOLE
+
+    subgraph "Report Structure"
+        direction LR
+        STRUCT["
+        {
+          summary: {
+            overall_compliance: 98.5%,
+            transports: {...}
+          },
+          per_requirement: {
+            'REQ-3.1': {
+              grpc: PASS,
+              jsonrpc: PASS,
+              rest: FAIL
+            }
+          },
+          per_transport: {
+            grpc: {passed: 100, failed: 0},
+            jsonrpc: {passed: 98, failed: 2}
+          },
+          corner_cases: {...}
+        }
+        "]
+    end
