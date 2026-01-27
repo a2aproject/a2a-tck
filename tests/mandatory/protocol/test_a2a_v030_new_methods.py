@@ -195,7 +195,7 @@ class TestAuthenticatedExtendedCard:
 
             # Validate it's a proper AgentCard
             assert isinstance(extended_card, dict)
-            assert "protocolVersion" in extended_card
+            assert "protocolVersions" in extended_card
             assert "name" in extended_card
             assert "description" in extended_card
             assert "url" in extended_card
@@ -203,7 +203,8 @@ class TestAuthenticatedExtendedCard:
             assert "capabilities" in extended_card
 
             # Should be version 0.3.0 or compatible
-            protocol_version = extended_card["protocolVersion"]
+            #FIXME
+            protocol_version = extended_card["protocolVersions"][0]
             assert protocol_version.startswith("0.3"), f"Expected v0.3.x, got: {protocol_version}"
 
         except Exception as e:
