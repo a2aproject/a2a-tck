@@ -28,7 +28,7 @@
 
 ### 1.1 Purpose
 
-The A2A TCK (Technology Compatibility Kit) is a comprehensive test suite that validates implementations of the **A2A (Agent-to-Agent) Protocol v1.0**. It ensures that A2A server implementations correctly handle all protocol operations across three transport bindings: **gRPC**, **JSON-RPC**, and **REST/HTTP**.
+The A2A TCK (Technology Compatibility Kit) is a comprehensive test suite that validates implementations of the **A2A (Agent-to-Agent) Protocol v1.0**. It ensures that A2A server implementations correctly handle all protocol operations across three transport bindings: **gRPC**, **JSON-RPC**, and **HTTP+JSON**.
 
 ### 1.2 Key Design Decisions
 
@@ -36,7 +36,7 @@ The A2A TCK (Technology Compatibility Kit) is a comprehensive test suite that va
 
 2. **Transport-Native Testing**: Each transport is tested using its native response format. No cross-transport conversion.
 
-3. **JSON Schema for Validation**: JSON-RPC and REST responses are validated against the official `a2a.json` schema (derived from proto).
+3. **JSON Schema for Validation**: JSON-RPC and REST responses are validated against the official `a2a.json` schema (derived from `a2a.proto`).
 
 4. **Single Requirement, Multiple Validators**: Each specification requirement has one logical test that runs across all transports via pytest parametrization.
 
@@ -91,7 +91,7 @@ Layer 2: Abstract Operations
 Layer 3: Protocol Bindings
           ├── JSON-RPC (Section 9)
           ├── gRPC (Section 10)
-          └── HTTP/REST (Section 11)
+          └── HTTP+JSON (Section 11)
 ```
 
 **Key Principle**: All bindings guarantee "functional equivalence" for core semantics while varying transport mechanics.
@@ -102,11 +102,12 @@ Layer 3: Protocol Bindings
 |----------|----------|---------|
 | `a2a.proto` | `specification/grpc/a2a.proto` | Canonical message definitions |
 | `a2a.json` | `specification/json/a2a.json` | JSON Schema (derived from proto) |
-| `specification.md` | `docs/specification.md` | Full specification with requirements |
+| `specification.md` | `specification/specification.md` | Full specification with requirements |
 
 ### 3.3 Core Protocol Objects
 
-From `a2a.proto` (see [Specification Section 4](https://github.com/a2aproject/A2A/blob/main/docs/specification.md)):
+From `a2a.proto` (see [Specification Section 4](https://github.com/a2aproject/A2A/blob/main/docs/specification.md)
+and [a2a.proto](https://github.com/a2aproject/A2A/blob/main/specification/grpc/a2a.proto)):
 
 | Object | Description | Key Fields |
 |--------|-------------|------------|
@@ -126,6 +127,8 @@ From `a2a.proto` (see [Specification Section 4](https://github.com/a2aproject/A2
 | **Error Format** | gRPC status codes | JSON-RPC error object | HTTP status + Problem Details |
 | **Spec Section** | Section 10 | Section 9 | Section 11 |
 
+Section 5 also defines Protocol Binding Requirements and Interoperability (including method and error code mappings)
+
 ### 3.5 Requirement Levels (RFC 2119)
 
 | Keyword | Meaning | TCK Treatment |
@@ -133,6 +136,10 @@ From `a2a.proto` (see [Specification Section 4](https://github.com/a2aproject/A2
 | **MUST** | Absolute requirement | Test failure = non-compliant |
 | **SHOULD** | Strong recommendation | Test failure = warning |
 | **MAY** | Optional behavior | Test if capability declared |
+
+Some capabilities provided by the remote agents are optional. However if the
+capabilities are enabled, their requirements are absolute.
+Such tests should be skipped if the remote agents to do not provide the capabilities.
 
 ---
 
@@ -145,20 +152,25 @@ See: [architecture.mmd](./architecture.mmd)
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    A2A Specification                        │
-│              (a2a.proto, a2a.json, spec.md)                 │
+│              (a2a.proto, spec.md)                           │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                    derived specification                    │
+│                       (a2a.json)                            │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │                  Requirement Layer                          │
-│         (Requirement definitions with spec references)       │
+│         (Requirement definitions with spec references)      │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │                  Validation Layer                           │
-│    ┌─────────────────────┴─────────────────────┐           │
-│    │  JSON Schema Validator  │  Proto Validator │           │
-│    │    (jsonrpc, rest)      │     (grpc)       │           │
-│    └─────────────────────────────────────────────┘          │
+│    ┌─────────────────────┴─────────────────────┐            │
+│    │  JSON Schema Validator  │  Proto Validator│            │
+│    │    (jsonrpc, rest)      │     (grpc)      │            │
+│    └───────────────────────────────────────────┘            │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
@@ -168,10 +180,10 @@ See: [architecture.mmd](./architecture.mmd)
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │                     Test Layer                              │
-│    ┌────────────────────────────────────────────────┐      │
-│    │  Core Tests (parametrized)  │  Corner Cases   │      │
-│    │     ~100 requirements       │  per transport  │      │
-│    └────────────────────────────────────────────────┘      │
+│    ┌────────────────────────────────────────────────┐       │
+│    │  Core Tests (parametrized)  │  Corner Cases    │       │
+│    │     ~100 requirements       │  per transport   │       │
+│    └────────────────────────────────────────────────┘       │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
@@ -189,7 +201,8 @@ a2a-tck/
 │
 ├── specification/              # Local copy of spec artifacts
 │   ├── a2a.proto              # Canonical proto (synced from A2A repo)
-│   ├── a2a.json               # JSON Schema (synced from A2A repo)
+│   ├── a2a.json               # JSON Schema (derived from a2a.proto)
+│   ├── specification.md       # Specification (synced from A2A repo)
 │   └── generated/             # Generated Python code
 │       └── a2a_pb2.py         # Proto-generated Python classes
 │
@@ -201,8 +214,10 @@ a2a-tck/
 │   │   ├── __init__.py
 │   │   ├── base.py           # RequirementSpec base class
 │   │   ├── registry.py       # ALL_REQUIREMENTS collection
-│   │   ├── section_3.py      # Section 3: Core Operations
-│   │   ├── section_4.py      # Section 4: Objects
+│   │   ├── core_operations.py # Core Operations
+│   │   ├── data_model.py     # Data Model
+│   │   ├── card_discovery.py # Agent card discovery
+│   │   ├── auth.py           # Authn and authz
 │   │   └── ...               # Other sections
 │   │
 │   ├── validators/            # Validation logic
@@ -231,7 +246,7 @@ a2a-tck/
 │   ├── conftest.py            # Pytest configuration & fixtures
 │   ├── markers.py             # Custom pytest markers
 │   │
-│   ├── core/                  # Core requirement tests
+│   ├── core_operations/          # Core requirement tests
 │   │   └── test_requirements.py  # Parametrized tests
 │   │
 │   ├── grpc/                  # gRPC corner cases
@@ -249,6 +264,7 @@ a2a-tck/
 │
 └── reports/                    # Generated reports (gitignored)
     ├── compliance.json
+    ├── junitreport.xml
     └── compliance.html
 ```
 
@@ -262,7 +278,7 @@ See: [validation-flow.mmd](./validation-flow.mmd)
 
 - **gRPC**: Response is proto message → validate against proto descriptor
 - **JSON-RPC**: Response is JSON → unwrap envelope → validate against JSON Schema
-- **REST**: Response is JSON → validate against JSON Schema
+- **HTTP+JSON**: Response is JSON → validate against JSON Schema
 
 #### 4.3.2 Test Parametrization
 
@@ -332,8 +348,8 @@ class TransportBinding:
     """Transport-specific operation details."""
     grpc_rpc: str                    # e.g., "SendMessage"
     jsonrpc_method: str              # e.g., "SendMessage"
-    rest_method: str                 # e.g., "POST"
-    rest_path: str                   # e.g., "/message:send"
+    http_json_method: str                 # e.g., "POST"
+    http_json_path: str                   # e.g., "/message:send"
 
 @dataclass
 class RequirementSpec:
@@ -381,8 +397,8 @@ REQ_3_1_1_SEND_MESSAGE = RequirementSpec(
     binding=TransportBinding(
         grpc_rpc="SendMessage",
         jsonrpc_method="SendMessage",
-        rest_method="POST",
-        rest_path="/message:send",
+        http_json_method="POST",
+        http_json_path="/message:send",
     ),
     proto_request_type="SendMessageRequest",
     proto_response_type="SendMessageResponse",
@@ -596,11 +612,11 @@ def validate_jsonrpc_error(response: dict, expected_error: str) -> ErrorValidati
 ```
 
 ```python
-# tck/validators/rest/error_validator.py
+# tck/validators/http_json/error_validator.py
 from dataclasses import dataclass
 
-# REST HTTP status mappings from spec Section 11
-REST_ERROR_STATUS = {
+# HTTP+JSON status mappings from spec Section 11
+HTTP_JSON_ERROR_STATUS = {
     "TaskNotFoundError": 404,
     "TaskNotCancelableError": 400,
     "UnsupportedOperationError": 400,
@@ -626,12 +642,12 @@ class ErrorValidationResult:
     actual_status: int
     problem_details: ProblemDetails | None
 
-def validate_rest_error(
+def validate_http_json_error(
     response,
     expected_error: str
 ) -> ErrorValidationResult:
-    """Validate REST error response with Problem Details."""
-    expected_status = REST_ERROR_STATUS.get(expected_error, 400)
+    """Validate HTTP+JSON error response with Problem Details."""
+    expected_status = HTTP_JSON_ERROR_STATUS.get(expected_error, 400)
     actual_status = response.status_code
 
     problem_details = None
@@ -666,7 +682,7 @@ from dataclasses import dataclass
 @dataclass
 class TransportResponse:
     """Unified response wrapper preserving native format."""
-    transport: str           # "grpc", "jsonrpc", "rest"
+    transport: str           # "grpc", "jsonrpc", "http+json"
     success: bool
     raw_response: Any        # Native response (proto, dict, Response)
     error: str | None = None
@@ -721,11 +737,6 @@ class BaseTransportClient(ABC):
         pass
 
     @abstractmethod
-    def get_agent_card(self) -> TransportResponse:
-        """Fetch agent card from well-known endpoint."""
-        pass
-
-    @abstractmethod
     def get_extended_agent_card(self) -> TransportResponse:
         """Execute GetExtendedAgentCard operation."""
         pass
@@ -748,6 +759,7 @@ class GrpcClient(BaseTransportClient):
         host_port = base_url.replace("grpc://", "").replace("http://", "")
         self.channel = grpc.insecure_channel(host_port)
         self.stub = a2a_pb2_grpc.A2AServiceStub(self.channel)
+        self.transport = "grpc"
 
     def send_message(self, request: dict) -> TransportResponse:
         """Execute SendMessage RPC."""
@@ -755,13 +767,13 @@ class GrpcClient(BaseTransportClient):
             proto_request = self._dict_to_proto(request, a2a_pb2.SendMessageRequest)
             response = self.stub.SendMessage(proto_request)
             return TransportResponse(
-                transport="grpc",
+                transport=self.transport,
                 success=True,
                 raw_response=response,
             )
         except grpc.RpcError as e:
             return TransportResponse(
-                transport="grpc",
+                transport=self.transport,
                 success=False,
                 raw_response=None,
                 error=str(e),
@@ -773,14 +785,14 @@ class GrpcClient(BaseTransportClient):
             proto_request = self._dict_to_proto(request, a2a_pb2.SendMessageRequest)
             stream = self.stub.SendStreamingMessage(proto_request)
             return StreamingResponse(
-                transport="grpc",
+                transport=self.transport,
                 success=True,
                 raw_response=stream,
                 events=stream,
             )
         except grpc.RpcError as e:
             return StreamingResponse(
-                transport="grpc",
+                transport=self.transport,
                 success=False,
                 raw_response=None,
                 error=str(e),
@@ -806,6 +818,7 @@ class JsonRpcClient(BaseTransportClient):
         super().__init__(base_url)
         self.client = httpx.Client(base_url=base_url)
         self._request_id = 0
+        self.transport = "jsonrpc"
 
     def _next_id(self) -> int:
         self._request_id += 1
@@ -832,14 +845,14 @@ class JsonRpcClient(BaseTransportClient):
 
         if "error" in result:
             return TransportResponse(
-                transport="jsonrpc",
+                transport=self.transport,
                 success=False,
                 raw_response=result,
                 error=result["error"].get("message"),
             )
 
         return TransportResponse(
-            transport="jsonrpc",
+            transport=self.transport,
             success=True,
             raw_response=result.get("result"),
         )
@@ -874,19 +887,20 @@ class JsonRpcClient(BaseTransportClient):
                 yield json.loads(line[6:])
 ```
 
-#### 5.3.4 REST Client Implementation
+#### 5.3.4 HTTP+JSON Client Implementation
 
 ```python
-# tck/transport/rest_client.py
+# tck/transport/http_json_client.py
 import httpx
 from tck.transport.base import BaseTransportClient, TransportResponse, StreamingResponse
 
-class RestClient(BaseTransportClient):
-    """HTTP/REST transport client."""
+class HttpJsonClient(BaseTransportClient):
+    """HTTP+JSON transport client."""
 
     def __init__(self, base_url: str):
         super().__init__(base_url)
         self.client = httpx.Client(base_url=base_url)
+        self.transport = "http+json"
 
     def send_message(self, request: dict) -> TransportResponse:
         """Execute POST /message:send."""
@@ -898,14 +912,14 @@ class RestClient(BaseTransportClient):
 
         if response.status_code >= 400:
             return TransportResponse(
-                transport="rest",
+                transport=self.transport,
                 success=False,
                 raw_response=response,
                 error=response.text,
             )
 
         return TransportResponse(
-            transport="rest",
+            transport=self.transport,
             success=True,
             raw_response=response.json(),
         )
@@ -916,14 +930,14 @@ class RestClient(BaseTransportClient):
 
         if response.status_code >= 400:
             return TransportResponse(
-                transport="rest",
+                transport=self.transport,
                 success=False,
                 raw_response=response,
                 error=response.text,
             )
 
         return TransportResponse(
-            transport="rest",
+            transport=self.transport",
             success=True,
             raw_response=response.json(),
         )
@@ -937,7 +951,7 @@ class RestClient(BaseTransportClient):
             headers={"Accept": "text/event-stream"},
         ) as response:
             return StreamingResponse(
-                transport="rest",
+                transport=self.transport",
                 success=True,
                 raw_response=response,
                 events=self._parse_sse(response),
@@ -954,7 +968,7 @@ import pytest
 from tck.requirements.registry import ALL_REQUIREMENTS, MUST_REQUIREMENTS
 from tck.requirements.base import RequirementSpec, RequirementLevel
 
-TRANSPORTS = ["grpc", "jsonrpc", "rest"]
+TRANSPORTS = ["grpc", "jsonrpc", "http+json"]
 
 @pytest.mark.parametrize("transport", TRANSPORTS)
 @pytest.mark.parametrize(
@@ -978,16 +992,7 @@ def test_must_requirement(
     response = client.execute(requirement.operation, requirement.sample_input)
 
     # Validate response
-    if transport == "grpc":
-        result = validator.validate_proto(
-            response.raw_response,
-            requirement.proto_response_type,
-        )
-    else:
-        result = validator.validate_json(
-            response.raw_response,
-            requirement.json_schema_ref,
-        )
+    result = validator.validate(response, requirement)
 
     # Record result for compliance report
     compliance_collector.record(requirement.id, transport, result.valid, result.errors)
@@ -1019,16 +1024,7 @@ def test_should_requirement(
 
     response = client.execute(requirement.operation, requirement.sample_input)
 
-    if transport == "grpc":
-        result = validator.validate_proto(
-            response.raw_response,
-            requirement.proto_response_type,
-        )
-    else:
-        result = validator.validate_json(
-            response.raw_response,
-            requirement.json_schema_ref,
-        )
+    result = validator.validate(response, requirement)
 
     compliance_collector.record(
         requirement.id,
@@ -1093,13 +1089,13 @@ class TestJsonRpcErrorCodes:
 ```
 
 ```python
-# tests/rest/test_http_status.py
+# tests/http_json/test_http_status.py
 import pytest
-from tck.validators.rest.error_validator import validate_rest_error, REST_ERROR_STATUS
+from tck.validators.http_json.error_validator import validate_http_json_error, HTTP_JSON_ERROR_STATUS
 
-class TestRestHttpStatus:
+class TestHttpJsonStatus:
     """
-    Validate REST HTTP status code mappings per Specification Section 11.
+    Validate HTTP+JSON status code mappings per Specification Section 11.
 
     Reference: https://github.com/a2aproject/A2A/blob/main/docs/specification.md#11-rest-binding
     """
@@ -1195,10 +1191,11 @@ class ComplianceReport:
 |------|-------------|-------------|
 | 1.1 | Create project structure | Directory layout per Section 4.2 |
 | 1.2 | Set up pyproject.toml | Build configuration with dependencies |
-| 1.3 | Sync specification artifacts | Local copies of a2a.proto, a2a.json |
+| 1.3 | Sync specification artifacts | Local copies of a2a.proto |
 | 1.4 | Generate Python proto stubs | a2a_pb2.py, a2a_pb2_grpc.py |
-| 1.5 | Implement RequirementSpec base | Base class per Section 5.1.1 |
-| 1.6 | Create requirement registry skeleton | Empty registry with structure |
+| 1.5 | Generate derived JSON schema | a2a.json |
+| 1.6 | Implement RequirementSpec base | Base class per Section 5.1.1 |
+| 1.7 | Create requirement registry skeleton | Empty registry with structure |
 
 **Dependencies**: None
 
@@ -1239,7 +1236,7 @@ class ComplianceReport:
 | 3.1 | Implement BaseTransportClient | Abstract base class |
 | 3.2 | Implement GrpcClient | gRPC client using generated stubs |
 | 3.3 | Implement JsonRpcClient | JSON-RPC over HTTP client |
-| 3.4 | Implement RestClient | REST/HTTP client |
+| 3.4 | Implement HttpJsonClient | HTTP+JSON client |
 | 3.5 | Implement TransportManager | Client orchestration |
 | 3.6 | Write transport integration tests | Test against mock server |
 
@@ -1303,8 +1300,8 @@ class ComplianceReport:
 |------|-------------|-------------|
 | 6.1 | Implement JSON-RPC error code tests | tests/jsonrpc/test_error_codes.py |
 | 6.2 | Implement JSON-RPC SSE streaming tests | tests/jsonrpc/test_sse_streaming.py |
-| 6.3 | Implement REST HTTP status tests | tests/rest/test_http_status.py |
-| 6.4 | Implement REST Problem Details tests | tests/rest/test_problem_details.py |
+| 6.3 | Implement HTTP+JSON status tests | tests/http_json/test_http_status.py |
+| 6.4 | Implement HTTP+JSON Problem Details tests | tests/http_json/test_problem_details.py |
 | 6.5 | Implement gRPC status code tests | tests/grpc/test_status_codes.py |
 | 6.6 | Implement gRPC streaming tests | tests/grpc/test_streaming.py |
 
@@ -1328,6 +1325,7 @@ class ComplianceReport:
 | 7.3 | Implement HTML formatter | compliance.html output |
 | 7.4 | Implement console summary | Terminal output |
 | 7.5 | Integrate with pytest hooks | Automatic report generation |
+| 7.6 | Generate junitreport.xml | report.html output |
 
 **Dependencies**: Phase 5, 6
 
@@ -1335,6 +1333,7 @@ class ComplianceReport:
 - Reports show per-requirement and per-transport views
 - JSON report is machine-parseable
 - HTML report is human-readable
+- junitreport.xml can be passed to tools to get HTML report
 
 ---
 
