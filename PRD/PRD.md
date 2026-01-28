@@ -937,7 +937,7 @@ class HttpJsonClient(BaseTransportClient):
             )
 
         return TransportResponse(
-            transport=self.transport",
+            transport=self.transport,
             success=True,
             raw_response=response.json(),
         )
@@ -951,7 +951,7 @@ class HttpJsonClient(BaseTransportClient):
             headers={"Accept": "text/event-stream"},
         ) as response:
             return StreamingResponse(
-                transport=self.transport",
+                transport=self.transport,
                 success=True,
                 raw_response=response,
                 events=self._parse_sse(response),
@@ -1103,7 +1103,7 @@ class TestHttpJsonStatus:
     def test_task_not_found_returns_404(self, rest_client):
         """TaskNotFoundError MUST return HTTP 404."""
         response = rest_client.get_task("nonexistent-task-id")
-        result = validate_rest_error(response.raw_response, "TaskNotFoundError")
+        result = validate_http_json_error(response.raw_response, "TaskNotFoundError")
 
         assert result.valid, (
             f"Expected HTTP {result.expected_status}, "
