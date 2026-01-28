@@ -488,7 +488,7 @@ class JSONSchemaValidator:
 
         # Validate
         errors = []
-        validator = Draft202012Validator(sub_schema, resolver=self._resolver)
+        validator = Draft202012Validator(sub_schema, resolver=self.validator.resolver)
         for error in validator.iter_errors(response):
             errors.append(f"{error.json_path}: {error.message}")
 
