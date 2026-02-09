@@ -490,9 +490,10 @@ class JSONRPCClient(BaseTransportClient):
         try:
             response = self._make_jsonrpc_request(
                 method="CreateTaskPushNotificationConfig",
-                params={"parent": f"tasks/{task_id}", "configId": config_id, "config": config},
+                params={"taskId": task_id, "configId": config_id, "config": config},
                 extra_headers=extra_headers,
             )
+            print(response)
             return response.get("result", {})
 
         except Exception as e:
@@ -524,7 +525,7 @@ class JSONRPCClient(BaseTransportClient):
         try:
             response = self._make_jsonrpc_request(
                 method="GetTaskPushNotificationConfig",
-                params={"name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}"},
+                params={"task_id": task_id, "id": config_id},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
@@ -554,7 +555,7 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="ListTaskPushNotificationConfig", params={"parent": f"tasks/{task_id}"}, extra_headers=extra_headers
+                method="ListTaskPushNotificationConfig", params={"task_id": task_id}, extra_headers=extra_headers
             )
             return response.get("result", {})
 
@@ -587,7 +588,7 @@ class JSONRPCClient(BaseTransportClient):
         try:
             response = self._make_jsonrpc_request(
                 method="DeleteTaskPushNotificationConfig",
-                params={"name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}"},
+                params={"task_id": task_id, "id": config_id},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
