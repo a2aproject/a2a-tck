@@ -543,7 +543,7 @@ class TestRESTClientTaskOperations:
         mock_response.json.return_value = {
             "id": "task-456",
             "status": {
-                "state": "TASK_STATE_CANCELLED",
+                "state": "TASK_STATE_CANCELED",
                 "message": {
                     "message_id": "cancel-456",
                     "role": "ROLE_AGENT",
@@ -565,7 +565,7 @@ class TestRESTClientTaskOperations:
             mock_post.assert_called_once_with("https://example.com:8080/tasks/task-456:cancel", headers=client.default_headers)
 
             assert result["id"] == "task-456"
-            assert result["status"]["state"] == "TASK_STATE_CANCELLED"
+            assert result["status"]["state"] == "TASK_STATE_CANCELED"
 
     @patch("tck.transport.rest_client.AsyncClient")
     @pytest.mark.asyncio

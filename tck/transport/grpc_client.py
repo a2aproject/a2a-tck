@@ -68,7 +68,7 @@ def _validate_task_object(task: Dict[str, Any]) -> None:
     if "state" not in status:
         raise A2AValidationError("Task status missing required field 'state'", TransportType.GRPC)
 
-    valid_states = ["TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_COMPLETED", "TASK_STATE_FAILED", "TASK_STATE_CANCELLED", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_REJECTED", "TASK_STATE_AUTH_REQUIRED"]
+    valid_states = ["TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_COMPLETED", "TASK_STATE_FAILED", "TASK_STATE_CANCELED", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_REJECTED", "TASK_STATE_AUTH_REQUIRED"]
     if status["state"] not in valid_states:
         raise A2AValidationError(
             f"Task status 'state' must be one of {valid_states}, got '{status['state']}'", TransportType.GRPC
@@ -653,7 +653,7 @@ class GRPCClient(BaseTransportClient):
                 "id": resp.id,
                 "contextId": resp.context_id,
                 #FIXME we should return the state from the response, not override it
-                "status": {"state": "TASK_STATE_CANCELLED"}
+                "status": {"state": "TASK_STATE_CANCELED"}
             }
             # Validate response conforms to A2A specification
             _validate_a2a_response(result, "cancel_task")
@@ -1251,7 +1251,7 @@ class GRPCClient(BaseTransportClient):
             "working": pb.TASK_STATE_WORKING,
             "completed": pb.TASK_STATE_COMPLETED,
             "failed": pb.TASK_STATE_FAILED,
-            "canceled": pb.TASK_STATE_CANCELLED,
+            "canceled": pb.TASK_STATE_CANCELED,
             "input-required": pb.TASK_STATE_INPUT_REQUIRED,
             "rejected": pb.TASK_STATE_REJECTED,
             "auth-required": pb.TASK_STATE_AUTH_REQUIRED,
@@ -1260,7 +1260,7 @@ class GRPCClient(BaseTransportClient):
             "TASK_STATE_WORKING": pb.TASK_STATE_WORKING,
             "TASK_STATE_COMPLETED": pb.TASK_STATE_COMPLETED,
             "TASK_STATE_FAILED": pb.TASK_STATE_FAILED,
-            "TASK_STATE_CANCELLED": pb.TASK_STATE_CANCELLED,
+            "TASK_STATE_CANCELED": pb.TASK_STATE_CANCELED,
             "TASK_STATE_INPUT_REQUIRED": pb.TASK_STATE_INPUT_REQUIRED,
             "TASK_STATE_REJECTED": pb.TASK_STATE_REJECTED,
             "TASK_STATE_AUTH_REQUIRED": pb.TASK_STATE_AUTH_REQUIRED,

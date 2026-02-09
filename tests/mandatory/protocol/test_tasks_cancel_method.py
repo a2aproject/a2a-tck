@@ -61,10 +61,10 @@ def test_tasks_cancel_valid(sut_client, created_task_id):
     # Check that task status indicates cancellation
     status = result.get("status", {})
     if isinstance(status, dict):
-        assert status.get("state") == "TASK_STATE_CANCELLED", f"Expected canceled state, got: {status.get('state')}"
+        assert status.get("state") == "TASK_STATE_CANCELED", f"Expected canceled state, got: {status.get('state')}"
     else:
         # Handle case where status might be a string
-        assert status == "TASK_STATE_CANCELLED", f"Expected canceled status, got: {status}"
+        assert status == "TASK_STATE_CANCELED", f"Expected canceled status, got: {status}"
 
 
 @mandatory_protocol
