@@ -369,7 +369,7 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v1.0 §3.1.3. Get Task
         """
         try:
-            params = {"name": "tasks/"+task_id}
+            params = {"id": task_id}
             if history_length is not None:
                 params["historyLength"] = history_length
 
@@ -400,7 +400,7 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v1.0 §3.1.5. Cancel Task
         """
         try:
-            response = self._make_jsonrpc_request(method="CancelTask", params={"name": "tasks/"+task_id}, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="CancelTask", params={"id": task_id}, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
@@ -429,7 +429,7 @@ class JSONRPCClient(BaseTransportClient):
         try:
             # Use the new streaming method that properly handles SSE
             async for event in self._make_streaming_jsonrpc_request(
-                method="SubscribeToTask", params={"name": f"tasks/{task_id}"}, extra_headers=extra_headers
+                method="SubscribeToTask", params={"id": task_id}, extra_headers=extra_headers
             ):
                 # Extract result from JSON-RPC response
                 result = event.get("result")
