@@ -1,7 +1,7 @@
 {
-  "downloadTime": "2026-01-26T13:03:05Z",
+  "downloadTime": "2026-02-09T10:01:33Z",
   "organization": "a2aproject",
-  "branch": "main",
+  "branch": "v1.0.0-rc",
   "files": [
     "a2a.proto",
     "buf.lock",
