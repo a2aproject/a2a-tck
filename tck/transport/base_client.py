@@ -337,7 +337,7 @@ class BaseTransportClient(ABC):
             pageSize: Optional number of tasks per page (1-100, default 50)
             pageToken: Optional pagination cursor
             historyLength: Optional number of messages to include in task history (default 0)
-            statusTimestampAfter: Optional timestamp filter (Unix milliseconds)
+            statusTimestampAfter: Optional timestamp filter in ISO 8601 format (e.g., "2023-10-27T10:00:00Z")
             includeArtifacts: Optional flag to include artifacts (default false)
 
         Returns:
