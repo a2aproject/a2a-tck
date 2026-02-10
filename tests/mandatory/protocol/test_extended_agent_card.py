@@ -30,7 +30,7 @@ def security_schemes(agent_card_data):
     if agent_card_data is None:
         pytest.skip("Agent Card not available - cannot test extended card requirements")
 
-    supports_extended = agent_card_data.get("supportsExtendedAgentCard", False)
+    supports_extended = agent_card_data.get("capabilities", {}).get("extended_agent_card", False)
     if not supports_extended:
         pytest.skip("supportsExtendedAgentCard not declared - extended card tests not applicable")
 

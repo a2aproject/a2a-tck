@@ -45,7 +45,6 @@ download() {
     local dest_path="${SPEC_DIR}/${filename}"
 
     echo "⬇️ Downloading ${filename}..."
-    echo $url
     if curl -sfL -o "$dest_path" "$url"; then
         echo "✅ Successfully downloaded ${filename}"
         return 0

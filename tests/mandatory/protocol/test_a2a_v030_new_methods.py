@@ -63,7 +63,7 @@ class TestExtendedAgentCard:
         - Authentication is properly enforced
         """
         # Check if agent card supports extended agent card
-        if not agent_card_data.get("supportsExtendedAgentCard", False):
+        if not agent_card_data.get("capabilities", {}).get("extendedAgentCard", False):
             pytest.skip("SUT does not support extended card")
 
         # Test method existence based on transport type

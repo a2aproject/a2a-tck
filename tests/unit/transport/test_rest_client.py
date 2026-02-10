@@ -657,7 +657,7 @@ class TestRESTClientAgentCard:
             expected_headers = client.default_headers.copy()
             expected_headers.update(auth_headers)
 
-            mock_get.assert_called_once_with("https://example.com:8080/card", headers=expected_headers)
+            mock_get.assert_called_once_with("https://example.com:8080/extendedAgentCard", headers=expected_headers)
 
             assert result["name"] == "A2A REST Test Agent (Extended)"
             assert result["capabilities"]["authenticated_features"] is True
