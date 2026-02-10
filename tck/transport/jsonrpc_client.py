@@ -493,7 +493,6 @@ class JSONRPCClient(BaseTransportClient):
                 params={"taskId": task_id, "configId": config_id, "config": config},
                 extra_headers=extra_headers,
             )
-            print(response)
             return response.get("result", {})
 
         except Exception as e:

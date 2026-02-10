@@ -887,7 +887,6 @@ class TestEdgeCasesAndErrors:
         assert is_json_rpc_error_response(resp), "Invalid timestamp should return error"
 
         error = resp.get("error", {})
-        print(error)
         # Should be InvalidParamsError (-32602)
         assert error.get("code") == -32602, \
             f"Invalid timestamp should return -32602, got {error.get('code')}"
