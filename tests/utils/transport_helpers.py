@@ -677,7 +677,7 @@ def transport_list_tasks(
     page_size: Optional[int] = None,
     page_token: Optional[str] = None,
     history_length: Optional[int] = None,
-    status_timestamp_after: Optional[int] = None,
+    status_timestamp_after: Optional[str] = None,
     include_artifacts: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """

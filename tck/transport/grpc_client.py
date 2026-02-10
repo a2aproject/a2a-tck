@@ -8,6 +8,7 @@ Specification Reference: A2A Protocol v0.3.0 §4.2 - gRPC Transport
 """
 
 import base64
+from datetime import datetime
 import json
 import logging
 import os
@@ -188,13 +189,13 @@ def _validate_push_notification_config_list(config_list: List[Dict[str, Any]]) -
             raise A2AValidationError(f"Push notification config[{i}] must be an object", TransportType.GRPC)
 
         # Validate TaskPushNotificationConfig structure
-        required_fields = ["pushNotificationConfig", "name"]
+        required_fields = ["pushNotificationConfig", "id", "taskId"]
         for field in required_fields:
             if field not in config:
                 raise A2AValidationError(f"Push notification config[{i}] missing required field '{field}'", TransportType.GRPC)
 
         # Validate taskId
-        if not isinstance(config["name"], str):
+        if not isinstance(config["taskId"], str):
             raise A2AValidationError(f"Push notification config[{i}] 'name' must be a string", TransportType.GRPC)
 
         # Validate pushNotificationConfig structure
@@ -509,7 +510,7 @@ class GRPCClient(BaseTransportClient):
                 # Use the generated protobuf stub for streaming
                 stub = self._pb_grpc.A2AServiceStub(channel)
                 stream = stub.SendStreamingMessage(request, timeout=self.timeout, metadata=metadata)
-                
+
                 async for response in stream:
                     # Convert protobuf response to JSON format
                     if response.WhichOneof("payload") == "task":
@@ -519,7 +520,6 @@ class GRPCClient(BaseTransportClient):
                                 "id": t.id,
                                 "contextId": t.context_id,
                                 "status": {"state": self._map_state_enum_to_json(t.status.state)},
-                                "kind": "task",
                             }
                         }
                     elif response.WhichOneof("payload") == "status_update":
@@ -579,7 +579,7 @@ class GRPCClient(BaseTransportClient):
             self._load_static_stubs()
             pb = self._pb
             # Only include history_length if explicitly provided (consistent with JSON-RPC)
-            req_kwargs = {"name": f"tasks/{task_id}"}
+            req_kwargs = {"id": task_id}
             if history_length is not None:
                 req_kwargs["history_length"] = history_length
             else:
@@ -644,7 +644,7 @@ class GRPCClient(BaseTransportClient):
 
             self._load_static_stubs()
             pb = self._pb
-            req = pb.CancelTaskRequest(name=f"tasks/{task_id}")
+            req = pb.CancelTaskRequest(id=task_id)
             metadata = self._prepare_metadata(extra_headers)
 
             resp = self.stub.CancelTask(req, timeout=self.timeout, metadata=metadata)
@@ -713,7 +713,7 @@ class GRPCClient(BaseTransportClient):
             pb = self._pb
             
             # Build SubscribeToTaskRequest
-            request = pb.SubscribeToTaskRequest(name=f"tasks/{task_id}")
+            request = pb.SubscribeToTaskRequest(id=task_id)
             metadata = self._prepare_metadata(extra_headers)
 
             # Create appropriate channel based on TLS setting
@@ -771,6 +771,121 @@ class GRPCClient(BaseTransportClient):
             error_msg = f"Unexpected error in gRPC subscription: {str(e)}"
             logger.error(error_msg)
             raise TransportError(error_msg, TransportType.GRPC)
+
+    # Optional method available on gRPC per spec mapping
+    def list_tasks(
+        self,
+        contextId: Optional[str] = None,
+        status: Optional[str] = None,
+        pageSize: Optional[int] = None,
+        pageToken: Optional[str] = None,
+        historyLength: Optional[int] = None,
+        statusTimestampAfter: Optional[str] = None,
+        includeArtifacts: Optional[bool] = None,
+        extra_headers: Optional[Dict[str, str]] = None
+    ) -> Dict[str, Any]:
+        """
+        List tasks for gRPC transport per A2A v0.4.0 specification.
+
+        Maps to: A2AService.ListTasks() RPC call
+
+        Args:
+            contextId: Optional context ID to filter by
+            status: Optional task status to filter by
+            pageSize: Optional number of tasks per page (1-100, default 50)
+            pageToken: Optional pagination cursor
+            historyLength: Optional number of messages to include in task history (default 0)
+            statusTimestampAfter: Optional timestamp filter (Unix milliseconds)
+            includeArtifacts: Optional flag to include artifacts (default false)
+
+        Returns:
+            Dict containing ListTasksResult structure
+
+        Raises:
+            TransportError: If gRPC call fails or method not implemented
+
+        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
+        """
+        try:
+            logger.info("Listing tasks via gRPC")
+
+            self._load_static_stubs()
+            pb = self._pb
+
+            # Build request with filter parameters
+            req_params = {}
+            if contextId is not None:
+                req_params["context_id"] = contextId
+            if status is not None:
+                # Convert JSON status string to protobuf enum
+                req_params["status"] = self._map_json_to_state_enum(status)
+            if pageSize is not None:
+                req_params["page_size"] = pageSize
+            if pageToken is not None:
+                req_params["page_token"] = pageToken
+            if historyLength is not None:
+                req_params["history_length"] = historyLength
+            if statusTimestampAfter is not None:
+                req_params["status_timestamp_after"] = datetime.fromisoformat(statusTimestampAfter)
+            if includeArtifacts is not None:
+                req_params["include_artifacts"] = includeArtifacts
+
+            req = pb.ListTasksRequest(**req_params)
+            metadata = self._prepare_metadata(extra_headers)
+            
+            resp = self.stub.ListTasks(req, timeout=self.timeout, metadata=metadata)
+
+            # Convert response to dict format
+            tasks_list = []
+            for task in resp.tasks:
+                task_dict = {
+                    "id": task.id,
+                    "contextId": task.context_id,
+                    "status": {"state": self._map_state_enum_to_json(task.status.state)},
+                }
+                # Include history if present
+                if task.history:
+                    task_dict["history"] = [
+                        {
+                            "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
+                            "parts": self._convert_parts_to_json(m.parts),
+                            "messageId": m.message_id,
+                        }
+                        for m in task.history
+                        ]
+                # Include artifacts if present
+                if hasattr(task, "artifacts") and task.artifacts:
+                    task_dict["artifacts"] = [
+                        {
+                            "artifactId": artifact.artifact_id,
+                            "name": artifact.name if artifact.name else "",
+                            "description": artifact.description if artifact.description else "",
+                            "parts": self._convert_parts_to_json(artifact.parts),
+                            "kind": "artifact",
+                        }
+                        for artifact in task.artifacts
+                        ]
+                tasks_list.append(task_dict)
+
+            return {
+                "tasks": tasks_list,
+                "totalSize": resp.total_size,
+                "pageSize": len(tasks_list),  # Number of tasks in current response
+                # Per A2A spec: nextPageToken MUST be empty string when no more results, not None
+                "nextPageToken": resp.next_page_token,
+            }
+        except TransportError:
+            # Re-raise TransportError as-is (from validation, etc.)
+            raise
+        except grpc.RpcError as e:
+            error_msg = f"gRPC ListTasks failed: {e.code().name} - {e.details()}"
+            logger.error(error_msg)
+            # Map gRPC status to A2A error code per specification
+            a2a_error = self._map_grpc_error_to_a2a(e)
+            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
+        except Exception as e:
+            logger.error(f"gRPC list_tasks failed: {str(e)}")
+            raise TransportError(f"gRPC list_tasks failed: {str(e)}", TransportType.GRPC)
 
     def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
@@ -854,20 +969,14 @@ class GRPCClient(BaseTransportClient):
 
             # Build push notification config
             push_config = pb.PushNotificationConfig(
-                id=config["pushNotificationConfig"].get("id", config_id),
-                url=config["pushNotificationConfig"].get("url", ""),
-                token=config["pushNotificationConfig"].get("token", "")
-            )
-
-            # Build task push notification config
-            task_config = pb.TaskPushNotificationConfig(
-                name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}",
-                push_notification_config=push_config,
+                id=config.get("id", config_id),
+                url=config.get("url", ""),
+                token=config.get("token", "")
             )
 
             # Build request
             req = pb.CreateTaskPushNotificationConfigRequest(
-                parent=f"tasks/{task_id}", config_id=config_id, config=task_config
+                task_id=task_id, config_id=config_id, config=push_config
             )
             metadata = self._prepare_metadata(extra_headers)
 
@@ -875,7 +984,8 @@ class GRPCClient(BaseTransportClient):
 
             # Convert response to JSON format that matches expected test format
             created_config = {
-                    "name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}",
+                    "id": config_id,
+                    "taskId": task_id,
                     "pushNotificationConfig": {
                         "id": resp.push_notification_config.id,
                         "url": resp.push_notification_config.url,
@@ -924,7 +1034,7 @@ class GRPCClient(BaseTransportClient):
 
             self._load_static_stubs()
             pb = self._pb
-            req = pb.GetTaskPushNotificationConfigRequest(name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}")
+            req = pb.GetTaskPushNotificationConfigRequest(task_id=task_id, id=config_id)
             metadata = self._prepare_metadata(extra_headers)
 
             resp = self.stub.GetTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
@@ -976,7 +1086,7 @@ class GRPCClient(BaseTransportClient):
 
             self._load_static_stubs()
             pb = self._pb
-            req = pb.ListTaskPushNotificationConfigRequest(parent=f"tasks/{task_id}")
+            req = pb.ListTaskPushNotificationConfigRequest(task_id=task_id)
             metadata = self._prepare_metadata(extra_headers)
 
             resp = self.stub.ListTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
@@ -986,7 +1096,8 @@ class GRPCClient(BaseTransportClient):
             for config in resp.configs:
                 configs_list.append(
                     {
-                        "name": config.name,
+                        "taskId": config.task_id,
+                        "id": config.id,
                         "pushNotificationConfig": {
                             "id": config.push_notification_config.id,
                             "url": config.push_notification_config.url,
@@ -1038,7 +1149,7 @@ class GRPCClient(BaseTransportClient):
 
             self._load_static_stubs()
             pb = self._pb
-            req = pb.DeleteTaskPushNotificationConfigRequest(name=f"tasks/{task_id}/pushNotificationConfigs/{config_id}")
+            req = pb.DeleteTaskPushNotificationConfigRequest(task_id=task_id, id=config_id)
             metadata = self._prepare_metadata(extra_headers)
 
             resp = self.stub.DeleteTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
@@ -1109,12 +1220,13 @@ class GRPCClient(BaseTransportClient):
             if "text" in p:
                 parts.append(pb.Part(text=p.get("text", "")))
             elif "data" in p:
-                # Handle DataPart - convert JSON data to protobuf Struct
-                from google.protobuf.struct_pb2 import Struct
-                struct_data = Struct()
-                struct_data.update(p["data"])
-                data_part = pb.DataPart(data=struct_data)
-                parts.append(pb.Part(data=data_part))
+                # Handle DataPart - convert JSON data to protobuf Value
+                from google.protobuf.struct_pb2 import Struct, Value
+                struct = Struct()
+                struct.update(p["data"])
+                value = Value()
+                value.struct_value.CopyFrom(struct)
+                parts.append(pb.Part(data=value))
             #FIXME incorrect serialization of FilePart payload
             elif p.get("kind") == "file" and (("file" in p and "uri" in p["file"]) or ("file" in p and "bytes" in p["file"]) or "fileUri" in p or "fileBytes" in p):
                 # Handle FilePart
@@ -1135,7 +1247,7 @@ class GRPCClient(BaseTransportClient):
                 # Empty or unrecognized part structure
                 parts.append(pb.Part())
 
-        role_map = {"ROLE_USER": pb.ROLE_USER, "ROLE_USER": pb.ROLE_AGENT}
+        role_map = {"ROLE_USER": pb.ROLE_USER, "ROLE_AGENT": pb.ROLE_AGENT}
         # Don't provide default role - let SUT validate required fields
         user_role = message.get("role")
         pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
@@ -1395,128 +1507,3 @@ class GRPCClient(BaseTransportClient):
             "supports_streaming": True,
             "supports_bidirectional": True,
         }
-
-    # Optional method available on gRPC per spec mapping
-    def list_tasks(
-        self,
-        contextId: Optional[str] = None,
-        status: Optional[str] = None,
-        pageSize: Optional[int] = None,
-        pageToken: Optional[str] = None,
-        historyLength: Optional[int] = None,
-        statusTimestampAfter: Optional[int] = None,
-        includeArtifacts: Optional[bool] = None
-    ) -> Dict[str, Any]:
-        """
-        List tasks for gRPC transport per A2A v0.4.0 specification.
-
-        Maps to: A2AService.ListTasks() RPC call
-
-        Args:
-            contextId: Optional context ID to filter by
-            status: Optional task status to filter by
-            pageSize: Optional number of tasks per page (1-100, default 50)
-            pageToken: Optional pagination cursor
-            historyLength: Optional number of messages to include in task history (default 0)
-            statusTimestampAfter: Optional timestamp filter (Unix milliseconds)
-            includeArtifacts: Optional flag to include artifacts (default false)
-
-        Returns:
-            Dict containing ListTasksResult structure
-
-        Raises:
-            TransportError: If gRPC call fails or method not implemented
-
-        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
-        """
-        try:
-            logger.info("Listing tasks via gRPC")
-
-            # Try to check if the method exists on the stub
-            if hasattr(self.stub, "ListTasks"):
-                self._load_static_stubs()
-                pb = self._pb
-
-                # Build request with filter parameters
-                req_params = {}
-                if contextId is not None:
-                    req_params["context_id"] = contextId
-                if status is not None:
-                    # Convert JSON status string to protobuf enum
-                    req_params["status"] = self._map_json_to_state_enum(status)
-                if pageSize is not None:
-                    req_params["page_size"] = pageSize
-                if pageToken is not None:
-                    req_params["page_token"] = pageToken
-                if historyLength is not None:
-                    req_params["history_length"] = historyLength
-                if statusTimestampAfter is not None:
-                    # Proto field is int64 milliseconds, not Timestamp
-                    req_params["last_updated_after"] = statusTimestampAfter
-                if includeArtifacts is not None:
-                    req_params["include_artifacts"] = includeArtifacts
-
-                # Create request object
-                req = pb.ListTasksRequest(**req_params) if hasattr(pb, "ListTasksRequest") else None
-
-                if req is not None:
-                    resp = self.stub.ListTasks(req, timeout=self.timeout)
-
-                    # Convert response to dict format
-                    tasks_list = []
-                    for task in resp.tasks:
-                        task_dict = {
-                            "id": task.id,
-                            "contextId": task.context_id,
-                            "status": {"state": self._map_state_enum_to_json(task.status.state)},
-                            "kind": "task",
-                        }
-                        # Include history if present
-                        if task.history:
-                            task_dict["history"] = [
-                                {
-                                    "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
-                                    "parts": self._convert_parts_to_json(m.parts),
-                                    "messageId": m.message_id,
-                                    "kind": "message",
-                                }
-                                for m in task.history
-                            ]
-                        # Include artifacts if present
-                        if hasattr(task, "artifacts") and task.artifacts:
-                            task_dict["artifacts"] = [
-                                {
-                                    "artifactId": artifact.artifact_id,
-                                    "name": artifact.name if artifact.name else "",
-                                    "description": artifact.description if artifact.description else "",
-                                    "parts": self._convert_parts_to_json(artifact.parts),
-                                    "kind": "artifact",
-                                }
-                                for artifact in task.artifacts
-                            ]
-                        tasks_list.append(task_dict)
-
-                    return {
-                        "tasks": tasks_list,
-                        "totalSize": resp.total_size,
-                        "pageSize": len(tasks_list),  # Number of tasks in current response
-                        # Per A2A spec: nextPageToken MUST be empty string when no more results, not None
-                        "nextPageToken": resp.next_page_token,
-                    }
-
-            # Method not implemented in current protobuf
-            logger.warning("ListTasks method not available in gRPC stub")
-            raise NotImplementedError("ListTasks method not available in gRPC stub")
-
-        except TransportError:
-            # Re-raise TransportError as-is (from validation, etc.)
-            raise
-        except grpc.RpcError as e:
-            error_msg = f"gRPC ListTasks failed: {e.code().name} - {e.details()}"
-            logger.error(error_msg)
-            # Map gRPC status to A2A error code per specification
-            a2a_error = self._map_grpc_error_to_a2a(e)
-            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
-        except Exception as e:
-            logger.error(f"gRPC list_tasks failed: {str(e)}")
-            raise TransportError(f"gRPC list_tasks failed: {str(e)}", TransportType.GRPC)

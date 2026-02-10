@@ -801,7 +801,7 @@ class RESTClient(BaseTransportClient):
         pageSize: Optional[int] = None,
         pageToken: Optional[str] = None,
         historyLength: Optional[int] = None,
-        statusTimestampAfter: Optional[int] = None,
+        statusTimestampAfter: Optional[str] = None,
         includeArtifacts: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
