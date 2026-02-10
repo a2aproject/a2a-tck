@@ -192,7 +192,7 @@ def convert_protobuf_task_to_a2a(task: Dict[str, Any]) -> Dict[str, Any]:
                 "TASK_STATE_WORKING": "working",
                 "TASK_STATE_COMPLETED": "completed",
                 "TASK_STATE_FAILED": "failed",
-                "TASK_STATE_CANCELLED": "canceled",
+                "TASK_STATE_CANCELED": "canceled",
                 "TASK_STATE_INPUT_REQUIRED": "input-required",
                 "TASK_STATE_REJECTED": "rejected",
                 "TASK_STATE_AUTH_REQUIRED": "auth-required"

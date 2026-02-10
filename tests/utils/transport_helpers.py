@@ -677,7 +677,7 @@ def transport_list_tasks(
     page_size: Optional[int] = None,
     page_token: Optional[str] = None,
     history_length: Optional[int] = None,
-    last_updated_after: Optional[int] = None,
+    status_timestamp_after: Optional[str] = None,
     include_artifacts: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
@@ -690,7 +690,7 @@ def transport_list_tasks(
         page_size: Optional number of tasks per page (1-100, default 50)
         page_token: Optional pagination cursor
         history_length: Optional number of messages to include in task history
-        last_updated_after: Optional timestamp filter (Unix milliseconds)
+        status_timestamp_after: Optional timestamp filter in ISO 8601 format (e.g., "2023-10-27T10:00:00Z")
         include_artifacts: Optional flag to include artifacts (default false)
 
     Returns:
@@ -713,7 +713,7 @@ def transport_list_tasks(
                 pageSize=page_size,
                 pageToken=page_token,
                 historyLength=history_length,
-                statusTimestampAfter=last_updated_after,
+                statusTimestampAfter=status_timestamp_after,
                 includeArtifacts=include_artifacts,
             )
 

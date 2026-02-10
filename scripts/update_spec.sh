@@ -65,9 +65,9 @@ echo "Organization: $ORG"
 echo "Branch: $BRANCH"
 echo ""
 
-download "${BASE_URL}/specification/grpc/a2a.proto" "a2a.proto" || exit 1
-download "${BASE_URL}/specification/grpc/buf.lock" "buf.lock" || exit 1
-download "${BASE_URL}/specification/grpc/buf.yaml" "buf.yaml" || exit 1
+download "${BASE_URL}/specification/a2a.proto" "a2a.proto" || exit 1
+download "${BASE_URL}/specification/buf.lock" "buf.lock" || exit 1
+download "${BASE_URL}/specification/buf.yaml" "buf.yaml" || exit 1
 download "${BASE_URL}/docs/specification.md" "specification.md" || exit 1
 
 # Create info.json with download metadata

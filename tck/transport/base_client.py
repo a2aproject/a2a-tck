@@ -323,7 +323,7 @@ class BaseTransportClient(ABC):
         pageSize: Optional[int] = None,
         pageToken: Optional[str] = None,
         historyLength: Optional[int] = None,
-        statusTimestampAfter: Optional[int] = None,
+        statusTimestampAfter: Optional[str] = None,
         includeArtifacts: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
@@ -337,7 +337,7 @@ class BaseTransportClient(ABC):
             pageSize: Optional number of tasks per page (1-100, default 50)
             pageToken: Optional pagination cursor
             historyLength: Optional number of messages to include in task history (default 0)
-            statusTimestampAfter: Optional timestamp filter (Unix milliseconds)
+            statusTimestampAfter: Optional timestamp filter in ISO 8601 format (e.g., "2023-10-27T10:00:00Z")
             includeArtifacts: Optional flag to include artifacts (default false)
 
         Returns:
@@ -410,8 +410,8 @@ class BaseTransportClient(ABC):
             headers.update(extra_headers)
             if "A2A_TCK_DONT_USE_AUTH" in extra_headers:
                 # remove the auth headers
-                headers = {k: v for k, v in headers if k not in auth_headers}
-
+                headers = {k: v for k, v in headers.items() if k not in auth_headers}
+                del headers["A2A_TCK_DONT_USE_AUTH"]
         return headers
 
     def get_transport_info(self) -> Dict[str, Any]:

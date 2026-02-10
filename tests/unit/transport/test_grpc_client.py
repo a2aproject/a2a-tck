@@ -386,7 +386,7 @@ class TestGRPCClientTaskOperations:
         result = client.cancel_task("task-456")
 
         assert result["id"] == "task-456"
-        assert result["status"]["state"] == "TASK_STATE_CANCELLED"
+        assert result["status"]["state"] == "TASK_STATE_CANCELED"
         assert "Task task-456 cancelled via gRPC" in result["status"]["message"]["content"][0]["text"]
 
     @patch("grpc.aio.insecure_channel")

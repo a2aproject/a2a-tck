@@ -18,9 +18,12 @@ References:
 """
 
 import time
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
-from tck.transport.base_client import BaseTransportClient
+import pytest
+
+from tck.transport.base_client import BaseTransportClient, TransportType
 from tests.markers import mandatory_protocol, optional_capability
 from tests.utils.transport_helpers import (
     transport_send_message,
@@ -316,7 +319,7 @@ class TestFiltering:
         Specification Reference: A2A v1.0 §3.1.4 ListTasksParams
         """
         # Get current timestamp in milliseconds
-        timestamp_before = int(time.time() * 1000)
+        timestamp_before = datetime.now(timezone.utc).isoformat()
 
         # Wait a bit to ensure timestamp difference
         time.sleep(0.1)
@@ -326,7 +329,7 @@ class TestFiltering:
         task_id = task["id"]
 
         # Filter by statusTimestampAfter
-        resp = transport_list_tasks(sut_client, last_updated_after=timestamp_before)
+        resp = transport_list_tasks(sut_client, status_timestamp_after=timestamp_before)
         assert is_json_rpc_success_response(resp), f"tasks/list with statusTimestampAfter failed: {resp}"
 
         result = resp.get("result", resp)
@@ -879,8 +882,11 @@ class TestEdgeCasesAndErrors:
 
         Specification Reference: A2A v1.0 §3.1.4 Error Cases
         """
+        if sut_client.transport_type == TransportType.GRPC:
+             pytest.skip("Skip test for gRPC that requires a typed status_timestamp_after")
+
         # Use invalid timestamp (negative value)
-        resp = transport_list_tasks(sut_client, last_updated_after=-1)
+        resp = transport_list_tasks(sut_client, status_timestamp_after="-1")
 
         # Should return error
         assert is_json_rpc_error_response(resp), "Invalid timestamp should return error"

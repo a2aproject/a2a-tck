@@ -159,7 +159,7 @@ def test_extended_card_access_controls(sut_client: BaseTransportClient, agent_ca
     logger.info(f"Security schemes required: {len(agent_card_security_info['security_schemes'])}")
 
 
-    response = transport_helpers.transport_get_extended_agent_card(sut_client, {"A2A_TCK_DONT_USE_AUTH": True})
+    response = transport_helpers.transport_get_extended_agent_card(sut_client, {"A2A_TCK_DONT_USE_AUTH": "True"})
 
     # Extended Agent Card MUST require authentication
     if "error" not in response:
@@ -211,7 +211,7 @@ def test_authentication_scheme_validation(sut_client, agent_card_security_info):
 
         # Test multiple invalid credential scenarios for each scheme
         test_scenarios = [
-            ("empty", {"A2A_TCK_DONT_USE_AUTH": True}),
+            ("empty", {"A2A_TCK_DONT_USE_AUTH": "True"}),
             ("malformed", {"Authorization": "Malformed auth header"}),
             ("invalid_type", {"Authorization": f"InvalidType invalid-token-{i}"}),
         ]

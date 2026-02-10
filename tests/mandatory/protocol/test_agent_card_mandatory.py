@@ -66,7 +66,6 @@ def test_agent_card_mandatory_fields(fetched_agent_card):
         "defaultOutputModes",
         "description",
         "name",
-        "protocolVersion",
         "skills",
         "version",
     ]

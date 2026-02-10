@@ -70,7 +70,7 @@ def agent_card_data(request):
         return None
 
     # Check for minimally required fields (optional check)
-    required_fields = ["name", "id", "protocolVersion"]
+    required_fields = ["name", "id"]
     missing_fields = [field for field in required_fields if field not in agent_card]
 
     if missing_fields:

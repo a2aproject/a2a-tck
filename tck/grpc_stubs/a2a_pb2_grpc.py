@@ -114,7 +114,7 @@ class A2AServiceServicer(object):
 
     def SubscribeToTask(self, request, context):
         """SubscribeToTask allows subscribing to task updates for tasks not in terminal state.
-        Returns UnsupportedOperationError if task is in terminal state (completed, failed, cancelled, rejected).
+        Returns UnsupportedOperationError if task is in terminal state (completed, failed, canceled, rejected).
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')

@@ -596,16 +596,13 @@ class RESTClient(BaseTransportClient):
             
             # Build protobuf-compatible request structure
             protobuf_request = {
-                "parent": f"tasks/{task_id}",
+                "taskId": task_id,
                 "configId": config_id,
                 "config": {
-                    "name": f"tasks/{task_id}/pushNotificationConfigs/{config_id}",
-                    "push_notification_config": {
-                        "id": push_notification_config_id,
-                        "url": config.get("pushNotificationConfig", {}).get("url", ""),
-                        "token": config.get("pushNotificationConfig", {}).get("token", ""),
-                        "authentication": config.get("pushNotificationConfig", {}).get("authentication", {})
-                    }
+                    "id": push_notification_config_id,
+                    "url": config.get("url", ""),
+                    "token": config.get("token", ""),
+                    "authentication": config.get("authentication", {})
                 }
             }
             logger.debug(f"Set push notification config via REST: {protobuf_request}")
@@ -804,7 +801,7 @@ class RESTClient(BaseTransportClient):
         pageSize: Optional[int] = None,
         pageToken: Optional[str] = None,
         historyLength: Optional[int] = None,
-        statusTimestampAfter: Optional[int] = None,
+        statusTimestampAfter: Optional[str] = None,
         includeArtifacts: Optional[bool] = None
     ) -> Dict[str, Any]:
         """

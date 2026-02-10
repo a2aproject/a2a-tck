@@ -133,9 +133,7 @@ def test_create_task_push_notification_config(sut_client, created_task_id, agent
         pytest.skip("Push notifications capability not declared - test not applicable")
 
     config = {
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook"
-        }
+        "url": "https://example.com/webhook"
     }
 
     config_id = "test_create_task_push_notification_config_" + str(uuid.uuid4())
@@ -167,9 +165,7 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
 
     # First, set a push notification config
     config = {
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook"
-        }
+        "url": "https://example.com/webhook"
     }
     config_id = "test_get_push_notification_config_" + str(uuid.uuid4())
 
@@ -205,9 +201,7 @@ def test_create_task_push_notification_config_nonexistent(sut_client, agent_card
         pytest.skip("Push notifications capability not declared - test not applicable")
 
     config = {
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook"
-        }
+        "url": "https://example.com/webhook"
     }
 
     config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
@@ -268,9 +262,7 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
         pytest.skip("Push notifications capability not declared - test not applicable")
 
     config = {
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook1"
-        }
+        "url": "https://example.com/webhook1"
     }
     config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
 
@@ -291,11 +283,10 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
     # Verify the configuration we set is in the list
     found_config = False
     for config in configs:
-        assert "pushNotificationConfig" in config, "Each config must contain pushNotificationConfig"
-        assert "name" in config, "Each config must contain a name"
-        expected_name = f"tasks/{created_task_id}/pushNotificationConfigs/{config_id}"
-        assert config["name"] == expected_name, "the name should match the requested task"
-        if config["pushNotificationConfig"]["url"] == "https://example.com/webhook1":
+        print(config)
+        assert "id" in config, "Each config must contain an id"
+        assert "taskId" in config, "Each config must contain an task ID"
+        if config["taskId"] == created_task_id:
             found_config = True
 
     assert found_config, "The configuration we set should be found in the list"
@@ -363,9 +354,7 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
 
     # First, set a push notification config
     config = {
-        "pushNotificationConfig": {
-            "url": "https://example.com/webhook-to-delete"
-        }
+        "url": "https://example.com/webhook-to-delete"
     }
     config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
 

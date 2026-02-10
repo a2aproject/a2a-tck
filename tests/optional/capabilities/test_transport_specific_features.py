@@ -298,10 +298,10 @@ class TestRESTSpecificFeatures:
 
         # REST HTTP verb mapping tests
         verb_mappings = {
-            "POST": ["/v1/messages", "/v1/tasks/{id}/cancel"],
-            "GET": ["/v1/tasks/{id}", "/v1/agent/card"],
-            "PUT": ["/v1/tasks/{id}/pushNotificationConfig"],
-            "DELETE": ["/v1/tasks/{id}/pushNotificationConfig"],
+            "POST": ["/messages", "/tasks/{id}/cancel"],
+            "GET": ["/tasks/{id}", "/agent/card"],
+            "PUT": ["/tasks/{id}/pushNotificationConfig"],
+            "DELETE": ["/tasks/{id}/pushNotificationConfig"],
         }
 
         logger.info("⚪ REST HTTP verb mapping test requires REST client implementation")
