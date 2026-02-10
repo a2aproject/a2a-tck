@@ -163,7 +163,7 @@ def _validate_agent_card_object(agent_card: Dict[str, Any]) -> None:
     """
     Validate that an AgentCard object conforms to A2A specification.
     """
-    required_fields = ["name", "description"]
+    required_fields = ["name", "description", "supportedInterfaces", "version", "capabilities", "defaultInputModes", "defaultOutputModes", "skills"]
     for field in required_fields:
         if field not in agent_card:
             raise A2AValidationError(f"AgentCard missing required field '{field}'", TransportType.GRPC)
