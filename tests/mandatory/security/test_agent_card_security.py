@@ -43,7 +43,7 @@ def agent_card_security_info(agent_card_data, agent_card_url):
 
     security_info = {
         "agent_card_url": agent_card_url,
-        "has_extended_card": "extendedAgentCard" in agent_card_data["capabilities"],
+        "has_extended_card": agent_card_data.get("capabilities", {}).get("extendedAgentCard", False),
         "security_schemes": agent_card_utils.get_authentication_schemes(agent_card_data),
         "security": agent_card_data.get("security", []),
         "sensitive_fields": [],
@@ -167,7 +167,6 @@ def test_extended_card_access_controls(sut_client: BaseTransportClient, agent_ca
             "SECURITY VIOLATION: Extended Agent Card accessible without authentication. "
             "A2A v0.3.0 Section 9.1 requires authentication for extended cards."
         )
- 
     assert response["error"]["code"] == -32603 
 
 
