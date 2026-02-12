@@ -35,9 +35,10 @@ Copy or sync the canonical a2a.proto file from the A2A specification repository 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 specification/a2a.proto exists and matches official A2A spec
-- [ ] #2 File contains all core protocol objects: Task, Message, Part, Artifact, AgentCard
-- [ ] #3 Proto file is syntactically valid (can be parsed by protoc)
-- [ ] #4 Version/source is documented (commit hash or version number)
+- [ ] #2 specification/specification.md exists and matches official A2A spec
+- [ ] #3 File contains all core protocol objects: Task, Message, Part, Artifact, AgentCard
+- [ ] #4 Proto file is syntactically valid (can be parsed by protoc)
+- [ ] #5 Version/source is documented (commit hash or version number)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,24 +47,27 @@ Copy or sync the canonical a2a.proto file from the A2A specification repository 
 ## Implementation Plan
 
 ### Steps
-1. Fetch the official a2a.proto from A2A repository:
-```bash
-curl -o specification/a2a.proto \
-  https://raw.githubusercontent.com/a2aproject/A2A/main/specification/a2a.proto
-```
-
+1. reuse the existing `scripts/update_spec.sh`
+    ```bash
+    ./scripts/update_spec.sh
+    ```
 2. Document the source version:
-   - Create `specification/version.json` or add comment to proto
+   - Create `specification/version.json`
    - Record commit hash or tag & git URL for traceability
 
 3. Validate proto syntax with buildbuf
 
 ### Verification
 - `specification/a2a.proto` exists
-- Contains core types: Task, Message, Part, Artifact, AgentCard
-- Proto parses without syntax errors
+  - Contains core types: Task, Message, Part, Artifact, AgentCard
+  - Proto parses without syntax errors
+- `specification/specification.md` exists
+- `specification/version.json` exists
+- `specification/buf.lock` exists
+- `specification/buf.yaml` exists
 
 ### Notes
-- Consider a `Makefile` target or script for re-syncing when spec updates
+- reuse the existing `scripts/update_spec.sh`
+- Consider a `Makefile` target (`spec`)
 - The proto file MUST be the official version, not modified
 <!-- SECTION:PLAN:END -->
