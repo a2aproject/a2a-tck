@@ -20,6 +20,7 @@ import pytest
 from tck import message_utils
 from tests.markers import mandatory
 from tests.utils import transport_helpers
+from tests.markers import mandatory_jsonrpc
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +55,8 @@ def verify_a2a_error_response(response: Dict[str, Any], expected_code: int, expe
     logger.info(f"✅ A2A error code {expected_code} properly returned with message: {error_message}")
 
 
-@mandatory
-def test_push_notification_not_supported_error_32003(sut_client):
+@mandatory_jsonrpc
+def test_push_notification_not_supported_error_32003(sut_client, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 8.2 - PushNotificationNotSupportedError (-32003)
 
@@ -79,7 +80,14 @@ def test_push_notification_not_supported_error_32003(sut_client):
     """
     # First check if agent declares push notification support
     try:
-        agent_card = transport_helpers.transport_get_agent_card(sut_client)
+        agent_card = {}
+        # Try to get extended agent card first
+        result = transport_helpers.transport_get_extended_agent_card(sut_client)
+        if isinstance(result.get("result"), dict):
+            agent_card = result["result"]
+        else:
+            # Fallback to public agent card from fixture
+            agent_card = agent_card_data if agent_card_data else {}
         capabilities = agent_card.get("capabilities", {})
         push_notifications_supported = capabilities.get("pushNotifications", False)
 
@@ -95,10 +103,9 @@ def test_push_notification_not_supported_error_32003(sut_client):
     # Create a test message to get a task ID first
     req_id = message_utils.generate_request_id()
     test_message = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Test message for push notification error test"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Test message for push notification error test"}],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     # Send message to create a task
@@ -128,7 +135,7 @@ def test_push_notification_not_supported_error_32003(sut_client):
         json_rpc_request = message_utils.make_json_rpc_request(
             "tasks/pushNotificationConfig/set", params=push_config_params, id=f"push-{req_id}"
         )
-
+        logger.info(f"Push notification request: {json_rpc_request}")
         try:
             response = sut_client.send_raw_json_rpc(json_rpc_request)
             # If we reach here, the request succeeded unexpectedly
@@ -162,8 +169,9 @@ def test_push_notification_not_supported_error_32003(sut_client):
         pytest.fail(f"Failed to test push notification error: {e}")
 
 
+@mandatory_jsonrpc
 @mandatory
-def test_unsupported_operation_error_32004(sut_client):
+def test_unsupported_operation_error_32004(sut_client, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 8.2 - UnsupportedOperationError (-32004)
 
@@ -187,7 +195,14 @@ def test_unsupported_operation_error_32004(sut_client):
     """
     # Test 1: Try streaming operation on agent that doesn't support streaming
     try:
-        agent_card = transport_helpers.transport_get_agent_card(sut_client)
+        agent_card = {}
+        # Try to get extended agent card first
+        result = transport_helpers.transport_get_extended_agent_card(sut_client)
+        if isinstance(result.get("result"), dict):
+            agent_card = result["result"]
+        else:
+            # Fallback to public agent card from fixture
+            agent_card = agent_card_data if agent_card_data else {}
         capabilities = agent_card.get("capabilities", {})
         streaming_supported = capabilities.get("streaming", False)
 
@@ -196,15 +211,14 @@ def test_unsupported_operation_error_32004(sut_client):
 
             req_id = message_utils.generate_request_id()
             message_data = {
-                "role": "user",
-                "parts": [{"kind": "text", "text": "test message for streaming"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": "test message for streaming"}],
                 "messageId": f"msg-{req_id}",
-                "kind": "message",
             }
 
             params = {"message": message_data}
 
-            response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/stream", params=params, id=req_id)
+            response = transport_helpers.transport_send_streaming_message(sut_client, params)
 
             if "error" in response:
                 error_code = response["error"]["code"]
@@ -223,21 +237,22 @@ def test_unsupported_operation_error_32004(sut_client):
     # Test 2: Try to use unsupported configuration options
     req_id = message_utils.generate_request_id()
 
-    # Attempt message/send with potentially unsupported configuration
-    message_data = {"role": "user", "parts": [{"kind": "text", "text": "test"}], "messageId": f"msg-{req_id}", "kind": "message"}
+    # Attempt SendMessage with potentially unsupported configuration
+    message = {
+        "message": {
+        "role": "ROLE_USER", "parts": [{"text": "test"}], "messageId": f"msg-{req_id}"
+        }
+    }
 
     # Add configuration that might not be supported
-    params = {
-        "message": message_data,
-        "configuration": {
-            "blocking": True,
-            "acceptedOutputModes": ["application/unsupported-format"],
-            "historyLength": 999999,  # Very large number that might be unsupported
-        },
+    configuration = {
+        "blocking": True,
+        "acceptedOutputModes": ["application/unsupported-format"],
+        "historyLength": 999999,  # Very large number that might be unsupported
     }
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/send", params=params, id=req_id)
+        response = transport_helpers.transport_send_message(sut_client, message, configuration)
 
         if "error" in response:
             error_code = response["error"]["code"]
@@ -286,26 +301,24 @@ def test_content_type_not_supported_error_32005(sut_client):
 
     # Test 1: Send message with unsupported file MIME type
     message_data = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [
-            {"kind": "text", "text": "Please process this file"},
+            {"text": "Please process this file"},
             {
-                "kind": "file",
                 "file": {
                     "name": "test.unsupported",
-                    "mimeType": "application/x-totally-unsupported-format",
-                    "bytes": "VGVzdCBkYXRh",  # "Test data" in base64
+                    "mediaType": "application/x-totally-unsupported-format",
+                    "fileWithBytes": "VGVzdCBkYXRh",  # "Test data" in base64
                 },
             },
         ],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     params = {"message": message_data}
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/send", params=params, id=req_id)
+        response = transport_helpers.transport_send_json_rpc_request(sut_client, "SendMessage", params=params, id=req_id)
 
         if "error" in response:
             error_code = response["error"]["code"]
@@ -327,10 +340,9 @@ def test_content_type_not_supported_error_32005(sut_client):
     req_id = message_utils.generate_request_id()
 
     message_data = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Generate output in unsupported format"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Generate output in unsupported format"}],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     params = {
@@ -339,7 +351,7 @@ def test_content_type_not_supported_error_32005(sut_client):
     }
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/send", params=params, id=req_id)
+        response = transport_helpers.transport_send_json_rpc_request(sut_client, "SendMessage", params=params, id=req_id)
 
         if "error" in response:
             error_code = response["error"]["code"]

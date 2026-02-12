@@ -13,6 +13,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
+from tck import config
+
 logger = logging.getLogger(__name__)
 
 
@@ -75,6 +77,7 @@ class BaseTransportClient(ABC):
         """
         self.base_url = base_url
         self.transport_type = transport_type
+        self.default_headers = {}
         self._logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
     @abstractmethod
@@ -85,7 +88,7 @@ class BaseTransportClient(ABC):
         extra_headers: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
-        Send a message to the A2A server using the message/send method.
+        Send a message to the A2A server using the SendMessage method.
 
         This method implements the core A2A message sending functionality.
         All transport implementations must provide functionally equivalent behavior.
@@ -180,38 +183,39 @@ class BaseTransportClient(ABC):
         pass
 
     @abstractmethod
-    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Any:
+    def subscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Any:
         """
-        Resubscribe to task updates using tasks/resubscribe method.
+        Subscribe to task updates using SubscribeToTaskmethod.
 
         This method allows resuming streaming updates for a task that was
         previously started but the stream was disconnected.
 
         Args:
-            task_id: The unique identifier of the task to resubscribe to
+            task_id: The unique identifier of the task to subscribe to
             extra_headers: Optional transport-specific headers
 
         Returns:
             A stream object that yields task updates (transport-specific type)
 
         Raises:
-            TransportError: If task resubscription fails
+            TransportError: If task subscription fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.2.4 - Task Resubscription
+        Specification Reference: A2A Protocol v1.0 §3.1.6. - Subscribe to Task
         """
         pass
 
     # Push notification configuration methods (v0.3.0 additions)
 
     @abstractmethod
-    def set_push_notification_config(
-        self, task_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+    def create_task_push_notification_config(
+        self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Set push notification configuration for a task.
 
         Args:
             task_id: The unique identifier of the task
+            config_id: The ID for the new config
             config: Push notification configuration object
             extra_headers: Optional transport-specific headers
 
@@ -221,7 +225,7 @@ class BaseTransportClient(ABC):
         Raises:
             TransportError: If configuration setting fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.3 - Push Notifications
+        Specification Reference: A2A Protocol v1.0 §3.1.7. Set or Update Push Notification Config
         """
         pass
 
@@ -291,9 +295,9 @@ class BaseTransportClient(ABC):
     # v0.3.0 new methods
 
     @abstractmethod
-    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        Get the authenticated extended agent card.
+        Get the  extended agent card.
 
         This method returns additional agent information that may only be available
         to authenticated clients.
@@ -311,25 +315,43 @@ class BaseTransportClient(ABC):
         """
         pass
 
-    # Optional method for gRPC/REST only
-    def list_tasks(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    # Available in all transports as of v1.0
+    def list_tasks(
+        self,
+        contextId: Optional[str] = None,
+        status: Optional[str] = None,
+        pageSize: Optional[int] = None,
+        pageToken: Optional[str] = None,
+        historyLength: Optional[int] = None,
+        statusTimestampAfter: Optional[str] = None,
+        includeArtifacts: Optional[bool] = None
+    ) -> Dict[str, Any]:
         """
-        List tasks (available in gRPC and REST transports only).
+        List tasks with optional filtering and pagination.
 
-        This is an optional method that may not be available in all transport types.
-        JSON-RPC transport does not support this method.
+        As of A2A v1.0, this method is available in all transports (JSON-RPC, gRPC, REST).
 
         Args:
-            extra_headers: Optional transport-specific headers
+            contextId: Optional context ID to filter by
+            status: Optional task status to filter by
+            pageSize: Optional number of tasks per page (1-100, default 50)
+            pageToken: Optional pagination cursor
+            historyLength: Optional number of messages to include in task history (default 0)
+            statusTimestampAfter: Optional timestamp filter in ISO 8601 format (e.g., "2023-10-27T10:00:00Z")
+            includeArtifacts: Optional flag to include artifacts (default false)
 
         Returns:
-            List of tasks
+            Dict containing:
+                - tasks: List of Task objects
+                - totalSize: Total number of matching tasks
+                - pageSize: Number of tasks in this response
+                - nextPageToken: Token for next page (None if no more results)
 
         Raises:
             TransportError: If task listing fails or is not supported
             NotImplementedError: If the transport doesn't support this method
 
-        Specification Reference: A2A Protocol v0.3.0 §3.5.6 - Method Mapping Reference Table
+        Specification Reference: A2A Protocol v1.0 §3.1.4 - ListTasks
         """
         raise NotImplementedError(f"list_tasks is not supported by {self.transport_type.value} transport")
 
@@ -349,14 +371,13 @@ class BaseTransportClient(ABC):
             "send_streaming_message",
             "get_task",
             "cancel_task",
-            "resubscribe_task",
+            "subscribe_task",
             "subscribe_to_task",
-            "get_agent_card",
-            "set_push_notification_config",
+            "create_task_push_notification_config",
             "get_push_notification_config",
             "list_push_notification_configs",
             "delete_push_notification_config",
-            "get_authenticated_extended_card",
+            "get_extended_agent_card",
         }
 
         if method_name in core_methods:
@@ -367,6 +388,31 @@ class BaseTransportClient(ABC):
             return self.transport_type in [TransportType.GRPC, TransportType.REST]
 
         return False
+
+    def _prepare_headers(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+        """
+        Prepare HTTP headers from default, config auth headers, and extra headers.
+
+        Args:
+            extra_headers: Optional additional headers to include
+
+        Returns:
+            Dictionary of HTTP headers
+        """
+        headers = self.default_headers.copy()
+
+        # Add auth headers from configuration
+        auth_headers = config.get_auth_headers()
+        if auth_headers:
+            headers.update(auth_headers)
+        # Add/override with extra headers if provided
+        if extra_headers:
+            headers.update(extra_headers)
+            if "A2A_TCK_DONT_USE_AUTH" in extra_headers:
+                # remove the auth headers
+                headers = {k: v for k, v in headers.items() if k not in auth_headers}
+                del headers["A2A_TCK_DONT_USE_AUTH"]
+        return headers
 
     def get_transport_info(self) -> Dict[str, Any]:
         """
@@ -385,14 +431,13 @@ class BaseTransportClient(ABC):
                     "send_streaming_message",
                     "get_task",
                     "cancel_task",
-                    "resubscribe_task",
+                    "subscribe_task",
                     "subscribe_to_task",
-                    "get_agent_card",
-                    "set_push_notification_config",
+                    "create_task_push_notification_config",
                     "get_push_notification_config",
                     "list_push_notification_configs",
                     "delete_push_notification_config",
-                    "get_authenticated_extended_card",
+                    "get_extended_agent_card",
                     "list_tasks",
                 ]
                 if self.supports_method(method)

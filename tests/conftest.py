@@ -78,6 +78,21 @@ def pytest_configure(config):
 
     tck.config.set_enable_transport_equivalence_testing(enable_equivalence)
 
+@pytest.fixture(scope="session")
+def agent_card_url(request):
+    """
+    Pytest fixture to get the Agent Card URL.
+    """
+    if request.config.getoption("--skip-agent-card"):
+        print("Skipping Agent Card fetch due to --skip-agent-card flag.")
+        return None
+
+    sut_url = request.config.getoption("--sut-url") or os.getenv("SUT_URL")
+    if not sut_url:
+        # This case should ideally be caught earlier, but as a fallback:
+        pytest.fail("SUT URL not provided. Cannot fetch Agent Card.")
+
+    return sut_url + "/.well-known/agent-card.json"
 
 @pytest.fixture(scope="session")
 def agent_card_data(request):
@@ -132,34 +147,30 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture
 def valid_text_message_params():
-    # Minimal valid params for message/send (TextPart)
+    # Minimal valid params for SendMessage (TextPart)
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello from TCK!"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello from TCK!"}],
         }
     }
 
 
 @pytest.fixture
 def valid_file_message_params():
-    # Valid params for message/send with FilePart
+    # Valid params for SendMessage with FilePart
     # Note: mimeType is RECOMMENDED per A2A Specification §6.6.2 FileWithUri Object
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-file-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
                 {
-                    "kind": "file",
                     "file": {
                         "name": "test.txt",
-                        "mimeType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
-                        "url": "https://example.com/test.txt",
-                        "sizeInBytes": 1024,
+                        "mediaType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
+                        "fileWithUri": "https://example.com/test.txt",
                     },
                 }
             ],
@@ -169,13 +180,12 @@ def valid_file_message_params():
 
 @pytest.fixture
 def valid_data_message_params():
-    # Valid params for message/send with DataPart
+    # Valid params for SendMessage with DataPart
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-data-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "data", "data": {"key": "value", "number": 123, "nested": {"array": [1, 2, 3]}}}],
+            "role": "ROLE_USER",
+            "parts": [{"data": {"key": "value", "number": 123, "nested": {"array": [1, 2, 3]}}}],
         }
     }
 

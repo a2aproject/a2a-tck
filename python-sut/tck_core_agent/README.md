@@ -30,13 +30,13 @@ A complete A2A agent implementation designed specifically for testing with the A
      -H "Content-Type: application/json" \
      -d '{
        "jsonrpc": "2.0",
-       "method": "message/send",
+       "method": "SendMessage",
        "params": {
          "message": {
            "messageId": "test-123",
-           "role": "user",
+           "role": "ROLE_USER",
            "taskId": "my-task-123",
-           "parts": [{"kind": "text", "text": "Hello"}]
+           "parts": [{"text": "Hello"}]
          }
        },
        "id": "test-id"
@@ -57,7 +57,7 @@ A complete A2A agent implementation designed specifically for testing with the A
 
 This agent serves as the reference implementation for A2A TCK testing. Unlike basic examples that only return Message objects, this implementation:
 
-- Returns Task objects from `message/send` when appropriate
+- Returns Task objects from `SendMessage` when appropriate
 - Supports `tasks/get` and `tasks/cancel` methods
 - Maintains task history and state
 - Generates artifacts for responses

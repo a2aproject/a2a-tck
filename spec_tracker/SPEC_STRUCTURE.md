@@ -81,7 +81,7 @@
   - InvalidAgentResponseError: -32006
 
 ### Method Signatures
-- message/send: SendMessageRequest → SendMessageResponse
+- SendMessage: SendMessageRequest → SendMessageResponse
 - message/stream: SendStreamingMessageRequest → SSE stream
 - tasks/get: GetTaskRequest → GetTaskResponse
 - tasks/cancel: CancelTaskRequest → CancelTaskResponse

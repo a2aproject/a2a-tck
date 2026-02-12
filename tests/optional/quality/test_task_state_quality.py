@@ -23,9 +23,8 @@ def text_message_params():
     return {
         "message": {
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello from TCK state transition test!"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello from TCK state transition test!"}],
         }
     }
 
@@ -36,9 +35,8 @@ def follow_up_message_params(text_message_params):
     return {
         "message": {
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Follow-up message for state transition test"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Follow-up message for state transition test"}],
         }
     }
 
@@ -64,10 +62,9 @@ def test_task_state_transitions(sut_client):
     # Create a task
     create_params = {
         "message": {
-            "kind": "message",
             "messageId": "test-state-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for state transition test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for state transition test"}],
         }
     }
 
@@ -75,15 +72,15 @@ def test_task_state_transitions(sut_client):
     assert transport_helpers.is_json_rpc_success_response(create_resp)
     logging.info(f"Create response: {create_resp}")
     # Get the server-generated task ID
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
     # Verify the initial state and history after task creation
     get_resp = transport_helpers.transport_get_task(sut_client, task_id, history_length=1)
     assert transport_helpers.is_json_rpc_success_response(get_resp)
 
     task_after_creation = get_resp["result"]
-    initial_state = task_after_creation.get("status", {}).get("state")
-    assert initial_state in {"submitted", "working"}, f"Unexpected initial state: {initial_state}"
+    initial_state = task_after_creation["status"]["state"]
+    assert initial_state in {"TASK_STATE_SUBMITTED", "TASK_STATE_WORKING"}, f"Unexpected initial state: {initial_state}"
 
     # Verify history exists and contains the initial message
     history = task_after_creation.get("history", [])
@@ -91,11 +88,10 @@ def test_task_state_transitions(sut_client):
     # Send a follow-up message to continue the task
     follow_up_params = {
         "message": {
-            "kind": "message",
             "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "taskId": task_id,
-            "parts": [{"kind": "text", "text": "Follow-up for state test"}],
+            "parts": [{"text": "Follow-up for state test"}],
         }
     }
 
@@ -115,7 +111,7 @@ def test_task_state_transitions(sut_client):
 
     # Verify the state transitions - simple check that it's in an expected state
     current_state = get_resp2["result"]["status"]["state"]
-    assert current_state in {"working", "input-required", "completed"}, f"Unexpected state: {current_state}"
+    assert current_state in {"TASK_STATE_WORKING", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_COMPLETED"}, f"Unexpected state: {current_state}"
 
 
 @quality_basic
@@ -139,10 +135,9 @@ def test_task_cancel_state_handling(sut_client):
     # Create a task
     create_params = {
         "message": {
-            "kind": "message",
             "messageId": "test-cancel-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for cancel test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for cancel test"}],
         }
     }
 
@@ -150,9 +145,8 @@ def test_task_cancel_state_handling(sut_client):
     assert transport_helpers.is_json_rpc_success_response(create_resp)
 
     # Get the server-generated task ID
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
-    params = {"id": task_id}
     # First cancel
     resp1 = transport_helpers.transport_cancel_task(sut_client, task_id)
     assert transport_helpers.is_json_rpc_success_response(resp1)

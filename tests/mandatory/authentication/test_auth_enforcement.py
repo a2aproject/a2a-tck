@@ -74,9 +74,6 @@ def test_authentication_required_when_declared(security_schemes):
         - WWW-Authenticate header is present (recommended)
         - Response follows A2A error format if JSON-RPC layer is reached
     """
-    if not security_schemes:
-        pytest.fail("Test should have been skipped - no authentication schemes found")
-
     logger.info(f"Testing authentication enforcement with {len(security_schemes)} declared schemes")
 
     # Create a direct session without any authentication
@@ -85,7 +82,7 @@ def test_authentication_required_when_declared(security_schemes):
     # Prepare a simple JSON-RPC request
     req_id = message_utils.generate_request_id()
     params = {"id": f"test-task-{req_id}"}
-    json_rpc_request = message_utils.make_json_rpc_request("tasks/get", params=params, id=req_id)
+    json_rpc_request = message_utils.make_json_rpc_request("GetTask", params=params, id=req_id)
 
     # Send request without authentication headers
     sut_url = config.get_sut_url()
@@ -170,28 +167,24 @@ def test_invalid_credentials_rejected(security_schemes):
         - HTTP status code is 401 or 403 for invalid auth
         - Security validation is properly implemented
     """
-    if not security_schemes:
-        pytest.fail("Test should have been skipped - no authentication schemes found")
-
     logger.info(f"Testing invalid credential rejection with {len(security_schemes)} declared schemes")
 
     # Test each declared authentication scheme
-    for i, scheme in enumerate(security_schemes):
-        scheme_type = scheme.get("type", "unknown").lower()
-        scheme_name = scheme.get("scheme", "unknown")
+    for scheme_type in security_schemes:
+        scheme = security_schemes[scheme_type]
 
-        logger.info(f"Testing invalid credentials for scheme {i + 1}: {scheme_type}")
+        logger.info(f"Testing invalid credentials for scheme {scheme_type}")
 
         # Create session with invalid credentials for this scheme type
         session = requests.Session()
         headers = {"Content-Type": "application/json"}
 
         # Add invalid authentication based on scheme type
-        if scheme_type == "http" and scheme_name.lower() == "bearer":
+        if scheme_type == "httpAuthSecurityScheme" and scheme.get("scheme") == "bearer":
             headers["Authorization"] = "Bearer invalid-dummy-jwt-token-12345"
-        elif scheme_type == "http" and scheme_name.lower() == "basic":
+        elif scheme_type == "httpAuthSecurityScheme" and scheme.get("scheme") == "basic":
             headers["Authorization"] = "Basic aW52YWxpZDppbnZhbGlk"  # invalid:invalid in base64
-        elif scheme_type == "apikey":
+        elif scheme_type == "apiKeySecurityScheme":
             key_name = scheme.get("name", "X-API-Key")
             key_location = scheme.get("in", "header")
 
@@ -201,9 +194,9 @@ def test_invalid_credentials_rejected(security_schemes):
                 # For query/cookie parameters, add to URL/cookies
                 logger.warning(f"API key location '{key_location}' not implemented in test")
                 continue
-        elif scheme_type == "oauth2":
+        elif scheme_type == "oauth2SecurityScheme":
             headers["Authorization"] = "Bearer invalid-oauth2-token-12345"
-        elif scheme_type == "openidconnect":
+        elif scheme_type == "openIdConnectSecurityScheme":
             headers["Authorization"] = "Bearer invalid-oidc-token-12345"
         else:
             # Generic fallback for unknown schemes
@@ -211,8 +204,8 @@ def test_invalid_credentials_rejected(security_schemes):
 
         # Prepare JSON-RPC request
         req_id = message_utils.generate_request_id()
-        params = {"id": f"test-task-{req_id}-scheme-{i}"}
-        json_rpc_request = message_utils.make_json_rpc_request("tasks/get", params=params, id=req_id)
+        params = {"id": f"test-task-{req_id}-scheme-{scheme_type}"}
+        json_rpc_request = message_utils.make_json_rpc_request("GetTask", params=params, id=req_id)
 
         # Send request with invalid credentials
         sut_url = config.get_sut_url()
@@ -285,49 +278,42 @@ def test_authentication_scheme_consistency(security_schemes, auth_agent_card):
         - Scheme types are valid according to specification
         - Security requirements are properly formatted
     """
-    if not security_schemes:
-        pytest.fail("Test should have been skipped - no authentication schemes found")
-
     logger.info(f"Validating authentication scheme consistency for {len(security_schemes)} schemes")
 
-    # Validate each security scheme structure
-    for i, scheme in enumerate(security_schemes):
-        scheme_name = f"Scheme {i + 1}"
-
-        # Required field: type
-        assert "type" in scheme, f"{scheme_name}: Missing required 'type' field"
-        scheme_type = scheme["type"]
+    for scheme_name in security_schemes:
+        security_scheme = security_schemes[scheme_name]
+        assert len(security_scheme.keys()) == 1
+        scheme_type, scheme = next(iter(security_scheme.items()))
 
         # Validate known scheme types according to A2A v0.3.0 specification
-        valid_types = ["http", "apiKey", "oauth2", "openIdConnect", "mutualTLS"]
-        assert scheme_type in valid_types, f"{scheme_name}: Invalid scheme type '{scheme_type}'. Must be one of: {valid_types}"
+        valid_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
+        assert scheme_type in valid_types, f"Invalid scheme type '{scheme_type}'. Must be one of: {valid_types}"
 
         # Type-specific validation
-        if scheme_type == "http":
-            assert "scheme" in scheme, f"{scheme_name}: HTTP auth missing required 'scheme' field"
+        if scheme_type == "httpAuthSecurityScheme":
+            assert "scheme" in scheme, f"HTTP auth missing required 'scheme' field"
             http_scheme = scheme["scheme"].lower()
             valid_http_schemes = ["basic", "bearer", "digest"]
-            assert http_scheme in valid_http_schemes, f"{scheme_name}: Invalid HTTP scheme '{http_scheme}'"
+            assert http_scheme in valid_http_schemes, f"Invalid HTTP scheme '{http_scheme}'"
 
-        elif scheme_type == "apiKey":
-            assert "name" in scheme, f"{scheme_name}: API key auth missing required 'name' field"
-            assert "in" in scheme, f"{scheme_name}: API key auth missing required 'in' field"
-
+        elif scheme_type == "apiKeySecurityScheme":
+            assert "name" in scheme, f"API key auth missing required 'name' field"
+            assert "in" in scheme, f"API key auth missing required 'in' field"
             key_location = scheme["in"]
             valid_locations = ["query", "header", "cookie"]
-            assert key_location in valid_locations, f"{scheme_name}: Invalid API key location '{key_location}'"
+            assert key_location in valid_locations, f"Invalid API key location '{key_location}'"
 
-        elif scheme_type == "oauth2":
-            assert "flows" in scheme, f"{scheme_name}: OAuth2 auth missing required 'flows' field"
+        elif scheme_type == "oauth2SecurityScheme":
+            assert "flows" in scheme, f"OAuth2 auth missing required 'flows' field"
             flows = scheme["flows"]
-            assert isinstance(flows, dict), f"{scheme_name}: OAuth2 'flows' must be an object"
+            assert isinstance(flows, dict), f"OAuth2 'flows' must be an object"
 
-        elif scheme_type == "openIdConnect":
-            assert "openIdConnectUrl" in scheme, f"{scheme_name}: OpenID Connect missing required 'openIdConnectUrl' field"
+        elif scheme_type == "openIdConnectSecurityScheme":
+            assert "openIdConnectUrl" in scheme, f"OpenID Connect missing required 'openIdConnectUrl' field"
             oidc_url = scheme["openIdConnectUrl"]
-            assert oidc_url.startswith("https://"), f"{scheme_name}: OpenID Connect URL must use HTTPS"
+            assert oidc_url.startswith("https://"), f"OpenID Connect URL must use HTTPS"
 
-        logger.info(f"✅ {scheme_name} ({scheme_type}) validation passed")
+        logger.info(f"✅ ({scheme_type}) validation passed")
 
     # Validate security requirements in Agent Card
     if "security" in auth_agent_card:

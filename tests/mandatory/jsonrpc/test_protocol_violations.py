@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from tck import message_utils
+from tck import config, message_utils
 from tck.sut_client import SUTClient
 from tests.markers import mandatory_jsonrpc
 
@@ -21,10 +21,9 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-protocol-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello from protocol violation test!"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello from protocol violation test!"}],
         }
     }
 
@@ -44,16 +43,16 @@ def test_duplicate_request_ids(sut_client, text_message_params):
     fixed_id = f"duplicate-{uuid.uuid4()}"
 
     # First request with the fixed ID
-    first_req = message_utils.make_json_rpc_request("message/send", params=text_message_params, id=fixed_id)
-    first_resp = sut_client.send_raw_json_rpc(first_req)
+    first_req = message_utils.make_json_rpc_request("SendMessage", params=text_message_params, id=fixed_id)
+    first_resp = sut_client.send_raw_json_rpc(first_req, config.get_auth_headers())
     assert message_utils.is_json_rpc_success_response(first_resp, expected_id=fixed_id)
 
     # Second request with the same ID but different params
     second_params = text_message_params.copy()
     second_params["message"]["parts"][0]["text"] = "This is a different message with the same ID"
 
-    second_req = message_utils.make_json_rpc_request("message/send", params=second_params, id=fixed_id)
-    second_resp = sut_client.send_raw_json_rpc(second_req)
+    second_req = message_utils.make_json_rpc_request("SendMessage", params=second_params, id=fixed_id)
+    second_resp = sut_client.send_raw_json_rpc(second_req, config.get_auth_headers())
 
     # Various SUTs might handle this differently:
     # 1. Reject with InvalidRequest error
@@ -76,13 +75,13 @@ def test_invalid_jsonrpc_version(sut_client, text_message_params):
     Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
     # Create a valid request first
-    req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
+    req = message_utils.make_json_rpc_request("SendMessage", params=text_message_params)
 
     # Modify the jsonrpc version to an invalid value (violates JSON-RPC 2.0 MUST requirement)
     req["jsonrpc"] = "1.0"  # Should be "2.0"
 
     # Send the malformed request using raw JSON-RPC method
-    resp = sut_client.send_raw_json_rpc(req)
+    resp = sut_client.send_raw_json_rpc(req, config.get_auth_headers())
 
     # Per JSON-RPC 2.0 spec, this MUST be rejected with InvalidRequest error
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), (
@@ -104,7 +103,7 @@ def test_missing_method_field(sut_client, text_message_params):
     Failure Impact: Implementation is not JSON-RPC 2.0 compliant
     """
     # Create a valid request first
-    req = message_utils.make_json_rpc_request("message/send", params=text_message_params)
+    req = message_utils.make_json_rpc_request("SendMessage", params=text_message_params)
     print(f"req: {req}")
 
     # Remove the method field (violates JSON-RPC 2.0 MUST requirement)
@@ -112,7 +111,7 @@ def test_missing_method_field(sut_client, text_message_params):
     print(f"req: {req}")
 
     # Send the malformed request using raw JSON-RPC method
-    resp = sut_client.send_raw_json_rpc(req)
+    resp = sut_client.send_raw_json_rpc(req, config.get_auth_headers())
 
     # Per JSON-RPC 2.0 spec, this MUST be rejected with InvalidRequest error
     assert message_utils.is_json_rpc_error_response(resp, expected_id=req["id"]), (
@@ -141,10 +140,10 @@ def test_raw_invalid_json(sut_client):
         - Implementation maintains A2A compliance requirements
     """
     # Create an intentionally invalid JSON string
-    invalid_json = """{"jsonrpc": "2.0", "method": "message/send", "params": {"unclosed_object": true"""
+    invalid_json = """{"jsonrpc": "2.0", "method": "SendMessage", "params": {"unclosed_object": true"""
 
     # Use the raw_send method to send invalid JSON
-    status_code, response_text = sut_client.raw_send(invalid_json)
+    status_code, response_text = sut_client.raw_send(invalid_json, config.get_auth_headers())
 
     # SUT should either:
     # 1. Respond with a 400 Bad Request status

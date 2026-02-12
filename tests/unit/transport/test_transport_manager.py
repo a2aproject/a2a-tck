@@ -32,10 +32,10 @@ class MockTransportClient(BaseTransportClient):
     def cancel_task(self, task_id, extra_headers=None):
         return {"task_id": task_id, "status": "cancelled"}
 
-    def resubscribe_task(self, task_id, extra_headers=None):
+    def subscribe_task(self, task_id, extra_headers=None):
         return iter([{"status": "running"}])
 
-    def set_push_notification_config(self, task_id, config, extra_headers=None):
+    def create_task_push_notification_config(self, task_id, config, extra_headers=None):
         return {"config_id": "test-config-123"}
 
     def get_push_notification_config(self, task_id, config_id, extra_headers=None):
@@ -47,7 +47,7 @@ class MockTransportClient(BaseTransportClient):
     def delete_push_notification_config(self, task_id, config_id, extra_headers=None):
         return {"config_id": config_id, "deleted": True}
 
-    def get_authenticated_extended_card(self, extra_headers=None):
+    def get_extended_agent_card(self, extra_headers=None):
         return {"extended": True}
 
     def close(self):

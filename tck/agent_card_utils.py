@@ -162,7 +162,7 @@ def get_supported_modalities(agent_card_data: Dict[str, Any], skill_id: Optional
     return list(modalities)
 
 
-def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Get the authentication schemes declared in the Agent Card.
 
@@ -173,33 +173,32 @@ def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str
         agent_card_data: The parsed Agent Card data
 
     Returns:
-        A list of authentication scheme objects from securitySchemes
+        A dictionary of authentication scheme objects from securitySchemes
     """
     # Look for securitySchemes as per A2A/OpenAPI specification
     if "securitySchemes" in agent_card_data:
         schemes = agent_card_data["securitySchemes"]
         if isinstance(schemes, dict):
-            # Convert dict of schemes to list of scheme objects
-            return list(schemes.values())
-
-    # Fallback: check for legacy 'authentication' field for backward compatibility
-    if "authentication" in agent_card_data:
-        auth = agent_card_data["authentication"]
-        if isinstance(auth, list):
-            return auth
-
-    # Return empty list if no authentication is declared
-    return []
+            return schemes
+    # Return empty dict if no authentication is declared
+    return {}
 
 
 # A2A v0.3.0 Transport Discovery Functions
 
+def _iterate_supported_interfaces(agent_card_data: Dict[str, Any]):
+    interfaces = agent_card_data.get("supportedInterfaces", [])
+    if isinstance(interfaces, list):
+        for interface in interfaces:
+            if isinstance(interface, dict):
+                yield interface
 
 def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportType]:
     """
     Discover supported transport protocols from the Agent Card.
 
-    Extracts transport information from preferredTransport and additionalInterfaces fields.
+    Extracts transport information from supportedInterfaces.
+    Also extracts from preferredTransport and additionalInterfaces fields for backwards compatibility with 0.3.0
 
     Args:
         agent_card_data: The parsed Agent Card data
@@ -207,18 +206,29 @@ def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportT
     Returns:
         List of supported TransportType enums
 
-    Specification Reference: A2A Protocol v0.3.0 §3.4.2 - Transport Selection and Negotiation
+    Specification Reference: A2A Protocol v1.0 §8.3. Protocol Declaration Requirements
     """
-    supported_transports: Set[TransportType] = set()
+    supported_transports: List[TransportType] = list()
+
+    # Check supportedInterfaces
+    for interface in _iterate_supported_interfaces(agent_card_data):
+        if isinstance(interface, dict):
+            transport_name = interface.get("protocolBinding")
+            if transport_name and isinstance(transport_name, str):
+                transport_type = _parse_transport_type(transport_name)
+                if transport_type:
+                    supported_transports.append(transport_type)
 
     # Check preferred transport
+    # backwards compatibility with 0.3.0
     preferred = agent_card_data.get("preferredTransport")
     if preferred and isinstance(preferred, str):
         transport_type = _parse_transport_type(preferred)
         if transport_type:
-            supported_transports.add(transport_type)
+            supported_transports.append(transport_type)
 
     # Check additional interfaces
+    # backwards compatibility with 0.3.0
     additional = agent_card_data.get("additionalInterfaces", [])
     if isinstance(additional, list):
         for interface in additional:
@@ -227,9 +237,9 @@ def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportT
                 if transport_name and isinstance(transport_name, str):
                     transport_type = _parse_transport_type(transport_name)
                     if transport_type:
-                        supported_transports.add(transport_type)
+                        supported_transports.append(transport_type)
 
-    return list(supported_transports)
+    return list(dict.fromkeys(supported_transports))
 
 
 def get_preferred_transport(agent_card_data: Dict[str, Any]) -> Optional[TransportType]:
@@ -244,17 +254,24 @@ def get_preferred_transport(agent_card_data: Dict[str, Any]) -> Optional[Transpo
 
     Specification Reference: A2A Protocol v0.3.0 §3.4.2 - Transport Selection and Negotiation
     """
+
+    supported = get_supported_transports(agent_card_data)
+    if supported and len(supported) > 0:
+        return supported[0]
+
+    # backwards compatibility with 0.3.0
     preferred = agent_card_data.get("preferredTransport")
     if preferred and isinstance(preferred, str):
         return _parse_transport_type(preferred)
     return None
-
 
 def get_transport_endpoints(agent_card_data: Dict[str, Any]) -> Dict[TransportType, str]:
     """
     Extract transport-specific endpoints from the Agent Card.
 
     Maps each supported transport to its corresponding endpoint URL.
+    Extracts transport information from supportedInterfaces.
+    Also extracts from preferredTransport and additionalInterfaces fields for backwards compatibility with 0.3.0
 
     Args:
         agent_card_data: The parsed Agent Card data
@@ -262,11 +279,22 @@ def get_transport_endpoints(agent_card_data: Dict[str, Any]) -> Dict[TransportTy
     Returns:
         Dictionary mapping TransportType to endpoint URL
 
-    Specification Reference: A2A Protocol v0.3.0 §3.1 - Transport Layer Requirements
+    Specification Reference: A2A Protocol v1.0. §8.3 Protocol Declaration Requirements
     """
     endpoints: Dict[TransportType, str] = {}
 
+    for interface in _iterate_supported_interfaces(agent_card_data):
+        if isinstance(interface, dict):
+            transport_name = interface.get("protocolBinding")
+            endpoint = interface.get("url")
+
+            if transport_name and endpoint and isinstance(transport_name, str) and isinstance(endpoint, str):
+                transport_type = _parse_transport_type(transport_name)
+                if transport_type:
+                    endpoints[transport_type] = endpoint
+
     # Check for main endpoint (usually JSON-RPC)
+    # backwards compatibility with 0.3.0
     main_endpoint = agent_card_data.get("endpoint")
     if main_endpoint and isinstance(main_endpoint, str):
         # Assume main endpoint is JSON-RPC unless specified otherwise
@@ -281,6 +309,7 @@ def get_transport_endpoints(agent_card_data: Dict[str, Any]) -> Dict[TransportTy
                 endpoints[transport_type] = main_url
 
     # Check additional interfaces for transport-specific endpoints
+    # backwards compatibility with 0.3.0
     additional = agent_card_data.get("additionalInterfaces", [])
     if isinstance(additional, list):
         for interface in additional:

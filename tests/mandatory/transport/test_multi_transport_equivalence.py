@@ -72,8 +72,8 @@ def execute_equivalent_operation(sut_client: BaseTransportClient, operation: str
         return transport_helpers.transport_send_message(sut_client, params)
     elif operation == "get_task":
         return transport_helpers.transport_get_task(sut_client, params.get("task_id"))
-    elif operation == "get_agent_card":
-        return transport_helpers.transport_get_agent_card(sut_client)
+    elif operation == "get_extended_agent_card":
+        return transport_helpers.transport_get_extended_agent_card(sut_client)
     elif operation == "list_tasks":
         return transport_helpers.transport_list_tasks(sut_client, params)
     else:
@@ -113,10 +113,9 @@ def test_message_sending_equivalence(sut_client: BaseTransportClient, transport_
     # Create test message for equivalence testing
     req_id = message_utils.generate_request_id()
     test_message = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Test message for transport equivalence validation"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Test message for transport equivalence validation"}],
         "messageId": f"equiv-test-msg-{req_id}",
-        "kind": "message",
     }
 
     transport_results = {}
@@ -220,10 +219,9 @@ def test_task_retrieval_equivalence(sut_client: BaseTransportClient, transport_c
     # Create a test task first
     req_id = message_utils.generate_request_id()
     test_message = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Task for transport equivalence testing"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Task for transport equivalence testing"}],
         "messageId": f"equiv-task-msg-{req_id}",
-        "kind": "message",
     }
 
     # Create task via primary transport
@@ -316,7 +314,7 @@ def test_task_retrieval_equivalence(sut_client: BaseTransportClient, transport_c
 
 
 @mandatory
-def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transport_capabilities):
+def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transport_capabilities, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Agent Card Access Transport Equivalence
 
@@ -338,6 +336,13 @@ def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transpor
         - No transport-specific data modifications
         - Consistent agent capability reporting
     """
+    if agent_card_data is None:
+        pytest.skip("Agent Card data not available")
+
+    supportsExtendedAgentCard = agent_card_data.get("capabilities", {}).get("extendedAgentCard", False)
+    if not supportsExtendedAgentCard:
+        pytest.skip("No extended agent card supported for Agent Card equivalence testing")
+
     available_transports = transport_capabilities["transports_detected"]
 
     if len(available_transports) < 1:
@@ -353,7 +358,7 @@ def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transpor
 
         try:
             result = execute_equivalent_operation(
-                sut_client, "get_agent_card", {}, transport.lower().replace("/", "_").replace("-", "_")
+                sut_client, "get_extended_agent_card", {}, transport.lower().replace("/", "_").replace("-", "_")
             )
 
             transport_results[transport] = {
@@ -551,7 +556,7 @@ def test_performance_equivalence(sut_client: BaseTransportClient, transport_capa
     logger.info(f"Testing performance equivalence across {len(available_transports)} transports")
 
     # Performance test operations
-    perf_operations = [{"name": "Agent Card Access", "operation": "get_agent_card", "params": {}}]
+    perf_operations = [{"name": "Agent Card Access", "operation": "get_extended_agent_card", "params": {}}]
 
     transport_performance = {}
 
@@ -676,10 +681,9 @@ def test_concurrent_operation_equivalence(sut_client: BaseTransportClient, trans
         try:
             req_id = message_utils.generate_request_id()
             test_message = {
-                "role": "user",
-                "parts": [{"kind": "text", "text": f"Concurrent test message {i + 1} via {transport}"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": f"Concurrent test message {i + 1} via {transport}"}],
                 "messageId": f"concurrent-msg-{req_id}-{i}",
-                "kind": "message",
             }
 
             result = execute_equivalent_operation(

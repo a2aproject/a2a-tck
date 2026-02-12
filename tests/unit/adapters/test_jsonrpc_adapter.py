@@ -34,7 +34,7 @@ class MockJSONRPCClient(JSONRPCClient):
         self.call_log.append(("_make_jsonrpc_request", method, params, request_id, extra_headers))
 
         # Return appropriate mock responses based on method
-        if method == "message/send":
+        if method == "SendMessage":
             return {
                 "jsonrpc": "2.0",
                 "result": {"taskId": "test-task-123", "state": "pending", "createdAt": "2025-08-02T10:00:00Z"},
@@ -66,7 +66,7 @@ class MockJSONRPCClient(JSONRPCClient):
 
     def send_message(self, message: Dict[str, Any], extra_headers=None):
         self.call_log.append(("send_message", message, extra_headers))
-        response = self._make_jsonrpc_request("message/send", {"message": message}, extra_headers=extra_headers)
+        response = self._make_jsonrpc_request("SendMessage", {"message": message}, extra_headers=extra_headers)
         return response["result"]
 
     def send_streaming_message(self, message: Dict[str, Any], extra_headers=None):
@@ -87,16 +87,16 @@ class MockJSONRPCClient(JSONRPCClient):
         response = self._make_jsonrpc_request("tasks/cancel", {"taskId": task_id}, extra_headers=extra_headers)
         return response["result"]
 
-    def get_agent_card(self, extra_headers=None):
-        self.call_log.append(("get_agent_card", extra_headers))
-        response = self._make_jsonrpc_request("agent/getAuthenticatedExtendedCard", {}, extra_headers=extra_headers)
+    def get_extended_agent_card(self, extra_headers=None):
+        self.call_log.append(("get_extended_agent_card", extra_headers))
+        response = self._make_jsonrpc_request("agent/getExtendedAgentCard", {}, extra_headers=extra_headers)
         return response["result"]
 
     # Implement remaining abstract methods with minimal functionality
-    def resubscribe_task(self, task_id: str, extra_headers=None):
+    def subscribe_task(self, task_id: str, extra_headers=None):
         return iter([{"taskId": task_id, "state": "in-progress"}])
 
-    def set_push_notification_config(self, task_id: str, config: Dict[str, Any], extra_headers=None):
+    def create_task_push_notification_config(self, task_id: str, config: Dict[str, Any], extra_headers=None):
         return {"configId": "config-123"}
 
     def get_push_notification_config(self, task_id: str, config_id: str, extra_headers=None):
@@ -108,7 +108,7 @@ class MockJSONRPCClient(JSONRPCClient):
     def delete_push_notification_config(self, task_id: str, config_id: str, extra_headers=None):
         return {"success": True}
 
-    def get_authenticated_extended_card(self, extra_headers=None):
+    def get_extended_agent_card(self, extra_headers=None):
         return {"name": "Test Agent", "protocol_version": "0.3.0", "endpoint": self.base_url}
 
 
@@ -240,15 +240,6 @@ class TestJSONRPCTestAdapter:
         assert result.sut_response["taskId"] == task_id
         assert result.duration_ms is not None
 
-    def test_get_agent_card_success(self, adapter, test_context):
-        """Test successful agent card retrieval."""
-        result = adapter.test_get_agent_card(test_context)
-
-        assert result.outcome == TestOutcome.PASS
-        assert result.sut_response["protocol_version"] == "0.3.0"
-        assert result.sut_response["name"] == "Test JSON-RPC Agent"
-        assert result.duration_ms is not None
-
     def test_raw_json_rpc_call(self, adapter, test_context):
         """Test raw JSON-RPC method call."""
         result = adapter.test_raw_json_rpc_call(test_context, "custom/method", {"param1": "value1"})
@@ -310,7 +301,7 @@ class TestJSONRPCTestAdapter:
         """Test creation of JSON-RPC compliance test scenarios."""
         scenarios = adapter.create_compliance_test_scenarios()
 
-        assert len(scenarios) == 3
+        assert len(scenarios) == 2
 
         # Verify basic message scenario
         message_scenario = scenarios[0]
@@ -322,11 +313,6 @@ class TestJSONRPCTestAdapter:
         streaming_scenario = scenarios[1]
         assert streaming_scenario["name"] == "streaming_message"
         assert streaming_scenario["type"] == "send_streaming_message"
-
-        # Verify agent card scenario
-        card_scenario = scenarios[2]
-        assert card_scenario["name"] == "agent_card_retrieval"
-        assert card_scenario["type"] == "get_agent_card"
 
     def test_run_compliance_test_suite(self, adapter, test_context):
         """Test running JSON-RPC compliance test suite."""

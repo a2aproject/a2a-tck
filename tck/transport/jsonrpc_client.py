@@ -19,7 +19,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast, Iterator, Asyn
 
 import httpx
 
+from tck import message_utils
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
+from tck import config
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +77,10 @@ class JSONRPCClient(BaseTransportClient):
             transport=transport
         )
 
+        self.default_headers = {
+            "Content-Type": "application/json"
+        }
+
         self._logger.info(f"JSON-RPC client initialized for {base_url} (streaming timeout: {self.streaming_timeout}s)")
 
     def _generate_id(self) -> str:
@@ -108,10 +114,7 @@ class JSONRPCClient(BaseTransportClient):
         # Build JSON-RPC 2.0 request
         jsonrpc_request = {"jsonrpc": "2.0", "method": method, "params": params or {}, "id": request_id or self._generate_id()}
 
-        # Prepare headers
-        headers = {"Content-Type": "application/json"}
-        if extra_headers:
-            headers.update(extra_headers)
+        headers = self._prepare_headers(extra_headers)
 
         self._logger.info(f"Sending JSON-RPC request to {self.base_url}: {jsonrpc_request}")
 
@@ -177,10 +180,9 @@ class JSONRPCClient(BaseTransportClient):
         # Build JSON-RPC 2.0 request
         jsonrpc_request = {"jsonrpc": "2.0", "method": method, "params": params or {}, "id": request_id or self._generate_id()}
 
-        # Prepare headers
-        headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
-        if extra_headers:
-            headers.update(extra_headers)
+        headers = self._prepare_headers(extra_headers)
+        headers["Accept"] = "text/event-stream"
+
 
         self._logger.info(f"Sending streaming JSON-RPC request to {self.base_url}: {jsonrpc_request}")
 
@@ -198,9 +200,9 @@ class JSONRPCClient(BaseTransportClient):
                     
                     # Validate response status
                     response.raise_for_status()
-                    
                     # Validate content type for SSE
                     content_type = response.headers.get("content-type", "")
+                    # FIXME a2a-java, regression likely caused by https://github.com/a2aproject/a2a-java/issues/486
                     if not content_type.startswith("text/event-stream"):
                         raise JSONRPCError(f"Expected text/event-stream content type for streaming, got: {content_type}")
 
@@ -262,7 +264,7 @@ class JSONRPCClient(BaseTransportClient):
         extra_headers: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
-        Send a message to the A2A server using the message/send method.
+        Send a message to the A2A server using the SendMessage method.
 
         Makes a real JSON-RPC call to validate the SUT's message handling capability.
 
@@ -277,14 +279,14 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If the message sending fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.1 - Core Message Protocol
+        Specification Reference: A2A Protocol v1.0 §9.4.1. SendMessage
         """
         try:
             params = {"message": message}
             if configuration is not None:
                 params["configuration"] = configuration
 
-            response = self._make_jsonrpc_request(method="message/send", params=params, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="SendMessage", params=params, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
@@ -303,7 +305,7 @@ class JSONRPCClient(BaseTransportClient):
 
         Makes a real JSON-RPC call with Server-Sent Events to test streaming functionality.
         This method yields the initial task creation and initial updates, but doesn't consume
-        the entire stream to allow resubscribe_task to work properly.
+        the entire stream to allow subscribe_task to work properly.
 
         Args:
             message: The message object conforming to A2A Message schema
@@ -327,7 +329,7 @@ class JSONRPCClient(BaseTransportClient):
             # Use the new streaming method that properly handles SSE
             event_count = 0
             async for event in self._make_streaming_jsonrpc_request(
-                method="message/stream", params=params, extra_headers=extra_headers
+                method="SendStreamingMessage", params=params, extra_headers=extra_headers
             ):
                 # Extract result from JSON-RPC response
                 result = event.get("result")
@@ -336,7 +338,7 @@ class JSONRPCClient(BaseTransportClient):
                     event_count += 1
                     
                     # Only yield the first few events to avoid consuming the entire stream
-                    # This allows resubscribe_task to work properly later
+                    # This allows subscribe_task to work properly later
                     if event_count >= 2:
                         break
 
@@ -349,7 +351,7 @@ class JSONRPCClient(BaseTransportClient):
         self, task_id: str, history_length: Optional[int] = None, extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
-        Get task status and information using tasks/get method.
+        Get task status and information using GetTask method.
 
         Makes a real JSON-RPC call to retrieve task information from the SUT.
 
@@ -364,14 +366,14 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task retrieval fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.3 - Task Retrieval
+        Specification Reference: A2A Protocol v1.0 §3.1.3. Get Task
         """
         try:
             params = {"id": task_id}
             if history_length is not None:
                 params["historyLength"] = history_length
 
-            response = self._make_jsonrpc_request(method="tasks/get", params=params, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="GetTask", params=params, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
@@ -381,7 +383,7 @@ class JSONRPCClient(BaseTransportClient):
 
     def cancel_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        Cancel a task using tasks/cancel method.
+        Cancel a task using CancelTask method.
 
         Makes a real JSON-RPC call to cancel a task on the SUT.
 
@@ -395,10 +397,10 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task cancellation fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.4 - Task Cancellation
+        Specification Reference: A2A Protocol v1.0 §3.1.5. Cancel Task
         """
         try:
-            response = self._make_jsonrpc_request(method="tasks/cancel", params={"id": task_id}, extra_headers=extra_headers)
+            response = self._make_jsonrpc_request(method="CancelTask", params={"id": task_id}, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
@@ -406,14 +408,14 @@ class JSONRPCClient(BaseTransportClient):
                 raise
             raise JSONRPCError(f"Failed to cancel task {task_id}: {e}", original_error=e)
 
-    async def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
+    async def subscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
         """
-        Resubscribe to task updates using tasks/resubscribe method.
+        Subscribe to task updates using SubscribeToTask method.
 
-        Makes a real JSON-RPC call to resubscribe to task updates via SSE.
+        Makes a real JSON-RPC call to subscribe to task updates via SSE.
 
         Args:
-            task_id: The unique identifier of the task to resubscribe to
+            task_id: The unique identifier of the task to subscribe to
             extra_headers: Optional HTTP headers
 
         Returns:
@@ -422,12 +424,12 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task resubscription fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.9 - Task Resubscription
+        Specification Reference: A2A Protocol v1.0 §3.1.6. Subscribe to Task
         """
         try:
             # Use the new streaming method that properly handles SSE
             async for event in self._make_streaming_jsonrpc_request(
-                method="tasks/resubscribe", params={"id": task_id}, extra_headers=extra_headers
+                method="SubscribeToTask", params={"id": task_id}, extra_headers=extra_headers
             ):
                 # Extract result from JSON-RPC response
                 result = event.get("result")
@@ -437,13 +439,13 @@ class JSONRPCClient(BaseTransportClient):
         except Exception as e:
             if isinstance(e, JSONRPCError):
                 raise
-            raise JSONRPCError(f"Failed to resubscribe to task {task_id}: {e}", original_error=e)
+            raise JSONRPCError(f"Failed to subscribe to task {task_id}: {e}", original_error=e)
 
     async def subscribe_to_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> AsyncIterator[Dict[str, Any]]:
         """
-        Subscribe to task updates using tasks/subscribe method.
+        Subscribe to task updates using SubscribeToTask method.
 
-        This is an alias for resubscribe_task to maintain interface compatibility
+        This is an alias for subscribe_task to maintain interface compatibility
         with other transport clients. JSON-RPC uses the same subscription mechanism
         for both initial subscription and resubscription.
 
@@ -457,40 +459,14 @@ class JSONRPCClient(BaseTransportClient):
         Raises:
             JSONRPCError: If task subscription fails
 
-        Specification Reference: A2A Protocol v0.3.0 §7.9 - Task Subscription
+        Specification Reference: A2A Protocol v1.0 §3.1.6. Subscribe to Task
         """
-        # JSON-RPC uses the same method for both subscribe and resubscribe
-        async for result in self.resubscribe_task(task_id, extra_headers):
+        # JSON-RPC uses the same method for both subscribe and subscribe
+        async for result in self.subscribe_task(task_id, extra_headers):
             yield result
 
-    def get_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-        """
-        Get agent card using agent/getAuthenticatedExtendedCard method.
-
-        Makes a real JSON-RPC call to get the agent card information.
-
-        Args:
-            extra_headers: Optional HTTP headers
-
-        Returns:
-            Dict containing agent card data from the real SUT
-
-        Raises:
-            JSONRPCError: If agent card retrieval fails
-
-        Specification Reference: A2A Protocol v0.3.0 §5.5 - Agent Card Retrieval
-        """
-        try:
-            response = self._make_jsonrpc_request(method="agent/getAuthenticatedExtendedCard", params={}, extra_headers=extra_headers)
-            return response.get("result", {})
-
-        except Exception as e:
-            if isinstance(e, JSONRPCError):
-                raise
-            raise JSONRPCError(f"Failed to get agent card: {e}", original_error=e)
-
-    def set_push_notification_config(
-        self, task_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+    def create_task_push_notification_config(
+        self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Set push notification configuration for a task.
@@ -499,6 +475,7 @@ class JSONRPCClient(BaseTransportClient):
 
         Args:
             task_id: The unique identifier of the task
+            config_id: The ID for the new config
             config: Push notification configuration object
             extra_headers: Optional HTTP headers
 
@@ -512,8 +489,8 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="tasks/pushNotificationConfig/set",
-                params={"taskId": task_id, "pushNotificationConfig": config},
+                method="CreateTaskPushNotificationConfig",
+                params={"taskId": task_id, "configId": config_id, "config": config},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
@@ -546,8 +523,8 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="tasks/pushNotificationConfig/get",
-                params={"id": task_id, "pushNotificationConfigId": config_id},
+                method="GetTaskPushNotificationConfig",
+                params={"task_id": task_id, "id": config_id},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
@@ -577,7 +554,7 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="tasks/pushNotificationConfig/list", params={"id": task_id}, extra_headers=extra_headers
+                method="ListTaskPushNotificationConfig", params={"task_id": task_id}, extra_headers=extra_headers
             )
             return response.get("result", {})
 
@@ -609,8 +586,8 @@ class JSONRPCClient(BaseTransportClient):
         """
         try:
             response = self._make_jsonrpc_request(
-                method="tasks/pushNotificationConfig/delete",
-                params={"id": task_id, "pushNotificationConfigId": config_id},
+                method="DeleteTaskPushNotificationConfig",
+                params={"task_id": task_id, "id": config_id},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
@@ -620,9 +597,9 @@ class JSONRPCClient(BaseTransportClient):
                 raise
             raise JSONRPCError(f"Failed to delete push notification config {config_id} for task {task_id}: {e}", original_error=e)
 
-    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
-        Get the authenticated extended agent card.
+        Get the extended agent card.
 
         Makes a real JSON-RPC call to retrieve extended agent information.
 
@@ -630,16 +607,16 @@ class JSONRPCClient(BaseTransportClient):
             extra_headers: Optional HTTP headers (typically auth headers)
 
         Returns:
-            The extended agent card with additional authenticated information
+            The extended agent card with additional information
 
         Raises:
-            JSONRPCError: If authenticated card retrieval fails
+            JSONRPCError: If card retrieval fails
 
-        Specification Reference: A2A Protocol v0.3.0 §5.6 - Authenticated Extended Card
+        Specification Reference: A2A Protocol v0.3.0 §5.6 - Extended Card
         """
         try:
             response = self._make_jsonrpc_request(
-                method="agent/getAuthenticatedExtendedCard", params={}, extra_headers=extra_headers
+                method="GetExtendedAgentCard", params={}, extra_headers=extra_headers
             )
             return response.get("result", {})
 
@@ -674,7 +651,7 @@ class JSONRPCClient(BaseTransportClient):
             self._logger.error(f"HTTP request failed: {e}")
             raise
 
-    def send_raw_json_rpc(self, json_request: dict) -> Dict[str, Any]:
+    def send_raw_json_rpc(self, json_request: dict, extra_headers: Dict[str, Any] = {}) -> Dict[str, Any]:
         """
         Send a JSON-RPC request without validation.
 
@@ -686,7 +663,7 @@ class JSONRPCClient(BaseTransportClient):
         Returns:
             The JSON response from the SUT
         """
-        headers = {"Content-Type": "application/json"}
+        headers = self._prepare_headers(extra_headers)
 
         self._logger.info(f"Sending raw JSON-RPC request to {self.base_url}: {json_request}")
 
@@ -704,6 +681,57 @@ class JSONRPCClient(BaseTransportClient):
         except ValueError as e:
             self._logger.error(f"Failed to parse JSON response from SUT: {e}")
             raise
+
+    def list_tasks(
+        self,
+        contextId: Optional[str] = None,
+        status: Optional[str] = None,
+        pageSize: Optional[int] = None,
+        pageToken: Optional[str] = None,
+        historyLength: Optional[int] = None,
+        statusTimestampAfter: Optional[str] = None,
+        includeArtifacts: Optional[bool] = None
+    ) -> Dict[str, Any]:
+        """
+        List tasks with optional filtering and pagination for JSON-RPC transport.
+
+        Args:
+            contextId: Optional context ID to filter by
+            status: Optional task status to filter by
+            pageSize: Optional number of tasks per page (1-100, default 50)
+            pageToken: Optional pagination cursor
+            historyLength: Optional number of messages to include in task history (default 0)
+            statusTimestampAfter: Optional timestamp filter (Unix milliseconds)
+            includeArtifacts: Optional flag to include artifacts (default false)
+
+        Returns:
+            Dict containing ListTasksResult structure
+
+        Specification Reference: A2A Protocol v0.4.0 §7.4 - tasks/list
+        """
+        # Build params dict (only include non-None values)
+        params = {}
+        if contextId is not None:
+            params["contextId"] = contextId
+        if status is not None:
+            params["status"] = status
+        if pageSize is not None:
+            params["pageSize"] = pageSize
+        if pageToken is not None:
+            params["pageToken"] = pageToken
+        if historyLength is not None:
+            params["historyLength"] = historyLength
+        if statusTimestampAfter is not None:
+            params["statusTimestampAfter"] = statusTimestampAfter
+        if includeArtifacts is not None:
+            params["includeArtifacts"] = includeArtifacts
+
+        # Make JSON-RPC request using spec-compliant method name
+        json_req = message_utils.make_json_rpc_request("ListTasks", params=params)
+        response = self.send_raw_json_rpc(json_req)
+
+        # Return the full response (with "result" or "error" key)
+        return response
 
     def close(self):
         """Close the HTTP client."""

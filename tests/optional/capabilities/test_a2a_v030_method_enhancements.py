@@ -19,7 +19,7 @@ from tests.utils.transport_helpers import (
     transport_send_message,
     transport_get_task,
     transport_cancel_task,
-    transport_get_agent_card,
+    transport_get_extended_agent_card,
     is_transport_client,
     get_client_transport_type,
     generate_test_message_id,
@@ -43,19 +43,30 @@ class TestA2AV030MethodEnhancements:
     @a2a_v030
     def test_message_send_enhanced_parts_support(self, sut_client: BaseTransportClient):
         """
-        A2A v0.3.0 §7.1 - Enhanced Parts Support in message/send
+        A2A v0.3.0 §7.1 - Enhanced Parts Support in SendMessage
 
         Tests support for enhanced message parts including file references,
         data parts, and complex message structures introduced in v0.3.0.
         """
         enhanced_message = {
-            "kind": "message",
             "messageId": generate_test_message_id("enhanced-parts"),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
-                {"kind": "text", "text": "This message tests enhanced parts support in A2A v0.3.0"},
-                {"kind": "data", "data": {"type": "application/json", "content": {"test": "data", "version": "0.3.0"}}},
-            ],
+                {
+                    "text": "This message tests enhanced parts support in A2A v0.3.0"
+                },
+                {
+                    "data": {
+                        "data": {
+                            "type": "application/json",
+                            "content": {
+                                "test": "data",
+                                "version": "0.3.0"
+                            },
+                        }
+                    }
+                }
+            ]
         }
 
         response = transport_send_message(sut_client, {"message": enhanced_message})
@@ -64,7 +75,7 @@ class TestA2AV030MethodEnhancements:
         assert "result" in response or "error" not in response, "Enhanced message parts should be supported in A2A v0.3.0"
 
         if "result" in response:
-            task = response["result"]
+            task = response["result"]["task"]
             assert "id" in task, "Task ID should be returned"
             logger.info(f"✅ Enhanced parts support validated with task: {task['id']}")
         elif "error" in response:
@@ -84,10 +95,9 @@ class TestA2AV030MethodEnhancements:
         """
         # First create a task
         message = {
-            "kind": "message",
             "messageId": generate_test_message_id("enhanced-query"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for enhanced query testing"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for enhanced query testing"}],
         }
 
         create_response = transport_send_message(sut_client, {"message": message})
@@ -95,7 +105,7 @@ class TestA2AV030MethodEnhancements:
         if "error" in create_response:
             pytest.skip(f"Could not create task for testing: {create_response}")
 
-        task = create_response.get("result", create_response)
+        task = create_response["result"]["task"]
         task_id = task["id"]
 
         # Test enhanced query parameters
@@ -134,7 +144,7 @@ class TestA2AV030MethodEnhancements:
         Tests the new authenticated extended agent card method with comprehensive
         validation of enhanced features and security aspects.
         """
-        response = transport_get_agent_card(sut_client)
+        response = transport_get_extended_agent_card(sut_client)
 
         if "error" in response:
             error = response["error"]
@@ -185,7 +195,7 @@ class TestA2AV030MethodEnhancements:
         introduced in A2A v0.3.0 methods.
         """
         test_cases = [
-            {"method": "message/send", "invalid_params": {"invalid": "structure"}, "expected_error": "Invalid message structure"},
+            {"method": "SendMessage", "invalid_params": {"invalid": "structure"}, "expected_error": "Invalid message structure"},
             {"method": "tasks/get", "invalid_params": {"invalid": "taskId"}, "expected_error": "Invalid task ID"},
             {"method": "tasks/cancel", "invalid_params": {"invalid": "params"}, "expected_error": "Invalid parameters"},
         ]
@@ -194,7 +204,7 @@ class TestA2AV030MethodEnhancements:
             method = test_case["method"]
             invalid_params = test_case["invalid_params"]
 
-            if method == "message/send":
+            if method == "SendMessage":
                 response = transport_send_message(sut_client, invalid_params)
             elif method == "tasks/get":
                 # Can't easily test with invalid params using transport helper
@@ -282,10 +292,9 @@ class TestTransportSpecificMethodBehavior:
 
         # Test JSON-RPC specific features
         message = {
-            "kind": "message",
             "messageId": generate_test_message_id("jsonrpc-specific"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "JSON-RPC transport test"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "JSON-RPC transport test"}],
         }
 
         response = transport_send_message(sut_client, {"message": message})
@@ -365,10 +374,9 @@ class TestMethodPerformanceAndScaling:
         messages = []
         for i in range(3):  # Keep small for testing
             message = {
-                "kind": "message",
                 "messageId": generate_test_message_id(f"concurrent-{i}"),
-                "role": "user",
-                "parts": [{"kind": "text", "text": f"Concurrent test message {i}"}],
+                "role": "ROLE_USER",
+                "parts": [{"text": f"Concurrent test message {i}"}],
             }
             messages.append(message)
 
@@ -383,7 +391,7 @@ class TestMethodPerformanceAndScaling:
         for i, response in enumerate(responses):
             if "result" in response:
                 successful_tasks += 1
-                task = response["result"]
+                task = response["result"]["task"]
                 assert "id" in task, f"Task {i} missing ID"
             elif "error" in response:
                 # Errors are acceptable but log them
@@ -405,10 +413,9 @@ class TestMethodPerformanceAndScaling:
         import time
 
         message = {
-            "kind": "message",
             "messageId": generate_test_message_id("response-time"),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Response time test message"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Response time test message"}],
         }
 
         start_time = time.time()
@@ -425,5 +432,5 @@ class TestMethodPerformanceAndScaling:
         logger.info(f"✅ Method response time: {response_time:.2f}s (within limits)")
 
         if "result" in response:
-            task = response["result"]
+            task = response["result"]["task"]
             assert "id" in task, "Task ID should be returned"

@@ -21,7 +21,7 @@ from tests.utils.transport_helpers import (
     transport_send_message,
     transport_get_task,
     transport_cancel_task,
-    transport_get_agent_card,
+    transport_get_extended_agent_card,
     is_json_rpc_success_response,
     is_json_rpc_error_response,
     extract_task_id_from_response,
@@ -34,15 +34,14 @@ from tests.utils.transport_helpers import (
 def sample_message():
     """Create a sample message for equivalence testing."""
     return {
-        "kind": "message",
         "messageId": generate_test_message_id("equivalence"),
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Multi-transport equivalence test message"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Multi-transport equivalence test message"}],
     }
 
 
 @pytest.fixture
-def test_task_data(sut_client, sample_message):
+def task_data(sut_client, sample_message):
     """Create a task for cross-transport testing."""
     params = {"message": sample_message}
     resp = transport_send_message(sut_client, params)
@@ -60,13 +59,13 @@ def test_task_data(sut_client, sample_message):
 @transport_equivalence
 def test_identical_functionality_message_send(all_transport_clients, sample_message):
     """
-    TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for message/send
+    TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for SendMessage
 
     Validates that all transport implementations provide the same set of operations.
-    All transports MUST support message/send with the same functionality.
+    All transports MUST support SendMessage with the same functionality.
 
     This test verifies the "Identical Functionality" requirement by ensuring
-    all transports can perform the message/send operation successfully.
+    all transports can perform the SendMessage operation successfully.
 
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence Requirements
     """
@@ -75,7 +74,7 @@ def test_identical_functionality_message_send(all_transport_clients, sample_mess
 
     successful_transports = []
 
-    # Test that all transports support message/send
+    # Test that all transports support SendMessage
     for transport_type, client in all_transport_clients.items():
         params = {"message": sample_message}
         resp = transport_send_message(client, params)
@@ -87,23 +86,23 @@ def test_identical_functionality_message_send(all_transport_clients, sample_mess
 
             # Method not found (-32601) means transport doesn't support this operation
             assert error_code != -32601, (
-                f"Transport {transport_type.value} does not support message/send (violates Identical Functionality requirement)"
+                f"Transport {transport_type.value} does not support SendMessage (violates Identical Functionality requirement)"
             )
 
             # Other errors are acceptable (e.g., authentication, validation issues)
             continue
 
         # Should be successful
-        assert is_json_rpc_success_response(resp), f"message/send failed on {transport_type.value}: {resp}"
+        assert is_json_rpc_success_response(resp), f"SendMessage failed on {transport_type.value}: {resp}"
 
         successful_transports.append(transport_type.value)
 
     # At least one transport should work for equivalence testing
-    assert len(successful_transports) >= 1, "No transports successfully performed message/send operation"
+    assert len(successful_transports) >= 1, "No transports successfully performed SendMessage operation"
 
 
 @transport_equivalence
-def test_identical_functionality_tasks_get(all_transport_clients, test_task_data):
+def test_identical_functionality_tasks_get(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for tasks/get
 
@@ -115,7 +114,7 @@ def test_identical_functionality_tasks_get(all_transport_clients, test_task_data
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
 
     # Test that all transports support tasks/get
     for transport_type, client in all_transport_clients.items():
@@ -145,7 +144,7 @@ def test_identical_functionality_tasks_get(all_transport_clients, test_task_data
 @transport_equivalence
 def test_consistent_behavior_message_send(all_transport_clients, sample_message):
     """
-    TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Consistent Behavior for message/send
+    TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Consistent Behavior for SendMessage
 
     Validates that all transport implementations return semantically equivalent
     results for the same requests. Tests the "Consistent Behavior" requirement.
@@ -214,7 +213,7 @@ def test_consistent_behavior_message_send(all_transport_clients, sample_message)
 
 
 @transport_equivalence
-def test_consistent_behavior_tasks_get(all_transport_clients, test_task_data):
+def test_consistent_behavior_tasks_get(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Consistent Behavior for tasks/get
 
@@ -226,7 +225,7 @@ def test_consistent_behavior_tasks_get(all_transport_clients, test_task_data):
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
     results = []
     transport_types = []
 
@@ -280,19 +279,19 @@ def test_consistent_behavior_tasks_get(all_transport_clients, test_task_data):
 
 
 @transport_equivalence
-def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_data):
+def test_identical_functionality_tasks_cancel(all_transport_clients, task_data):
     """
-    TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for tasks/cancel
+    TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for CancelTask
 
     Validates that all transport implementations provide the same set of operations.
-    All transports MUST support tasks/cancel with the same functionality.
+    All transports MUST support CancelTask with the same functionality.
 
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence Requirements
     """
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
 
     # Test that all transports support tasks/cancel
     for transport_type, client in all_transport_clients.items():
@@ -305,7 +304,7 @@ def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_d
 
             # Method not found (-32601) means transport doesn't support this operation
             assert error_code != -32601, (
-                f"Transport {transport_type.value} does not support tasks/cancel (violates Identical Functionality requirement)"
+                f"Transport {transport_type.value} does not support CancelTask (violates Identical Functionality requirement)"
             )
 
             # TaskNotFoundError (-32001) is acceptable
@@ -320,11 +319,11 @@ def test_identical_functionality_tasks_cancel(all_transport_clients, test_task_d
             continue
 
         # Should be successful and contain task data
-        assert is_json_rpc_success_response(resp), f"tasks/cancel failed on {transport_type.value}: {resp}"
+        assert is_json_rpc_success_response(resp), f"CancelTask failed on {transport_type.value}: {resp}"
 
 
 @transport_equivalence
-def test_consistent_behavior_tasks_cancel(all_transport_clients, test_task_data):
+def test_consistent_behavior_tasks_cancel(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Consistent Behavior for tasks/cancel
 
@@ -336,7 +335,7 @@ def test_consistent_behavior_tasks_cancel(all_transport_clients, test_task_data)
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
     results = []
     transport_types = []
 
@@ -492,7 +491,6 @@ def test_same_error_handling_invalid_params(all_transport_clients):
 
     # Test with invalid message structure (missing required fields)
     invalid_message = {
-        "kind": "message",
         # Missing required fields like 'role', 'parts', 'messageId'
     }
 
@@ -535,7 +533,7 @@ def test_same_error_handling_invalid_params(all_transport_clients):
 
 
 @transport_equivalence
-def test_same_error_handling_task_not_cancelable(all_transport_clients, test_task_data):
+def test_same_error_handling_task_not_cancelable(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Same Error Handling for TaskNotCancelableError
 
@@ -547,7 +545,7 @@ def test_same_error_handling_task_not_cancelable(all_transport_clients, test_tas
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
     error_responses = []
     transport_types = []
 
@@ -690,7 +688,7 @@ def test_equivalent_authentication_agent_card(all_transport_clients):
 
     # Retrieve agent card using all available transports
     for transport_type, client in all_transport_clients.items():
-        resp = transport_get_agent_card(client)
+        resp = transport_get_extended_agent_card(client)
 
         # Agent card retrieval might not be supported on all transports
         if is_json_rpc_error_response(resp):
@@ -769,20 +767,19 @@ def test_method_mapping_compliance(all_transport_clients):
         supported_methods = []
 
         # Test core methods that all transports must support
-        core_methods = ["message/send", "tasks/get", "tasks/cancel"]
+        core_methods = ["SendMessage", "tasks/get", "tasks/cancel"]
 
         for method_name in core_methods:
             # We can't directly test method names without transport-specific code,
             # but we can verify that the operations work through our transport helpers
             # which use the correct method mappings internally
 
-            if method_name == "message/send":
+            if method_name == "SendMessage":
                 # Test message send capability
                 sample_msg = {
-                    "kind": "message",
                     "messageId": generate_test_message_id("mapping-test"),
-                    "role": "user",
-                    "parts": [{"kind": "text", "text": "Method mapping test"}],
+                    "role": "ROLE_USER",
+                    "parts": [{"text": "Method mapping test"}],
                 }
                 resp = transport_send_message(client, {"message": sample_msg})
                 if not is_json_rpc_error_response(resp, expected_error_code=-32601):
@@ -869,7 +866,7 @@ def test_identical_functionality_message_stream(all_transport_clients, sample_me
 
 
 @transport_equivalence
-def test_identical_functionality_tasks_resubscribe(all_transport_clients, test_task_data):
+def test_identical_functionality_tasks_resubscribe(all_transport_clients, task_data):
     """
     TRANSPORT EQUIVALENCE: A2A v0.3.0 §3.4.1 - Identical Functionality for tasks/resubscribe
 
@@ -883,7 +880,7 @@ def test_identical_functionality_tasks_resubscribe(all_transport_clients, test_t
     if len(all_transport_clients) < 2:
         pytest.skip("Functional equivalence requires multiple transport implementations")
 
-    task_id = test_task_data["task_id"]
+    task_id = task_data["task_id"]
     resubscribe_transports = []
 
     # Test that streaming-capable transports support tasks/resubscribe

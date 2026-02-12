@@ -17,7 +17,6 @@ SAMPLE_AGENT_CARD = {
     "name": "Test Agent",
     "description": "A test agent for TCK",
     "id": "test-agent-id",
-    "protocolVersion": "1.0",
     "url": "https://example.com/agent",
     "endpoint": "https://example.com/agent/jsonrpc",
     "capabilities": {
@@ -33,8 +32,14 @@ SAMPLE_AGENT_CARD = {
             },
         ],
     },
-    "authentication": [{"scheme": "bearer", "description": "Bearer token authentication"}],
-}
+    "securitySchemes": {
+      "google": {
+        "openIdConnectSecurityScheme": {
+          "openIdConnectUrl": "https://accounts.google.com/.well-known/openid-configuration"
+        }
+      }
+    }
+  }
 
 # Tests for fetch_agent_card
 
@@ -271,13 +276,18 @@ def test_get_authentication_schemes():
     """
     # Get authentication schemes from sample card
     result1 = agent_card_utils.get_authentication_schemes(SAMPLE_AGENT_CARD)
-    assert result1 == [{"scheme": "bearer", "description": "Bearer token authentication"}]
+    assert result1 ==  { "google": {
+        "openIdConnectSecurityScheme": {
+          "openIdConnectUrl": "https://accounts.google.com/.well-known/openid-configuration"
+        }
+      }
+    }
 
     # Card with no authentication
     result2 = agent_card_utils.get_authentication_schemes({})
-    assert result2 == []
+    assert result2 == {}
 
     # Card with invalid authentication (not a list)
     card3 = {"authentication": "invalid"}
     result3 = agent_card_utils.get_authentication_schemes(card3)
-    assert result3 == []
+    assert result3 == {}

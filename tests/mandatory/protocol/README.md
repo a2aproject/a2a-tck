@@ -6,7 +6,7 @@ These tests validate A2A specification MUST requirements.
 
 ## Test Files
 - `test_agent_card.py` - Agent Card availability and mandatory fields
-- `test_message_send_method.py` - Core message/send functionality
+- `test_message_send_method.py` - Core SendMessage functionality
 - `test_tasks_get_method.py` - Task retrieval with required parameters
 - `test_tasks_cancel_method.py` - Task cancellation functionality
 - `test_state_transitions.py` - Required state management features

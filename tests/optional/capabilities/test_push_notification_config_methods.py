@@ -19,18 +19,17 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def created_task_id(sut_client):
-    # Create a task using message/send and return its id
+    # Create a task using SendMessage and return its id
     message_params = {
         "message": {
             "messageId": "test-push-notification-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for push notification config test"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for push notification config test"}],
         }
     }
     resp = transport_helpers.transport_send_message(sut_client, message_params)
     assert transport_helpers.is_json_rpc_success_response(resp)
-    return resp["result"]["id"]
+    return resp["result"]["task"]["id"]
 
 
 @pytest.fixture(scope="session")
@@ -118,7 +117,7 @@ def has_push_notification_support(agent_card_data):
 
 
 @optional_capability
-def test_set_push_notification_config(sut_client, created_task_id, agent_card_data):
+def test_create_task_push_notification_config(sut_client, created_task_id, agent_card_data):
     """
     CONDITIONAL MANDATORY: A2A Specification §7.5 - Push Notification Configuration
 
@@ -133,10 +132,12 @@ def test_set_push_notification_config(sut_client, created_task_id, agent_card_da
     if not validator.is_capability_declared("pushNotifications"):
         pytest.skip("Push notifications capability not declared - test not applicable")
 
-    config = {"url": "https://example.com/webhook"}
+    config = {
+        "url": "https://example.com/webhook"
+    }
 
-    resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config)
-
+    config_id = "test_create_task_push_notification_config_" + str(uuid.uuid4())
+    resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
     # Since push notifications capability is declared, this MUST work
     assert transport_helpers.is_json_rpc_success_response(resp), "Push notifications capability declared but set config failed"
 
@@ -163,13 +164,16 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
         pytest.skip("Push notifications capability not declared - test not applicable")
 
     # First, set a push notification config
-    config = {"url": "https://example.com/webhook"}
+    config = {
+        "url": "https://example.com/webhook"
+    }
+    config_id = "test_get_push_notification_config_" + str(uuid.uuid4())
 
-    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config)
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), "Failed to set push notification config before testing get"
 
     # Now, get the config we just set
-    resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id)
+    resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id, config_id)
 
     # Since push notifications capability is declared, this MUST work
     assert transport_helpers.is_json_rpc_success_response(resp), "Push notifications capability declared but get config failed"
@@ -181,7 +185,7 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
 
 
 @optional_capability
-def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
+def test_create_task_push_notification_config_nonexistent(sut_client, agent_card_data):
     """
     CONDITIONAL MANDATORY: A2A Specification §7.5 - Push Notification Error Handling
 
@@ -196,9 +200,12 @@ def test_set_push_notification_config_nonexistent(sut_client, agent_card_data):
     if not validator.is_capability_declared("pushNotifications"):
         pytest.skip("Push notifications capability not declared - test not applicable")
 
-    config = {"url": "https://example.com/webhook"}
+    config = {
+        "url": "https://example.com/webhook"
+    }
 
-    resp = transport_helpers.transport_set_push_notification_config(sut_client, "nonexistent-task-id", config)
+    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
+    resp = transport_helpers.transport_create_task_push_notification_config(sut_client, "nonexistent-task-id", config_id, config)
 
     # Should return proper JSON-RPC error for non-existent task
     assert transport_helpers.is_json_rpc_error_response(resp), (
@@ -254,10 +261,13 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
     if not validator.is_capability_declared("pushNotifications"):
         pytest.skip("Push notifications capability not declared - test not applicable")
 
+    config = {
+        "url": "https://example.com/webhook1"
+    }
+    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
+
     # First, set one or more push notification configs
-    set_resp = transport_helpers.transport_set_push_notification_config(
-        sut_client, created_task_id, {"url": "https://example.com/webhook1"}
-    )
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), "Failed to set push notification config before testing list"
 
     # Now, list the configs for this task
@@ -266,17 +276,17 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
     # Since push notifications capability is declared, this MUST work
     assert transport_helpers.is_json_rpc_success_response(resp), "Push notifications capability declared but list config failed"
 
-    result = resp["result"]
-    assert isinstance(result, list), "Result must be a list of configurations"
-    assert len(result) >= 1, "Should contain at least one configuration that we just set"
+    configs = resp["result"]["configs"]
+    assert isinstance(configs, list), "Result must be a list of configurations"
+    assert len(configs) >= 1, "Should contain at least one configuration that we just set"
 
     # Verify the configuration we set is in the list
     found_config = False
-    for config in result:
-        assert "pushNotificationConfig" in config, "Each config must contain pushNotificationConfig"
-        assert "taskId" in config, "Each config must contain taskId"
-        assert config["taskId"] == created_task_id, "TaskId should match the requested task"
-        if config["pushNotificationConfig"]["url"] == "https://example.com/webhook1":
+    for config in configs:
+        print(config)
+        assert "id" in config, "Each config must contain an id"
+        assert "taskId" in config, "Each config must contain an task ID"
+        if config["taskId"] == created_task_id:
             found_config = True
 
     assert found_config, "The configuration we set should be found in the list"
@@ -302,14 +312,13 @@ def test_list_push_notification_config_empty(sut_client, agent_card_data):
     message_params = {
         "message": {
             "messageId": "test-empty-list-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task for empty push notification config list test"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task for empty push notification config list test"}],
         }
     }
     resp = transport_helpers.transport_send_message(sut_client, message_params)
     assert transport_helpers.is_json_rpc_success_response(resp)
-    empty_task_id = resp["result"]["id"]
+    empty_task_id = resp["result"]["task"]["id"]
 
     # List configs for task with no configurations
     resp = transport_helpers.transport_list_push_notification_configs(sut_client, empty_task_id)
@@ -317,8 +326,11 @@ def test_list_push_notification_config_empty(sut_client, agent_card_data):
     # Should return empty list or appropriate error - both are valid
     if transport_helpers.is_json_rpc_success_response(resp):
         result = resp["result"]
-        assert isinstance(result, list), "Result must be a list"
-        assert len(result) == 0, "Should be empty list for task with no configs"
+        assert result is not None, "Result should not be None"
+        if result.get("configs") is not None:
+            configs = result["configs"]
+            # if there are no push notification configs, the configs field is not required
+            assert len(configs) == 0, "Should be empty list for task with no configs"
     else:
         # Some implementations might return an error for no configs - this is acceptable
         assert transport_helpers.is_json_rpc_error_response(resp), "Response should be either success with empty list or error"
@@ -341,15 +353,19 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
         pytest.skip("Push notifications capability not declared - test not applicable")
 
     # First, set a push notification config
-    config = {"url": "https://example.com/webhook-to-delete"}
-    set_resp = transport_helpers.transport_set_push_notification_config(sut_client, created_task_id, config)
+    config = {
+        "url": "https://example.com/webhook-to-delete"
+    }
+    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
+
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), (
         "Failed to set push notification config before testing delete"
     )
 
     # Extract the config ID from the response (if provided by server)
     set_result = set_resp["result"]
-    config_id = set_result["pushNotificationConfig"].get("id")
+    assert set_result["pushNotificationConfig"].get("id") == config_id
 
     if config_id:
         # If the server provides config ID, use it for deletion
@@ -360,9 +376,9 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
             "Push notifications capability declared but delete config failed"
         )
 
-        # Result should be null for successful deletion
+        # Result should be null or empty for successful deletion
         result = resp["result"]
-        assert result is None, "Delete should return null result on success"
+        assert result is None or len(result) == 0, "Delete should return null or empty result on success"
 
         # Verify deletion by trying to get the config
         get_resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id, config_id)
@@ -440,7 +456,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     2. Push notifications are actually sent to the configured webhook URL
 
     This addresses GitHub issue #84 - ensuring the TCK tests that pushNotificationConfig
-    is processed when included in the message/send configuration.
+    is processed when included in the SendMessage configuration.
 
     Specification Reference: A2A Protocol v0.3.0 §7.1.2 - SendMessageConfiguration
     """
@@ -456,9 +472,8 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     message_params = {
         "message": {
             "messageId": message_id,
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task with push notification config in send configuration"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task with push notification config in send configuration"}],
         }
     }
 
@@ -474,10 +489,10 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
 
     # Since push notifications capability is declared, message send should succeed
     assert transport_helpers.is_json_rpc_success_response(resp), (
-        "Push notifications capability declared but message/send with pushNotificationConfig failed"
+        "Push notifications capability declared but SendMessage with pushNotificationConfig failed"
     )
 
-    task_id = resp["result"]["id"]
+    task_id = resp["result"]["task"]["id"]
     logger.info(f"Task created with ID: {task_id}")
 
     # Verify that the push notification config was actually used
@@ -485,7 +500,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     list_resp = transport_helpers.transport_list_push_notification_configs(sut_client, task_id)
 
     if transport_helpers.is_json_rpc_success_response(list_resp):
-        configs = list_resp["result"]
+        configs = list_resp["result"]["configs"]
         assert isinstance(configs, list), "Push notification configs should be a list"
 
         logger.info(f"Retrieved {len(configs)} push notification configs for task {task_id}")
@@ -525,11 +540,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
                 logger.info(f"Notification {idx}: {notification}")
 
             # Verify the notification is for our task
-            # Notification can be a Task object (with "id") or status update (with "taskId")
-            task_found_in_notifications = any(
-                notification.get("taskId") == task_id or notification.get("id") == task_id
-                for notification in push_notification_webhook['notifications']
-            )
+            task_found_in_notifications = find_push_notification_for_task_id(task_id, push_notification_webhook)
             assert task_found_in_notifications, (
                 f"Push notification was sent but did not contain our task ID {task_id}. "
                 f"Notifications received: {push_notification_webhook['notifications']}"
@@ -589,9 +600,8 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
     message_params = {
         "message": {
             "messageId": message_id,
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Task with push notification config in streaming send configuration"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Task with push notification config in streaming send configuration"}],
         }
     }
 
@@ -600,7 +610,6 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
             "url": webhook_url,
             "token": "test-streaming-token-456",
         },
-        "blocking": False,  # Streaming should be non-blocking
     }
 
     # Send the streaming message with configuration
@@ -610,29 +619,33 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
             sut_client, message_params, configuration=configuration
         )
 
-        # Collect streaming updates and extract task_id
-        # Different transports return different formats:
-        # - JSON-RPC: yields Task objects directly (with "id" and "status" fields)
-        # - gRPC/REST: yields wrapped objects with "task" or "status_update" keys
-        async for update in stream:
-            if isinstance(update, dict):
-                # Format 1: gRPC/REST - wrapped with "task" key
-                if "task" in update:
-                    task_id = update["task"]["id"]
-                    logger.info(f"Received task from streaming (wrapped): {task_id}")
-                    break  # Got the task, can stop streaming
-                # Format 2: gRPC/REST - status_update with taskId
-                elif "status_update" in update:
-                    if not task_id:
-                        task_id = update["status_update"]["taskId"]
-                        logger.info(f"Received task_id from status_update: {task_id}")
-                # Format 3: JSON-RPC - Task object directly
-                elif "id" in update and "status" in update and "kind" in update:
-                    task_id = update["id"]
-                    logger.info(f"Received task from streaming (direct): {task_id}")
-                    break  # Got the task, can stop streaming
+        try:
+            # Collect streaming updates and extract task_id
+            # Different transports return different formats:
+            # - JSON-RPC: yields Task objects directly (with "id" and "status" fields)
+            # - gRPC/REST: yields wrapped objects with "task" or "status_update" keys
+            async for update in stream:
+                if isinstance(update, dict):
+                    # Format 1: gRPC/REST - wrapped with "task" key
+                    if "task" in update:
+                        task_id = update["task"]["id"]
+                        logger.info(f"Received task from streaming (wrapped): {task_id}")
+                        break  # Got the task, can stop streaming
+                    # Format 2: gRPC/REST - status_update with taskId
+                    elif "status_update" in update:
+                        if not task_id:
+                            task_id = update["status_update"]["taskId"]
+                            logger.info(f"Received task_id from status_update: {task_id}")
+                    # Format 3: JSON-RPC - Task object directly
+                    elif "id" in update and "status" in update and "kind" in update:
+                        task_id = update["id"]
+                        logger.info(f"Received task from streaming (direct): {task_id}")
+                        break  # Got the task, can stop streaming
 
-        return task_id
+            return task_id
+        finally:
+            # Close the streaming subscription to free server resources
+            await stream.aclose()
 
     # Run the async streaming test
     task_id = asyncio.run(run_streaming_test())
@@ -645,7 +658,7 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
     list_resp = transport_helpers.transport_list_push_notification_configs(sut_client, task_id)
 
     if transport_helpers.is_json_rpc_success_response(list_resp):
-        configs = list_resp["result"]
+        configs = list_resp["result"]["configs"]
         assert isinstance(configs, list), "Push notification configs should be a list"
 
         logger.info(f"Retrieved {len(configs)} push notification configs for streaming task {task_id}")
@@ -685,11 +698,7 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
                 logger.info(f"Notification {idx}: {notification}")
 
             # Verify the notification is for our task
-            # Notification can be a Task object (with "id") or status update (with "taskId")
-            task_found_in_notifications = any(
-                notification.get("taskId") == task_id or notification.get("id") == task_id
-                for notification in push_notification_webhook['notifications']
-            )
+            task_found_in_notifications = find_push_notification_for_task_id(task_id, push_notification_webhook)
             assert task_found_in_notifications, (
                 f"Push notification was sent but did not contain our task ID {task_id}. "
                 f"Notifications received: {push_notification_webhook['notifications']}"
@@ -711,3 +720,22 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
             f"Could not verify streaming pushNotificationConfig was used. "
             f"List configs failed with: {list_resp.get('error', 'Unknown error')}"
         )
+
+
+def find_push_notification_for_task_id(task_id: str, push_notification_webhook):
+    for current_notification in push_notification_webhook['notifications']:
+        id = None
+        key = "taskId"
+        # Payload is one of the following:
+        if current_notification.get("task"):
+            payload = current_notification["task"]
+            key = "id"
+        elif current_notification.get("statusUpdate"):
+            payload = current_notification["statusUpdate"]
+        elif current_notification.get("artifactUpdate"):
+            payload = current_notification["artifactUpdate"]
+        elif current_notification.get("message"):
+            payload = current_notification["message"]
+
+        if payload and payload.get(key) == task_id:
+            return True

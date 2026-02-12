@@ -38,12 +38,12 @@ class MockTransportClient(BaseTransportClient):
         self.call_log.append(("cancel_task", task_id, kwargs))
         return {"taskId": task_id, "state": "cancelled"}
 
-    def resubscribe_task(self, task_id: str, **kwargs):
-        self.call_log.append(("resubscribe_task", task_id, kwargs))
+    def subscribe_task(self, task_id: str, **kwargs):
+        self.call_log.append(("subscribe_task", task_id, kwargs))
         return iter([{"taskId": task_id, "state": "in-progress"}])
 
-    def set_push_notification_config(self, task_id: str, config: Dict[str, Any], **kwargs):
-        self.call_log.append(("set_push_notification_config", task_id, config, kwargs))
+    def create_task_push_notification_config(self, task_id: str, config: Dict[str, Any], **kwargs):
+        self.call_log.append(("create_task_push_notification_config", task_id, config, kwargs))
         return {"configId": "config-123"}
 
     def get_push_notification_config(self, task_id: str, config_id: str, **kwargs):
@@ -58,8 +58,8 @@ class MockTransportClient(BaseTransportClient):
         self.call_log.append(("delete_push_notification_config", task_id, config_id, kwargs))
         return {"success": True}
 
-    def get_authenticated_extended_card(self, **kwargs):
-        self.call_log.append(("get_authenticated_extended_card", kwargs))
+    def get_extended_agent_card(self, **kwargs):
+        self.call_log.append(("get_extended_agent_card", kwargs))
         return {"name": "Test Agent", "protocol_version": "0.3.0", "endpoint": "https://example.com/jsonrpc"}
 
 
@@ -146,11 +146,11 @@ class TestTransportAdapter(BaseTransportAdapter):
         except Exception as e:
             return self.create_test_result(TestOutcome.ERROR, context, error_message=str(e))
 
-    def test_get_agent_card(self, context: TestContext) -> TestResult:
+    def test_get_extended_agent_card(self, context: TestContext) -> TestResult:
         try:
 
             def test_func():
-                return self.transport_client.get_authenticated_extended_card(extra_headers=context.extra_headers)
+                return self.transport_client.get_extended_agent_card(extra_headers=context.extra_headers)
 
             result, duration = self.execute_test_with_timing(test_func, context)
 

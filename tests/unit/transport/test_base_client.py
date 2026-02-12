@@ -43,13 +43,13 @@ class MockTransportClient(BaseTransportClient):
     def cancel_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         return self._record_call("cancel_task", task_id=task_id, extra_headers=extra_headers)
 
-    def resubscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Any:
-        return self._record_call("resubscribe_task", task_id=task_id, extra_headers=extra_headers)
+    def subscribe_task(self, task_id: str, extra_headers: Optional[Dict[str, str]] = None) -> Any:
+        return self._record_call("subscribe_task", task_id=task_id, extra_headers=extra_headers)
 
-    def set_push_notification_config(
+    def create_task_push_notification_config(
         self, task_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
-        return self._record_call("set_push_notification_config", task_id=task_id, config=config, extra_headers=extra_headers)
+        return self._record_call("create_task_push_notification_config", task_id=task_id, config=config, extra_headers=extra_headers)
 
     def get_push_notification_config(
         self, task_id: str, config_id: str, extra_headers: Optional[Dict[str, str]] = None
@@ -68,8 +68,8 @@ class MockTransportClient(BaseTransportClient):
             "delete_push_notification_config", task_id=task_id, config_id=config_id, extra_headers=extra_headers
         )
 
-    def get_authenticated_extended_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-        return self._record_call("get_authenticated_extended_card", extra_headers=extra_headers)
+    def get_extended_agent_card(self, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+        return self._record_call("get_extended_agent_card", extra_headers=extra_headers)
 
 
 class TestTransportType:
@@ -128,12 +128,12 @@ class TestBaseTransportClient:
             "send_streaming_message",
             "get_task",
             "cancel_task",
-            "resubscribe_task",
-            "set_push_notification_config",
+            "subscribe_task",
+            "create_task_push_notification_config",
             "get_push_notification_config",
             "list_push_notification_configs",
             "delete_push_notification_config",
-            "get_authenticated_extended_card",
+            "get_extended_agent_card",
         ]
 
         for method in core_methods:
@@ -194,7 +194,7 @@ class TestBaseTransportClient:
         client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
 
         # Test a method call
-        message = {"kind": "message", "messageId": "test", "role": "user", "parts": []}
+        message = {"messageId": "test", "role": "ROLE_USER", "parts": []}
         result = client.send_message(message, extra_headers={"Auth": "Bearer token"})
 
         assert result["mocked"] is True

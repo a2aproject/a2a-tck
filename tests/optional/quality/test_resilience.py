@@ -24,10 +24,9 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
-            "kind": "message",
             "messageId": "test-resilience-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello from resilience test!"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello from resilience test!"}],
         }
     }
 
@@ -132,7 +131,7 @@ def test_streaming_reconnection_simulation(sut_client, text_message_params):
     if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for streaming reconnection test")
 
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
     # Step 2: Simulate starting a streaming connection
     # In a real test, this would connect to the SUT's streaming endpoint
@@ -151,7 +150,7 @@ def test_streaming_reconnection_simulation(sut_client, text_message_params):
     # Step 3: Simulate connection closed or interrupted
     sse_client.close()
 
-    # Step 4: Simulate reconnection (in a real test, this would use tasks/resubscribe)
+    # Step 4: Simulate reconnection (in a real test, this would use SubscribeToTask)
     new_sse_client = InterruptibleSSEClient(url=f"{sut_client.base_url}/stream")
     new_sse_client.start()
 
@@ -203,7 +202,7 @@ def test_partial_update_recovery(sut_client, text_message_params):
     if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for partial update test")
 
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
     # Step 2: Send a series of updates with delays between
     update_texts = [
@@ -217,11 +216,10 @@ def test_partial_update_recovery(sut_client, text_message_params):
     for i, text in enumerate(update_texts):
         params = {
             "message": {
-                "kind": "message",
                 "messageId": "test-update-message-id-" + str(uuid.uuid4()),
-                "role": "user",
+                "role": "ROLE_USER",
                 "taskId": task_id,
-                "parts": [{"kind": "text", "text": text}],
+                "parts": [{"text": text}],
             }
         }
 

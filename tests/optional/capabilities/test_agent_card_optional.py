@@ -82,7 +82,7 @@ def test_capabilities_structure(fetched_agent_card):
         assert isinstance(capabilities["stateTransitionHistory"], bool), "stateTransitionHistory capability must be a boolean"
 
     # Check extensions array if present (NEW from spec update)
-    if "extensions" in capabilities:
+    if "extensions" in capabilities and capabilities["extensions"] is not None:
         extensions = capabilities["extensions"]
         assert isinstance(extensions, list), "extensions must be an array"
 
@@ -146,7 +146,7 @@ def test_agent_extensions_structure(fetched_agent_card):
     capabilities = fetched_agent_card["capabilities"]
 
     # Skip if extensions is not present (it's optional)
-    if "extensions" not in capabilities:
+    if "extensions" not in capabilities or capabilities["extensions"] is None:
         pytest.skip("Agent Card capabilities do not include extensions")
 
     extensions = capabilities["extensions"]

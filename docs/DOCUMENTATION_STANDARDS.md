@@ -123,7 +123,7 @@ def test_convenience_feature():
 """
 MANDATORY: A2A §5.1 / JSON-RPC 2.0 §4.1 - Message Send Request Validation
 
-The A2A specification requires message/send method (§5.1) and
+The A2A specification requires SendMessage method (§5.1) and
 JSON-RPC 2.0 requires proper request validation (§4.1).
 """
 ```
@@ -185,7 +185,7 @@ def test_agent_card_validation():
 ### Specification-Driven Error Messages
 ```python
 # ✅ GOOD - References specification
-assert response_code == 200, "A2A §5.1 requires message/send to return HTTP 200"
+assert response_code == 200, "A2A §5.1 requires SendMessage to return HTTP 200"
 
 # ❌ BAD - Generic error message  
 assert response_code == 200, "Expected HTTP 200"
