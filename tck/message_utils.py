@@ -107,7 +107,7 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
             elif part.get("kind") == "data":
                 # DataPart has structure: {"data": {"data": <actual_data>}}
                 # The protobuf DataPart has a single field "data" of type google.protobuf.Struct
-                protobuf_part["data"] = {"data": part.get("data", {})}
+                protobuf_part["data"] = part.get("data", {})
             else:
                 protobuf_part.update(part)
             # Add metadata if present
