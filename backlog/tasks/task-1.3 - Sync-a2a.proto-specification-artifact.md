@@ -28,7 +28,7 @@ Copy or sync the canonical a2a.proto file from the A2A specification repository 
 **Key principle**: The proto file is the source of truth for all data model validation. This must be the official proto from the A2A specification, not a modified version.
 
 **Consider**:
-- Document the version/commit hash for traceability
+- Document the version/commit hash for traceability in a `specification/info.json` file
 - Consider a script or Makefile target for syncing updates
 <!-- SECTION:DESCRIPTION:END -->
 
@@ -49,18 +49,14 @@ Copy or sync the canonical a2a.proto file from the A2A specification repository 
 1. Fetch the official a2a.proto from A2A repository:
 ```bash
 curl -o specification/a2a.proto \
-  https://raw.githubusercontent.com/a2aproject/A2A/main/specification/grpc/a2a.proto
+  https://raw.githubusercontent.com/a2aproject/A2A/main/specification/a2a.proto
 ```
 
 2. Document the source version:
-   - Create `specification/VERSION` or add comment to proto
-   - Record commit hash or tag for traceability
+   - Create `specification/version.json` or add comment to proto
+   - Record commit hash or tag & git URL for traceability
 
-3. Validate proto syntax:
-```bash
-uv run python -m grpc_tools.protoc --version
-uv run python -m grpc_tools.protoc -I specification --python_out=/dev/null specification/a2a.proto
-```
+3. Validate proto syntax with buildbuf
 
 ### Verification
 - `specification/a2a.proto` exists

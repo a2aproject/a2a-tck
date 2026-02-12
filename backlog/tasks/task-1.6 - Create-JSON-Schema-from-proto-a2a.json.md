@@ -18,14 +18,14 @@ priority: high
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Generate or create the JSON Schema (a2a.json) derived from a2a.proto for validating JSON-RPC and REST responses.
+Generate the JSON Schema (a2a.json) derived from a2a.proto for validating JSON-RPC and REST responses.
 
 **Reference**: PRD Section 3.2, Section 6 Task 1.5
 
 **Target**: `specification/a2a.json`
 
 **Options**:
-1. Use a proto-to-jsonschema tool if one exists
+1. Reuse the script https://github.com/a2aproject/A2A/blob/main/scripts/proto_to_json_schema.sh
 2. Manually derive from proto definitions
 3. Obtain from official A2A spec if available
 
@@ -54,29 +54,9 @@ Generate or create the JSON Schema (a2a.json) derived from a2a.proto for validat
 <!-- SECTION:PLAN:BEGIN -->
 ## Implementation Plan
 
-### Options (in order of preference)
-
-**Option A: Obtain from A2A spec repo**
-Check if official JSON Schema exists at:
-- https://github.com/a2aproject/A2A/blob/main/specification/json/a2a.json
-
-If exists:
-```bash
-curl -o specification/a2a.json \
-  https://raw.githubusercontent.com/a2aproject/A2A/main/specification/json/a2a.json
-```
-
-**Option B: Use proto-to-jsonschema tool**
-Tools to evaluate:
-- `protoc-gen-jsonschema` - protoc plugin
-- `proto-to-jsonschema` - standalone converter
-
-**Option C: Manual derivation**
-Create JSON Schema manually matching proto definitions:
-- Map proto types to JSON Schema types
-- Handle oneof → oneOf
-- Handle repeated → array
-- Handle optional → nullable
+Use a tool to genereate the JSON scheme from the proto definition.
+Reuse the script  `https://github.com/a2aproject/A2A/blob/main/scripts/proto_to_json_schema.sh` 
+and store the generated `a2a.json` in `specification/a2a.json`
 
 ### Schema Requirements
 ```json
