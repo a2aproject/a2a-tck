@@ -26,9 +26,11 @@ Create the pyproject.toml file with all required dependencies and build configur
 - pytest (test framework)
 - httpx (HTTP client for JSON-RPC and REST)
 - grpcio (gRPC client)
-- grpcio-tools (proto compilation)
 - google-protobuf (proto runtime)
 - jsonschema (JSON Schema validation, Draft 2020-12 support)
+
+**Proto compilation**:
+- use bufbuild/buf to generate Python code from protobuf
 
 **Dev dependencies**:
 - ruff (linting and formatting)
@@ -71,7 +73,6 @@ dependencies = [
     "pytest>=8.0",
     "httpx>=0.27",
     "grpcio>=1.60",
-    "grpcio-tools>=1.60",
     "protobuf>=4.25",
     "jsonschema>=4.21",
 ]
