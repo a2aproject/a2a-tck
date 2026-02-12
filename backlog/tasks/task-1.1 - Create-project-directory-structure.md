@@ -96,7 +96,6 @@ Create the complete directory structure for A2A TCK v1.0 following the layout de
    __pycache__/
    *.pyc
    .uv/
-   uv.lock  # or keep tracked - TBD
    ```
 
 ### Verification
