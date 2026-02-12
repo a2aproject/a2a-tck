@@ -18,17 +18,14 @@ priority: high
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Use grpcio-tools to generate Python code from a2a.proto, producing the message classes and gRPC service stubs.
+Use buildbuf/buf to generate Python code from a2a.proto, producing the message classes and gRPC service stubs.
 
 **Reference**: PRD Section 6 Task 1.4
 
+Reuse the existing script `./scripts/generate_grpc_stubs.sh` and change the output files
 **Command**:
 ```bash
-python -m grpc_tools.protoc \
-  -I specification \
-  --python_out=specification/generated \
-  --grpc_python_out=specification/generated \
-  specification/a2a.proto
+./scripts/generate_grpc_stubs.sh
 ```
 
 **Output files**:
@@ -55,16 +52,8 @@ python -m grpc_tools.protoc \
 ### Steps
 1. Generate Python stubs from a2a.proto:
 ```bash
-uv run python -m grpc_tools.protoc \
-  -I specification \
-  --python_out=specification/generated \
-  --grpc_python_out=specification/generated \
-  specification/a2a.proto
+./scripts/generate_grpc_stubs.sh
 ```
-
-2. Fix imports in generated files (grpc_tools generates relative imports):
-   - May need to add `specification/generated/__init__.py`
-   - May need to patch imports if they reference incorrectly
 
 3. Verify imports work:
 ```python
@@ -82,11 +71,7 @@ assert hasattr(a2a_pb2_grpc, 'A2AServiceStub')
 ```makefile
 .PHONY: proto
 proto:
-	uv run python -m grpc_tools.protoc \
-		-I specification \
-		--python_out=specification/generated \
-		--grpc_python_out=specification/generated \
-		specification/a2a.proto
+	./scripts/generate_grpc_stubs.sh
 ```
 
 ### Verification
@@ -95,6 +80,4 @@ proto:
 - Both import without errors
 - Message classes accessible: Task, Message, Part, Artifact, AgentCard
 
-### Known Issues
-- grpc_tools may generate imports like `import a2a_pb2` which need fixing to `from specification.generated import a2a_pb2`
 <!-- SECTION:PLAN:END -->
