@@ -70,7 +70,7 @@ class TestRESTClientInterface:
         assert hasattr(client, "get_task")
         assert hasattr(client, "cancel_task")
         assert hasattr(client, "subscribe_to_task")
-        assert hasattr(client, "get_agent_card")
+        assert hasattr(client, "get_extended_agent_card")
         assert hasattr(client, "close")
 
     def test_transport_type_is_rest(self):
@@ -194,7 +194,6 @@ class TestRESTClientSendMessage:
                 "status": {
                     "state": "TASK_STATE_SUBMITTED",
                     "message": {
-                        "kind": "message",
                         "message_id": "response-123",
                         "role": "ROLE_AGENT",
                         "content": [{"text": "Message received via REST"}],
@@ -212,22 +211,22 @@ class TestRESTClientSendMessage:
             client = RESTClient("https://example.com:8080")
 
             message = {
-                "message_id": "test-msg-1",
-                "context_id": "test-context",
-                "role": "user",
-                "content": [{"text": "Hello via REST"}],
+                "messageId": "test-msg-1",
+                "contextId": "test-context",
+                "role": "ROLE_USER",
+                "parts": [{"text": "Hello via REST"}],
             }
 
             result = client.send_message(message)
 
             # Verify correct URL and payload were used
             mock_post.assert_called_once_with(
-                "https://example.com:8080/v1/message:send", json={"message": message}, headers=client.default_headers
+                "https://example.com:8080/message:send", json={"message": message}, headers=client.default_headers
             )
 
             # Verify result
             assert result["task"]["id"] == "task-123"
-            assert result["task"]["context_id"] == "test-context"
+            assert result["task"]["contextId"] == "test-context"
 
     @patch("httpx.Client.post")
     def test_send_message_with_extra_headers(self, mock_post):
@@ -254,7 +253,7 @@ class TestRESTClientSendMessage:
             expected_headers.update(extra_headers)
 
             mock_post.assert_called_once_with(
-                "https://example.com:8080/v1/message:send", json={"message": message}, headers=expected_headers
+                "https://example.com:8080/message:send", json={"message": message}, headers=expected_headers
             )
 
     @patch("httpx.Client.post")
@@ -285,7 +284,7 @@ class TestRESTClientSendMessage:
             }
 
             mock_post.assert_called_once_with(
-                "https://example.com:8080/v1/message:send", json=expected_payload, headers=client.default_headers
+                "https://example.com:8080/message:send", json=expected_payload, headers=client.default_headers
             )
 
     @patch("httpx.Client.post")
@@ -399,7 +398,7 @@ class TestRESTClientStreamingMessage:
         # Verify correct URL and headers were used
         mock_async_client.stream.assert_called_once_with(
             "POST",
-            "https://example.com:8080/v1/message:stream",
+            "https://example.com:8080/message:stream",
             json={"message": message},
             headers={**client.default_headers, "Accept": "text/event-stream"},
         )
@@ -492,10 +491,9 @@ class TestRESTClientTaskOperations:
             "status": {
                 "state": "TASK_STATE_COMPLETED",
                 "message": {
-                    "kind": "message",
                     "message_id": "status-123",
                     "role": "ROLE_AGENT",
-                    "content": [{"text": "Task 123 retrieved via REST"}],
+                    "parts": [{"text": "Task 123 retrieved via REST"}],
                 },
             },
         }
@@ -510,7 +508,7 @@ class TestRESTClientTaskOperations:
 
             result = client.get_task("task-123")
 
-            mock_get.assert_called_once_with("https://example.com:8080/v1/tasks/task-123", params={}, headers=client.default_headers)
+            mock_get.assert_called_once_with("https://example.com:8080/tasks/task-123", params={}, headers=client.default_headers)
 
             assert result["id"] == "task-123"
             assert result["context_id"] == "default-context"
@@ -534,7 +532,7 @@ class TestRESTClientTaskOperations:
             client.get_task("task-123", history_length=10)
 
             mock_get.assert_called_once_with(
-                "https://example.com:8080/v1/tasks/task-123", params={"history_length": 10}, headers=client.default_headers
+                "https://example.com:8080/tasks/task-123", params={"history_length": 10}, headers=client.default_headers
             )
 
     @patch("httpx.Client.post")
@@ -545,12 +543,11 @@ class TestRESTClientTaskOperations:
         mock_response.json.return_value = {
             "id": "task-456",
             "status": {
-                "state": "TASK_STATE_CANCELLED",
+                "state": "TASK_STATE_CANCELED",
                 "message": {
-                    "kind": "message",
                     "message_id": "cancel-456",
                     "role": "ROLE_AGENT",
-                    "content": [{"text": "Task 456 cancelled via REST"}],
+                    "parts": [{"text": "Task 456 cancelled via REST"}],
                 },
             },
         }
@@ -565,10 +562,10 @@ class TestRESTClientTaskOperations:
 
             result = client.cancel_task("task-456")
 
-            mock_post.assert_called_once_with("https://example.com:8080/v1/tasks/task-456:cancel", headers=client.default_headers)
+            mock_post.assert_called_once_with("https://example.com:8080/tasks/task-456:cancel", headers=client.default_headers)
 
             assert result["id"] == "task-456"
-            assert result["status"]["state"] == "TASK_STATE_CANCELLED"
+            assert result["status"]["state"] == "TASK_STATE_CANCELED"
 
     @patch("tck.transport.rest_client.AsyncClient")
     @pytest.mark.asyncio
@@ -621,7 +618,7 @@ class TestRESTClientTaskOperations:
         # Verify correct URL and headers were used
         mock_async_client.stream.assert_called_once_with(
             "GET",
-            "https://example.com:8080/v1/tasks/task-789:subscribe",
+            "https://example.com:8080/tasks/task-789:subscribe",
             headers={**client.default_headers, "Accept": "text/event-stream"},
         )
 
@@ -631,39 +628,7 @@ class TestRESTClientAgentCard:
     """Test agent card retrieval via REST."""
 
     @patch("httpx.Client.get")
-    def test_get_agent_card_success(self, mock_get):
-        """Test successful agent card retrieval via REST."""
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "protocol_version": "0.3.0",
-            "name": "A2A REST Test Agent",
-            "description": "Test agent accessed via REST transport",
-            "url": "https://example.com:8080/",
-            "preferred_transport": "REST",
-            "capabilities": {"streaming": True, "push_notifications": False},
-            "additional_interfaces": [{"url": "https://example.com:8080/", "transport": "REST"}],
-        }
-        mock_get.return_value = mock_response
-
-        with patch("httpx.Client") as mock_client_class:
-            mock_client = Mock()
-            mock_client.get = mock_get
-            mock_client_class.return_value = mock_client
-
-            client = RESTClient("https://example.com:8080")
-
-            result = client.get_agent_card()
-
-            mock_get.assert_called_once_with("https://example.com:8080/v1/card", headers=client.default_headers)
-
-            assert result["protocol_version"] == "0.3.0"
-            assert result["name"] == "A2A REST Test Agent"
-            assert result["preferred_transport"] == "REST"
-            assert result["capabilities"]["streaming"] is True
-
-    @patch("httpx.Client.get")
-    def test_get_authenticated_extended_card_success(self, mock_get):
+    def test_get_extended_agent_card_success(self, mock_get):
         """Test successful authenticated extended agent card retrieval via REST."""
         mock_response = Mock()
         mock_response.status_code = 200
@@ -687,12 +652,12 @@ class TestRESTClientAgentCard:
             client = RESTClient("https://example.com:8080")
 
             auth_headers = {"Authorization": "Bearer token123"}
-            result = client.get_authenticated_extended_card(extra_headers=auth_headers)
+            result = client.get_extended_agent_card(extra_headers=auth_headers)
 
             expected_headers = client.default_headers.copy()
             expected_headers.update(auth_headers)
 
-            mock_get.assert_called_once_with("https://example.com:8080/v1/card", headers=expected_headers)
+            mock_get.assert_called_once_with("https://example.com:8080/extendedAgentCard", headers=expected_headers)
 
             assert result["name"] == "A2A REST Test Agent (Extended)"
             assert result["capabilities"]["authenticated_features"] is True
@@ -705,7 +670,7 @@ class TestRESTClientPushNotifications:
     """Test push notification configuration methods."""
 
     @patch("httpx.Client.post")
-    def test_set_push_notification_config_success(self, mock_post):
+    def test_create_task_push_notification_config_success(self, mock_post):
         """Test successful push notification config creation via REST."""
         mock_response = Mock()
         mock_response.status_code = 201
@@ -728,10 +693,10 @@ class TestRESTClientPushNotifications:
 
             config = {"id": "config1", "url": "https://webhook.example.com/notify", "token": "webhook-token-123"}
 
-            result = client.set_push_notification_config("task-123", config)
+            result = client.create_task_push_notification_config("task-123", config)
 
             mock_post.assert_called_once_with(
-                "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs", json=config, headers=client.default_headers
+                "https://example.com:8080/tasks/task-123/pushNotificationConfigs", json=config, headers=client.default_headers
             )
 
             assert result["push_notification_config"]["id"] == "config1"
@@ -762,7 +727,7 @@ class TestRESTClientPushNotifications:
             result = client.get_push_notification_config("task-123", "config1")
 
             mock_get.assert_called_once_with(
-                "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs/config1", headers=client.default_headers
+                "https://example.com:8080/tasks/task-123/pushNotificationConfigs/config1", headers=client.default_headers
             )
 
             assert result["push_notification_config"]["id"] == "config1"
@@ -797,7 +762,7 @@ class TestRESTClientPushNotifications:
             result = client.list_push_notification_configs("task-123")
 
             mock_get.assert_called_once_with(
-                "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs", headers=client.default_headers
+                "https://example.com:8080/tasks/task-123/pushNotificationConfigs", headers=client.default_headers
             )
 
             assert len(result["configs"]) == 2
@@ -822,7 +787,7 @@ class TestRESTClientPushNotifications:
             result = client.delete_push_notification_config("task-123", "config1")
 
             mock_delete.assert_called_once_with(
-                "https://example.com:8080/v1/tasks/task-123/pushNotificationConfigs/config1", headers=client.default_headers
+                "https://example.com:8080/tasks/task-123/pushNotificationConfigs/config1", headers=client.default_headers
             )
 
             assert result == {}  # Empty response for successful deletion
@@ -908,9 +873,8 @@ def test_rest_client_interface_compatibility():
         "get_task",
         "cancel_task",
         "subscribe_to_task",
-        "get_agent_card",
-        "get_authenticated_extended_card",
-        "set_push_notification_config",
+        "get_extended_agent_card",
+        "create_task_push_notification_config",
         "get_push_notification_config",
         "list_push_notification_configs",
         "delete_push_notification_config",

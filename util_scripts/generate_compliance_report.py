@@ -273,7 +273,7 @@ class ComplianceReportGenerator:
         # This would be enhanced with specific fix suggestions
         fix_suggestions = {
             "historyLength": "Implement historyLength parameter in DefaultRequestHandler",
-            "message_send": "Ensure message/send method validates required fields",
+            "message_send": "Ensure SendMessage method validates required fields",
             "tasks_get": "Verify tasks/get returns proper Task structure",
             "streaming": "Implement message/stream if streaming capability is declared",
         }

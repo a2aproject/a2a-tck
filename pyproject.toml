@@ -37,6 +37,8 @@ dependencies = [
     # gRPC support for v0.3.0 multi-transport
     "grpcio>=1.62.0",
     "grpcio-tools>=1.62.0",
+    "grpcio-status>=1.62.0",
+    "proto-plus >=1.22.3",
     "protobuf>=4.25.0",
     "googleapis-common-protos>=1.63.0",
     # Enhanced TLS/certificate analysis

@@ -106,11 +106,11 @@ target url and the...
 
 - `test_message_send_data_part_array` in `test_message_send_capabilities`
 
-- `test_set_push_notification_config` in `test_push_notification_config_methods`
+- `test_create_task_push_notification_config` in `test_push_notification_config_methods`
 
 - `test_get_push_notification_config` in `test_push_notification_config_methods`
 
-- `test_set_push_notification_config_nonexistent` in `test_push_notification_config_methods`
+- `test_create_task_push_notification_config_nonexistent` in `test_push_notification_config_methods`
 
 - `test_get_push_notification_config_nonexistent` in `test_push_notification_config_methods`
 
@@ -250,7 +250,7 @@ target url and the...
 
 *New requirements or features that may need test coverage:*
 
-- `test_set_push_notification_config` in `test_push_notification_config_methods`
+- `test_create_task_push_notification_config` in `test_push_notification_config_methods`
 
 - `test_get_push_notification_config` in `test_push_notification_config_methods`
 
@@ -328,7 +328,7 @@ target url and the...
 
 - `test_message_send_valid_file_part` in `test_message_send_capabilities`
 
-- `test_set_push_notification_config_nonexistent` in `test_push_notification_config_methods`
+- `test_create_task_push_notification_config_nonexistent` in `test_push_notification_config_methods`
 
 - `test_get_push_notification_config_nonexistent` in `test_push_notification_config_methods`
 
@@ -404,7 +404,7 @@ target url and the...
 
 *Tests that may be testing removed requirements:*
 
-- `test_set_push_notification_config` in `test_push_notification_config_methods`
+- `test_create_task_push_notification_config` in `test_push_notification_config_methods`
 
 - `test_get_push_notification_config` in `test_push_notification_config_methods`
 

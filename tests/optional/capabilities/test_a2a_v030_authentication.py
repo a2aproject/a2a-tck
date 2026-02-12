@@ -15,8 +15,8 @@ import base64
 import json
 
 from tests.markers import optional_capability, a2a_v030
-from tests.utils.transport_helpers import transport_get_agent_card, is_transport_client, get_client_transport_type
-from tck import config, message_utils
+from tests.utils.transport_helpers import transport_get_extended_agent_card, is_transport_client, get_client_transport_type
+from tck import agent_card_utils, config, message_utils
 from tck.transport.base_client import BaseTransportClient
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def auth_agent_card(sut_client):
     Fixture to get agent card and extract authentication information.
     """
     try:
-        response = transport_get_agent_card(sut_client)
+        response = transport_get_extended_agent_card(sut_client)
         if "result" in response:
             return response["result"]
         elif "error" not in response:
@@ -40,24 +40,19 @@ def auth_agent_card(sut_client):
         logger.warning(f"Failed to fetch agent card: {e}")
         return None
 
-
 @pytest.fixture
 def security_schemes(auth_agent_card):
-    """
-    Extract security schemes from the Agent Card.
-    """
-    if not auth_agent_card:
-        return []
+    """Extract all security schemes from Agent Card."""
+    if auth_agent_card is None:
+        pytest.skip("Agent Card not available - cannot test authentication compliance")
 
-    # A2A v0.3.0 uses securitySchemes field
-    security_schemes = auth_agent_card.get("securitySchemes", {})
-    if not security_schemes:
-        # Fallback to legacy authentication field
-        legacy_auth = auth_agent_card.get("authentication", [])
-        return legacy_auth
+    schemes = agent_card_utils.get_authentication_schemes(auth_agent_card)
 
-    return list(security_schemes.values())
+    if not schemes:
+        # No authentication schemes is acceptable - skip all the tests
+        pytest.skip("No security schemes declared")
 
+    return schemes
 
 class TestA2AV030SecuritySchemes:
     """
@@ -79,32 +74,35 @@ class TestA2AV030SecuritySchemes:
         if not security_schemes:
             pytest.skip("No security schemes declared in Agent Card")
 
-        valid_scheme_types = ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
+        valid_scheme_types = ["apiKeySecurityScheme", "httpAuthSecurityScheme", "oauth2SecurityScheme", "openIdConnectSecurityScheme", "mtlsSecurityScheme"]
         valid_api_key_locations = ["query", "header", "cookie"]
 
-        for i, scheme in enumerate(security_schemes):
-            scheme_type = scheme.get("type")
-            assert scheme_type in valid_scheme_types, f"Security scheme {i} has invalid type: {scheme_type}"
+        for scheme_name in security_schemes:
+            security_scheme = security_schemes[scheme_name]
+            assert len(security_scheme.keys()) == 1
+            scheme_type, scheme = next(iter(security_scheme.items()))
+            
+            assert scheme_type in valid_scheme_types, f"Security scheme has invalid type: {scheme_type}"
 
             # Type-specific validation
-            if scheme_type == "apiKey":
-                assert "name" in scheme, f"API Key scheme {i} missing 'name' field"
-                assert "in" in scheme, f"API Key scheme {i} missing 'in' field"
-                assert scheme["in"] in valid_api_key_locations, f"API Key scheme {i} has invalid location: {scheme['in']}"
+            if scheme_type == "apiKeySecurityScheme":
+                assert "name" in scheme, f"{scheme_name}/{scheme_type}: missing 'name' field"
+                assert "in" in scheme, f"{scheme_name}/{scheme_type}: missing 'in' field"
+                assert scheme["in"] in valid_api_key_locations, f"{scheme_name}/{scheme_type}: invalid location {scheme['in']}"
 
-            elif scheme_type == "http":
-                assert "scheme" in scheme, f"HTTP auth scheme {i} missing 'scheme' field"
+            elif scheme_type == "httpAuthSecurityScheme":
+                assert "scheme" in scheme, f"{scheme_name}/{scheme_type}: missing 'scheme' field"
                 http_scheme = scheme["scheme"].lower()
-                assert http_scheme in ["basic", "bearer", "digest"], f"HTTP auth scheme {i} has unsupported scheme: {http_scheme}"
+                assert http_scheme in ["basic", "bearer", "digest"], f"{scheme_name}/{scheme_type}: unsupported scheme: {http_scheme}"
 
-            elif scheme_type == "oauth2":
-                assert "flows" in scheme, f"OAuth2 scheme {i} missing 'flows' field"
+            elif scheme_type == "oauth2SecurityScheme":
+                assert "flows" in scheme, f"{scheme_name}/{scheme_type}: missing 'flows' field"
                 flows = scheme["flows"]
                 valid_flows = ["authorizationCode", "clientCredentials", "implicit", "password"]
-                assert any(flow in flows for flow in valid_flows), f"OAuth2 scheme {i} has no valid flows"
+                assert any(flow in flows for flow in valid_flows), f"{scheme_name}/{scheme_type}: no valid flows"
 
-            elif scheme_type == "openIdConnect":
-                assert "openIdConnectUrl" in scheme, f"OpenID Connect scheme {i} missing 'openIdConnectUrl' field"
+            elif scheme_type == "openIdConnectSecurityScheme":
+                assert "openIdConnectUrl" in scheme, f"{scheme_name}/{scheme_type}: missing 'openIdConnectUrl' field"
 
     @optional_capability
     @a2a_v030
@@ -118,7 +116,7 @@ class TestA2AV030SecuritySchemes:
         if not security_schemes:
             pytest.skip("No security schemes declared in Agent Card")
 
-        mutual_tls_schemes = [s for s in security_schemes if s.get("type") == "mutualTLS"]
+        mutual_tls_schemes = [s for s in security_schemes if "mtlsSecurityScheme" in s]
 
         if not mutual_tls_schemes:
             pytest.skip("No mutualTLS security schemes declared")
@@ -142,8 +140,8 @@ class TestA2AV030SecuritySchemes:
         if not security_schemes:
             pytest.skip("No security schemes declared in Agent Card")
 
-        oauth2_schemes = [s for s in security_schemes if s.get("type") == "oauth2"]
-
+        oauth2_schemes = [s for s in security_schemes if "oauth2SecurityScheme" in s]
+        
         if not oauth2_schemes:
             pytest.skip("No OAuth2 security schemes declared")
 
@@ -184,7 +182,7 @@ class TestMultiTransportAuthentication:
         # would require valid credentials which are out-of-band
         try:
             # Attempt to get agent card (should work regardless of auth)
-            response = transport_get_agent_card(sut_client)
+            response = transport_get_extended_agent_card(sut_client)
 
             # Verify response structure
             assert isinstance(response, dict)
@@ -245,20 +243,24 @@ class TestEnhancedSecurityValidation:
             pytest.skip("No security schemes declared in Agent Card")
 
         # Verify that security schemes are discoverable
-        for scheme in security_schemes:
+        for scheme_name in security_schemes:
+            security_scheme = security_schemes[scheme_name]
+            assert len(security_scheme.keys()) == 1
+            scheme_type, scheme = next(iter(security_scheme.items()))
+        
             scheme_type = scheme.get("type")
 
             # Each scheme should have enough information for client implementation
-            if scheme_type == "apiKey":
+            if scheme_type == "apiKeySecurityScheme":
                 assert "name" in scheme and "in" in scheme
-            elif scheme_type == "http":
+            elif scheme_type == "httpAuthSecurityScheme":
                 assert "scheme" in scheme
-            elif scheme_type == "oauth2":
+            elif scheme_type == "oauth2SecurityScheme":
                 assert "flows" in scheme
                 # Check if metadata URL is provided for easier discovery
                 if "oauth2MetadataUrl" in scheme:
                     logger.info(f"OAuth2 metadata URL provided: {scheme['oauth2MetadataUrl']}")
-            elif scheme_type == "openIdConnect":
+            elif scheme_type == "openIdConnectSecurityScheme":
                 assert "openIdConnectUrl" in scheme
 
     @optional_capability
@@ -357,20 +359,22 @@ class TestAuthenticationErrorHandling:
 
         sut_url = config.get_sut_url()
 
-        for scheme in security_schemes:
-            scheme_type = scheme.get("type", "")
+        for scheme_name in security_schemes:
+            security_scheme = security_schemes[scheme_name]
+            assert len(security_scheme.keys()) == 1
+            scheme_type, scheme = next(iter(security_scheme.items()))
 
             # Prepare invalid credentials based on scheme type
             headers = {"Content-Type": "application/json"}
 
-            if scheme_type == "apiKey":
+            if scheme_type == "apiKeySecurityScheme":
                 key_name = scheme.get("name", "x-api-key")
                 key_location = scheme.get("in", "header")
 
                 if key_location == "header":
                     headers[key_name] = "invalid-api-key-value"
 
-            elif scheme_type == "http":
+            elif scheme_type == "httpAuthSecurityScheme":
                 http_scheme = scheme.get("scheme", "bearer").lower()
                 if http_scheme == "bearer":
                     headers["Authorization"] = "Bearer invalid-token-12345"

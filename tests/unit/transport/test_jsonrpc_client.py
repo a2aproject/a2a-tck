@@ -63,7 +63,7 @@ class TestJSONRPCClient:
         assert self.client.supports_method("send_message") is True
         assert self.client.supports_method("get_task") is True
         assert self.client.supports_method("cancel_task") is True
-        assert self.client.supports_method("resubscribe_task") is True
+        assert self.client.supports_method("subscribe_task") is True
 
         # list_tasks is not supported by JSON-RPC transport
         assert self.client.supports_method("list_tasks") is False
@@ -132,13 +132,13 @@ class TestJSONRPCClient:
         mock_post.return_value = mock_response
 
         # Test message
-        message = {"kind": "message", "messageId": "msg-123", "role": "user", "parts": [{"kind": "text", "text": "Hello"}]}
+        message = {"messageId": "msg-123", "role": "ROLE_USER", "parts": [{"text": "Hello"}]}
 
         result = self.client.send_message(message)
 
         # Verify correct method and params were used
         call_args = mock_post.call_args
-        assert call_args[1]["json"]["method"] == "message/send"
+        assert call_args[1]["json"]["method"] == "SendMessage"
         assert call_args[1]["json"]["params"] == {"message": message}
 
         # Verify result extraction

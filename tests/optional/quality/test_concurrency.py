@@ -22,9 +22,8 @@ def text_message_params():
     return {
         "message": {
             "messageId": "test-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Hello from concurrency test!"}],
-            "kind": "message",
+            "role": "ROLE_USER",
+            "parts": [{"text": "Hello from concurrency test!"}],
         }
     }
 
@@ -39,7 +38,7 @@ def test_parallel_requests(sut_client, text_message_params):
     may send requests simultaneously.
 
     Validates:
-    - Multiple parallel message/send requests
+    - Multiple parallel SendMessage requests
     - Proper response handling under concurrent load
     - No race conditions or resource conflicts
     """
@@ -52,7 +51,7 @@ def test_parallel_requests(sut_client, text_message_params):
         params = text_message_params.copy()
         params["message"]["parts"][0]["text"] = f"Parallel request {i} - {uuid.uuid4()}"
 
-        req = message_utils.make_json_rpc_request("message/send", params=params)
+        req = message_utils.make_json_rpc_request("SendMessage", params=params)
         try:
             resp = transport_helpers.transport_send_message(sut_client, params)
             return (i, req["id"], resp)
@@ -95,7 +94,7 @@ def test_rapid_sequential_requests(sut_client, text_message_params):
     Fix Suggestion: Implement proper request queuing and resource management
 
     Validates:
-    - Multiple rapid sequential requests per A2A message/send method
+    - Multiple rapid sequential requests per A2A SendMessage method
     - Consistent response times and behavior
     - No resource exhaustion under sequential load
     - Specification compliance for sustained operation
@@ -109,7 +108,7 @@ def test_rapid_sequential_requests(sut_client, text_message_params):
         params = text_message_params.copy()
         params["message"]["parts"][0]["text"] = f"Rapid request {i} - {uuid.uuid4()}"
 
-        req = message_utils.make_json_rpc_request("message/send", params=params)
+        req = message_utils.make_json_rpc_request("SendMessage", params=params)
         try:
             resp = transport_helpers.transport_send_message(sut_client, params)
             results.append((i, req["id"], resp))
@@ -150,7 +149,7 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     if not transport_helpers.is_json_rpc_success_response(create_resp):
         pytest.skip("Failed to create task for concurrent operations test")
 
-    task_id = create_resp["result"]["id"]
+    task_id = create_resp["result"]["task"]["id"]
 
     # Step 2: Define operations to perform concurrently on the task
     def get_task():
@@ -162,9 +161,8 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
             "message": {
                 "taskId": task_id,
                 "messageId": "test-update-message-id-" + str(uuid.uuid4()),
-                "role": "user",
-                "parts": [{"kind": "text", "text": f"Concurrent update {uuid.uuid4()}"}],
-                "kind": "message",
+                "role": "ROLE_USER",
+                "parts": [{"text": f"Concurrent update {uuid.uuid4()}"}],
             }
         }
         resp = transport_helpers.transport_send_message(sut_client, params)

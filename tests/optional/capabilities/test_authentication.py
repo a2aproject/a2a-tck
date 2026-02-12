@@ -58,11 +58,6 @@ def test_auth_schemes_available(auth_schemes):
     if not auth_schemes:
         logger.info("No authentication schemes found in Agent Card")
         pytest.skip("No authentication schemes declared in Agent Card, skipping authentication tests")
-    else:
-        logger.info(f"Found {len(auth_schemes)} authentication schemes in Agent Card")
-        for i, scheme in enumerate(auth_schemes):
-            scheme_type = scheme.get("scheme", "unknown")
-            logger.info(f"Scheme {i + 1}: {scheme_type}")
 
 
 @optional_capability
@@ -170,20 +165,22 @@ def test_invalid_authentication(sut_client, auth_schemes):
     session = requests.Session()
 
     # Get the first declared auth scheme and create an invalid token/credentials
-    auth_scheme = auth_schemes[0]
-    scheme_type = auth_scheme.get("scheme", "").lower()
+    scheme_name = next(iter(auth_schemes.keys()))
+    auth_scheme = auth_schemes[scheme_name]
+    assert len(auth_scheme.keys()) == 1
+    scheme_type, scheme = next(iter(auth_scheme.items()))
 
     # Prepare headers with invalid authentication
     headers = {"Content-Type": "application/json"}
 
-    if scheme_type == "bearer":
+    if scheme_type == "httpAuthSecurityScheme" and scheme["scheme"] == "bearer":
         headers["Authorization"] = "Bearer invalid-dummy-token"
-    elif scheme_type == "basic":
+    elif scheme_type == "httpAuthSecurityScheme" and scheme["scheme"] == "basic":
         headers["Authorization"] = "Basic aW52YWxpZDppbnZhbGlk"  # invalid:invalid in base64
-    elif scheme_type == "apikey":
+    elif scheme_type == "apiKeySecurityScheme":
         # Look for the name and location of the API key
-        key_name = auth_scheme.get("name", "x-api-key")
-        key_location = auth_scheme.get("in", "header")
+        key_name = scheme.get("name", "x-api-key")
+        key_location = scheme.get("in", "header")
 
         if key_location == "header":
             headers[key_name] = "invalid-api-key"

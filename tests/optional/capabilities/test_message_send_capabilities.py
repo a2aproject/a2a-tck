@@ -1,7 +1,7 @@
 """
 A2A Protocol Specification: Message send capability-dependent tests.
 
-This test suite validates capability-dependent message/send functionality
+This test suite validates capability-dependent SendMessage functionality
 according to the A2A specification: https://google.github.io/A2A/specification/#message-send
 """
 
@@ -29,7 +29,7 @@ def test_message_send_valid_file_part(sut_client, valid_file_message_params, age
             SKIP if file modality not declared
 
     If an agent declares file modality support, it MUST properly
-    handle message/send with FilePart containing FileWithUri objects.
+    handle SendMessage with FilePart containing FileWithUri objects.
 
     Failure Impact: False advertising if declared but not implemented
     Fix Suggestion: Either implement file support or remove from Agent Card
@@ -75,9 +75,8 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
 
     combined_parts = {
         "message": {
-            "kind": "message",
             "messageId": "test-multiple-parts-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": valid_text_message_params["message"]["parts"] + valid_file_message_params["message"]["parts"],
         }
     }
@@ -107,13 +106,14 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     """
     # First, create a task
     first_resp = transport_helpers.transport_send_message(sut_client, valid_text_message_params)
+    logger.info(f"Response: {first_resp}")
     assert transport_helpers.is_json_rpc_success_response(first_resp)
-    task_id = first_resp["result"]["id"]
+    task_id = first_resp["result"]["task"]["id"]
 
     # Check if the response contains a contextId we can use
     context_id = None
     if "result" in first_resp and isinstance(first_resp["result"], dict):
-        context_id = first_resp["result"].get("contextId")
+        context_id = first_resp["result"]["task"]["contextId"]
 
     # If no contextId was provided, create a dummy one
     if not context_id:
@@ -123,19 +123,18 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     # Send a follow-up message with both taskId and contextId
     continuation_params = {
         "message": {
-            "kind": "message",
             "taskId": task_id,
             "contextId": context_id,
             "messageId": "test-contextid-message-id-" + str(uuid.uuid4()),
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Follow-up message for the existing task with contextId"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Follow-up message for the existing task with contextId"}],
         }
     }
     second_resp = transport_helpers.transport_send_message(sut_client, continuation_params)
     assert transport_helpers.is_json_rpc_success_response(second_resp)
-    result = second_resp["result"]
+    result = second_resp["result"]["task"]
     assert result["id"] == task_id  # Should be the same task ID
-    assert result.get("status", {}).get("state") in {"submitted", "working", "input-required", "completed"}
+    assert result.get("status", {}).get("state") in {"TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_COMPLETED"}
 
 
 @optional_capability
@@ -147,7 +146,7 @@ def test_message_send_valid_data_part(sut_client, valid_data_message_params, age
             SKIP if data modality not declared
 
     If an agent declares data modality support, it MUST properly
-    handle message/send with DataPart.
+    handle SendMessage with DataPart.
 
     Failure Impact: False advertising if declared but not implemented
     Fix Suggestion: Either implement data support or remove from Agent Card
@@ -177,7 +176,7 @@ def test_message_send_data_part_array(sut_client, agent_card_data):
             SKIP if data modality not declared
 
     If an agent declares data modality support, it MUST properly
-    handle message/send with DataPart containing arrays.
+    handle SendMessage with DataPart containing arrays.
 
     Failure Impact: False advertising if declared but not implemented
     Fix Suggestion: Either implement full data support or remove from Agent Card
@@ -194,12 +193,10 @@ def test_message_send_data_part_array(sut_client, agent_card_data):
     # Create a message with data part containing an array
     data_array_params = {
         "message": {
-            "kind": "message",
             "messageId": "test-data-array-message-id-" + str(uuid.uuid4()),
-            "role": "user",
+            "role": "ROLE_USER",
             "parts": [
                 {
-                    "kind": "data",
                     "data": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}, {"name": "Charlie", "age": 35}],
                 }
             ],

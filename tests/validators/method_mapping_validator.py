@@ -45,79 +45,79 @@ class MethodMappingValidator:
     # A2A v0.3.0 Method Mapping Reference Table (§3.5.6)
     CORE_METHOD_MAPPINGS = [
         MethodMapping(
-            jsonrpc_method="message/send",
+            jsonrpc_method="SendMessage",
             grpc_method="SendMessage",
-            rest_endpoint="POST /v1/message:send",
+            rest_endpoint="POST /message:send",
             description="Send message to agent",
             transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="message/stream",
             grpc_method="SendStreamingMessage",
-            rest_endpoint="POST /v1/message:stream",
+            rest_endpoint="POST /message:stream",
             description="Send message with streaming",
             transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="tasks/get",
             grpc_method="GetTask",
-            rest_endpoint="GET /v1/tasks/{id}",
+            rest_endpoint="GET /tasks/{id}",
             description="Get task status",
             transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="tasks/list",
-            grpc_method="ListTask",
-            rest_endpoint="GET /v1/tasks",
-            description="List tasks (gRPC/REST only)",
-            transport_support="grpc_rest_only",
+            grpc_method="ListTasks",
+            rest_endpoint="GET /tasks",
+            description="List tasks with optional filtering and pagination",
+            transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="tasks/cancel",
             grpc_method="CancelTask",
-            rest_endpoint="POST /v1/tasks/{id}:cancel",
+            rest_endpoint="POST /tasks/{id}:cancel",
             description="Cancel task",
             transport_support="all",
         ),
         MethodMapping(
-            jsonrpc_method="tasks/resubscribe",
+            jsonrpc_method="SubscribeToTask",
             grpc_method="TaskSubscription",
-            rest_endpoint="POST /v1/tasks/{id}:subscribe",
+            rest_endpoint="POST /tasks/{id}:subscribe",
             description="Resume task streaming",
             transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="tasks/pushNotificationConfig/set",
             grpc_method="CreateTaskPushNotification",
-            rest_endpoint="POST /v1/tasks/{id}/pushNotificationConfigs",
+            rest_endpoint="POST /tasks/{id}/pushNotificationConfigs",
             description="Set push notification config",
             transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="tasks/pushNotificationConfig/get",
             grpc_method="GetTaskPushNotification",
-            rest_endpoint="GET /v1/tasks/{id}/pushNotificationConfigs/{configId}",
+            rest_endpoint="GET /tasks/{id}/pushNotificationConfigs/{configId}",
             description="Get push notification config",
             transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="tasks/pushNotificationConfig/list",
             grpc_method="ListTaskPushNotification",
-            rest_endpoint="GET /v1/tasks/{id}/pushNotificationConfigs",
+            rest_endpoint="GET /tasks/{id}/pushNotificationConfigs",
             description="List push notification configs",
             transport_support="all",
         ),
         MethodMapping(
             jsonrpc_method="tasks/pushNotificationConfig/delete",
             grpc_method="DeleteTaskPushNotification",
-            rest_endpoint="DELETE /v1/tasks/{id}/pushNotificationConfigs/{configId}",
+            rest_endpoint="DELETE /tasks/{id}/pushNotificationConfigs/{configId}",
             description="Delete push notification config",
             transport_support="all",
         ),
         MethodMapping(
-            jsonrpc_method="agent/getAuthenticatedExtendedCard",
-            grpc_method="GetAgentCard",
-            rest_endpoint="GET /v1/card",
+            jsonrpc_method="GetExtendedAgentCard",
+            grpc_method="GetExtendedAgentCard",
+            rest_endpoint="GET /extendedAgentCard",
             description="Get authenticated agent card",
             transport_support="all",
         ),
@@ -165,7 +165,7 @@ class MethodMappingValidator:
 
         # Test core methods that should be equivalent across transports
         equivalent_methods = [
-            ("message/send", "Send a test message"),
+            ("SendMessage", "Send a test message"),
             ("tasks/get", None),  # Requires existing task
             ("tasks/cancel", None),  # Requires existing task
         ]
@@ -303,12 +303,12 @@ class MethodMappingValidator:
         """
         Validate REST endpoint naming conventions (§3.5.3).
 
-        REST endpoints MUST follow /v1/{resource}[/{id}][:{action}] pattern.
+        REST endpoints MUST follow /{resource}[/{id}][:{action}] pattern.
         """
         results = {
             "transport": "rest",
             "compliant": True,
-            "naming_convention": "/v1/{resource}[/{id}][:{action}]",
+            "naming_convention": "/{resource}[/{id}][:{action}]",
             "violations": [],
             "valid_endpoints": [],
         }
@@ -336,13 +336,13 @@ class MethodMappingValidator:
         return bool(re.match(pattern, method))
 
     def _validate_rest_endpoint_pattern(self, endpoint: str) -> bool:
-        """Validate REST endpoint follows /v1/{resource} pattern."""
-        # Must start with /v1/
-        if not endpoint.startswith("/v1/"):
+        """Validate REST endpoint follows /{resource} pattern."""
+        # Must start with /
+        if not endpoint.startswith("/"):
             return False
 
         # Should follow resource-based pattern
-        pattern = r"^/v1/[a-z]+(/\{[a-zA-Z]+\}|:[a-z]+)?$"
+        pattern = r"^/[a-z]+(/\{[a-zA-Z]+\}|:[a-z]+)?$"
         return bool(re.match(pattern, endpoint))
 
     def _get_available_jsonrpc_methods(self, client: JSONRPCClient) -> List[str]:

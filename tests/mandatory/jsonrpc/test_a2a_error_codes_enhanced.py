@@ -19,6 +19,7 @@ import pytest
 from tck import message_utils
 from tests.markers import mandatory
 from tests.utils import transport_helpers
+from tests.markers import mandatory_jsonrpc
 
 logger = logging.getLogger(__name__)
 
@@ -56,18 +57,18 @@ def create_test_task(sut_client) -> Optional[str]:
     try:
         req_id = message_utils.generate_request_id()
         test_message = {
-            "role": "user",
-            "parts": [{"kind": "text", "text": "Test message for error testing"}],
+            "role": "ROLE_USER",
+            "parts": [{"text": "Test message for error testing"}],
             "messageId": f"msg-{req_id}",
-            "kind": "message",
         }
 
         message_response = transport_helpers.transport_send_message(sut_client, {"message": test_message})
-
         if "result" in message_response and isinstance(message_response["result"], dict):
-            task = message_response["result"]
-            if "id" in task:
-                return task["id"]
+            result = message_response["result"]
+            if "task" in result and isinstance(result["task"], dict):
+                task = result["task"]
+                if "id" in task:
+                    return task["id"]
     except Exception as e:
         logger.warning(f"Failed to create test task: {e}")
 
@@ -75,7 +76,7 @@ def create_test_task(sut_client) -> Optional[str]:
 
 
 @mandatory
-def test_push_notification_not_supported_error_32003_enhanced(sut_client):
+def test_push_notification_not_supported_error_32003_enhanced(sut_client, agent_card_data):
     """
     MANDATORY: A2A v0.3.0 Section 8.2 - PushNotificationNotSupportedError (-32003)
 
@@ -90,21 +91,29 @@ def test_push_notification_not_supported_error_32003_enhanced(sut_client):
     push_notifications_supported = False
 
     try:
-        agent_card = transport_helpers.transport_get_agent_card(sut_client)
-        capabilities = agent_card.get("capabilities", {})
-        push_notifications_supported = capabilities.get("pushNotifications", False)
+        result = transport_helpers.transport_get_extended_agent_card(sut_client)
+        if "result" in result and isinstance(result["result"], dict):
+            agent_card = result["result"]
+        else:
+            # Fallback to public agent card from fixture
+            agent_card = agent_card_data
+
+        if agent_card:
+            capabilities = agent_card.get("capabilities", {})
+            push_notifications_supported = capabilities.get("pushNotifications", False)
     except Exception as e:
         logger.warning(f"Could not retrieve agent card: {e}")
 
     if not push_notifications_supported:
         # Test direct rejection for unsupported feature
         task_id = create_test_task(sut_client) or f"test-task-{message_utils.generate_request_id()}"
-
+        config_id = str(uuid.uuid4())
         # Try to set push notification config on agent that doesn't support it
-        config = {"url": "https://test.example.com/webhook", "token": "test-token"}
+        name= f"tasks/{task_id}/pushNotificationConfigs/{config_id}"
+        config = {"name": name, "pushNotificationConfig":{"url": "https://test.example.com/webhook", "token": "test-token"}}
 
         try:
-            response = transport_helpers.transport_set_push_notification_config(sut_client, task_id, config)
+            response = transport_helpers.transport_create_task_push_notification_config(sut_client, task_id, config_id, config)
 
             if "error" in response:
                 error_code = response["error"]["code"]
@@ -170,10 +179,9 @@ def test_unsupported_operation_error_32004_enhanced(sut_client):
 
     # Strategy 1: Try to use unsupported configuration parameters
     test_message = {
-        "role": "user",
-        "parts": [{"kind": "text", "text": "Test message with extreme parameters"}],
+        "role": "ROLE_USER",
+        "parts": [{"text": "Test message with extreme parameters"}],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     # Test with extremely large or invalid configuration that might be unsupported
@@ -190,7 +198,7 @@ def test_unsupported_operation_error_32004_enhanced(sut_client):
     }
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/send", params=params, id=req_id)
+        response = transport_helpers.transport_send_json_rpc_request(sut_client, "SendMessage", params=params, id=req_id)
 
         if "error" in response:
             error_code = response["error"]["code"]
@@ -244,20 +252,18 @@ def test_content_type_not_supported_error_32005_enhanced(sut_client):
 
     # Strategy 1: Try message with completely unsupported MIME types
     test_message = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [
-            {"kind": "text", "text": "Test message"},
+            {"text": "Test message"},
             {
-                "kind": "file",
                 "file": {
                     "name": "test.xyz",
-                    "mimeType": "application/x-completely-unsupported-binary-format-test",
-                    "bytes": "dGVzdCBkYXRh",  # "test data" in base64
+                    "mediaType": "application/x-completely-unsupported-binary-format-test",
+                    "fileWithBytes": "dGVzdCBkYXRh",  # "test data" in base64
                 },
             },
         ],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     params = {
@@ -272,7 +278,7 @@ def test_content_type_not_supported_error_32005_enhanced(sut_client):
     }
 
     try:
-        response = transport_helpers.transport_send_json_rpc_request(sut_client, "message/send", params=params, id=req_id)
+        response = transport_helpers.transport_send_json_rpc_request(sut_client, "SendMessage", params=params, id=req_id)
 
         if "error" in response:
             error_code = response["error"]["code"]
@@ -291,24 +297,22 @@ def test_content_type_not_supported_error_32005_enhanced(sut_client):
 
     # Strategy 2: Try with invalid file format that might not be supported
     test_message_2 = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [
             {
-                "kind": "file",
                 "file": {
                     "name": "corrupt.bin",
-                    "mimeType": "application/octet-stream-corrupted-test-format",
-                    "bytes": "INVALID_BASE64_CONTENT_THAT_SHOULD_CAUSE_ISSUES",
+                    "mediaType": "application/octet-stream-corrupted-test-format",
+                    "fileWithBytes": "INVALID_BASE64_CONTENT_THAT_SHOULD_CAUSE_ISSUES",
                 },
             }
         ],
         "messageId": f"msg-{req_id}-2",
-        "kind": "message",
     }
 
     try:
         response = transport_helpers.transport_send_json_rpc_request(
-            sut_client, "message/send", params={"message": test_message_2}, id=f"{req_id}-2"
+            sut_client, "SendMessage", params={"message": test_message_2}, id=f"{req_id}-2"
         )
 
         if "error" in response:
@@ -340,11 +344,10 @@ def test_invalid_agent_response_error_32006_enhanced(sut_client):
 
     # Strategy 1: Try to trigger complex processing that might cause response generation issues
     complex_message = {
-        "role": "user",
+        "role": "ROLE_USER",
         "parts": [
-            {"kind": "text", "text": "Generate an extremely complex response with nested data"},
+            {"text": "Generate an extremely complex response with nested data"},
             {
-                "kind": "data",
                 "data": {
                     "complexRequest": True,
                     "nestedLevels": {
@@ -356,12 +359,11 @@ def test_invalid_agent_response_error_32006_enhanced(sut_client):
             },
         ],
         "messageId": f"msg-{req_id}",
-        "kind": "message",
     }
 
     try:
         response = transport_helpers.transport_send_json_rpc_request(
-            sut_client, "message/send", params={"message": complex_message}, id=req_id
+            sut_client, "SendMessage", params={"message": complex_message}, id=req_id
         )
 
         if "error" in response:
