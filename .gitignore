@@ -197,8 +197,8 @@ spec_tracker/cache
 
 #a2a-spec-analysis
 
-# Reports
-reports/*.json
+# Reports (generated output)
+reports/
 
 .DS_Store
 .serena
