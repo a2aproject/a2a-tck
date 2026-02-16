@@ -1,13 +1,16 @@
-.PHONY: proto test lint
+.PHONY: help proto test lint spec
 
-# Generate Python gRPC stubs from a2a.proto
-proto:
+help: ## Show available targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  make %-10s %s\n", $$1, $$2}'
+
+proto: ## Generate Python gRPC stubs from a2a.proto
 	./scripts/generate_grpc_stubs.sh
 
-# Run tests
-test:
+spec: ## Update the A2A specification and Protobuf definition
+	./scripts/update_spec.sh
+
+test: ## Run tests
 	uv run pytest
 
-# Run linter
-lint:
+lint: ## Run linter
 	uv run ruff check .

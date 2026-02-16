@@ -7,7 +7,6 @@ set -e  # Exit on error
 # Colors for output
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
 readonly NC='\033[0m' # No Color
 
 echo "================================================"
@@ -33,20 +32,6 @@ if [ ! -f "${PROTO_FILE}" ]; then
     echo -e "${RED}Error: ${PROTO_FILE} file not found${NC}"
     echo "Please run update_spec.sh to download the specification files"
     exit 1
-fi
-
-# Backup existing stubs if they exist
-if [ -f "${OUTPUT_DIR}/a2a_pb2.py" ] || [ -f "${OUTPUT_DIR}/a2a_pb2_grpc.py" ]; then
-    BACKUP_DIR="${OUTPUT_DIR}/backup_$(date +%Y%m%d_%H%M%S)"
-    echo -e "${YELLOW}Backing up existing stubs to: ${BACKUP_DIR}${NC}"
-    mkdir -p "${BACKUP_DIR}"
-
-    # Files to backup
-    readonly BACKUP_FILES=("a2a_pb2.py" "a2a_pb2_grpc.py" "a2a_pb2.pyi")
-
-    for file in "${BACKUP_FILES[@]}"; do
-        [ -f "${OUTPUT_DIR}/${file}" ] && cp "${OUTPUT_DIR}/${file}" "${BACKUP_DIR}/"
-    done
 fi
 
 # Generate the stubs using buf
