@@ -4,7 +4,7 @@ title: Create project directory structure
 status: Done
 assignee: []
 created_date: '2026-01-28 09:07'
-updated_date: '2026-02-12 10:50'
+updated_date: '2026-02-16 09:46'
 labels:
   - phase-1
   - foundation
@@ -36,7 +36,7 @@ Create the complete directory structure for A2A TCK v1.0 following the layout de
 - `tests/core_operations/` - Core requirement tests
 - `tests/grpc/` - gRPC corner cases
 - `tests/jsonrpc/` - JSON-RPC corner cases
-- `tests/rest/` - REST corner cases
+- `tests/http_json/` - HTTP+JSON corner cases
 - `reports/` - Generated reports (gitignored)
 
 **Files to create**:
