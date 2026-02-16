@@ -1,0 +1,14 @@
+{
+  "downloadTime": "2026-02-12T14:00:39Z",
+  "organization": "a2aproject",
+  "repository": "A2A",
+  "branch": "main",
+  "commitHash": "68727dcb35599d0ccf4cb38a9173d47b4c182c19",
+  "sourceUrl": "https://github.com/a2aproject/A2A/tree/68727dcb35599d0ccf4cb38a9173d47b4c182c19/specification",
+  "files": [
+    "a2a.proto",
+    "buf.lock",
+    "buf.yaml",
+    "specification.md"
+  ]
+}

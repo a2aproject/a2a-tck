@@ -1,10 +1,10 @@
 ---
 id: TASK-1.3
 title: Sync a2a.proto specification artifact
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-01-28 09:07'
-updated_date: '2026-01-28 09:20'
+updated_date: '2026-02-12 13:28'
 labels:
   - phase-1
   - foundation

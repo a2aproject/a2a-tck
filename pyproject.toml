@@ -1,13 +1,13 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "a2a-tck"
-version = "0.1.0"
-description = "Technology Compatibility Kit for the A2A Protocol"
+version = "1.0.0"
+description = "A2A Protocol Technology Compatibility Kit"
 readme = "README.md"
-requires-python = ">=3.8.1"
+requires-python = ">=3.11"
 authors = [
     {name = "A2A Protocol Developers"}
 ]
@@ -16,89 +16,49 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.20.0",
-    "pytest-json-report>=1.5.0",
-    "httpx>=0.24.0",
-    "requests>=2.31.0",
-    "responses>=0.23.0",
-    "types-requests>=2.30.0",
-    "deepdiff>=6.7.1",
-    "jsonschema>=4.20.0",
-    "packaging>=21.0",
-    "PyYAML>=5.0.0",
-    "python-dotenv>=1.0.0",
-    # gRPC support for v0.3.0 multi-transport
-    "grpcio>=1.62.0",
-    "grpcio-tools>=1.62.0",
-    "grpcio-status>=1.62.0",
-    "proto-plus >=1.22.3",
-    "protobuf>=4.25.0",
-    "googleapis-common-protos>=1.63.0",
-    # Enhanced TLS/certificate analysis
-    "pyOpenSSL>=23.0.0",
-    # HTTP server for push notification testing
-    "aiohttp>=3.9.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "grpcio>=1.60",
+    "protobuf>=4.25",
+    "jsonschema>=4.21",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest-html>=3.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "mypy>=1.0.0",
-    "flake8>=6.0.0",
+    "ruff>=0.3",
+    "mypy>=1.8",
 ]
 
 [project.scripts]
 run-tck = "run_tck:main"
 
-[tool.setuptools.packages.find]
-include = ["spec_tracker*", "tck*", "spec_analysis*"]
-exclude = ["tests*"]
+[tool.hatch.build.targets.wheel]
+packages = ["tck", "specification"]
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "8.0"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
-    "core: mark test as a core test (always runs)",
-    "all: mark test as an optional test (only runs with --test-scope all)",
-    # Mandatory markers - MUST requirements
-    "mandatory: Blocks SDK compliance",
-    "mandatory_jsonrpc: JSON-RPC 2.0 compliance",
-    "mandatory_protocol: A2A protocol requirements",
-    # Optional markers - SHOULD/MAY requirements
-    "optional_recommended: SHOULD requirements",
-    "optional_feature: MAY requirements",
-    "optional_capability: Capability-dependent",
-    # Quality markers
-    "quality_basic: Basic implementation quality",
-    "quality_production: Production-ready quality",
-    "quality_advanced: Advanced features",
-    # Transport equivalence markers
-    "transport_equivalence: Multi-transport functional equivalence",
-    # A2A version-specific markers
-    "a2a_v030: A2A v0.3.0 specific features",
-    # General markers for convenience
-    "optional: General optional functionality",
+    "core: Core A2A protocol requirements",
+    "grpc: gRPC transport specific tests",
+    "jsonrpc: JSON-RPC transport specific tests",
+    "http_json: HTTP+JSON transport specific tests",
 ]
 
-[tool.black]
-line-length = 100
-target-version = ["py38"]
+[tool.ruff]
+line-length = 130
 
-[tool.isort]
-profile = "black"
-line_length = 100
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
