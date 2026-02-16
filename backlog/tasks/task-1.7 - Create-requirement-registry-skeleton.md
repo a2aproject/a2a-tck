@@ -1,10 +1,10 @@
 ---
 id: TASK-1.7
 title: Create requirement registry skeleton
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:07'
-updated_date: '2026-01-28 09:21'
+updated_date: '2026-02-16 10:20'
 labels:
   - phase-1
   - foundation
@@ -46,12 +46,12 @@ This is a skeleton - actual requirements will be added in Phase 4.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 tck/requirements/registry.py exists
-- [ ] #2 ALL_REQUIREMENTS list is defined (can be empty)
-- [ ] #3 MUST_REQUIREMENTS, SHOULD_REQUIREMENTS, MAY_REQUIREMENTS filtered lists exist
-- [ ] #4 get_requirements_by_section() function is implemented
-- [ ] #5 get_requirements_by_operation() function is implemented
-- [ ] #6 Module can be imported: from tck.requirements.registry import ALL_REQUIREMENTS
+- [x] #1 tck/requirements/registry.py exists
+- [x] #2 ALL_REQUIREMENTS list is defined (can be empty)
+- [x] #3 MUST_REQUIREMENTS, SHOULD_REQUIREMENTS, MAY_REQUIREMENTS filtered lists exist
+- [x] #4 get_requirements_by_section() function is implemented
+- [x] #5 get_requirements_by_operation() function is implemented
+- [x] #6 Module can be imported: from tck.requirements.registry import ALL_REQUIREMENTS
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -125,3 +125,16 @@ assert callable(get_requirements_by_section)
 - Registry is empty initially - populated in Phase 4
 - Helper functions ready for use in test parametrization
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Created the requirement registry skeleton at `tck/requirements/registry.py` with:
+
+- `ALL_REQUIREMENTS` list (empty, to be populated in Phase 4)
+- Helper functions: `get_must_requirements()`, `get_should_requirements()`, `get_may_requirements()`
+- Query functions: `get_requirements_by_section()`, `get_requirements_by_operation()`, `get_requirements_by_tag()`
+- All exports added to `tck/requirements/__init__.py`
+
+The registry is ready for Phase 4 when actual requirements will be added.
+<!-- SECTION:FINAL_SUMMARY:END -->
