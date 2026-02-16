@@ -1,10 +1,10 @@
 ---
 id: TASK-1.6
 title: Create JSON Schema from proto (a2a.json)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:07'
-updated_date: '2026-01-28 09:21'
+updated_date: '2026-02-16 10:03'
 labels:
   - phase-1
   - foundation
@@ -42,11 +42,11 @@ Generate the JSON Schema (a2a.json) derived from a2a.proto for validating JSON-R
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 specification/a2a.json exists and is valid JSON
-- [ ] #2 Schema uses JSON Schema Draft 2020-12 ($schema field)
-- [ ] #3 All proto message types have corresponding $defs entries
-- [ ] #4 Task, Message, Part, Artifact, AgentCard definitions are present
-- [ ] #5 Schema can be loaded by jsonschema library without errors
+- [x] #1 specification/a2a.json exists and is valid JSON
+- [x] #2 Schema uses JSON Schema Draft 2020-12 ($schema field)
+- [x] #3 All proto message types have corresponding $defs entries
+- [x] #4 Task, Message, Part, Artifact, AgentCard definitions are present
+- [x] #5 Schema can be loaded by jsonschema library without errors
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -94,3 +94,29 @@ assert "Message" in schema.get("$defs", {})
 - Schema MUST use Draft 2020-12 ($schema field)
 - Must match proto semantics exactly
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Generated JSON Schema from a2a.proto using the official A2A script:
+
+**Script:** `scripts/proto_to_json_schema.sh` (from A2A repository)
+
+**Output:** `specification/a2a.json`
+- Schema version: JSON Schema Draft 2020-12
+- 49 definitions including Task, Message, Part, Artifact, Agent Card, Send Message Request/Response
+
+**Prerequisites installed:**
+- protoc (libprotoc 33.4)
+- protoc-gen-jsonschema v0.5.2 (bufbuild/protoschema-plugins)
+- jq 1.6
+- googleapis repository cloned to ~/Developer/googleapis
+
+**Makefile target:** `make jsonschema`
+
+**Environment required:**
+```bash
+export PATH="$HOME/go/bin:$PATH"
+export GOOGLEAPIS_DIR="$HOME/Developer/googleapis"
+```
+<!-- SECTION:FINAL_SUMMARY:END -->
