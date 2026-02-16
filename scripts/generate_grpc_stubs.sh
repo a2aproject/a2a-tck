@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script to generate gRPC Python stubs from current_spec/a2a.proto using buf
+# Script to generate gRPC Python stubs from specification/a2a.proto using buf
 # This script generates gRPC stubs for the A2A protocol Protobuf definition
 
 set -e  # Exit on error
@@ -16,9 +16,9 @@ echo "================================================"
 echo ""
 
 # Directories and files
-readonly SPEC_DIR="current_spec"
+readonly SPEC_DIR="specification"
 readonly PROTO_FILE="${SPEC_DIR}/a2a.proto"
-readonly OUTPUT_DIR="tck/grpc_stubs"
+readonly OUTPUT_DIR="${SPEC_DIR}/generated"
 readonly BUF_BINARY="bin/buf"
 
 # Check if buf binary exists
@@ -63,3 +63,7 @@ else
     echo "Please check the error messages above"
     exit 1
 fi
+
+echo ""
+echo "Generated files:"
+ls -la "${OUTPUT_DIR}"/*.py

@@ -1,10 +1,10 @@
 ---
 id: TASK-1.5
 title: Generate Python proto stubs from a2a.proto
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:07'
-updated_date: '2026-01-28 09:21'
+updated_date: '2026-02-16 09:33'
 labels:
   - phase-1
   - foundation
@@ -37,11 +37,11 @@ Reuse the existing script `./scripts/generate_grpc_stubs.sh` and change the outp
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 specification/generated/a2a_pb2.py exists
-- [ ] #2 specification/generated/a2a_pb2_grpc.py exists
-- [ ] #3 Both files can be imported in Python without errors
-- [ ] #4 Message classes (Task, Message, Part, etc.) are accessible
-- [ ] #5 A2AServiceStub is available for gRPC client use
+- [x] #1 specification/generated/a2a_pb2.py exists
+- [x] #2 specification/generated/a2a_pb2_grpc.py exists
+- [x] #3 Both files can be imported in Python without errors
+- [x] #4 Message classes (Task, Message, Part, etc.) are accessible
+- [x] #5 A2AServiceStub is available for gRPC client use
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -79,5 +79,25 @@ proto:
 - `specification/generated/a2a_pb2_grpc.py` exists
 - Both import without errors
 - Message classes accessible: Task, Message, Part, Artifact, AgentCard
-
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Generated Python proto stubs from a2a.proto using buf:
+
+**Files created/modified:**
+- `specification/buf.gen.yaml` - New buf code generation config
+- `specification/generated/a2a_pb2.py` - Generated message classes
+- `specification/generated/a2a_pb2_grpc.py` - Generated gRPC service stubs
+- `specification/generated/__init__.py` - Adds generated dir to sys.path for imports
+- `scripts/generate_grpc_stubs.sh` - Updated to use specification directory
+- `pyproject.toml` - Added `googleapis-common-protos` dependency
+- `Makefile` - New file with `proto`, `test`, and `lint` targets
+
+**Key points:**
+- Generated code is NOT modified - uses `__init__.py` sys.path approach for imports
+- All message classes (Task, Message, Part, Artifact, AgentCard) are accessible
+- A2AServiceStub available for gRPC client use
+- Regeneration supported via `make proto`
+<!-- SECTION:FINAL_SUMMARY:END -->
