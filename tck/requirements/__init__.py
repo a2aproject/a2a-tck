@@ -6,10 +6,26 @@ from tck.requirements.base import (
     RequirementSpec,
     TransportBinding,
 )
+from tck.requirements.registry import (
+    ALL_REQUIREMENTS,
+    get_may_requirements,
+    get_must_requirements,
+    get_requirements_by_operation,
+    get_requirements_by_section,
+    get_requirements_by_tag,
+    get_should_requirements,
+)
 
 __all__ = [
+    "ALL_REQUIREMENTS",
     "OperationType",
     "RequirementLevel",
     "RequirementSpec",
     "TransportBinding",
+    "get_may_requirements",
+    "get_must_requirements",
+    "get_requirements_by_operation",
+    "get_requirements_by_section",
+    "get_requirements_by_tag",
+    "get_should_requirements",
 ]
