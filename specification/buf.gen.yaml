@@ -1,0 +1,6 @@
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/python
+    out: generated
+  - remote: buf.build/grpc/python
+    out: generated
