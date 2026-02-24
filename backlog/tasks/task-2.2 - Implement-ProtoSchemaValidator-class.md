@@ -1,16 +1,17 @@
 ---
-id: task-2.2
+id: TASK-2.2
 title: Implement ProtoSchemaValidator class
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-01-28 09:08'
+updated_date: '2026-02-23 14:14'
 labels:
   - phase-2
   - validation
   - proto
 dependencies:
   - task-1.5
-parent_task_id: task-2
+parent_task_id: TASK-2
 priority: high
 ---
 
