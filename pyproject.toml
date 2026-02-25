@@ -56,9 +56,6 @@ markers = [
 [tool.ruff]
 line-length = 130
 
-[tool.ruff.lint]
-select = ["E", "F", "I", "W"]
-
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true

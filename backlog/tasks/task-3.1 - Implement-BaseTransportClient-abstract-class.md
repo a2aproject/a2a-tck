@@ -1,15 +1,16 @@
 ---
-id: task-3.1
+id: TASK-3.1
 title: Implement BaseTransportClient abstract class
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:09'
+updated_date: '2026-02-25 12:33'
 labels:
   - phase-3
   - transport
   - base
 dependencies: []
-parent_task_id: task-3
+parent_task_id: TASK-3
 priority: high
 ---
 

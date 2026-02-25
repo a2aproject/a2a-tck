@@ -2,6 +2,7 @@
 
 This module defines the abstract base class and response dataclasses
 that all transport clients (gRPC, JSON-RPC, HTTP+JSON) implement.
+Method signatures match the A2A proto/JSON schema request types.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ class TransportResponse:
 
     @property
     def is_streaming(self) -> bool:
+        """Whether this response contains a stream of events."""
         return False
 
 
@@ -33,51 +35,93 @@ class StreamingResponse(TransportResponse):
 
     @property
     def is_streaming(self) -> bool:
+        """Whether this response contains a stream of events."""
         return True
 
 
 class BaseTransportClient(ABC):
-    """Abstract base class for A2A transport clients."""
+    """Abstract base class for A2A transport clients.
+
+    Method signatures expose all parameters from the A2A proto request types.
+    """
 
     def __init__(self, base_url: str) -> None:
         self.base_url = base_url
 
     @abstractmethod
-    def send_message(self, request: dict) -> TransportResponse: ...
+    def send_message(
+        self,
+        message: dict,
+        *,
+        configuration: dict | None = None,
+        metadata: dict | None = None,
+    ) -> TransportResponse: ...
 
     @abstractmethod
-    def send_streaming_message(self, request: dict) -> StreamingResponse: ...
+    def send_streaming_message(
+        self,
+        message: dict,
+        *,
+        configuration: dict | None = None,
+        metadata: dict | None = None,
+    ) -> StreamingResponse: ...
 
     @abstractmethod
-    def get_task(self, task_id: str) -> TransportResponse: ...
+    def get_task(
+        self,
+        id: str,
+        *,
+        history_length: int | None = None,
+    ) -> TransportResponse: ...
 
     @abstractmethod
-    def list_tasks(self, params: dict) -> TransportResponse: ...
+    def list_tasks(
+        self,
+        context_id: str,
+        *,
+        status: str | None = None,
+        page_size: int | None = None,
+        page_token: str | None = None,
+        history_length: int | None = None,
+        status_timestamp_after: str | None = None,
+        include_artifacts: bool | None = None,
+    ) -> TransportResponse: ...
 
     @abstractmethod
-    def cancel_task(self, task_id: str) -> TransportResponse: ...
+    def cancel_task(self, id: str) -> TransportResponse: ...
 
     @abstractmethod
-    def subscribe_to_task(self, task_id: str) -> StreamingResponse: ...
+    def subscribe_to_task(self, id: str) -> StreamingResponse: ...
 
     @abstractmethod
     def create_push_notification_config(
-        self, task_id: str, config: dict
+        self,
+        task_id: str,
+        config_id: str,
+        config: dict,
     ) -> TransportResponse: ...
 
     @abstractmethod
     def get_push_notification_config(
-        self, task_id: str, config_id: str
+        self,
+        task_id: str,
+        id: str,
     ) -> TransportResponse: ...
 
     @abstractmethod
     def list_push_notification_configs(
-        self, task_id: str
+        self,
+        task_id: str,
+        *,
+        page_size: int | None = None,
+        page_token: str | None = None,
     ) -> TransportResponse: ...
 
     @abstractmethod
     def delete_push_notification_config(
-        self, task_id: str, config_id: str
+        self,
+        task_id: str,
+        id: str,
     ) -> TransportResponse: ...
 
     @abstractmethod

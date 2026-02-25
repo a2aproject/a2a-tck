@@ -7,11 +7,16 @@ including type checking, required field validation, and nested message validatio
 from __future__ import annotations
 
 import warnings
+
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from google.protobuf.descriptor import FieldDescriptor
-from google.protobuf.message import Message as ProtoMessage
+
+
+if TYPE_CHECKING:
+    from google.protobuf.message import Message as ProtoMessage
+
 
 # Field behavior values from google/api/field_behavior.proto
 # FIELD_BEHAVIOR_REQUIRED = 2
@@ -74,7 +79,6 @@ class ProtoSchemaValidator:
 
     def __init__(self) -> None:
         """Initialize the validator."""
-        pass
 
     def validate(
         self, response: ProtoMessage, expected_type: type[ProtoMessage]
@@ -153,10 +157,9 @@ class ProtoSchemaValidator:
         value = getattr(message, field_desc.name)
 
         # Check field presence for required fields
-        if is_required:
-            if not self._is_field_set(message, field_desc, value):
-                errors.append(f"{path}: required field is not set")
-                return errors  # Don't validate further if required field is missing
+        if is_required and not self._is_field_set(message, field_desc, value):
+            errors.append(f"{path}: required field is not set")
+            return errors  # Don't validate further if required field is missing
 
         # For repeated fields, validate each item
         if _is_repeated_field(field_desc):
@@ -176,12 +179,10 @@ class ProtoSchemaValidator:
                         item_path = f"{path}[{i}]"
                         item_errors = self._validate_message(item, item_path)
                         errors.extend(item_errors)
-        else:
-            # Singular message field - validate if set
-            if field_desc.message_type is not None:
-                if message.HasField(field_desc.name):
-                    nested_errors = self._validate_message(value, path)
-                    errors.extend(nested_errors)
+        # Singular message field - validate if set
+        elif field_desc.message_type is not None and message.HasField(field_desc.name):
+            nested_errors = self._validate_message(value, path)
+            errors.extend(nested_errors)
 
         return errors
 

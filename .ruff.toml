@@ -31,6 +31,11 @@ ignore = [
     "ANN003",
     "ANN401",
     "E402",
+    "A002",    # Allow shadowing builtins (id) to match proto field names
+    "B027",    # Allow non-abstract empty methods in ABCs (e.g. default no-op close())
+    "PLR0913", # Allow many arguments to match proto request types
+    "PLR0911", # Allow many return statements in validators
+    "PLC0415", # Allow conditional imports (e.g. google.api)
 ]
 
 select = [
@@ -83,6 +88,7 @@ exclude = [
     "node_modules",
     "venv",
     "*/migrations/*",
+    "specification/generated/*",
 ]
 
 [lint.isort]
