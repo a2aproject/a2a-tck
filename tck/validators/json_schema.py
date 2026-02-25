@@ -8,12 +8,17 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any
 
-from jsonschema import Draft202012Validator, ValidationError
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+
 from jsonschema.validators import validator_for
+
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from jsonschema import ValidationError
 
 
 @dataclass
@@ -160,13 +165,12 @@ class JSONSchemaValidator:
                 if len(obj) == 1:
                     # If $ref is the only property, return an any-type schema
                     return {"type": "object", "additionalProperties": True}
-                else:
-                    # Remove $ref and keep other properties
-                    return {
-                        k: self._resolve_all_refs(v, visited)
-                        for k, v in obj.items()
-                        if k != "$ref"
-                    }
+                # Remove $ref and keep other properties
+                return {
+                    k: self._resolve_all_refs(v, visited)
+                    for k, v in obj.items()
+                    if k != "$ref"
+                }
 
             # Process all keys in the dict
             return {k: self._resolve_all_refs(v, visited) for k, v in obj.items()}
@@ -225,12 +229,11 @@ class JSONSchemaValidator:
         for element in path:
             if isinstance(element, int):
                 result += f"[{element}]"
+            # Use bracket notation for keys with special characters
+            elif re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", str(element)):
+                result += f".{element}"
             else:
-                # Use bracket notation for keys with special characters
-                if re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", str(element)):
-                    result += f".{element}"
-                else:
-                    result += f"['{element}']"
+                result += f"['{element}']"
         return result
 
     def _format_error(self, error: ValidationError) -> str:

@@ -6,7 +6,7 @@ Section 11 of the A2A specification, including RFC 7807 Problem Details support.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 
@@ -201,18 +201,17 @@ def validate_http_json_error(
     # Parse Problem Details if Content-Type indicates it
     problem_details = None
     content_type = _get_content_type(headers)
-    if content_type and "application/problem+json" in content_type.lower():
-        if isinstance(body, dict):
-            try:
-                problem_details = ProblemDetails.from_dict(body)
-            except ValueError as e:
-                return ErrorValidationResult(
-                    valid=False,
-                    expected_status=expected_status,
-                    actual_status=actual_status,
-                    problem_details=None,
-                    message=f"Invalid Problem Details: {e}",
-                )
+    if content_type and "application/problem+json" in content_type.lower() and isinstance(body, dict):
+        try:
+            problem_details = ProblemDetails.from_dict(body)
+        except ValueError as e:
+            return ErrorValidationResult(
+                valid=False,
+                expected_status=expected_status,
+                actual_status=actual_status,
+                problem_details=None,
+                message=f"Invalid Problem Details: {e}",
+            )
 
     # Compare status codes
     if actual_status == expected_status:

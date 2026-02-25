@@ -16,6 +16,7 @@ from tck.requirements.registry import (
     get_should_requirements,
 )
 
+
 __all__ = [
     "ALL_REQUIREMENTS",
     "OperationType",

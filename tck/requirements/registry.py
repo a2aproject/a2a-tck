@@ -13,6 +13,7 @@ from tck.requirements.base import (
     RequirementSpec,
 )
 
+
 # Will be populated in Phase 4
 ALL_REQUIREMENTS: list[RequirementSpec] = []
 

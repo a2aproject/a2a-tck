@@ -15,14 +15,14 @@ def validator() -> ProtoSchemaValidator:
 class TestValidationResult:
     """Tests for the ValidationResult dataclass."""
 
-    def test_valid_result(self):
+    def test_valid_result(self) -> None:
         """Test creating a valid result."""
         result = ValidationResult(valid=True, errors=[], proto_type="a2a.v1.Task")
         assert result.valid is True
         assert result.errors == []
         assert result.proto_type == "a2a.v1.Task"
 
-    def test_invalid_result(self):
+    def test_invalid_result(self) -> None:
         """Test creating an invalid result with errors."""
         result = ValidationResult(
             valid=False,
@@ -33,7 +33,7 @@ class TestValidationResult:
         assert len(result.errors) == 1
         assert result.proto_type == "a2a.v1.Task"
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test default values for errors and proto_type."""
         result = ValidationResult(valid=True)
         assert result.errors == []
@@ -43,7 +43,7 @@ class TestValidationResult:
 class TestProtoSchemaValidatorTypeCheck:
     """Tests for type checking."""
 
-    def test_correct_type(self, validator: ProtoSchemaValidator):
+    def test_correct_type(self, validator: ProtoSchemaValidator) -> None:
         """Test that correct types pass validation."""
         task = a2a_pb2.Task(
             id="task-123",
@@ -54,7 +54,7 @@ class TestProtoSchemaValidatorTypeCheck:
         assert result.valid is True
         assert result.proto_type == "a2a.v1.Task"
 
-    def test_wrong_type(self, validator: ProtoSchemaValidator):
+    def test_wrong_type(self, validator: ProtoSchemaValidator) -> None:
         """Test that wrong types fail validation."""
         message = a2a_pb2.Message(
             message_id="msg-123",
@@ -67,7 +67,7 @@ class TestProtoSchemaValidatorTypeCheck:
         assert "a2a.v1.Task" in result.errors[0]
         assert "a2a.v1.Message" in result.errors[0]
 
-    def test_proto_type_in_result(self, validator: ProtoSchemaValidator):
+    def test_proto_type_in_result(self, validator: ProtoSchemaValidator) -> None:
         """Test that proto_type is set correctly in result."""
         task = a2a_pb2.Task(
             id="123",
@@ -81,7 +81,7 @@ class TestProtoSchemaValidatorTypeCheck:
 class TestRequiredFieldValidation:
     """Tests for required field validation."""
 
-    def test_required_field_present(self, validator: ProtoSchemaValidator):
+    def test_required_field_present(self, validator: ProtoSchemaValidator) -> None:
         """Test that present required fields pass validation."""
         task = a2a_pb2.Task(
             id="task-123",
@@ -91,7 +91,7 @@ class TestRequiredFieldValidation:
         result = validator.validate(task, a2a_pb2.Task)
         assert result.valid is True
 
-    def test_required_field_missing(self, validator: ProtoSchemaValidator):
+    def test_required_field_missing(self, validator: ProtoSchemaValidator) -> None:
         """Test that missing required fields fail validation."""
         # Task requires id, context_id, and status
         task = a2a_pb2.Task()  # All fields empty
@@ -100,7 +100,7 @@ class TestRequiredFieldValidation:
         # Should have errors for missing required fields
         assert len(result.errors) >= 1
 
-    def test_required_field_error_message(self, validator: ProtoSchemaValidator):
+    def test_required_field_error_message(self, validator: ProtoSchemaValidator) -> None:
         """Test that error messages clearly identify the missing field."""
         task = a2a_pb2.Task(
             context_id="ctx-456",
@@ -111,19 +111,20 @@ class TestRequiredFieldValidation:
         assert result.valid is False
         assert any("id" in error and "required" in error for error in result.errors)
 
-    def test_multiple_required_fields_missing(self, validator: ProtoSchemaValidator):
+    def test_multiple_required_fields_missing(self, validator: ProtoSchemaValidator) -> None:
         """Test that all missing required fields are reported."""
         task = a2a_pb2.Task()
         result = validator.validate(task, a2a_pb2.Task)
         assert result.valid is False
         # Should report multiple errors
-        assert len(result.errors) >= 2
+        min_expected_errors = 2
+        assert len(result.errors) >= min_expected_errors
 
 
 class TestNestedMessageValidation:
     """Tests for nested message validation."""
 
-    def test_nested_message_valid(self, validator: ProtoSchemaValidator):
+    def test_nested_message_valid(self, validator: ProtoSchemaValidator) -> None:
         """Test that valid nested messages pass validation."""
         task = a2a_pb2.Task(
             id="task-123",
@@ -133,7 +134,7 @@ class TestNestedMessageValidation:
         result = validator.validate(task, a2a_pb2.Task)
         assert result.valid is True
 
-    def test_nested_message_missing_required(self, validator: ProtoSchemaValidator):
+    def test_nested_message_missing_required(self, validator: ProtoSchemaValidator) -> None:
         """Test that nested messages with missing required fields fail."""
         # TaskStatus.state is required
         task = a2a_pb2.Task(
@@ -141,12 +142,12 @@ class TestNestedMessageValidation:
             context_id="ctx-456",
             status=a2a_pb2.TaskStatus(),  # state is unset (default 0)
         )
-        result = validator.validate(task, a2a_pb2.Task)
+        validator.validate(task, a2a_pb2.Task)
         # Note: state=0 is TASK_STATE_UNSPECIFIED which might be considered set
         # The validation should still pass because the message is present
         # and the enum has a default value
 
-    def test_nested_message_path_in_error(self, validator: ProtoSchemaValidator):
+    def test_nested_message_path_in_error(self, validator: ProtoSchemaValidator) -> None:
         """Test that error paths include nested field names."""
         # Create a Message with missing required parts
         message = a2a_pb2.Message(
@@ -163,7 +164,7 @@ class TestNestedMessageValidation:
 class TestRepeatedFieldValidation:
     """Tests for repeated field validation."""
 
-    def test_repeated_field_valid(self, validator: ProtoSchemaValidator):
+    def test_repeated_field_valid(self, validator: ProtoSchemaValidator) -> None:
         """Test that valid repeated fields pass validation."""
         task = a2a_pb2.Task(
             id="task-123",
@@ -179,7 +180,7 @@ class TestRepeatedFieldValidation:
         result = validator.validate(task, a2a_pb2.Task)
         assert result.valid is True
 
-    def test_repeated_field_item_invalid(self, validator: ProtoSchemaValidator):
+    def test_repeated_field_item_invalid(self, validator: ProtoSchemaValidator) -> None:
         """Test that invalid items in repeated fields are caught."""
         task = a2a_pb2.Task(
             id="task-123",
@@ -194,7 +195,7 @@ class TestRepeatedFieldValidation:
         # Should reference the array index
         assert any("artifacts[0]" in error for error in result.errors)
 
-    def test_repeated_message_required(self, validator: ProtoSchemaValidator):
+    def test_repeated_message_required(self, validator: ProtoSchemaValidator) -> None:
         """Test that required repeated fields must have items."""
         # Message.parts is required
         message = a2a_pb2.Message(
@@ -210,7 +211,7 @@ class TestRepeatedFieldValidation:
 class TestErrorMessages:
     """Tests for error message clarity."""
 
-    def test_error_identifies_field(self, validator: ProtoSchemaValidator):
+    def test_error_identifies_field(self, validator: ProtoSchemaValidator) -> None:
         """Test that errors identify which field failed."""
         task = a2a_pb2.Task()
         result = validator.validate(task, a2a_pb2.Task)
@@ -218,7 +219,7 @@ class TestErrorMessages:
         for error in result.errors:
             assert ":" in error  # Format is "field: message"
 
-    def test_error_identifies_reason(self, validator: ProtoSchemaValidator):
+    def test_error_identifies_reason(self, validator: ProtoSchemaValidator) -> None:
         """Test that errors explain why validation failed."""
         task = a2a_pb2.Task()
         result = validator.validate(task, a2a_pb2.Task)
@@ -230,7 +231,7 @@ class TestErrorMessages:
 class TestAgentCardValidation:
     """Tests for AgentCard validation (complex message)."""
 
-    def test_valid_agent_card(self, validator: ProtoSchemaValidator):
+    def test_valid_agent_card(self, validator: ProtoSchemaValidator) -> None:
         """Test validating a valid AgentCard."""
         agent_card = a2a_pb2.AgentCard(
             name="Test Agent",
@@ -259,7 +260,7 @@ class TestAgentCardValidation:
         assert result.valid is True
         assert result.proto_type == "a2a.v1.AgentCard"
 
-    def test_agent_card_missing_required(self, validator: ProtoSchemaValidator):
+    def test_agent_card_missing_required(self, validator: ProtoSchemaValidator) -> None:
         """Test AgentCard with missing required fields."""
         agent_card = a2a_pb2.AgentCard(
             name="Test Agent",

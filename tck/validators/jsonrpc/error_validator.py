@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+
 # JSON-RPC error codes as defined in A2A specification Section 9
 # Standard JSON-RPC errors (-32600 to -32699)
 # A2A-specific errors (-32001 to -32099)
