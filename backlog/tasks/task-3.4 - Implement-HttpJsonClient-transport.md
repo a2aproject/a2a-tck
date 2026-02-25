@@ -1,16 +1,17 @@
 ---
-id: task-3.4
-title: Implement HttpJsonClient (REST) transport
+id: TASK-3.4
+title: Implement HttpJsonClient transport
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:09'
+updated_date: '2026-02-24 15:37'
 labels:
   - phase-3
   - transport
-  - rest
+  - http_json
 dependencies:
   - task-3.1
-parent_task_id: task-3
+parent_task_id: TASK-3
 priority: high
 ---
 
