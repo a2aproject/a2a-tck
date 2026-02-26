@@ -9,9 +9,21 @@ from typing import Any
 import httpx
 import pytest
 
-from tck.transport import ALL_TRANSPORTS, TransportManager
+from tck.transport.base import BaseTransportClient
+from tck.transport.grpc_client import GrpcClient
+from tck.transport.http_json_client import HttpJsonClient
+from tck.transport.jsonrpc_client import JsonRpcClient
 from tck.validators.json_schema import JSONSchemaValidator
+from tck.validators.jsonrpc.response_validator import JsonRpcResponseValidator
 from tck.validators.proto_schema import ProtoSchemaValidator
+
+
+# Maps the agent card's protocolBinding value to (internal transport name, client class).
+_PROTOCOL_BINDING_MAP: dict[str, tuple[str, type[BaseTransportClient]]] = {
+    "JSONRPC": ("jsonrpc", JsonRpcClient),
+    "GRPC": ("grpc", GrpcClient),
+    "HTTP+JSON": ("http_json", HttpJsonClient),
+}
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -20,8 +32,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     group.addoption(
         "--sut-host",
         dest="sut_host",
-        default="localhost",
-        help="Hostname of the System Under Test (default: localhost).",
+        default="http://localhost",
+        help="Hostname of the System Under Test (default: http://localhost).",
     )
     group.addoption(
         "--transport",
@@ -71,29 +83,89 @@ def sut_host(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session")
+def agent_card(sut_host: str) -> dict[str, Any]:
+    """Fetch the agent card from the well-known URL.
+
+    Per the A2A spec (Section 8.2), the agent card is discovered at
+    ``{host}/.well-known/agent-card.json``.
+    """
+    base = sut_host.rstrip("/")
+    url = f"{base}/.well-known/agent-card.json"
+    response = httpx.get(url)
+    response.raise_for_status()
+    return response.json()
+
+
+@pytest.fixture(scope="session")
 def transport_clients(
-    request: pytest.FixtureRequest, sut_host: str
-) -> dict[str, Any]:
-    """Create and yield transport clients, closing them on teardown."""
+    request: pytest.FixtureRequest,
+    agent_card: dict[str, Any],
+) -> dict[str, BaseTransportClient]:
+    """Create transport clients from the agent card's ``supportedInterfaces``.
+
+    Each interface declares a ``protocolBinding`` (JSONRPC / GRPC / HTTP+JSON)
+    and a ``url`` where that transport is available.  Clients are created using
+    the per-interface URL.  When multiple interfaces share the same binding,
+    the first one wins (per the spec's preference-order rule).
+
+    The ``--transport`` CLI option further restricts which transports are used.
+    """
+    interfaces = agent_card.get("supportedInterfaces", [])
+    if not interfaces:
+        pytest.fail(
+            "Agent card declares no supportedInterfaces — "
+            "cannot determine which transports to test"
+        )
+
+    # Parse --transport filter
     raw: str = request.config.getoption("--transport")
     if raw == "all":
-        transports = None  # TransportManager defaults to ALL_TRANSPORTS
+        transport_filter: set[str] | None = None
     else:
-        transports = [t.strip() for t in raw.split(",") if t.strip()]
+        transport_filter = {t.strip() for t in raw.split(",") if t.strip()}
 
-    manager = TransportManager(sut_host, transports)
-    yield manager.get_all_clients()
-    manager.close()
+    clients: dict[str, BaseTransportClient] = {}
+    for iface in interfaces:
+        binding = iface.get("protocolBinding", "")
+        url = iface.get("url", "")
+
+        entry = _PROTOCOL_BINDING_MAP.get(binding)
+        if entry is None:
+            continue  # Unknown binding, skip
+
+        transport_name, client_class = entry
+
+        # Respect --transport filter
+        if transport_filter is not None and transport_name not in transport_filter:
+            continue
+
+        # First interface per transport wins (preference order)
+        if transport_name not in clients:
+            clients[transport_name] = client_class(url)
+
+    if not clients:
+        declared = [iface.get("protocolBinding", "?") for iface in interfaces]
+        pytest.fail(
+            f"No usable transports after filtering.  "
+            f"Agent card declares: {declared}.  "
+            f"--transport filter: {raw!r}"
+        )
+
+    yield clients
+
+    for client in clients.values():
+        client.close()
 
 
 @pytest.fixture(scope="session")
 def validators() -> dict[str, Any]:
     """Return a dict of validators keyed by transport name."""
     schema_path = Path(__file__).parent.parent / "specification" / "a2a.json"
+    json_schema_validator = JSONSchemaValidator(schema_path)
     return {
         "grpc": ProtoSchemaValidator(),
-        "jsonrpc": JSONSchemaValidator(schema_path),
-        "http_json": JSONSchemaValidator(schema_path),
+        "jsonrpc": JsonRpcResponseValidator(json_schema_validator),
+        "http_json": json_schema_validator,
     }
 
 
@@ -101,16 +173,3 @@ def validators() -> dict[str, Any]:
 def compliance_collector() -> _ComplianceCollector:
     """Return a compliance result collector (placeholder)."""
     return _ComplianceCollector()
-
-
-@pytest.fixture(scope="session")
-def agent_card(sut_host: str) -> dict[str, Any]:
-    """Fetch the agent card from the well-known URL.
-
-    Per the A2A spec, the agent card is discovered at
-    ``https://{host}/.well-known/agent-card.json``.
-    """
-    url = f"https://{sut_host}/.well-known/agent-card.json"
-    response = httpx.get(url)
-    response.raise_for_status()
-    return response.json()
