@@ -1,16 +1,17 @@
 ---
-id: task-4.1
+id: TASK-4.1
 title: Define Core Operations requirements (Section 3)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:10'
+updated_date: '2026-02-26 09:52'
 labels:
   - phase-4
   - requirements
   - core-operations
 dependencies:
   - task-1.4
-parent_task_id: task-4
+parent_task_id: TASK-4
 priority: high
 ---
 

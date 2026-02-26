@@ -1,9 +1,10 @@
 ---
-id: task-4.3
+id: TASK-4.3
 title: Define AgentCard requirements (Section 5)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:10'
+updated_date: '2026-02-26 09:52'
 labels:
   - phase-4
   - requirements
@@ -11,7 +12,7 @@ labels:
   - discovery
 dependencies:
   - task-1.4
-parent_task_id: task-4
+parent_task_id: TASK-4
 priority: high
 ---
 
