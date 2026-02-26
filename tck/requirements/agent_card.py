@@ -101,6 +101,7 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Authenticated request returns extended card",
         spec_url=f"{SPEC_BASE}3111-get-extended-agent-card",
         tags=[AGENT_CARD, EXTENDED, AUTH],
+        sample_input={},
     ),
     RequirementSpec(
         id="CARD-EXT-002",
@@ -117,6 +118,7 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="ExtendedAgentCardNotConfiguredError returned",
         spec_url=f"{SPEC_BASE}3111-get-extended-agent-card",
         tags=[AGENT_CARD, EXTENDED, ERROR],
+        sample_input={},
     ),
     # --- Agent Card Signing (Section 8.4) ---
     RequirementSpec(

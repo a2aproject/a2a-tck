@@ -58,6 +58,13 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         ),
         spec_url=f"{SPEC_BASE}311-send-message",
         tags=[CORE, SEND_MESSAGE],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Hello from TCK"}],
+                "messageId": "tck-send-001",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-SEND-002",
@@ -74,6 +81,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="UnsupportedOperationError returned for terminal task",
         spec_url=f"{SPEC_BASE}311-send-message",
         tags=[CORE, SEND_MESSAGE, ERROR],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Message to terminal task"}],
+                "messageId": "tck-send-002",
+                "taskId": "tck-terminal-task",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-SEND-003",
@@ -90,6 +105,18 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="ContentTypeNotSupportedError returned",
         spec_url=f"{SPEC_BASE}311-send-message",
         tags=[CORE, SEND_MESSAGE, ERROR],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [
+                    {
+                        "raw": "dGNr",
+                        "mediaType": "application/x-unsupported-tck-type",
+                    },
+                ],
+                "messageId": "tck-send-003",
+            },
+        },
     ),
     # --- SendStreamingMessage (Section 3.1.2) ---
     RequirementSpec(
@@ -108,6 +135,13 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Streaming connection established with real-time events",
         spec_url=f"{SPEC_BASE}312-send-streaming-message",
         tags=[CORE, STREAMING],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Stream hello from TCK"}],
+                "messageId": "tck-stream-001",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-STREAM-002",
@@ -125,6 +159,13 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Stream contains single Message then closes",
         spec_url=f"{SPEC_BASE}312-send-streaming-message",
         tags=[CORE, STREAMING],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Stream message-only response"}],
+                "messageId": "tck-stream-002",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-STREAM-003",
@@ -145,6 +186,13 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         ),
         spec_url=f"{SPEC_BASE}312-send-streaming-message",
         tags=[CORE, STREAMING],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Stream task lifecycle"}],
+                "messageId": "tck-stream-003",
+            },
+        },
     ),
     # --- GetTask (Section 3.1.3) ---
     RequirementSpec(
@@ -163,6 +211,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Current task state returned with status and artifacts",
         spec_url=f"{SPEC_BASE}313-get-task",
         tags=[CORE, GET_TASK],
+        sample_input={"id": "tck-existing-task"},
     ),
     RequirementSpec(
         id="CORE-GET-002",
@@ -179,6 +228,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="TaskNotFoundError returned",
         spec_url=f"{SPEC_BASE}313-get-task",
         tags=[CORE, GET_TASK, ERROR],
+        sample_input={"id": "tck-nonexistent-task"},
     ),
     # --- ListTasks (Section 3.1.4) ---
     RequirementSpec(
@@ -197,6 +247,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Only authorized tasks returned",
         spec_url=f"{SPEC_BASE}314-list-tasks",
         tags=[CORE, LIST_TASKS, AUTHORIZATION],
+        sample_input={"context_id": "tck-test-context"},
     ),
     RequirementSpec(
         id="CORE-LIST-002",
@@ -214,6 +265,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Cursor-based pagination with pageToken/nextPageToken",
         spec_url=f"{SPEC_BASE}314-list-tasks",
         tags=[CORE, LIST_TASKS, PAGINATION],
+        sample_input={"context_id": "tck-test-context", "page_size": 2},
     ),
     RequirementSpec(
         id="CORE-LIST-003",
@@ -231,6 +283,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Tasks sorted by status timestamp descending",
         spec_url=f"{SPEC_BASE}314-list-tasks",
         tags=[CORE, LIST_TASKS],
+        sample_input={"context_id": "tck-test-context"},
     ),
     RequirementSpec(
         id="CORE-LIST-004",
@@ -248,6 +301,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="nextPageToken is empty string on final page",
         spec_url=f"{SPEC_BASE}314-list-tasks",
         tags=[CORE, LIST_TASKS, PAGINATION],
+        sample_input={"context_id": "tck-test-context", "page_size": 100},
     ),
     RequirementSpec(
         id="CORE-LIST-005",
@@ -265,6 +319,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Artifacts field omitted entirely when includeArtifacts=false",
         spec_url=f"{SPEC_BASE}314-list-tasks",
         tags=[CORE, LIST_TASKS],
+        sample_input={"context_id": "tck-test-context", "include_artifacts": False},
     ),
     # --- CancelTask (Section 3.1.5) ---
     RequirementSpec(
@@ -283,6 +338,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Updated Task with cancellation status returned",
         spec_url=f"{SPEC_BASE}315-cancel-task",
         tags=[CORE, CANCEL_TASK],
+        sample_input={"id": "tck-cancelable-task"},
     ),
     RequirementSpec(
         id="CORE-CANCEL-002",
@@ -299,6 +355,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="TaskNotCancelableError returned",
         spec_url=f"{SPEC_BASE}315-cancel-task",
         tags=[CORE, CANCEL_TASK, ERROR],
+        sample_input={"id": "tck-terminal-task"},
     ),
     RequirementSpec(
         id="CORE-CANCEL-003",
@@ -315,6 +372,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="TaskNotFoundError returned",
         spec_url=f"{SPEC_BASE}315-cancel-task",
         tags=[CORE, CANCEL_TASK, ERROR],
+        sample_input={"id": "tck-nonexistent-task"},
     ),
     # --- Blocking Semantics (Section 3.2.2) ---
     RequirementSpec(
@@ -334,6 +392,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Response delayed until terminal or interrupted state",
         spec_url=f"{SPEC_BASE}322-sendmessageconfiguration",
         tags=[CORE, BLOCKING],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Blocking request"}],
+                "messageId": "tck-block-001",
+            },
+            "configuration": {"blocking": True},
+        },
     ),
     RequirementSpec(
         id="CORE-BLOCK-002",
@@ -351,6 +417,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Response returned immediately with in-progress state",
         spec_url=f"{SPEC_BASE}322-sendmessageconfiguration",
         tags=[CORE, BLOCKING],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Non-blocking request"}],
+                "messageId": "tck-block-002",
+            },
+            "configuration": {"blocking": False},
+        },
     ),
     # --- Error Handling (Section 3.3.2) ---
     RequirementSpec(
@@ -449,6 +523,13 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Response contains server-generated contextId",
         spec_url=f"{SPEC_BASE}341-context-identifier-semantics",
         tags=[CORE, MULTI_TURN, CONTEXT],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Message without contextId"}],
+                "messageId": "tck-multi-001",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-MULTI-002",
@@ -464,6 +545,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Response contextId matches client-provided value",
         spec_url=f"{SPEC_BASE}341-context-identifier-semantics",
         tags=[CORE, MULTI_TURN, CONTEXT],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Message with contextId"}],
+                "messageId": "tck-multi-002",
+                "contextId": "tck-client-context-001",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-MULTI-003",
@@ -479,6 +568,13 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Task contains server-generated unique taskId",
         spec_url=f"{SPEC_BASE}342-task-identifier-semantics",
         tags=[CORE, MULTI_TURN, TASK_ID],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "New task request"}],
+                "messageId": "tck-multi-003",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-MULTI-004",
@@ -494,6 +590,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="TaskNotFoundError returned",
         spec_url=f"{SPEC_BASE}342-task-identifier-semantics",
         tags=[CORE, MULTI_TURN, TASK_ID, ERROR],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Message to invalid task"}],
+                "messageId": "tck-multi-004",
+                "taskId": "tck-nonexistent-task",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-MULTI-005",
@@ -508,6 +612,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="contextId inferred from referenced task",
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
         tags=[CORE, MULTI_TURN],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Follow-up with taskId only"}],
+                "messageId": "tck-multi-005",
+                "taskId": "tck-existing-task",
+            },
+        },
     ),
     RequirementSpec(
         id="CORE-MULTI-006",
@@ -524,5 +636,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Error returned for mismatching contextId/taskId",
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
         tags=[CORE, MULTI_TURN, ERROR],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Mismatched context"}],
+                "messageId": "tck-multi-006",
+                "taskId": "tck-existing-task",
+                "contextId": "tck-wrong-context",
+            },
+        },
     ),
 ]

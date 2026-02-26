@@ -5,6 +5,7 @@ from tck.transport.base import (
     StreamingResponse,
     TransportResponse,
 )
+from tck.transport.dispatch import execute_operation
 from tck.transport.grpc_client import GrpcClient
 from tck.transport.http_json_client import HttpJsonClient
 from tck.transport.jsonrpc_client import JsonRpcClient
@@ -20,4 +21,5 @@ __all__ = [
     "StreamingResponse",
     "TransportManager",
     "TransportResponse",
+    "execute_operation",
 ]
