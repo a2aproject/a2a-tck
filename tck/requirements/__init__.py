@@ -8,6 +8,7 @@ from tck.requirements.base import (
 )
 from tck.requirements.registry import (
     ALL_REQUIREMENTS,
+    get_cross_cutting_requirements,
     get_may_requirements,
     get_must_requirements,
     get_requirements_by_operation,
@@ -23,6 +24,7 @@ __all__ = [
     "RequirementLevel",
     "RequirementSpec",
     "TransportBinding",
+    "get_cross_cutting_requirements",
     "get_may_requirements",
     "get_must_requirements",
     "get_requirements_by_operation",

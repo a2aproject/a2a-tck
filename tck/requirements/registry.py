@@ -1,21 +1,50 @@
 """Requirement registry for A2A protocol specification requirements.
 
-This module provides a central registry for all ~100 requirement definitions
-that will be tested by the TCK. The actual requirements will be populated
-in Phase 4.
+This module provides a central registry for all requirement definitions
+that will be tested by the TCK.
 
 Reference: PRD Section 5.1.3 (Requirement Registry)
 """
 
+from tck.requirements.agent_card import AGENT_CARD_REQUIREMENTS
+from tck.requirements.auth import AUTH_REQUIREMENTS
 from tck.requirements.base import (
     OperationType,
     RequirementLevel,
     RequirementSpec,
 )
+from tck.requirements.binding_grpc import BINDING_GRPC_REQUIREMENTS
+from tck.requirements.binding_jsonrpc import BINDING_JSONRPC_REQUIREMENTS
+from tck.requirements.binding_rest import BINDING_REST_REQUIREMENTS
+from tck.requirements.core_operations import CORE_OPERATIONS_REQUIREMENTS
+from tck.requirements.data_model import DATA_MODEL_REQUIREMENTS
+from tck.requirements.interop import INTEROP_REQUIREMENTS
+from tck.requirements.push_notifications import PUSH_NOTIFICATION_REQUIREMENTS
+from tck.requirements.streaming import STREAMING_REQUIREMENTS
+from tck.requirements.versioning import VERSIONING_REQUIREMENTS
 
 
-# Will be populated in Phase 4
-ALL_REQUIREMENTS: list[RequirementSpec] = []
+ALL_REQUIREMENTS: list[RequirementSpec] = [
+    *CORE_OPERATIONS_REQUIREMENTS,
+    *DATA_MODEL_REQUIREMENTS,
+    *STREAMING_REQUIREMENTS,
+    *PUSH_NOTIFICATION_REQUIREMENTS,
+    *AGENT_CARD_REQUIREMENTS,
+    *AUTH_REQUIREMENTS,
+    *VERSIONING_REQUIREMENTS,
+    *INTEROP_REQUIREMENTS,
+    *BINDING_JSONRPC_REQUIREMENTS,
+    *BINDING_GRPC_REQUIREMENTS,
+    *BINDING_REST_REQUIREMENTS,
+]
+
+# Import-time duplicate ID validation
+_seen_ids: set[str] = set()
+for _req in ALL_REQUIREMENTS:
+    if _req.id in _seen_ids:
+        raise ValueError(f"Duplicate requirement ID: {_req.id}")
+    _seen_ids.add(_req.id)
+del _seen_ids, _req
 
 
 # Filtered views
@@ -75,3 +104,12 @@ def get_requirements_by_tag(tag: str) -> list[RequirementSpec]:
         List of requirements that have the specified tag.
     """
     return [r for r in ALL_REQUIREMENTS if tag in r.tags]
+
+
+def get_cross_cutting_requirements() -> list[RequirementSpec]:
+    """Get all cross-cutting requirements (not tied to a specific operation).
+
+    Returns:
+        List of requirements where operation is None.
+    """
+    return [r for r in ALL_REQUIREMENTS if r.operation is None]
