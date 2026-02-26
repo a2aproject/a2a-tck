@@ -1,9 +1,10 @@
 ---
-id: task-3
+id: TASK-3
 title: 'Phase 3: Transport Layer - Native Transport Clients'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:08'
+updated_date: '2026-02-26 09:52'
 labels:
   - phase-3
   - transport

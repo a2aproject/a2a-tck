@@ -1,9 +1,10 @@
 ---
-id: task-4.4
+id: TASK-4.4
 title: 'Define Security, Streaming, and Push Notification requirements (Sections 6-8)'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:10'
+updated_date: '2026-02-26 09:52'
 labels:
   - phase-4
   - requirements
@@ -12,7 +13,7 @@ labels:
   - push
 dependencies:
   - task-1.4
-parent_task_id: task-4
+parent_task_id: TASK-4
 priority: high
 ---
 
