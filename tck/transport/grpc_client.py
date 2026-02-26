@@ -974,18 +974,18 @@ class GRPCClient(BaseTransportClient):
                 token=config.get("token", "")
             )
 
-            # Build request
+            # Build request (config_id is now inside the config object, not a separate field)
             req = pb.CreateTaskPushNotificationConfigRequest(
-                task_id=task_id, config_id=config_id, config=push_config
+                task_id=task_id, config=push_config
             )
             metadata = self._prepare_metadata(extra_headers)
 
             resp = self.stub.CreateTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
+            # Note: TaskPushNotificationConfig no longer has top-level 'id' field
             created_config = {
-                    "id": config_id,
-                    "taskId": task_id,
+                    "taskId": resp.task_id,
                     "pushNotificationConfig": {
                         "id": resp.push_notification_config.id,
                         "url": resp.push_notification_config.url,
@@ -1086,18 +1086,20 @@ class GRPCClient(BaseTransportClient):
 
             self._load_static_stubs()
             pb = self._pb
-            req = pb.ListTaskPushNotificationConfigRequest(task_id=task_id)
+            # Method renamed from ListTaskPushNotificationConfigRequest to ListTaskPushNotificationConfigsRequest
+            req = pb.ListTaskPushNotificationConfigsRequest(task_id=task_id)
             metadata = self._prepare_metadata(extra_headers)
 
-            resp = self.stub.ListTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
+            # RPC method renamed from ListTaskPushNotificationConfig to ListTaskPushNotificationConfigs
+            resp = self.stub.ListTaskPushNotificationConfigs(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
+            # Note: TaskPushNotificationConfig no longer has top-level 'id' field
             configs_list = []
             for config in resp.configs:
                 configs_list.append(
                     {
                         "taskId": config.task_id,
-                        "id": config.id,
                         "pushNotificationConfig": {
                             "id": config.push_notification_config.id,
                             "url": config.push_notification_config.url,

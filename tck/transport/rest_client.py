@@ -591,15 +591,13 @@ class RESTClient(BaseTransportClient):
             headers = self._prepare_headers(extra_headers)
 
             # Format request according to protobuf CreateTaskPushNotificationConfigRequest structure
-            # Generate config_id if not provided
-            push_notification_config_id = config.get("pushNotificationConfig", {}).get("id", "default")
-            
+            # Note: configId field was removed from the proto - ID is now inside the config object
+
             # Build protobuf-compatible request structure
             protobuf_request = {
                 "taskId": task_id,
-                "configId": config_id,
                 "config": {
-                    "id": push_notification_config_id,
+                    "id": config_id,  # ID is now inside the config object
                     "url": config.get("url", ""),
                     "token": config.get("token", ""),
                     "authentication": config.get("authentication", {})
