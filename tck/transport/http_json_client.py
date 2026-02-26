@@ -10,6 +10,20 @@ import json
 
 import httpx
 
+from tck.requirements.base import (
+    CANCEL_TASK_BINDING,
+    CREATE_PUSH_CONFIG_BINDING,
+    DELETE_PUSH_CONFIG_BINDING,
+    GET_EXTENDED_AGENT_CARD_BINDING,
+    GET_PUSH_CONFIG_BINDING,
+    GET_TASK_BINDING,
+    LIST_PUSH_CONFIGS_BINDING,
+    LIST_TASKS_BINDING,
+    PATH_MESSAGE_SEND,
+    PATH_MESSAGE_STREAM,
+    SEND_MESSAGE_BINDING,
+    SUBSCRIBE_TO_TASK_BINDING,
+)
 from tck.transport._helpers import _build_params, _parse_sse
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
@@ -127,7 +141,11 @@ class HttpJsonClient(BaseTransportClient):
     ) -> TransportResponse:
         """Send a message to the agent via ``POST /message:send``."""
         body = _build_params(message=message, configuration=configuration, metadata=metadata)
-        return self._request("POST", "/message:send", json_body=body)
+        return self._request(
+            SEND_MESSAGE_BINDING.http_json_method,
+            PATH_MESSAGE_SEND,
+            json_body=body,
+        )
 
     def send_streaming_message(
         self,
@@ -138,7 +156,11 @@ class HttpJsonClient(BaseTransportClient):
     ) -> StreamingResponse:
         """Send a streaming message to the agent via ``POST /message:stream``."""
         body = _build_params(message=message, configuration=configuration, metadata=metadata)
-        return self._request_streaming("POST", "/message:stream", json_body=body)
+        return self._request_streaming(
+            SEND_MESSAGE_BINDING.http_json_method,
+            PATH_MESSAGE_STREAM,
+            json_body=body,
+        )
 
     # -- Task Operations --
 
@@ -150,7 +172,11 @@ class HttpJsonClient(BaseTransportClient):
     ) -> TransportResponse:
         """Get a task by ID via ``GET /tasks/{id}``."""
         params = _build_params(historyLength=history_length)
-        return self._request("GET", f"/tasks/{id}", params=params or None)
+        return self._request(
+            GET_TASK_BINDING.http_json_method,
+            GET_TASK_BINDING.http_json_path.format(id=id),
+            params=params or None,
+        )
 
     def list_tasks(
         self,
@@ -173,15 +199,25 @@ class HttpJsonClient(BaseTransportClient):
             statusTimestampAfter=status_timestamp_after,
             includeArtifacts=str(include_artifacts).lower() if include_artifacts is not None else None,
         )
-        return self._request("GET", "/tasks", params=params)
+        return self._request(
+            LIST_TASKS_BINDING.http_json_method,
+            LIST_TASKS_BINDING.http_json_path,
+            params=params,
+        )
 
     def cancel_task(self, id: str) -> TransportResponse:
         """Cancel a task by ID via ``POST /tasks/{id}:cancel``."""
-        return self._request("POST", f"/tasks/{id}:cancel")
+        return self._request(
+            CANCEL_TASK_BINDING.http_json_method,
+            CANCEL_TASK_BINDING.http_json_path.format(id=id),
+        )
 
     def subscribe_to_task(self, id: str) -> StreamingResponse:
         """Subscribe to task updates via ``POST /tasks/{id}:subscribe``."""
-        return self._request_streaming("POST", f"/tasks/{id}:subscribe")
+        return self._request_streaming(
+            SUBSCRIBE_TO_TASK_BINDING.http_json_method,
+            SUBSCRIBE_TO_TASK_BINDING.http_json_path.format(id=id),
+        )
 
     # -- Push Notification Configuration --
 
@@ -193,11 +229,18 @@ class HttpJsonClient(BaseTransportClient):
     ) -> TransportResponse:
         """Create a push notification config via ``POST /tasks/{id}/pushNotificationConfigs``."""
         body = {"configId": config_id, "config": config}
-        return self._request("POST", f"/tasks/{task_id}/pushNotificationConfigs", json_body=body)
+        return self._request(
+            CREATE_PUSH_CONFIG_BINDING.http_json_method,
+            CREATE_PUSH_CONFIG_BINDING.http_json_path.format(id=task_id),
+            json_body=body,
+        )
 
     def get_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
         """Get a push notification config via ``GET /tasks/{id}/pushNotificationConfigs/{configId}``."""
-        return self._request("GET", f"/tasks/{task_id}/pushNotificationConfigs/{id}")
+        return self._request(
+            GET_PUSH_CONFIG_BINDING.http_json_method,
+            GET_PUSH_CONFIG_BINDING.http_json_path.format(id=task_id, configId=id),
+        )
 
     def list_push_notification_configs(
         self,
@@ -208,14 +251,24 @@ class HttpJsonClient(BaseTransportClient):
     ) -> TransportResponse:
         """List push notification configs via ``GET /tasks/{id}/pushNotificationConfigs``."""
         params = _build_params(pageSize=page_size, pageToken=page_token)
-        return self._request("GET", f"/tasks/{task_id}/pushNotificationConfigs", params=params or None)
+        return self._request(
+            LIST_PUSH_CONFIGS_BINDING.http_json_method,
+            LIST_PUSH_CONFIGS_BINDING.http_json_path.format(id=task_id),
+            params=params or None,
+        )
 
     def delete_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
         """Delete a push notification config via ``DELETE /tasks/{id}/pushNotificationConfigs/{configId}``."""
-        return self._request("DELETE", f"/tasks/{task_id}/pushNotificationConfigs/{id}")
+        return self._request(
+            DELETE_PUSH_CONFIG_BINDING.http_json_method,
+            DELETE_PUSH_CONFIG_BINDING.http_json_path.format(id=task_id, configId=id),
+        )
 
     # -- Agent Card --
 
     def get_extended_agent_card(self) -> TransportResponse:
         """Get the extended agent card via ``GET /extendedAgentCard``."""
-        return self._request("GET", "/extendedAgentCard")
+        return self._request(
+            GET_EXTENDED_AGENT_CARD_BINDING.http_json_method,
+            GET_EXTENDED_AGENT_CARD_BINDING.http_json_path,
+        )
