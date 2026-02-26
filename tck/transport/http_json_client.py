@@ -8,30 +8,14 @@ from __future__ import annotations
 
 import json
 
-from typing import Iterator
-
 import httpx
 
+from tck.transport._helpers import _build_params, _parse_sse
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
 _HTTP_JSON = "http_json"
 _HTTP_ERROR_MIN = 400
-
-
-def _build_query_params(**kwargs: object) -> dict:
-    """Build a query params dict with camelCase keys, omitting None values."""
-    return {k: v for k, v in kwargs.items() if v is not None}
-
-
-def _parse_sse(text: str) -> Iterator[dict]:
-    """Parse SSE-formatted text into JSON dicts."""
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if line.startswith("data:"):
-            data = line[len("data:"):].strip()
-            if data:
-                yield json.loads(data)
 
 
 def _extract_error(response: httpx.Response) -> str:
@@ -142,11 +126,7 @@ class HttpJsonClient(BaseTransportClient):
         metadata: dict | None = None,
     ) -> TransportResponse:
         """Send a message to the agent via ``POST /message:send``."""
-        body: dict = {"message": message}
-        if configuration is not None:
-            body["configuration"] = configuration
-        if metadata is not None:
-            body["metadata"] = metadata
+        body = _build_params(message=message, configuration=configuration, metadata=metadata)
         return self._request("POST", "/message:send", json_body=body)
 
     def send_streaming_message(
@@ -157,11 +137,7 @@ class HttpJsonClient(BaseTransportClient):
         metadata: dict | None = None,
     ) -> StreamingResponse:
         """Send a streaming message to the agent via ``POST /message:stream``."""
-        body: dict = {"message": message}
-        if configuration is not None:
-            body["configuration"] = configuration
-        if metadata is not None:
-            body["metadata"] = metadata
+        body = _build_params(message=message, configuration=configuration, metadata=metadata)
         return self._request_streaming("POST", "/message:stream", json_body=body)
 
     # -- Task Operations --
@@ -173,7 +149,7 @@ class HttpJsonClient(BaseTransportClient):
         history_length: int | None = None,
     ) -> TransportResponse:
         """Get a task by ID via ``GET /tasks/{id}``."""
-        params = _build_query_params(historyLength=history_length)
+        params = _build_params(historyLength=history_length)
         return self._request("GET", f"/tasks/{id}", params=params or None)
 
     def list_tasks(
@@ -188,7 +164,7 @@ class HttpJsonClient(BaseTransportClient):
         include_artifacts: bool | None = None,
     ) -> TransportResponse:
         """List tasks filtered by context ID via ``GET /tasks``."""
-        params = _build_query_params(
+        params = _build_params(
             contextId=context_id,
             status=status,
             pageSize=page_size,
@@ -231,7 +207,7 @@ class HttpJsonClient(BaseTransportClient):
         page_token: str | None = None,
     ) -> TransportResponse:
         """List push notification configs via ``GET /tasks/{id}/pushNotificationConfigs``."""
-        params = _build_query_params(pageSize=page_size, pageToken=page_token)
+        params = _build_params(pageSize=page_size, pageToken=page_token)
         return self._request("GET", f"/tasks/{task_id}/pushNotificationConfigs", params=params or None)
 
     def delete_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
