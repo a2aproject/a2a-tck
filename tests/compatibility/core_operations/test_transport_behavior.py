@@ -13,13 +13,16 @@ Requirements tested:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import RequirementSpec
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport.base import BaseTransportClient, TransportResponse
+
+
+if TYPE_CHECKING:
+    from tck.requirements.base import RequirementSpec
+    from tck.transport.base import BaseTransportClient, TransportResponse
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +88,7 @@ class TestJsonRpcFormat:
     def jsonrpc_response(
         self, transport_clients: dict[str, BaseTransportClient]
     ) -> TransportResponse:
+        """Send a message via JSON-RPC and return the response."""
         client = transport_clients.get("jsonrpc")
         if client is None:
             pytest.skip("JSON-RPC transport not configured")
@@ -171,6 +175,7 @@ class TestJsonRpcStreaming:
         transport_clients: dict[str, BaseTransportClient],
         compliance_collector: Any,
     ) -> None:
+        """Streaming Content-Type must be text/event-stream."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
         client = transport_clients.get(transport)
@@ -200,6 +205,7 @@ class TestRestFormat:
     def rest_response(
         self, transport_clients: dict[str, BaseTransportClient]
     ) -> TransportResponse:
+        """Send a message via HTTP+JSON and return the response."""
         client = transport_clients.get("http_json")
         if client is None:
             pytest.skip("HTTP+JSON transport not configured")
@@ -328,6 +334,7 @@ class TestRestStreaming:
         transport_clients: dict[str, BaseTransportClient],
         compliance_collector: Any,
     ) -> None:
+        """REST streaming Content-Type must be text/event-stream."""
         req = REST_SSE_001
         transport = "http_json"
         client = transport_clients.get(transport)

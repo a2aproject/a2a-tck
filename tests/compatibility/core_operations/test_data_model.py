@@ -12,13 +12,17 @@ Requirements tested:
 from __future__ import annotations
 
 import re
-from typing import Any
+
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import RequirementSpec
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport.base import BaseTransportClient
+
+
+if TYPE_CHECKING:
+    from tck.requirements.base import RequirementSpec
+    from tck.transport.base import BaseTransportClient
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +216,7 @@ class TestCamelCaseFieldNames:
         send_message_responses: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
+        """Field names must use camelCase, not snake_case."""
         req = DM_SERIAL_001
         if not send_message_responses:
             pytest.skip("No successful send_message responses")
@@ -235,6 +240,7 @@ class TestEnumSerialization:
         send_message_responses: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
+        """Enum values must be serialized as strings, not integers."""
         req = DM_SERIAL_002
         if not send_message_responses:
             pytest.skip("No successful send_message responses")
@@ -264,6 +270,7 @@ class TestTimestampFormat:
         send_message_responses: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
+        """Timestamps must use ISO 8601 format with Z suffix."""
         req = DM_SERIAL_003
         if not send_message_responses:
             pytest.skip("No successful send_message responses")

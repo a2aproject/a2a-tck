@@ -3,19 +3,22 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 import pytest
 
 from tck.reporting.collector import ComplianceCollector
-from tck.transport.base import BaseTransportClient
 from tck.transport.grpc_client import GrpcClient
 from tck.transport.http_json_client import HttpJsonClient
 from tck.transport.jsonrpc_client import JsonRpcClient
 from tck.validators.json_schema import JSONSchemaValidator
 from tck.validators.jsonrpc.response_validator import JsonRpcResponseValidator
 from tck.validators.proto_schema import ProtoSchemaValidator
+
+
+if TYPE_CHECKING:
+    from tck.transport.base import BaseTransportClient
 
 
 # Maps the agent card's protocolBinding value to (internal transport name, client class).
@@ -141,7 +144,7 @@ def transport_clients(
 @pytest.fixture(scope="session")
 def validators() -> dict[str, Any]:
     """Return a dict of validators keyed by transport name."""
-    schema_path = Path(__file__).parent.parent / "specification" / "a2a.json"
+    schema_path = Path(__file__).parent.parent.parent / "specification" / "a2a.json"
     json_schema_validator = JSONSchemaValidator(schema_path)
     return {
         "grpc": ProtoSchemaValidator(),

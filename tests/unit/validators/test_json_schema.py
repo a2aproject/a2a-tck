@@ -12,7 +12,7 @@ from tck.validators.json_schema import JSONSchemaValidator, ValidationResult
 @pytest.fixture
 def schema_path() -> Path:
     """Get the path to the a2a.json schema."""
-    return Path(__file__).parent.parent.parent / "specification" / "a2a.json"
+    return Path(__file__).parent.parent.parent.parent / "specification" / "a2a.json"
 
 
 @pytest.fixture
