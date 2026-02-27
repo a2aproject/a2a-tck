@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
+from tests.compatibility.markers import core
 
 
 if TYPE_CHECKING:
@@ -142,6 +143,7 @@ def send_message_responses(
 # ---------------------------------------------------------------------------
 
 
+@core
 class TestSendMessageResponseSchema:
     """DM-TASK-001 through DM-STATUS-001: Validate response against JSON schema.
 
@@ -208,6 +210,7 @@ class TestSendMessageResponseSchema:
 # ---------------------------------------------------------------------------
 
 
+@core
 class TestCamelCaseFieldNames:
     """DM-SERIAL-001: JSON serialization uses camelCase field names."""
 
@@ -232,6 +235,7 @@ class TestCamelCaseFieldNames:
             assert not errors, _fail_msg(req, transport, "; ".join(errors))
 
 
+@core
 class TestEnumSerialization:
     """DM-SERIAL-002: Enum values are strings, not integers."""
 
@@ -260,6 +264,7 @@ class TestEnumSerialization:
             assert not errors, _fail_msg(req, transport, "; ".join(errors))
 
 
+@core
 class TestTimestampFormat:
     """DM-SERIAL-003: Timestamps use ISO 8601 format with Z suffix."""
 

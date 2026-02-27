@@ -48,9 +48,14 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
     "core: Core A2A protocol requirements",
+    "must: MUST-level requirements (hard failure)",
+    "should: SHOULD-level requirements (expected failure)",
+    "may: MAY-level requirements (skip if not declared)",
     "grpc: gRPC transport specific tests",
     "jsonrpc: JSON-RPC transport specific tests",
     "http_json: HTTP+JSON transport specific tests",
+    "streaming: Streaming-related tests",
+    "integration: Integration tests (require running SUT)",
 ]
 
 [tool.ruff]
