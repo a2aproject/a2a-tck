@@ -330,7 +330,20 @@ class TestJsonRpcErrorCodeMappings:
         )
         body = response.json()
         if "error" not in body:
-            pytest.skip("Server did not return an error for unsupported version")
+            # The spec requires servers to return VersionNotSupportedError
+            # for unsupported A2A-Version values — this is a compliance failure.
+            detail = (
+                "Server MUST return VersionNotSupportedError (-32009) for "
+                "unsupported A2A-Version, but processed the request normally"
+            )
+            _record(
+                collector=compliance_collector,
+                req=req,
+                transport=transport,
+                passed=False,
+                errors=[detail],
+            )
+            pytest.fail(_fail_msg(req, transport, detail))
 
         result = validate_jsonrpc_error(body, "VersionNotSupportedError")
         errors = [] if result.valid else [result.message]
