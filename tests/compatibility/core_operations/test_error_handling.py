@@ -14,15 +14,18 @@ Requirements tested:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 import jsonschema
 import pytest
 
-from tck.requirements.base import RequirementSpec
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport.base import BaseTransportClient
+
+
+if TYPE_CHECKING:
+    from tck.requirements.base import RequirementSpec
+    from tck.transport.base import BaseTransportClient
 
 
 # ---------------------------------------------------------------------------
@@ -45,6 +48,21 @@ REST_ERR_002 = get_requirement_by_id("REST-ERR-002")
 GRPC_ERR_001 = get_requirement_by_id("GRPC-ERR-001")
 GRPC_ERR_002 = get_requirement_by_id("GRPC-ERR-002")
 
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_HTTP_ERROR_STATUS = 400
+
+# JSON-RPC error code ranges
+_A2A_ERROR_CODE_MIN = -32099
+_A2A_ERROR_CODE_MAX = -32001
+_JSONRPC_ERROR_CODE_MIN = -32700
+_JSONRPC_ERROR_CODE_MAX = -32600
+
+# Specific A2A error codes
+_TASK_NOT_FOUND_ERROR_CODE = -32001
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -164,7 +182,7 @@ class TestCoreErrorStructure:
         transport = "http_json"
         base_url = _get_base_url(transport_clients, transport)
         response = _rest_call(base_url, "GET", "/tasks/tck-nonexistent-error-test")
-        passed = response.status_code >= 400
+        passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error status, got {response.status_code}"]
         _record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
@@ -201,7 +219,7 @@ class TestCoreInputValidation:
         transport = "http_json"
         base_url = _get_base_url(transport_clients, transport)
         response = _rest_call(base_url, "POST", "/message:send", json_body={})
-        passed = response.status_code >= 400
+        passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error status, got {response.status_code}"]
         _record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
@@ -222,6 +240,7 @@ class TestCapabilityPushNotifications:
         agent_card: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
+        """Push notification operations must return error when unsupported."""
         req = CORE_CAP_001
         transport = "jsonrpc"
         caps = agent_card.get("capabilities", {})
@@ -246,6 +265,7 @@ class TestCapabilityPushNotifications:
         agent_card: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
+        """Push notification operations must return error when unsupported (REST)."""
         req = CORE_CAP_001
         transport = "http_json"
         caps = agent_card.get("capabilities", {})
@@ -258,7 +278,7 @@ class TestCapabilityPushNotifications:
             "/tasks/t/pushNotificationConfigs",
             json_body={"configId": "c", "config": {"url": "https://example.com"}},
         )
-        passed = response.status_code >= 400
+        passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported push, got {response.status_code}"]
         _record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
@@ -274,6 +294,7 @@ class TestCapabilityStreaming:
         agent_card: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
+        """Streaming operations must return error when unsupported."""
         req = CORE_CAP_002
         transport = "jsonrpc"
         caps = agent_card.get("capabilities", {})
@@ -305,6 +326,7 @@ class TestCapabilityExtendedCard:
         agent_card: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
+        """Extended agent card must return error when unsupported."""
         req = CORE_CAP_003
         transport = "jsonrpc"
         caps = agent_card.get("capabilities", {})
@@ -376,7 +398,7 @@ class TestVersionErrors:
             json_body={"message": msg},
             headers={"A2A-Version": "99.0"},
         )
-        passed = response.status_code >= 400
+        passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported version, got {response.status_code}"]
         _record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
@@ -473,14 +495,20 @@ class TestJsonRpcErrorStructure:
             pytest.skip("Server did not return an error")
         code = body["error"].get("code")
         errors = []
-        if code is not None and isinstance(code, int):
-            # Standard JSON-RPC errors are in -32700 to -32600 range
-            # A2A errors should be in -32001 to -32099
-            if not (-32099 <= code <= -32001 or -32700 <= code <= -32600):
-                errors.append(
-                    f"Error code {code} is not in A2A range (-32001 to -32099) "
-                    f"or standard JSON-RPC range (-32700 to -32600)"
-                )
+        if (
+            code is not None
+            and isinstance(code, int)
+            and not (
+                _A2A_ERROR_CODE_MIN <= code <= _A2A_ERROR_CODE_MAX
+                or _JSONRPC_ERROR_CODE_MIN <= code <= _JSONRPC_ERROR_CODE_MAX
+            )
+        ):
+            errors.append(
+                f"Error code {code} is not in A2A range "
+                f"({_A2A_ERROR_CODE_MAX} to {_A2A_ERROR_CODE_MIN}) "
+                f"or standard JSON-RPC range "
+                f"({_JSONRPC_ERROR_CODE_MAX} to {_JSONRPC_ERROR_CODE_MIN})"
+            )
         _record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, transport, "; ".join(errors))
@@ -503,7 +531,7 @@ class TestJsonRpcErrorStructure:
             pytest.skip("Server did not return an error")
         code = body["error"].get("code")
         errors = []
-        if code != -32001:
+        if code != _TASK_NOT_FOUND_ERROR_CODE:
             errors.append(
                 f"TaskNotFoundError should map to -32001, got {code}"
             )
@@ -532,7 +560,7 @@ class TestRestErrorStructure:
         response = _rest_call(
             base_url, "GET", "/tasks/tck-nonexistent-pd-test"
         )
-        if response.status_code < 400:
+        if response.status_code < _HTTP_ERROR_STATUS:
             pytest.skip("Server did not return an error")
         ct = response.headers.get("content-type", "")
         errors = []
@@ -560,7 +588,7 @@ class TestRestErrorStructure:
         response = _rest_call(
             base_url, "GET", "/tasks/tck-nonexistent-uri-test"
         )
-        if response.status_code < 400:
+        if response.status_code < _HTTP_ERROR_STATUS:
             pytest.skip("Server did not return an error")
         ct = response.headers.get("content-type", "")
         if "application/problem+json" not in ct:

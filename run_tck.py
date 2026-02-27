@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A2A Protocol Technology Compatibility Kit (TCK) - Test Runner
+"""A2A Protocol Technology Compatibility Kit (TCK) - Test Runner.
 
 Runs parametrized conformance tests against an A2A-compliant agent.
 Tests are organized by RFC 2119 requirement level (MUST/SHOULD/MAY)
@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+
 from pathlib import Path
 
 
@@ -37,7 +38,7 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
         sys.executable,
         "-m",
         "pytest",
-        "tests/core_operations/",
+        "tests/compatibility/",
         f"--sut-host={args.sut_host}",
         "--tb=short",
     ]
@@ -79,6 +80,7 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
 
 
 def main() -> None:
+    """Parse arguments and run the TCK pytest suite."""
     parser = argparse.ArgumentParser(
         description="A2A Protocol TCK - Test Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -158,8 +160,8 @@ Requirement levels:
     args = parser.parse_args()
 
     # Validate test directory exists
-    if not Path("tests/core_operations").exists():
-        print("Error: tests/core_operations/ directory not found")
+    if not Path("tests/compatibility").exists():
+        print("Error: tests/compatibility/ directory not found")
         print("Make sure you're running from the TCK root directory")
         sys.exit(1)
 
@@ -168,7 +170,7 @@ Requirement levels:
     print(f"Command: {' '.join(cmd)}")
     print()
 
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, check=False)
     sys.exit(result.returncode)
 
 

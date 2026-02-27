@@ -12,8 +12,8 @@ jsonschema: ## Generate JSON Schema from a2a.proto (make sure that the googleapi
 spec: ## Update the A2A specification and Protobuf definition
 	./scripts/update_spec.sh
 
-test: ## Run tests
-	uv run pytest
+unit-test: ## Run unit tests only
+	uv run pytest tests/unit
 
 lint: ## Run linter
 	uv run ruff check .
