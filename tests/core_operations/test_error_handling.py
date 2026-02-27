@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Any
 
 import httpx
+import jsonschema
 import pytest
 
 from tck.requirements.base import RequirementSpec
@@ -415,6 +416,17 @@ class TestVersionErrors:
 # JSON-RPC error structure
 # ---------------------------------------------------------------------------
 
+_JSONRPC_ERROR_SCHEMA = {
+    "type": "object",
+    "required": ["code", "message"],
+    "properties": {
+        "code": {"type": "integer"},
+        "message": {"type": "string"},
+        "data": {},
+    },
+    "additionalProperties": False,
+}
+
 
 class TestJsonRpcErrorStructure:
     """JSONRPC-ERR-001 / JSONRPC-ERR-002: JSON-RPC error object structure."""
@@ -436,10 +448,10 @@ class TestJsonRpcErrorStructure:
             pytest.skip("Server did not return an error")
         error = body["error"]
         errors = []
-        if not isinstance(error.get("code"), int):
-            errors.append("error.code must be an integer")
-        if not isinstance(error.get("message"), str):
-            errors.append("error.message must be a string")
+        try:
+            jsonschema.validate(error, _JSONRPC_ERROR_SCHEMA)
+        except jsonschema.ValidationError as exc:
+            errors.append(exc.message)
         _record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, transport, "; ".join(errors))
