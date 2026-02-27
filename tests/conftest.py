@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
 
+from tck.reporting.collector import ComplianceCollector
 from tck.transport.base import BaseTransportClient
 from tck.transport.grpc_client import GrpcClient
 from tck.transport.http_json_client import HttpJsonClient
@@ -50,25 +50,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Output path for the compliance report.",
     )
-
-
-# ---------------------------------------------------------------------------
-# Placeholder for ComplianceCollector (will be replaced by task 5.3)
-# ---------------------------------------------------------------------------
-@dataclass
-class _ComplianceCollector:
-    """Minimal placeholder until the real ComplianceCollector is built."""
-
-    _results: list[dict[str, Any]] = field(default_factory=list)
-
-    def record(self, **kwargs: Any) -> None:
-        self._results.append(kwargs)
-
-    def get_results(self) -> list[dict[str, Any]]:
-        return list(self._results)
-
-    def reset(self) -> None:
-        self._results.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +151,6 @@ def validators() -> dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def compliance_collector() -> _ComplianceCollector:
-    """Return a compliance result collector (placeholder)."""
-    return _ComplianceCollector()
+def compliance_collector() -> ComplianceCollector:
+    """Return a compliance result collector."""
+    return ComplianceCollector()
