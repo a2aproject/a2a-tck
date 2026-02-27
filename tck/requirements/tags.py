@@ -63,6 +63,10 @@ GRPC = "grpc"
 JSONRPC = "jsonrpc"
 REST = "rest"
 
+# --- Test strategy tags ---
+NOT_AUTOMATABLE = "not-automatable"
+MULTI_OPERATION = "multi-operation"
+
 # --- Binding detail tags ---
 CLIENT = "client"
 CODE = "code"

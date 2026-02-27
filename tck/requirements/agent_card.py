@@ -20,6 +20,7 @@ from tck.requirements.tags import (
     INTERFACE,
     JCS,
     JWS,
+    NOT_AUTOMATABLE,
     PROTOCOL,
     SECURITY,
     SIGNING,
@@ -133,7 +134,7 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Agent Card canonicalized per RFC 8785 before signing",
         spec_url=f"{SPEC_BASE}841-canonicalization-requirements",
-        tags=[AGENT_CARD, SIGNING, JCS],
+        tags=[AGENT_CARD, SIGNING, JCS, NOT_AUTOMATABLE],
     ),
     RequirementSpec(
         id="CARD-SIGN-002",
@@ -146,7 +147,7 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Signatures field excluded from signing payload",
         spec_url=f"{SPEC_BASE}841-canonicalization-requirements",
-        tags=[AGENT_CARD, SIGNING],
+        tags=[AGENT_CARD, SIGNING, NOT_AUTOMATABLE],
     ),
     RequirementSpec(
         id="CARD-SIGN-003",
@@ -159,7 +160,7 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Protected header contains alg and kid",
         spec_url=f"{SPEC_BASE}842-signature-format",
-        tags=[AGENT_CARD, SIGNING, JWS],
+        tags=[AGENT_CARD, SIGNING, JWS, NOT_AUTOMATABLE],
     ),
     RequirementSpec(
         id="CARD-SIGN-004",
@@ -172,6 +173,6 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Expired/revoked keys rejected during verification",
         spec_url=f"{SPEC_BASE}843-signature-verification",
-        tags=[AGENT_CARD, SIGNING, SECURITY],
+        tags=[AGENT_CARD, SIGNING, SECURITY, NOT_AUTOMATABLE],
     ),
 ]

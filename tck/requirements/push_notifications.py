@@ -24,6 +24,7 @@ from tck.requirements.tags import (
     GET,
     IDEMPOTENT,
     LIST,
+    NOT_AUTOMATABLE,
     PUSH_NOTIFICATION,
 )
 
@@ -193,7 +194,7 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Webhook requests include configured auth credentials",
         spec_url=f"{SPEC_BASE}433-push-notification-payload",
-        tags=[PUSH_NOTIFICATION, DELIVERY, AUTH],
+        tags=[PUSH_NOTIFICATION, DELIVERY, AUTH, NOT_AUTOMATABLE],
     ),
     RequirementSpec(
         id="PUSH-DELIVER-002",
@@ -206,7 +207,7 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="At-least-once delivery attempted",
         spec_url=f"{SPEC_BASE}433-push-notification-payload",
-        tags=[PUSH_NOTIFICATION, DELIVERY],
+        tags=[PUSH_NOTIFICATION, DELIVERY, NOT_AUTOMATABLE],
     ),
     RequirementSpec(
         id="PUSH-DELIVER-003",
@@ -219,6 +220,6 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Payload is valid StreamResponse with single field",
         spec_url=f"{SPEC_BASE}433-push-notification-payload",
-        tags=[PUSH_NOTIFICATION, DELIVERY, FORMAT],
+        tags=[PUSH_NOTIFICATION, DELIVERY, FORMAT, NOT_AUTOMATABLE],
     ),
 ]

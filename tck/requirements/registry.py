@@ -113,3 +113,22 @@ def get_cross_cutting_requirements() -> list[RequirementSpec]:
         List of requirements where operation is None.
     """
     return [r for r in ALL_REQUIREMENTS if r.operation is None]
+
+
+# Pre-built index for O(1) lookups by requirement ID.
+_REQUIREMENTS_BY_ID: dict[str, RequirementSpec] = {r.id: r for r in ALL_REQUIREMENTS}
+
+
+def get_requirement_by_id(req_id: str) -> RequirementSpec:
+    """Look up a requirement by its unique ID.
+
+    Args:
+        req_id: The requirement ID (e.g. ``"CORE-ERR-001"``).
+
+    Returns:
+        The matching :class:`RequirementSpec`.
+
+    Raises:
+        KeyError: If no requirement with that ID exists.
+    """
+    return _REQUIREMENTS_BY_ID[req_id]

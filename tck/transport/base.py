@@ -20,6 +20,8 @@ class TransportResponse:
     success: bool
     raw_response: Any
     error: str | None = None
+    headers: dict[str, str] = field(default_factory=dict)
+    status_code: int | None = None
 
     @property
     def is_streaming(self) -> bool:

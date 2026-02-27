@@ -49,15 +49,22 @@ class JsonRpcClient(BaseTransportClient):
                 headers={"Content-Type": "application/json"},
             )
             body = response.json()
+            resp_headers = dict(response.headers)
             if "error" in body:
                 return TransportResponse(
                     transport=_JSONRPC,
                     success=False,
                     raw_response=body,
                     error=body["error"].get("message", str(body["error"])),
+                    headers=resp_headers,
+                    status_code=response.status_code,
                 )
             return TransportResponse(
-                transport=_JSONRPC, success=True, raw_response=body
+                transport=_JSONRPC,
+                success=True,
+                raw_response=body,
+                headers=resp_headers,
+                status_code=response.status_code,
             )
         except httpx.HTTPError as e:
             return TransportResponse(
@@ -86,6 +93,8 @@ class JsonRpcClient(BaseTransportClient):
                 success=True,
                 raw_response=response,
                 events=_parse_sse(response.text),
+                headers=dict(response.headers),
+                status_code=response.status_code,
             )
         except httpx.HTTPError as e:
             return StreamingResponse(
