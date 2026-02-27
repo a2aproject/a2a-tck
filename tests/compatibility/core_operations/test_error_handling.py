@@ -21,6 +21,7 @@ import jsonschema
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
+from tests.compatibility.markers import core, grpc, http_json, jsonrpc
 
 
 if TYPE_CHECKING:
@@ -146,6 +147,7 @@ def _get_base_url(
 # ---------------------------------------------------------------------------
 
 
+@core
 class TestCoreErrorStructure:
     """CORE-ERR-001: Server returns appropriate errors with actionable info."""
 
@@ -189,6 +191,7 @@ class TestCoreErrorStructure:
         assert passed, _fail_msg(req, transport, errors[0])
 
 
+@core
 class TestCoreInputValidation:
     """CORE-ERR-002: Server validates input parameters."""
 
@@ -231,6 +234,7 @@ class TestCoreInputValidation:
 # ---------------------------------------------------------------------------
 
 
+@core
 class TestCapabilityPushNotifications:
     """CORE-CAP-001: Push operations return error when not supported."""
 
@@ -285,6 +289,7 @@ class TestCapabilityPushNotifications:
         assert passed, _fail_msg(req, transport, errors[0])
 
 
+@core
 class TestCapabilityStreaming:
     """CORE-CAP-002: Streaming operations return error when not supported."""
 
@@ -317,6 +322,7 @@ class TestCapabilityStreaming:
         assert passed, _fail_msg(req, transport, errors[0])
 
 
+@core
 class TestCapabilityExtendedCard:
     """CORE-CAP-003: Extended agent card returns error when not supported."""
 
@@ -347,6 +353,7 @@ class TestCapabilityExtendedCard:
 # ---------------------------------------------------------------------------
 
 
+@core
 class TestVersionErrors:
     """VER-SERVER-002 / VER-SERVER-003: Version error handling."""
 
@@ -450,6 +457,7 @@ _JSONRPC_ERROR_SCHEMA = {
 }
 
 
+@jsonrpc
 class TestJsonRpcErrorStructure:
     """JSONRPC-ERR-001 / JSONRPC-ERR-002: JSON-RPC error object structure."""
 
@@ -545,6 +553,7 @@ class TestJsonRpcErrorStructure:
 # ---------------------------------------------------------------------------
 
 
+@http_json
 class TestRestErrorStructure:
     """REST-ERR-001 / REST-ERR-002: RFC 9457 Problem Details format."""
 
@@ -610,6 +619,7 @@ class TestRestErrorStructure:
 # ---------------------------------------------------------------------------
 
 
+@grpc
 class TestGrpcErrorStructure:
     """GRPC-ERR-001 / GRPC-ERR-002: gRPC error handling."""
 

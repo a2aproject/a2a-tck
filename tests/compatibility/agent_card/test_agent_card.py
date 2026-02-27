@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
+from tests.compatibility.markers import core
 
 
 if TYPE_CHECKING:
@@ -78,6 +79,7 @@ def _record(
 # ---------------------------------------------------------------------------
 
 
+@core
 class TestAgentCardDiscovery:
     """CARD-DISC-001: Agent card is retrievable."""
 
@@ -98,6 +100,7 @@ class TestAgentCardDiscovery:
         assert not errors, _fail_msg(req, "; ".join(errors))
 
 
+@core
 class TestAgentCardStructure:
     """CARD-STRUCT-001: AgentCard contains required fields and valid structure."""
 
@@ -131,6 +134,7 @@ class TestAgentCardStructure:
         assert not errors, _fail_msg(req, "; ".join(errors))
 
 
+@core
 class TestAgentCardProtocol:
     """CARD-PROTO-001 / CARD-PROTO-002: Protocol declaration."""
 
@@ -171,6 +175,7 @@ class TestAgentCardProtocol:
         assert not errors, _fail_msg(req, "; ".join(errors))
 
 
+@core
 class TestBindingFieldDeclaration:
     """BIND-FIELD-001: All supported protocols declared in AgentCard."""
 

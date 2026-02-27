@@ -18,6 +18,7 @@ from tck.requirements.registry import (
 from tck.transport import ALL_TRANSPORTS
 from tck.transport.base import StreamingResponse
 from tck.transport.dispatch import execute_operation
+from tests.compatibility.markers import may, must, should
 
 
 if TYPE_CHECKING:
@@ -93,6 +94,7 @@ def _format_failure(
 # MUST requirements — hard failure
 # ---------------------------------------------------------------------------
 
+@must
 @pytest.mark.parametrize(
     "transport",
     ALL_TRANSPORTS,
@@ -131,6 +133,7 @@ def test_must_requirement(
 # SHOULD requirements — expected failure (xfail), not hard fail
 # ---------------------------------------------------------------------------
 
+@should
 @pytest.mark.parametrize(
     "transport",
     ALL_TRANSPORTS,
@@ -170,6 +173,7 @@ def test_should_requirement(
 # MAY requirements — skip if capability not declared in agent card
 # ---------------------------------------------------------------------------
 
+@may
 @pytest.mark.parametrize(
     "transport",
     ALL_TRANSPORTS,
