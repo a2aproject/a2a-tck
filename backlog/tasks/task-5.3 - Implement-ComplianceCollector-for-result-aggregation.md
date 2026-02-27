@@ -1,15 +1,16 @@
 ---
-id: task-5.3
+id: TASK-5.3
 title: Implement ComplianceCollector for result aggregation
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:11'
+updated_date: '2026-02-27 12:02'
 labels:
   - phase-5
   - testing
   - reporting
 dependencies: []
-parent_task_id: task-5
+parent_task_id: TASK-5
 priority: high
 ---
 
@@ -43,11 +44,11 @@ This collector will be used by both tests and the reporting layer.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 tck/reporting/collector.py exists
-- [ ] #2 TestResult dataclass has all required fields
-- [ ] #3 ComplianceCollector.record() stores test results
-- [ ] #4 get_results() returns all recorded results
-- [ ] #5 get_per_requirement() groups results by requirement ID
-- [ ] #6 get_per_transport() groups results by transport
-- [ ] #7 reset() clears all stored results
+- [x] #1 tck/reporting/collector.py exists
+- [x] #2 TestResult dataclass has all required fields
+- [x] #3 ComplianceCollector.record() stores test results
+- [x] #4 get_results() returns all recorded results
+- [x] #5 get_per_requirement() groups results by requirement ID
+- [x] #6 get_per_transport() groups results by transport
+- [x] #7 reset() clears all stored results
 <!-- AC:END -->

@@ -1,9 +1,10 @@
 ---
-id: task-3.6
+id: TASK-3.6
 title: Write transport integration tests
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:09'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-3
   - transport
@@ -11,7 +12,7 @@ labels:
   - integration
 dependencies:
   - task-3.5
-parent_task_id: task-3
+parent_task_id: TASK-3
 priority: medium
 ---
 
@@ -22,7 +23,7 @@ Write integration tests for transport clients to verify they can communicate wit
 
 **Reference**: PRD Section 6 Task 3.6
 
-**Location**: `tests/integration/test_transports.py`
+**Location**: `tests/compatibility/integration/test_transports.py`
 
 **Test approach**:
 - Tests require a running A2A server (skip if not available)

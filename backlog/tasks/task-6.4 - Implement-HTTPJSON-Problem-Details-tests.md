@@ -4,7 +4,7 @@ title: Implement HTTP+JSON Problem Details tests
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:12'
-updated_date: '2026-02-24 15:37'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-6
   - testing
@@ -21,7 +21,7 @@ Implement tests for RFC 7807 Problem Details format in HTTP+JSON error responses
 
 **Reference**: PRD Section 6 Task 6.4, PRD Section 5.2.3, RFC 7807
 
-**Location**: `tests/rest/test_problem_details.py`
+**Location**: `tests/compatibility/http_json/test_problem_details.py`
 
 **Test class**: `TestProblemDetails`
 

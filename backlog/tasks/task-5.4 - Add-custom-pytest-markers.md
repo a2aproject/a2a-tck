@@ -1,15 +1,16 @@
 ---
-id: task-5.4
+id: TASK-5.4
 title: Add custom pytest markers
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:11'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-5
   - testing
   - markers
 dependencies: []
-parent_task_id: task-5
+parent_task_id: TASK-5
 priority: medium
 ---
 
@@ -20,7 +21,7 @@ Define and register custom pytest markers for test categorization.
 
 **Reference**: PRD Section 5.4 (Test Layer), existing tests/markers.py
 
-**Location**: `tests/markers.py` and `pyproject.toml` (marker registration)
+**Location**: `tests/compatibility/markers.py` and `pyproject.toml` (marker registration)
 
 **Markers to define**:
 
