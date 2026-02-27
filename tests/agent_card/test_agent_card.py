@@ -10,12 +10,16 @@ Requirements tested:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import RequirementSpec
 from tck.requirements.registry import get_requirement_by_id
+
+
+if TYPE_CHECKING:
+    from tck.requirements.base import RequirementSpec
+    from tck.validators.json_schema import JSONSchemaValidator
 
 
 # ---------------------------------------------------------------------------
@@ -33,8 +37,17 @@ BIND_FIELD_001 = get_requirement_by_id("BIND-FIELD-001")
 # Helpers
 # ---------------------------------------------------------------------------
 
-# Required top-level fields per the A2A spec (Section 4.4.1).
-_REQUIRED_FIELDS = {"name", "description", "version", "capabilities", "skills"}
+# Required top-level fields per the A2A spec (proto REQUIRED annotation).
+_REQUIRED_FIELDS = {
+    "name",
+    "description",
+    "version",
+    "capabilities",
+    "skills",
+    "supportedInterfaces",
+    "defaultInputModes",
+    "defaultOutputModes",
+}
 
 _KNOWN_BINDINGS = {"JSONRPC", "GRPC", "HTTP+JSON"}
 
@@ -86,7 +99,21 @@ class TestAgentCardDiscovery:
 
 
 class TestAgentCardStructure:
-    """CARD-STRUCT-001: AgentCard contains required fields."""
+    """CARD-STRUCT-001: AgentCard contains required fields and valid structure."""
+
+    def test_agent_card_validates_against_schema(
+        self,
+        agent_card: dict[str, Any],
+        validators: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """Agent card must validate against the Agent Card JSON schema."""
+        req = CARD_STRUCT_001
+        json_validator: JSONSchemaValidator = validators["http_json"]
+        result = json_validator.validate(agent_card, "Agent Card")
+        _record(collector=compliance_collector, req=req,
+                passed=result.valid, errors=result.errors)
+        assert result.valid, _fail_msg(req, "; ".join(result.errors))
 
     def test_required_fields_present(
         self,
@@ -99,110 +126,6 @@ class TestAgentCardStructure:
         errors = []
         if missing:
             errors.append(f"Missing required fields: {missing}")
-        _record(collector=compliance_collector, req=req,
-                passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, "; ".join(errors))
-
-    def test_name_is_non_empty_string(
-        self,
-        agent_card: dict[str, Any],
-        compliance_collector: Any,
-    ) -> None:
-        req = CARD_STRUCT_001
-        name = agent_card.get("name")
-        errors = []
-        if not isinstance(name, str) or not name:
-            errors.append("name must be a non-empty string")
-        _record(collector=compliance_collector, req=req,
-                passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, "; ".join(errors))
-
-    def test_description_is_non_empty_string(
-        self,
-        agent_card: dict[str, Any],
-        compliance_collector: Any,
-    ) -> None:
-        req = CARD_STRUCT_001
-        desc = agent_card.get("description")
-        errors = []
-        if not isinstance(desc, str) or not desc:
-            errors.append("description must be a non-empty string")
-        _record(collector=compliance_collector, req=req,
-                passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, "; ".join(errors))
-
-    def test_version_is_string(
-        self,
-        agent_card: dict[str, Any],
-        compliance_collector: Any,
-    ) -> None:
-        req = CARD_STRUCT_001
-        version = agent_card.get("version")
-        errors = []
-        if not isinstance(version, str):
-            errors.append("version must be a string")
-        _record(collector=compliance_collector, req=req,
-                passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, "; ".join(errors))
-
-    def test_capabilities_is_object(
-        self,
-        agent_card: dict[str, Any],
-        compliance_collector: Any,
-    ) -> None:
-        req = CARD_STRUCT_001
-        caps = agent_card.get("capabilities")
-        errors = []
-        if not isinstance(caps, dict):
-            errors.append("capabilities must be a JSON object")
-        _record(collector=compliance_collector, req=req,
-                passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, "; ".join(errors))
-
-    def test_skills_is_list(
-        self,
-        agent_card: dict[str, Any],
-        compliance_collector: Any,
-    ) -> None:
-        req = CARD_STRUCT_001
-        skills = agent_card.get("skills")
-        errors = []
-        if not isinstance(skills, list):
-            errors.append("skills must be a JSON array")
-        _record(collector=compliance_collector, req=req,
-                passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, "; ".join(errors))
-
-    def test_default_input_modes_present(
-        self,
-        agent_card: dict[str, Any],
-        compliance_collector: Any,
-    ) -> None:
-        req = CARD_STRUCT_001
-        modes = agent_card.get("defaultInputModes")
-        errors = []
-        if modes is not None:
-            if not isinstance(modes, list):
-                errors.append("defaultInputModes must be a list")
-            elif len(modes) == 0:
-                errors.append("defaultInputModes must not be empty")
-        _record(collector=compliance_collector, req=req,
-                passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, "; ".join(errors))
-
-    def test_default_output_modes_present(
-        self,
-        agent_card: dict[str, Any],
-        compliance_collector: Any,
-    ) -> None:
-        req = CARD_STRUCT_001
-        modes = agent_card.get("defaultOutputModes")
-        errors = []
-        if modes is not None:
-            if not isinstance(modes, list):
-                errors.append("defaultOutputModes must be a list")
-            elif len(modes) == 0:
-                errors.append("defaultOutputModes must not be empty")
         _record(collector=compliance_collector, req=req,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))
@@ -228,24 +151,21 @@ class TestAgentCardProtocol:
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))
 
-    def test_each_interface_has_url_and_binding(
+    def test_each_interface_validates_against_schema(
         self,
         agent_card: dict[str, Any],
+        validators: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
-        """CARD-PROTO-002: Each interface must declare url and protocolBinding."""
+        """CARD-PROTO-002: Each interface must validate against AgentInterface schema."""
         req = CARD_PROTO_002
         interfaces = agent_card.get("supportedInterfaces", [])
+        json_validator: JSONSchemaValidator = validators["http_json"]
         errors = []
         for i, iface in enumerate(interfaces):
-            if "url" not in iface:
-                errors.append(f"Interface [{i}] missing 'url'")
-            elif not isinstance(iface["url"], str) or not iface["url"]:
-                errors.append(f"Interface [{i}] 'url' must be a non-empty string")
-            if "protocolBinding" not in iface:
-                errors.append(f"Interface [{i}] missing 'protocolBinding'")
-            elif not isinstance(iface["protocolBinding"], str) or not iface["protocolBinding"]:
-                errors.append(f"Interface [{i}] 'protocolBinding' must be a non-empty string")
+            result = json_validator.validate(iface, "Agent Interface")
+            for err in result.errors:
+                errors.append(f"Interface [{i}]: {err}")
         _record(collector=compliance_collector, req=req,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))
