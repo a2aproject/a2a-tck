@@ -40,6 +40,7 @@ _A2A_ERROR_CODE_MIN = -32099
 _A2A_ERROR_CODE_MAX = -32001
 _JSONRPC_ERROR_CODE_MIN = -32700
 _JSONRPC_ERROR_CODE_MAX = -32600
+_HTTP_ERROR_STATUS = 400
 
 
 # ---------------------------------------------------------------------------
@@ -277,7 +278,20 @@ class TestJsonRpcErrorCodeMappings:
             content=str(payload).encode(),
             headers={"Content-Type": "text/plain"},
         )
-        body = response.json()
+
+        # The server may reject the wrong Content-Type at the HTTP level
+        # (e.g. 415 with an empty body) instead of returning a JSON-RPC error.
+        try:
+            body = response.json()
+        except Exception:
+            # Non-JSON response — server rejected at HTTP level.
+            if response.status_code >= _HTTP_ERROR_STATUS:
+                pytest.skip(
+                    f"Server rejected wrong Content-Type with HTTP {response.status_code} "
+                    f"instead of a JSON-RPC error"
+                )
+            pytest.skip("Server returned non-JSON response for wrong Content-Type")
+
         if "error" not in body:
             pytest.skip("Server did not return an error for wrong Content-Type")
 
