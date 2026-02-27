@@ -488,9 +488,14 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §7.3 - Push Notifications
         """
         try:
+            # Note: configId parameter was removed from the proto - ID is now inside config object
+            config_with_id = config.copy()
+            if "id" not in config_with_id:
+                config_with_id["id"] = config_id
+
             response = self._make_jsonrpc_request(
                 method="CreateTaskPushNotificationConfig",
-                params={"taskId": task_id, "configId": config_id, "config": config},
+                params={"taskId": task_id, "config": config_with_id},
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
@@ -553,8 +558,9 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §7.3.3 - List Push Notification Configs
         """
         try:
+            # Method renamed from ListTaskPushNotificationConfig to ListTaskPushNotificationConfigs
             response = self._make_jsonrpc_request(
-                method="ListTaskPushNotificationConfig", params={"task_id": task_id}, extra_headers=extra_headers
+                method="ListTaskPushNotificationConfigs", params={"task_id": task_id}, extra_headers=extra_headers
             )
             return response.get("result", {})
 

@@ -201,4 +201,6 @@ spec_tracker/cache
 reports/*.json
 
 .DS_Store
-.serena
+.serena/
+.claude/
+.bob/

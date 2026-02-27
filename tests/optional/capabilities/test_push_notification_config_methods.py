@@ -284,8 +284,9 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
     found_config = False
     for config in configs:
         print(config)
-        assert "id" in config, "Each config must contain an id"
-        assert "taskId" in config, "Each config must contain an task ID"
+        assert "taskId" in config, "Each config must contain a task ID"
+        assert "pushNotificationConfig" in config, "Each config must contain pushNotificationConfig"
+        assert "id" in config["pushNotificationConfig"], "pushNotificationConfig must contain an id"
         if config["taskId"] == created_task_id:
             found_config = True
 
@@ -365,10 +366,11 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
 
     # Extract the config ID from the response (if provided by server)
     set_result = set_resp["result"]
+    # Config ID is now inside pushNotificationConfig, not at the top level
     assert set_result["pushNotificationConfig"].get("id") == config_id
 
     if config_id:
-        # If the server provides config ID, use it for deletion
+        # If the server provides config ID in pushNotificationConfig, use it for deletion
         resp = transport_helpers.transport_delete_push_notification_config(sut_client, created_task_id, config_id)
 
         # Since push notifications capability is declared, this MUST work
