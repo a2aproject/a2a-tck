@@ -21,6 +21,8 @@ JSONRPC_ERROR_CODES: dict[str, int] = {
     "UnsupportedOperationError": -32004,
     "ContentTypeNotSupportedError": -32005,
     "InvalidAgentResponseError": -32006,
+    "ExtendedAgentCardNotConfiguredError": -32007,
+    "ExtensionSupportRequiredError": -32008,
     "VersionNotSupportedError": -32009,
     # Standard JSON-RPC errors
     "InvalidRequestError": -32600,
