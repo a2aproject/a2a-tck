@@ -4,7 +4,7 @@ title: Implement HTTP+JSON status code tests
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:12'
-updated_date: '2026-02-24 15:37'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-6
   - testing
@@ -21,7 +21,7 @@ Implement tests that validate HTTP+JSON (REST) status code mappings per A2A Spec
 
 **Reference**: PRD Section 6 Task 6.3, PRD Section 5.4.2
 
-**Location**: `tests/rest/test_http_status.py`
+**Location**: `tests/compatibility/http_json/test_http_status.py`
 
 **Test class**: `TestHttpJsonStatus`
 

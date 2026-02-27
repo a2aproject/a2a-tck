@@ -4,7 +4,7 @@ title: Implement conftest.py with pytest fixtures
 status: Done
 assignee: []
 created_date: '2026-01-28 09:11'
-updated_date: '2026-02-26 10:27'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-5
   - testing
@@ -21,7 +21,7 @@ Implement the pytest configuration and fixtures for the TCK test suite.
 
 **Reference**: PRD Section 7.2 (Test Fixtures)
 
-**Location**: `tests/conftest.py`
+**Location**: `tests/compatibility/conftest.py`
 
 **CLI options to add**:
 - `--sut-url`: SUT base URL (required)

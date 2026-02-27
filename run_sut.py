@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
+"""Download, build, and run a System Under Test (SUT)."""
+
+from __future__ import annotations
+
 import argparse
-import yaml
 import os
+import shlex
+import shutil
 import subprocess
 import sys
-import shlex
-import shutil  # Added for shutil.copytree and rmtree
+
+from pathlib import Path
+from typing import Any
+
+import yaml
+
 
 # --- Configuration ---
-SUT_BASE_DIR = "SUT"
+SUT_BASE_DIR = Path("SUT")
 
 
-def print_help():
+def print_help() -> None:
+    """Print usage help text."""
     help_text = """
 Usage: run_sut.py [--help|--explain] config_file
 
@@ -39,13 +49,14 @@ Optional YAML fields:
     print(help_text)
 
 
-def load_config(config_path):
-    """Loads and validates the SUT configuration YAML file."""
-    if not os.path.exists(config_path):
+def load_config(config_path: str) -> dict[str, Any]:
+    """Load and validate the SUT configuration YAML file."""
+    config_file = Path(config_path)
+    if not config_file.exists():
         print(f"Error: Configuration file not found at {config_path}", file=sys.stderr)
         sys.exit(1)
     try:
-        with open(config_path, "r") as f:
+        with config_file.open() as f:
             config = yaml.safe_load(f)
     except yaml.YAMLError as e:
         print(f"Error parsing YAML configuration file: {e}", file=sys.stderr)
@@ -68,8 +79,14 @@ def load_config(config_path):
     return config
 
 
-def run_command(command, cwd=None, check=True, shell=False, capture_output_flag=True):
-    """Helper function to run a shell command."""
+def run_command(
+    command: list[str] | str,
+    cwd: str | None = None,
+    check: bool = True,
+    shell: bool = False,
+    capture_output_flag: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    """Run a shell command."""
     cmd_str = " ".join(command) if not shell and isinstance(command, list) else command
     if not capture_output_flag:
         print(f"Executing (output will stream): {cmd_str} {'in ' + cwd if cwd else ''}")
@@ -78,7 +95,8 @@ def run_command(command, cwd=None, check=True, shell=False, capture_output_flag=
 
     try:
         process = subprocess.run(
-            command if not shell else cmd_str, cwd=cwd, text=True, capture_output=capture_output_flag, shell=shell, check=False
+            command if not shell else cmd_str, cwd=cwd, text=True,
+            capture_output=capture_output_flag, shell=shell, check=False,
         )
 
         if capture_output_flag:
@@ -107,7 +125,128 @@ def run_command(command, cwd=None, check=True, shell=False, capture_output_flag=
         sys.exit(1)
 
 
-def main():
+def _download_or_update_sut(config: dict[str, Any], sut_dir: Path) -> None:  # noqa: PLR0912
+    """Download or update the SUT from git or local path."""
+    github_repo_source = config["github_repo"]
+    git_ref = config.get("git_ref")
+
+    source_path = Path(github_repo_source)
+    if source_path.is_dir():
+        abs_source = source_path.resolve()
+        print(f"Using local SUT path: {abs_source}")
+        if sut_dir.exists():
+            print(f"Removing existing SUT directory: {sut_dir} to ensure a fresh copy.")
+            try:
+                shutil.rmtree(sut_dir)
+            except OSError as e:
+                print(f"Error removing directory {sut_dir}: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        print(f"Copying SUT from {abs_source} to {sut_dir}")
+        try:
+            shutil.copytree(abs_source, sut_dir)
+        except OSError as e:
+            print(f"Error copying local SUT from {abs_source} to {sut_dir}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        if git_ref:
+            print(f"Note: 'git_ref' ('{git_ref}') is specified in config, but will be ignored for local SUT paths.")
+
+    else:
+        sut_dir_str = str(sut_dir)
+        if not sut_dir.exists():
+            print(f"SUT directory {sut_dir} not found. Cloning repository from {github_repo_source}...")
+            clone_command = ["git", "clone", github_repo_source, sut_dir_str]
+            run_command(clone_command, capture_output_flag=True)
+            if git_ref:
+                print(f"Checking out specified git reference: {git_ref}...")
+                run_command(["git", "-C", sut_dir_str, "checkout", git_ref], capture_output_flag=True)
+        else:
+            print(f"SUT directory {sut_dir} exists. Updating repository from {github_repo_source}...")
+            run_command(["git", "-C", sut_dir_str, "fetch", "--all", "--prune"], capture_output_flag=True)
+            if git_ref:
+                print(f"Checking out specified git reference: {git_ref}...")
+                run_command(["git", "-C", sut_dir_str, "checkout", git_ref], capture_output_flag=True)
+
+                is_branch_proc = run_command(
+                    ["git", "-C", sut_dir_str, "show-ref", "--verify", "--quiet", f"refs/heads/{git_ref}"],
+                    check=False, capture_output_flag=True,
+                )
+                is_remote_branch_proc = run_command(
+                    ["git", "-C", sut_dir_str, "show-ref", "--verify", "--quiet", f"refs/remotes/origin/{git_ref}"],
+                    check=False, capture_output_flag=True,
+                )
+
+                if is_branch_proc.returncode == 0 or is_remote_branch_proc.returncode == 0:
+                    print(f"Reference {git_ref} appears to be a branch. Pulling updates...")
+                    run_command(["git", "-C", sut_dir_str, "pull"], capture_output_flag=True)
+                else:
+                    print(f"Reference {git_ref} appears to be a tag or commit. Skipping pull.")
+            else:
+                print("No specific git_ref. Pulling updates for the current branch...")
+                run_command(["git", "-C", sut_dir_str, "pull"], capture_output_flag=True)
+
+
+def _make_executable(script_path: Path) -> None:
+    """Make a script executable on POSIX systems if it isn't already."""
+    if os.name == "posix" and not os.access(script_path, os.X_OK):
+        print(f"Script {script_path} is not executable. Attempting to make it executable...")
+        try:
+            script_path.chmod(script_path.stat().st_mode | 0o111)
+        except Exception as e:
+            print(f"Warning: Failed to make script executable: {e}. Execution might fail.", file=sys.stderr)
+
+
+def _run_script(
+    config: dict[str, Any],
+    script_key: str,
+    interpreter_key: str,
+    args_key: str,
+    *,
+    capture_output: bool = True,
+) -> None:
+    """Build and run a script command from config keys."""
+    script_file = config[script_key]
+    sut_abs_path = config["sut_abs_path"]
+    script_path = Path(sut_abs_path) / script_file
+    script_path = script_path.resolve()
+    interpreter = config.get(interpreter_key)
+    args_str = config.get(args_key, "")
+
+    if not script_file.strip():
+        if script_key == "run_script":
+            print(f"Error: No SUT run script specified ({script_key} is empty). Cannot proceed.", file=sys.stderr)
+            sys.exit(1)
+        print(f"No script specified ({script_key} is empty). Skipping.")
+        return
+
+    if not script_path.is_file():
+        print(
+            f"Error: Script '{script_file}' not found or is not a file at '{script_path}'",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    command: list[str] = []
+    if interpreter:
+        command.append(interpreter)
+    elif os.name == "posix":
+        _make_executable(script_path)
+    command.append(str(script_path))
+
+    if args_str:
+        try:
+            command.extend(shlex.split(args_str))
+        except Exception as e:
+            print(f"Error splitting args '{args_str}': {e}", file=sys.stderr)
+            sys.exit(1)
+
+    print(f"Executing script: {script_file} with args: '{args_str}'")
+    run_command(command, cwd=sut_abs_path, check=True, capture_output_flag=capture_output)
+
+
+def main() -> None:
+    """Download, build, and run a System Under Test."""
     parser = argparse.ArgumentParser(description="Download, build, and run a System Under Test (SUT).", add_help=False)
     parser.add_argument("config_file", nargs="?", help="Path to the SUT configuration YAML file.")
     parser.add_argument("--help", "--explain", action="store_true", help="Show help message and exit")
@@ -119,164 +258,33 @@ def main():
 
     config = load_config(args.config_file)
     sut_name = config["sut_name"]
-    github_repo_source = config["github_repo"]  # Can be URL or local path
-    git_ref = config.get("git_ref")
 
     print(f"--- Processing SUT: {sut_name} ---")
-    print(f"Configuration loaded from: {os.path.abspath(args.config_file)}")
+    print(f"Configuration loaded from: {Path(args.config_file).resolve()}")
 
     # --- SUT Download/Update ---
     print("\n--- SUT Download/Update ---")
 
-    if not os.path.exists(SUT_BASE_DIR):
-        print(f"Creating SUT base directory: {SUT_BASE_DIR}")
-        os.makedirs(SUT_BASE_DIR)
+    SUT_BASE_DIR.mkdir(parents=True, exist_ok=True)
 
-    sut_dir = os.path.join(SUT_BASE_DIR, sut_name)
-    config["sut_abs_path"] = os.path.abspath(sut_dir)
+    sut_dir = SUT_BASE_DIR / sut_name
+    config["sut_abs_path"] = str(sut_dir.resolve())
 
-    # Check if github_repo_source is a local directory
-    if os.path.isdir(github_repo_source):
-        abs_github_repo_source = os.path.abspath(github_repo_source)
-        print(f"Using local SUT path: {abs_github_repo_source}")
-        if os.path.exists(sut_dir):
-            print(f"Removing existing SUT directory: {sut_dir} to ensure a fresh copy.")
-            try:
-                shutil.rmtree(sut_dir)
-            except OSError as e:
-                print(f"Error removing directory {sut_dir}: {e}", file=sys.stderr)
-                sys.exit(1)
-
-        print(f"Copying SUT from {abs_github_repo_source} to {sut_dir}")
-        try:
-            # copytree needs the destination directory to not exist yet.
-            shutil.copytree(abs_github_repo_source, sut_dir)
-        except OSError as e:
-            print(f"Error copying local SUT from {abs_github_repo_source} to {sut_dir}: {e}", file=sys.stderr)
-            sys.exit(1)
-
-        if git_ref:
-            print(f"Note: 'git_ref' ('{git_ref}') is specified in config, but will be ignored for local SUT paths.")
-
-    else:  # Not a local directory, assume it's a git repository URL
-        if not os.path.exists(sut_dir):
-            print(f"SUT directory {sut_dir} not found. Cloning repository from {github_repo_source}...")
-            clone_command = ["git", "clone", github_repo_source, sut_dir]
-            run_command(clone_command, capture_output_flag=True)
-            if git_ref:
-                print(f"Checking out specified git reference: {git_ref}...")
-                run_command(["git", "-C", sut_dir, "checkout", git_ref], capture_output_flag=True)
-        else:
-            print(f"SUT directory {sut_dir} exists. Updating repository from {github_repo_source}...")
-            run_command(["git", "-C", sut_dir, "fetch", "--all", "--prune"], capture_output_flag=True)
-            if git_ref:
-                print(f"Checking out specified git reference: {git_ref}...")
-                run_command(["git", "-C", sut_dir, "checkout", git_ref], capture_output_flag=True)
-
-                is_branch_proc = run_command(
-                    ["git", "-C", sut_dir, "show-ref", "--verify", "--quiet", f"refs/heads/{git_ref}"],
-                    check=False,
-                    capture_output_flag=True,
-                )
-                is_remote_branch_proc = run_command(
-                    ["git", "-C", sut_dir, "show-ref", "--verify", "--quiet", f"refs/remotes/origin/{git_ref}"],
-                    check=False,
-                    capture_output_flag=True,
-                )
-
-                if is_branch_proc.returncode == 0 or is_remote_branch_proc.returncode == 0:
-                    print(f"Reference {git_ref} appears to be a branch. Pulling updates...")
-                    run_command(["git", "-C", sut_dir, "pull"], capture_output_flag=True)
-                else:
-                    print(f"Reference {git_ref} appears to be a tag or commit. Skipping pull.")
-            else:
-                print("No specific git_ref. Pulling updates for the current branch...")
-                run_command(["git", "-C", sut_dir, "pull"], capture_output_flag=True)
+    _download_or_update_sut(config, sut_dir)
 
     print(f"SUT is ready at: {config['sut_abs_path']}")
 
     # --- Prerequisites/Build ---
     print("\n--- Prerequisites/Build ---")
-    prereq_script_file = config["prerequisites_script"]
-    prereq_script_path_abs = os.path.normpath(os.path.join(config["sut_abs_path"], prereq_script_file))
-    prereq_interpreter = config.get("prerequisites_interpreter")
-    prereq_args_str = config.get("prerequisites_args", "")
-
-    if not prereq_script_file.strip():
-        print("No prerequisite script specified (prerequisites_script is empty). Skipping.")
-    elif not os.path.isfile(prereq_script_path_abs):
-        print(
-            f"Error: Prerequisite script '{prereq_script_file}' not found or is not a file at '{prereq_script_path_abs}'",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    else:
-        prereq_command = []
-        if prereq_interpreter:
-            prereq_command.append(prereq_interpreter)
-
-        if not prereq_interpreter and os.name == "posix":
-            if not os.access(prereq_script_path_abs, os.X_OK):
-                print(f"Prerequisite script {prereq_script_path_abs} is not executable. Attempting to make it executable...")
-                try:
-                    os.chmod(prereq_script_path_abs, os.stat(prereq_script_path_abs).st_mode | 0o111)
-                except Exception as e:
-                    print(f"Warning: Failed to make prerequisite script executable: {e}. Execution might fail.", file=sys.stderr)
-        prereq_command.append(prereq_script_path_abs)
-
-        if prereq_args_str:
-            try:
-                prereq_command.extend(shlex.split(prereq_args_str))
-            except Exception as e:
-                print(f"Error splitting prerequisite_args '{prereq_args_str}': {e}", file=sys.stderr)
-                sys.exit(1)
-
-        print(f"Executing prerequisite script: {prereq_script_file} with args: '{prereq_args_str}'")
-        run_command(prereq_command, cwd=config["sut_abs_path"], capture_output_flag=True)
-        print("Prerequisite script executed successfully.")
+    _run_script(config, "prerequisites_script", "prerequisites_interpreter", "prerequisites_args")
+    print("Prerequisite script executed successfully.")
 
     # --- Run SUT ---
     print("\n--- Run SUT ---")
-    run_script_file = config["run_script"]
-    run_script_path_abs = os.path.normpath(os.path.join(config["sut_abs_path"], run_script_file))
-    run_interpreter = config.get("run_interpreter")
-    run_args_str = config.get("run_args", "")
-
-    if not run_script_file.strip():
-        print("Error: No SUT run script specified (run_script is empty). Cannot proceed.", file=sys.stderr)
-        sys.exit(1)
-    if not os.path.isfile(run_script_path_abs):
-        print(f"Error: SUT run script '{run_script_file}' not found or is not a file at '{run_script_path_abs}'", file=sys.stderr)
-        sys.exit(1)
-
-    sut_command = []
-    if run_interpreter:
-        sut_command.append(run_interpreter)
-
-    if not run_interpreter and os.name == "posix":
-        if not os.access(run_script_path_abs, os.X_OK):
-            print(f"SUT run script {run_script_path_abs} is not executable. Attempting to make it executable...")
-            try:
-                os.chmod(run_script_path_abs, os.stat(run_script_path_abs).st_mode | 0o111)
-            except Exception as e:
-                print(f"Warning: Failed to make SUT run script executable: {e}. Execution might fail.", file=sys.stderr)
-    sut_command.append(run_script_path_abs)
-
-    if run_args_str:
-        try:
-            sut_command.extend(shlex.split(run_args_str))
-        except Exception as e:
-            print(f"Error splitting run_args '{run_args_str}': {e}", file=sys.stderr)
-            sys.exit(1)
-
-    print(f"Starting SUT: {run_script_file} with args: '{run_args_str}'")
-    # print(f"Full command: {' '.join(sut_command)}") # For debugging
-    print(f"SUT output will stream below. Press Ctrl+C to attempt to stop the SUT and this script.")
-
-    run_command(sut_command, cwd=config["sut_abs_path"], check=True, capture_output_flag=False)
+    print("SUT output will stream below. Press Ctrl+C to attempt to stop the SUT and this script.")
+    _run_script(config, "run_script", "run_interpreter", "run_args", capture_output=False)
 
     print("SUT script execution finished.")
-
     print(f"\n--- SUT processing finished for: {sut_name} ---")
 
 

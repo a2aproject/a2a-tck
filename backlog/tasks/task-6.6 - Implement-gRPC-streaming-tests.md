@@ -1,16 +1,17 @@
 ---
-id: task-6.6
+id: TASK-6.6
 title: Implement gRPC streaming tests
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:12'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-6
   - testing
   - grpc
   - streaming
 dependencies: []
-parent_task_id: task-6
+parent_task_id: TASK-6
 priority: high
 ---
 
@@ -21,7 +22,7 @@ Implement tests for gRPC native streaming behavior.
 
 **Reference**: PRD Section 6 Task 6.6, A2A Spec Section 7/10
 
-**Location**: `tests/grpc/test_streaming.py`
+**Location**: `tests/compatibility/grpc/test_streaming.py`
 
 **Test class**: `TestGrpcStreaming`
 

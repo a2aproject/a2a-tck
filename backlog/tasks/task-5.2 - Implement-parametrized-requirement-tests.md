@@ -1,16 +1,17 @@
 ---
-id: task-5.2
+id: TASK-5.2
 title: Implement parametrized requirement tests
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:11'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-5
   - testing
   - parametrization
 dependencies:
   - task-5.1
-parent_task_id: task-5
+parent_task_id: TASK-5
 priority: high
 ---
 
@@ -19,9 +20,9 @@ priority: high
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Implement the core parametrized tests that run each requirement across all transports.
 
-**Reference**: PRD Section 5.4.1 (Core Parametrized Tests), Section 4.3.2
+**Reference**: PRD Section 5.4.1 (Core Parametrised Tests), Section 4.3.2
 
-**Location**: `tests/core_operations/test_requirements.py`
+**Location**: `tests/compatibility/core_operations/test_requirements.py`
 
 **Test structure**:
 ```python

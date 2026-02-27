@@ -1,9 +1,10 @@
 ---
-id: task-7.5
+id: TASK-7.5
 title: Integrate reporting with pytest hooks
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:13'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-7
   - reporting
@@ -12,7 +13,7 @@ dependencies:
   - task-7.2
   - task-7.3
   - task-7.4
-parent_task_id: task-7
+parent_task_id: TASK-7
 priority: high
 ---
 
@@ -23,7 +24,7 @@ Integrate the reporting system with pytest hooks for automatic report generation
 
 **Reference**: PRD Section 6 Task 7.5, Section 7.2
 
-**Location**: `tests/conftest.py` (add hooks)
+**Location**: `tests/compatibility/conftest.py` (add hooks)
 
 **Hooks to implement**:
 

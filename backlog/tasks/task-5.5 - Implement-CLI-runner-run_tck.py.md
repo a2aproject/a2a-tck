@@ -1,9 +1,10 @@
 ---
-id: task-5.5
+id: TASK-5.5
 title: Implement CLI runner (run_tck.py)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:11'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-5
   - testing
@@ -12,7 +13,7 @@ dependencies:
   - task-5.1
   - task-5.2
   - task-5.4
-parent_task_id: task-5
+parent_task_id: TASK-5
 priority: high
 ---
 
@@ -24,6 +25,8 @@ Implement the main CLI entry point for running the TCK.
 **Reference**: PRD Section 7.3 (Running Tests), Section 4.2 (run_tck.py)
 
 **Location**: `run_tck.py` (project root)
+
+**Test path**: `tests/compatibility/` (SUT conformance tests only)
 
 **CLI interface**:
 ```bash

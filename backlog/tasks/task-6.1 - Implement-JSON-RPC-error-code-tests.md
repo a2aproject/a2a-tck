@@ -1,16 +1,17 @@
 ---
-id: task-6.1
+id: TASK-6.1
 title: Implement JSON-RPC error code tests
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:12'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-6
   - testing
   - jsonrpc
   - errors
 dependencies: []
-parent_task_id: task-6
+parent_task_id: TASK-6
 priority: high
 ---
 
@@ -21,7 +22,7 @@ Implement tests that validate JSON-RPC error code mappings per A2A Specification
 
 **Reference**: PRD Section 6 Task 6.1, PRD Section 5.4.2
 
-**Location**: `tests/jsonrpc/test_error_codes.py`
+**Location**: `tests/compatibility/jsonrpc/test_error_codes.py`
 
 **Test class**: `TestJsonRpcErrorCodes`
 

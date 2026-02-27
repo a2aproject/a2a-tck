@@ -1,16 +1,17 @@
 ---
-id: task-6.2
+id: TASK-6.2
 title: Implement JSON-RPC SSE streaming tests
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:12'
+updated_date: '2026-02-27 13:36'
 labels:
   - phase-6
   - testing
   - jsonrpc
   - streaming
 dependencies: []
-parent_task_id: task-6
+parent_task_id: TASK-6
 priority: high
 ---
 
@@ -21,7 +22,7 @@ Implement tests for JSON-RPC SSE (Server-Sent Events) streaming behavior.
 
 **Reference**: PRD Section 6 Task 6.2, A2A Spec Section 7/9
 
-**Location**: `tests/jsonrpc/test_sse_streaming.py`
+**Location**: `tests/compatibility/jsonrpc/test_sse_streaming.py`
 
 **Test class**: `TestJsonRpcSseStreaming`
 
