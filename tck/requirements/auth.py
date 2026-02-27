@@ -13,6 +13,7 @@ from tck.requirements.tags import (
     AUTH,
     AUTHORIZATION,
     IN_TASK,
+    NOT_AUTOMATABLE,
     SCOPE,
     SECURITY,
     SERVER,
@@ -33,7 +34,7 @@ AUTH_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="All production traffic encrypted via TLS",
         spec_url=f"{SPEC_BASE}71-protocol-security",
-        tags=[AUTH, TLS, SECURITY],
+        tags=[AUTH, TLS, SECURITY, NOT_AUTOMATABLE],
     ),
     RequirementSpec(
         id="AUTH-TLS-002",
@@ -46,7 +47,7 @@ AUTH_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="TLS 1.3+ with strong ciphers used",
         spec_url=f"{SPEC_BASE}71-protocol-security",
-        tags=[AUTH, TLS, SECURITY],
+        tags=[AUTH, TLS, SECURITY, NOT_AUTOMATABLE],
     ),
     # --- Server Identity (Section 7.2) ---
     RequirementSpec(
@@ -60,7 +61,7 @@ AUTH_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Server TLS certificate validated against trusted CAs",
         spec_url=f"{SPEC_BASE}72-server-identity-verification",
-        tags=[AUTH, SERVER, TLS],
+        tags=[AUTH, SERVER, TLS, NOT_AUTOMATABLE],
     ),
     # --- Server Authentication (Section 7.4) ---
     RequirementSpec(

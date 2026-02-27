@@ -127,6 +127,15 @@ def execute_operation(
                      keys are missing.
     """
     if requirement.operation is None:
+        # Provide specific skip reasons based on tags
+        if "not-automatable" in requirement.tags:
+            pytest.skip(
+                f"{requirement.id} is not automatable (requires manual verification)"
+            )
+        if "multi-operation" in requirement.tags:
+            pytest.skip(
+                f"{requirement.id} requires multi-operation orchestration"
+            )
         pytest.skip(
             f"{requirement.id} is a cross-cutting requirement (no operation)"
         )

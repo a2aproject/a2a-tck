@@ -13,6 +13,7 @@ from tck.requirements.base import (
 )
 from tck.requirements.tags import (
     ERROR,
+    MULTI_OPERATION,
     MULTI_STREAM,
     ORDERING,
     STREAMING,
@@ -32,7 +33,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Events arrive in generation order",
         spec_url=f"{SPEC_BASE}352-streaming-event-delivery",
-        tags=[STREAMING, ORDERING],
+        tags=[STREAMING, ORDERING, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="STREAM-ORDER-002",
@@ -45,7 +46,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="All active streams receive the same events",
         spec_url=f"{SPEC_BASE}352-streaming-event-delivery",
-        tags=[STREAMING, MULTI_STREAM],
+        tags=[STREAMING, MULTI_STREAM, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="STREAM-ORDER-003",
@@ -57,7 +58,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Event ordering consistent across all streams",
         spec_url=f"{SPEC_BASE}352-streaming-event-delivery",
-        tags=[STREAMING, MULTI_STREAM],
+        tags=[STREAMING, MULTI_STREAM, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="STREAM-ORDER-004",
@@ -70,7 +71,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Other streams continue when one closes",
         spec_url=f"{SPEC_BASE}352-streaming-event-delivery",
-        tags=[STREAMING, MULTI_STREAM],
+        tags=[STREAMING, MULTI_STREAM, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="STREAM-SUB-001",

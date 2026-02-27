@@ -15,6 +15,7 @@ from tck.requirements.tags import (
     EQUIVALENCE,
     ERROR,
     INTEROP,
+    MULTI_OPERATION,
 )
 
 
@@ -31,7 +32,7 @@ INTEROP_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Same operations available across all bindings",
         spec_url=f"{SPEC_BASE}51-functional-equivalence-requirements",
-        tags=[INTEROP, EQUIVALENCE],
+        tags=[INTEROP, EQUIVALENCE, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="BIND-EQUIV-002",
@@ -44,7 +45,7 @@ INTEROP_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Same request produces equivalent results across bindings",
         spec_url=f"{SPEC_BASE}51-functional-equivalence-requirements",
-        tags=[INTEROP, EQUIVALENCE],
+        tags=[INTEROP, EQUIVALENCE, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="BIND-EQUIV-003",
@@ -57,7 +58,7 @@ INTEROP_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Errors mapped consistently across bindings",
         spec_url=f"{SPEC_BASE}51-functional-equivalence-requirements",
-        tags=[INTEROP, EQUIVALENCE, ERROR],
+        tags=[INTEROP, EQUIVALENCE, ERROR, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="BIND-EQUIV-004",
@@ -70,7 +71,7 @@ INTEROP_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Same auth schemes across all bindings",
         spec_url=f"{SPEC_BASE}51-functional-equivalence-requirements",
-        tags=[INTEROP, EQUIVALENCE, AUTH],
+        tags=[INTEROP, EQUIVALENCE, AUTH, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="BIND-FIELD-001",

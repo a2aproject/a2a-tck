@@ -77,16 +77,23 @@ class HttpJsonClient(BaseTransportClient):
                 params=params,
                 headers={"Content-Type": "application/json"} if json_body else None,
             )
+            resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
                 return TransportResponse(
                     transport=_HTTP_JSON,
                     success=False,
                     raw_response=response.json() if "json" in response.headers.get("content-type", "") else None,
                     error=_extract_error(response),
+                    headers=resp_headers,
+                    status_code=response.status_code,
                 )
             body = response.json()
             return TransportResponse(
-                transport=_HTTP_JSON, success=True, raw_response=body
+                transport=_HTTP_JSON,
+                success=True,
+                raw_response=body,
+                headers=resp_headers,
+                status_code=response.status_code,
             )
         except httpx.HTTPError as e:
             return TransportResponse(
@@ -111,6 +118,7 @@ class HttpJsonClient(BaseTransportClient):
                     "Accept": "text/event-stream",
                 },
             )
+            resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
                 return StreamingResponse(
                     transport=_HTTP_JSON,
@@ -118,12 +126,16 @@ class HttpJsonClient(BaseTransportClient):
                     raw_response=None,
                     events=iter([]),
                     error=_extract_error(response),
+                    headers=resp_headers,
+                    status_code=response.status_code,
                 )
             return StreamingResponse(
                 transport=_HTTP_JSON,
                 success=True,
                 raw_response=response,
                 events=_parse_sse(response.text),
+                headers=resp_headers,
+                status_code=response.status_code,
             )
         except httpx.HTTPError as e:
             return StreamingResponse(

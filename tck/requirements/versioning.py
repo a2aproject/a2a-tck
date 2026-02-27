@@ -12,6 +12,7 @@ from tck.requirements.tags import (
     CLIENT,
     DEFAULT,
     ERROR,
+    MULTI_OPERATION,
     SERVER,
     VERSIONING,
 )
@@ -42,7 +43,7 @@ VERSIONING_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Request processed per requested version",
         spec_url=f"{SPEC_BASE}362-server-responsibilities",
-        tags=[VERSIONING, SERVER],
+        tags=[VERSIONING, SERVER, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="VER-SERVER-002",
