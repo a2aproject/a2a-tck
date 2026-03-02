@@ -31,6 +31,11 @@ class GrpcClient(BaseTransportClient):
         self._channel = grpc.insecure_channel(base_url)
         self._stub = a2a_pb2_grpc.A2AServiceStub(self._channel)
 
+    @property
+    def stub(self) -> a2a_pb2_grpc.A2AServiceStub:
+        """The gRPC service stub for direct RPC calls."""
+        return self._stub
+
     def close(self) -> None:
         """Close the gRPC channel."""
         self._channel.close()
@@ -49,7 +54,7 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.SendMessage(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
 
     def send_streaming_message(
         self,
@@ -65,7 +70,7 @@ class GrpcClient(BaseTransportClient):
             stream = self._stub.SendStreamingMessage(proto_request)
             return StreamingResponse(transport=self.transport, success=True, raw_response=stream, events=stream)
         except grpc.RpcError as e:
-            return StreamingResponse(transport=self.transport, success=False, raw_response=None, events=iter([]), error=str(e.details()))
+            return StreamingResponse(transport=self.transport, success=False, raw_response=e, events=iter([]), error=str(e.details()))
 
     def get_task(
         self,
@@ -80,7 +85,7 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.GetTask(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
 
     def list_tasks(
         self,
@@ -108,7 +113,7 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.ListTasks(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
 
     def cancel_task(self, id: str) -> TransportResponse:
         """Cancel a task by ID."""
@@ -117,7 +122,7 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.CancelTask(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
 
     def subscribe_to_task(self, id: str) -> StreamingResponse:
         """Subscribe to task updates."""
@@ -126,7 +131,7 @@ class GrpcClient(BaseTransportClient):
             stream = self._stub.SubscribeToTask(proto_request)
             return StreamingResponse(transport=self.transport, success=True, raw_response=stream, events=stream)
         except grpc.RpcError as e:
-            return StreamingResponse(transport=self.transport, success=False, raw_response=None, events=iter([]), error=str(e.details()))
+            return StreamingResponse(transport=self.transport, success=False, raw_response=e, events=iter([]), error=str(e.details()))
 
     def create_push_notification_config(
         self,
@@ -141,7 +146,7 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.CreateTaskPushNotificationConfig(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
 
     def get_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
         """Get a push notification config by task and config ID."""
@@ -151,7 +156,7 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.GetTaskPushNotificationConfig(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
 
     def list_push_notification_configs(
         self,
@@ -167,7 +172,7 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.ListTaskPushNotificationConfig(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
 
     def delete_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
         """Delete a push notification config by task and config ID."""
@@ -177,7 +182,7 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.DeleteTaskPushNotificationConfig(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
 
     def get_extended_agent_card(self) -> TransportResponse:
         """Get the extended agent card."""
@@ -186,4 +191,4 @@ class GrpcClient(BaseTransportClient):
             response = self._stub.GetExtendedAgentCard(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
-            return TransportResponse(transport=self.transport, success=False, raw_response=None, error=str(e.details()))
+            return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
