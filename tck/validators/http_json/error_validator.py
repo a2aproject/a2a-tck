@@ -14,11 +14,11 @@ from typing import Any, Protocol
 # Based on A2A specification Section 11
 HTTP_JSON_ERROR_STATUS: dict[str, int] = {
     "TaskNotFoundError": 404,
-    "TaskNotCancelableError": 400,
+    "TaskNotCancelableError": 409,
     "PushNotificationNotSupportedError": 400,
     "UnsupportedOperationError": 400,
     "ContentTypeNotSupportedError": 415,
-    "InvalidAgentResponseError": 500,
+    "InvalidAgentResponseError": 502,
     "VersionNotSupportedError": 400,
     "InvalidRequestError": 400,
     "MethodNotFoundError": 404,
