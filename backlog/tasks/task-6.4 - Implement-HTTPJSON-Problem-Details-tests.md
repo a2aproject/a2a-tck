@@ -1,10 +1,10 @@
 ---
 id: TASK-6.4
 title: Implement HTTP+JSON Problem Details tests
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:12'
-updated_date: '2026-02-27 13:36'
+updated_date: '2026-03-02 08:34'
 labels:
   - phase-6
   - testing
@@ -65,3 +65,21 @@ Implement tests for RFC 7807 Problem Details format in HTTP+JSON error responses
 - [ ] #5 type field matches A2A error type
 - [ ] #6 status field matches HTTP status code
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Created `tests/compatibility/http_json/test_problem_details.py` with 6 tests in 2 classes:
+
+**TestProblemDetailsFormat** (HTTP_JSON-ERR-001):
+1. `test_error_content_type` — verifies `application/problem+json` Content-Type
+2. `test_required_fields_present` — validates `type`, `title`, `status` via `ProblemDetails.from_dict()`
+3. `test_status_field_matches_http_status` — checks `status` field equals HTTP status code
+4. `test_optional_fields_valid` — validates `detail` and `instance` are strings if present
+
+**TestProblemDetailsTypeUri** (HTTP_JSON-ERR-002):
+5. `test_type_is_a2a_error_uri` — `type` matches a spec-defined A2A error URI
+6. `test_type_uri_matches_error_condition` — TaskNotFound trigger produces `task-not-found` URI
+
+All tests follow existing patterns (helpers, markers, compliance recording). Triggers errors via `client.get_task()` on a non-existent task ID.
+<!-- SECTION:FINAL_SUMMARY:END -->

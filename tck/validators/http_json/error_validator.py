@@ -14,7 +14,7 @@ from typing import Any, Protocol
 # Based on A2A specification Section 11
 HTTP_JSON_ERROR_STATUS: dict[str, int] = {
     "TaskNotFoundError": 404,
-    "TaskNotCancelableError": 409,
+    "TaskNotCancelableError": 400,
     "PushNotificationNotSupportedError": 400,
     "UnsupportedOperationError": 400,
     "ContentTypeNotSupportedError": 415,

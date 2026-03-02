@@ -1,0 +1,325 @@
+"""HTTP+JSON Problem Details validation tests.
+
+Validates that HTTP+JSON error responses conform to RFC 9457 Problem Details
+format as required by Section 11.6 of the A2A specification.
+
+Requirements tested:
+    HTTP_JSON-ERR-001, HTTP_JSON-ERR-002
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+import pytest
+
+from tck.requirements.registry import get_requirement_by_id
+from tck.validators.http_json.error_validator import ProblemDetails
+from tests.compatibility.markers import http_json
+
+
+if TYPE_CHECKING:
+    from tck.requirements.base import RequirementSpec
+    from tck.transport.base import BaseTransportClient
+
+
+# ---------------------------------------------------------------------------
+# Requirement lookups
+# ---------------------------------------------------------------------------
+
+HTTP_JSON_ERR_001 = get_requirement_by_id("HTTP_JSON-ERR-001")
+HTTP_JSON_ERR_002 = get_requirement_by_id("HTTP_JSON-ERR-002")
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+_TRANSPORT = "http_json"
+_HTTP_ERROR_MIN = 400
+
+# A2A error type URIs from spec Section 5.4
+A2A_ERROR_TYPE_URIS = {
+    "https://a2a-protocol.org/errors/task-not-found",
+    "https://a2a-protocol.org/errors/task-not-cancelable",
+    "https://a2a-protocol.org/errors/push-notification-not-supported",
+    "https://a2a-protocol.org/errors/unsupported-operation",
+    "https://a2a-protocol.org/errors/content-type-not-supported",
+    "https://a2a-protocol.org/errors/invalid-agent-response",
+    "https://a2a-protocol.org/errors/extended-agent-card-not-configured",
+    "https://a2a-protocol.org/errors/extension-support-required",
+    "https://a2a-protocol.org/errors/version-not-supported",
+}
+
+
+def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
+    """Build a failure message referencing the requirement."""
+    return (
+        f"{req.id} [{req.title}] failed on {transport}: "
+        f"{detail} (see {req.spec_url})"
+    )
+
+
+def _record(
+    collector: Any,
+    req: RequirementSpec,
+    transport: str,
+    passed: bool,
+    errors: list[str] | None = None,
+) -> None:
+    """Record a result in the compliance collector."""
+    collector.record(
+        requirement_id=req.id,
+        transport=transport,
+        level=req.level.value,
+        passed=passed,
+        errors=errors or [],
+    )
+
+
+def _get_client(
+    transport_clients: dict[str, BaseTransportClient],
+) -> BaseTransportClient:
+    """Get the HTTP+JSON transport client, skipping if not configured."""
+    client = transport_clients.get(_TRANSPORT)
+    if client is None:
+        pytest.skip("HTTP+JSON transport not configured")
+    return client
+
+
+def _get_error_response(
+    client: BaseTransportClient,
+) -> Any:
+    """Request a non-existent task to trigger an error response.
+
+    Returns the raw transport response, or calls pytest.skip if the server
+    does not return an error.
+    """
+    response = client.get_task(id="tck-nonexistent-pd-001")
+    if response.success:
+        pytest.skip("Server did not return an error for non-existent task")
+    return response
+
+
+def _get_problem_body(response: Any) -> dict[str, Any] | None:
+    """Extract the Problem Details body from a response, if applicable.
+
+    Returns None (and skips the test) when the response Content-Type is not
+    ``application/problem+json``.
+    """
+    headers = response.headers or {}
+    ct = ""
+    for key, value in headers.items():
+        if key.lower() == "content-type":
+            ct = value
+            break
+    if "application/problem+json" not in ct.lower():
+        pytest.skip("Response is not Problem Details format")
+    body = response.raw_response
+    if not isinstance(body, dict):
+        pytest.skip("Response body is not a JSON object")
+    return body
+
+
+# ---------------------------------------------------------------------------
+# Problem Details format tests (HTTP_JSON-ERR-001)
+# ---------------------------------------------------------------------------
+
+
+@http_json
+class TestProblemDetailsFormat:
+    """HTTP_JSON-ERR-001: Error responses use RFC 9457 Problem Details format."""
+
+    def test_error_content_type(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compliance_collector: Any,
+    ) -> None:
+        """Error response has Content-Type: application/problem+json."""
+        req = HTTP_JSON_ERR_001
+        client = _get_client(transport_clients)
+        response = _get_error_response(client)
+
+        headers = response.headers or {}
+        ct = ""
+        for key, value in headers.items():
+            if key.lower() == "content-type":
+                ct = value
+                break
+
+        valid = "application/problem+json" in ct.lower()
+        errors = (
+            []
+            if valid
+            else [
+                f"Error Content-Type must be application/problem+json, got: {ct!r}"
+            ]
+        )
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=valid,
+            errors=errors,
+        )
+        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+
+    def test_required_fields_present(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compliance_collector: Any,
+    ) -> None:
+        """Body contains required fields: type, title, status."""
+        req = HTTP_JSON_ERR_001
+        client = _get_client(transport_clients)
+        response = _get_error_response(client)
+        body = _get_problem_body(response)
+
+        errors: list[str] = []
+        try:
+            ProblemDetails.from_dict(body)
+        except ValueError as exc:
+            errors.append(str(exc))
+
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=not errors,
+            errors=errors,
+        )
+        assert not errors, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+
+    def test_status_field_matches_http_status(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compliance_collector: Any,
+    ) -> None:
+        """The ``status`` field value equals the HTTP response status code."""
+        req = HTTP_JSON_ERR_001
+        client = _get_client(transport_clients)
+        response = _get_error_response(client)
+        body = _get_problem_body(response)
+
+        try:
+            pd = ProblemDetails.from_dict(body)
+        except ValueError:
+            pytest.skip("Problem Details missing required fields")
+
+        valid = pd.status == response.status_code
+        errors = (
+            []
+            if valid
+            else [
+                f"Problem Details status ({pd.status}) does not match "
+                f"HTTP status code ({response.status_code})"
+            ]
+        )
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=valid,
+            errors=errors,
+        )
+        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+
+    def test_optional_fields_valid(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compliance_collector: Any,
+    ) -> None:
+        """If ``detail`` or ``instance`` are present, they must be strings."""
+        req = HTTP_JSON_ERR_001
+        client = _get_client(transport_clients)
+        response = _get_error_response(client)
+        body = _get_problem_body(response)
+
+        errors: list[str] = []
+        if "detail" in body and not isinstance(body["detail"], str):
+            errors.append(
+                f"'detail' field must be a string, got {type(body['detail']).__name__}"
+            )
+        if "instance" in body and not isinstance(body["instance"], str):
+            errors.append(
+                f"'instance' field must be a string, got {type(body['instance']).__name__}"
+            )
+
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=not errors,
+            errors=errors,
+        )
+        assert not errors, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+
+
+# ---------------------------------------------------------------------------
+# Problem Details type URI tests (HTTP_JSON-ERR-002)
+# ---------------------------------------------------------------------------
+
+
+@http_json
+class TestProblemDetailsTypeUri:
+    """HTTP_JSON-ERR-002: A2A errors use specified type URIs."""
+
+    def test_type_is_a2a_error_uri(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compliance_collector: Any,
+    ) -> None:
+        """The ``type`` field matches one of the spec-defined A2A error URIs."""
+        req = HTTP_JSON_ERR_002
+        client = _get_client(transport_clients)
+        response = _get_error_response(client)
+        body = _get_problem_body(response)
+
+        error_type = body.get("type", "")
+        valid = error_type in A2A_ERROR_TYPE_URIS
+        errors = (
+            []
+            if valid
+            else [
+                f"type URI {error_type!r} is not a recognised A2A error URI"
+            ]
+        )
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=valid,
+            errors=errors,
+        )
+        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+
+    def test_type_uri_matches_error_condition(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compliance_collector: Any,
+    ) -> None:
+        """For a TaskNotFound trigger, type must be the task-not-found URI."""
+        req = HTTP_JSON_ERR_002
+        client = _get_client(transport_clients)
+        response = _get_error_response(client)
+        body = _get_problem_body(response)
+
+        expected_uri = "https://a2a-protocol.org/errors/task-not-found"
+        error_type = body.get("type", "")
+        valid = error_type == expected_uri
+        errors = (
+            []
+            if valid
+            else [
+                f"TaskNotFoundError should have type {expected_uri!r}, "
+                f"got {error_type!r}"
+            ]
+        )
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=valid,
+            errors=errors,
+        )
+        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
