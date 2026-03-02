@@ -405,8 +405,12 @@ class RESTClient(BaseTransportClient):
             url = urljoin(self.base_url, f"/tasks/{task_id}:cancel")
             headers = self._prepare_headers(kwargs.get("extra_headers", {}))
 
+            # Build request body with only metadata (id is in URL path)
+            # According to a2a.proto, CancelTaskRequest has id in path and metadata in body
+            request_body = kwargs.get("metadata", {})
+
             # Make real HTTP request to live SUT
-            response = self.client.post(url, headers=headers)
+            response = self.client.post(url, json=request_body, headers=headers)
 
             # Handle HTTP errors
             if response.status_code >= 400:

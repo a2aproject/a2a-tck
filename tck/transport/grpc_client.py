@@ -189,7 +189,8 @@ def _validate_push_notification_config_list(config_list: List[Dict[str, Any]]) -
             raise A2AValidationError(f"Push notification config[{i}] must be an object", TransportType.GRPC)
 
         # Validate TaskPushNotificationConfig structure
-        required_fields = ["pushNotificationConfig", "id", "taskId"]
+        # Note: 'id' field was removed from top level in proto update - it's now only in pushNotificationConfig
+        required_fields = ["pushNotificationConfig", "taskId"]
         for field in required_fields:
             if field not in config:
                 raise A2AValidationError(f"Push notification config[{i}] missing required field '{field}'", TransportType.GRPC)
