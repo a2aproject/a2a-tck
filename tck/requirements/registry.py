@@ -15,7 +15,7 @@ from tck.requirements.base import (
 )
 from tck.requirements.binding_grpc import BINDING_GRPC_REQUIREMENTS
 from tck.requirements.binding_jsonrpc import BINDING_JSONRPC_REQUIREMENTS
-from tck.requirements.binding_rest import BINDING_HTTP_JSON_REQUIREMENTS
+from tck.requirements.binding_http_json import BINDING_HTTP_JSON_REQUIREMENTS
 from tck.requirements.core_operations import CORE_OPERATIONS_REQUIREMENTS
 from tck.requirements.data_model import DATA_MODEL_REQUIREMENTS
 from tck.requirements.interop import INTEROP_REQUIREMENTS

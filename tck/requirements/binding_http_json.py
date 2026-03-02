@@ -19,6 +19,7 @@ from tck.requirements.tags import (
     REST,
     SERVICE_PARAMS,
     SSE,
+    STATUS,
     STREAMING,
     URL,
 )
@@ -116,6 +117,20 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Error type field contains correct A2A URI",
         spec_url=f"{SPEC_BASE}116-error-handling",
         tags=[REST, ERROR, MAPPING],
+    ),
+    RequirementSpec(
+        id="HTTP_JSON-STATUS-001",
+        section="5.4",
+        title="A2A errors map to correct HTTP status codes",
+        level=RequirementLevel.MUST,
+        description=(
+            "Each A2A error type MUST map to the HTTP status code specified "
+            "in the error code mappings table (e.g., TaskNotFoundError to "
+            "404, ContentTypeNotSupportedError to 415)."
+        ),
+        expected_behavior="HTTP status code matches the spec-defined mapping for each error",
+        spec_url=f"{SPEC_BASE}54-error-code-mappings",
+        tags=[REST, ERROR, STATUS, MAPPING],
     ),
     RequirementSpec(
         id="HTTP_JSON-SSE-001",
