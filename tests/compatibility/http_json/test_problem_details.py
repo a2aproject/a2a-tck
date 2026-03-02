@@ -13,7 +13,9 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import A2A_ERROR_TYPE_URIS, TASK_NOT_FOUND_ERROR
 from tck.requirements.registry import get_requirement_by_id
+from tck.transport.http_json_client import _TRANSPORT
 from tck.validators.http_json.error_validator import ProblemDetails
 from tests.compatibility.markers import http_json
 
@@ -34,22 +36,6 @@ HTTP_JSON_ERR_002 = get_requirement_by_id("HTTP_JSON-ERR-002")
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-_TRANSPORT = "http_json"
-_HTTP_ERROR_MIN = 400
-
-# A2A error type URIs from spec Section 5.4
-A2A_ERROR_TYPE_URIS = {
-    "https://a2a-protocol.org/errors/task-not-found",
-    "https://a2a-protocol.org/errors/task-not-cancelable",
-    "https://a2a-protocol.org/errors/push-notification-not-supported",
-    "https://a2a-protocol.org/errors/unsupported-operation",
-    "https://a2a-protocol.org/errors/content-type-not-supported",
-    "https://a2a-protocol.org/errors/invalid-agent-response",
-    "https://a2a-protocol.org/errors/extended-agent-card-not-configured",
-    "https://a2a-protocol.org/errors/extension-support-required",
-    "https://a2a-protocol.org/errors/version-not-supported",
-}
 
 
 def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
@@ -304,7 +290,7 @@ class TestProblemDetailsTypeUri:
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
-        expected_uri = "https://a2a-protocol.org/errors/task-not-found"
+        expected_uri = TASK_NOT_FOUND_ERROR.type_uri
         error_type = body.get("type", "")
         valid = error_type == expected_uri
         errors = (

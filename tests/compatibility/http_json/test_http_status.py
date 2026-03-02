@@ -16,6 +16,7 @@ import pytest
 
 from tck.requirements.base import SEND_MESSAGE_BINDING
 from tck.requirements.registry import get_requirement_by_id
+from tck.transport.http_json_client import _TRANSPORT
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tests.compatibility.markers import http_json
 
@@ -36,7 +37,6 @@ HTTP_JSON_STATUS_001 = get_requirement_by_id("HTTP_JSON-STATUS-001")
 # Helpers
 # ---------------------------------------------------------------------------
 
-_TRANSPORT = "http_json"
 _HTTP_ERROR_MIN = 400
 _HTTP_SUCCESS_MIN = 200
 _HTTP_SUCCESS_MAX = 299
