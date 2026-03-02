@@ -76,12 +76,26 @@ def _get_client(
     return client
 
 
+_CONNECTIVITY_CODES = frozenset({
+    grpc.StatusCode.UNAVAILABLE,
+    grpc.StatusCode.DEADLINE_EXCEEDED,
+})
+
+
 def _get_rpc_error(response: Any) -> grpc.RpcError:
-    """Extract the RpcError from a failed transport response."""
+    """Extract the RpcError from a failed transport response.
+
+    Skips the test when the failure is a connectivity issue (UNAVAILABLE,
+    DEADLINE_EXCEEDED) rather than a server-side A2A error.
+    """
     rpc_error = response.raw_response
     if not isinstance(rpc_error, grpc.RpcError):
         pytest.fail(
             f"Expected raw_response to be grpc.RpcError, got {type(rpc_error).__name__}"
+        )
+    if rpc_error.code() in _CONNECTIVITY_CODES:
+        pytest.fail(
+            f"gRPC connectivity error: {rpc_error.code().name} — {rpc_error.details()}"
         )
     return rpc_error
 
@@ -267,6 +281,10 @@ class TestGrpcStatusCodes:
             )
             pytest.fail(_fail_msg(req, _TRANSPORT, detail))
         except grpc.RpcError as e:
+            if e.code() in _CONNECTIVITY_CODES:
+                pytest.fail(
+                    f"gRPC connectivity error: {e.code().name} — {e.details()}"
+                )
             result = validate_grpc_error(e, "VersionNotSupportedError")
             errors = [] if result.valid else [result.message]
             _record(
