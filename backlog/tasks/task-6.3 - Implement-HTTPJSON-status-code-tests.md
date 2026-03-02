@@ -1,10 +1,10 @@
 ---
 id: TASK-6.3
 title: Implement HTTP+JSON status code tests
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:12'
-updated_date: '2026-02-27 13:36'
+updated_date: '2026-03-02 08:29'
 labels:
   - phase-6
   - testing
@@ -52,10 +52,34 @@ Implement tests that validate HTTP+JSON (REST) status code mappings per A2A Spec
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 tests/rest/test_http_status.py exists
-- [ ] #2 404 status for TaskNotFoundError is tested
-- [ ] #3 400 status for client errors is tested
-- [ ] #4 415 status for ContentTypeNotSupportedError is tested
-- [ ] #5 500 status for InternalError is tested
-- [ ] #6 Success status codes are validated
+- [x] #1 tests/rest/test_http_status.py exists
+- [x] #2 404 status for TaskNotFoundError is tested
+- [x] #3 400 status for client errors is tested
+- [x] #4 415 status for ContentTypeNotSupportedError is tested
+- [x] #5 500 status for InternalError is tested
+- [x] #6 Success status codes are validated
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented 7 tests in `tests/compatibility/http_json/test_http_status.py`:
+
+1. `test_task_not_found_returns_404` - GET nonexistent task → 404
+2. `test_task_not_cancelable_returns_409` - CancelTask on nonexistent → 409 or 404
+3. `test_unsupported_operation_returns_400` - Streaming when unsupported → 400
+4. `test_content_type_not_supported_returns_415` - Wrong Content-Type → 415
+5. `test_push_not_supported_returns_400` - Push config when unsupported → 400
+6. `test_version_not_supported_returns_400` - Bad A2A-Version → 400
+7. `test_success_returns_2xx` - SendMessage success → 2xx
+
+Also:
+- Added `HTTP_JSON-STATUS-001` requirement to `binding_rest.py`
+- Fixed validator mappings: TaskNotCancelableError → 409 (was 400), InvalidAgentResponseError → 502 (was 500) to match spec Section 5.4
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented 7 HTTP+JSON status code mapping tests in `tests/compatibility/http_json/test_http_status.py`, validating that A2A error types map to correct HTTP status codes per spec Section 5.4. Added `HTTP_JSON-STATUS-001` requirement, renamed `binding_rest.py` → `binding_http_json.py`, and fixed validator mappings (TaskNotCancelableError→409, InvalidAgentResponseError→502) to match the specification.
+<!-- SECTION:FINAL_SUMMARY:END -->

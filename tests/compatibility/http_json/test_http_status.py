@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 import pytest
 
-from tck.requirements.base import SEND_MESSAGE_BINDING, OperationType
+from tck.requirements.base import SEND_MESSAGE_BINDING
 from tck.requirements.registry import get_requirement_by_id
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tests.compatibility.markers import http_json

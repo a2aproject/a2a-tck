@@ -347,10 +347,7 @@ class TestSseSubscribeToTask:
         if isinstance(result, dict):
             # Task may be at result.id or nested under result.task.id
             task = result.get("task")
-            if isinstance(task, dict):
-                task_id = task.get("id")
-            else:
-                task_id = result.get("id")
+            task_id = task.get("id") if isinstance(task, dict) else result.get("id")
         if not task_id:
             pytest.skip("Could not extract task ID from send_message response")
 
