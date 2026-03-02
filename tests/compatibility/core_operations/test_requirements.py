@@ -30,8 +30,13 @@ if TYPE_CHECKING:
 def _parametrize_requirements(
     getter: Callable[[], list[RequirementSpec]],
 ) -> list[pytest.param]:
-    """Return pytest.param list from a requirement getter, handling empty lists."""
-    reqs = getter()
+    """Return pytest.param list from a requirement getter, handling empty lists.
+
+    Requirements without an ``operation`` are excluded because the
+    parametrized runner cannot dispatch them (they always skip).
+    Cross-cutting requirements are covered by dedicated test modules.
+    """
+    reqs = [r for r in getter() if r.operation is not None]
     if not reqs:
         return [pytest.param(None, id="no-requirements",
                              marks=pytest.mark.skip(reason="No requirements at this level"))]
