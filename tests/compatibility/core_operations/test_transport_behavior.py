@@ -6,8 +6,8 @@ transport operations to verify binding-specific requirements.
 Requirements tested:
     JSONRPC-FMT-001, JSONRPC-FMT-002, JSONRPC-SVC-001, JSONRPC-SVC-002,
     JSONRPC-SSE-001,
-    REST-SVC-001, REST-SVC-002, REST-URL-001, REST-URL-002,
-    REST-QP-001, REST-SSE-001,
+    HTTP_JSON-SVC-001, HTTP_JSON-SVC-002, HTTP_JSON-URL-001, HTTP_JSON-URL-002,
+    HTTP_JSON-QP-001, HTTP_JSON-SSE-001,
     GRPC-SVC-001, GRPC-META-001, GRPC-ERR-003
 """
 
@@ -34,11 +34,11 @@ JSONRPC_FMT_001 = get_requirement_by_id("JSONRPC-FMT-001")
 JSONRPC_FMT_002 = get_requirement_by_id("JSONRPC-FMT-002")
 JSONRPC_SVC_001 = get_requirement_by_id("JSONRPC-SVC-001")
 JSONRPC_SSE_001 = get_requirement_by_id("JSONRPC-SSE-001")
-REST_SVC_001 = get_requirement_by_id("REST-SVC-001")
-REST_URL_001 = get_requirement_by_id("REST-URL-001")
-REST_URL_002 = get_requirement_by_id("REST-URL-002")
-REST_QP_001 = get_requirement_by_id("REST-QP-001")
-REST_SSE_001 = get_requirement_by_id("REST-SSE-001")
+HTTP_JSON_SVC_001 = get_requirement_by_id("HTTP_JSON-SVC-001")
+HTTP_JSON_URL_001 = get_requirement_by_id("HTTP_JSON-URL-001")
+HTTP_JSON_URL_002 = get_requirement_by_id("HTTP_JSON-URL-002")
+HTTP_JSON_QP_001 = get_requirement_by_id("HTTP_JSON-QP-001")
+HTTP_JSON_SSE_001 = get_requirement_by_id("HTTP_JSON-SSE-001")
 GRPC_SVC_001 = get_requirement_by_id("GRPC-SVC-001")
 GRPC_ERR_003 = get_requirement_by_id("GRPC-ERR-003")
 
@@ -205,7 +205,7 @@ class TestJsonRpcStreaming:
 
 @http_json
 class TestRestFormat:
-    """REST-SVC-001: Content-Type and response schema validation."""
+    """HTTP_JSON-SVC-001: Content-Type and response schema validation."""
 
     @pytest.fixture()
     def rest_response(
@@ -222,8 +222,8 @@ class TestRestFormat:
         rest_response: TransportResponse,
         compliance_collector: Any,
     ) -> None:
-        """REST-SVC-001: Content-Type must be application/json."""
-        req = REST_SVC_001
+        """HTTP_JSON-SVC-001: Content-Type must be application/json."""
+        req = HTTP_JSON_SVC_001
         transport = "http_json"
         ct = rest_response.headers.get("content-type", "")
         errors = []
@@ -239,8 +239,8 @@ class TestRestFormat:
         validators: dict[str, Any],
         compliance_collector: Any,
     ) -> None:
-        """REST-SVC-001: Response payload conforms to SendMessageResponse schema."""
-        req = REST_SVC_001
+        """HTTP_JSON-SVC-001: Response payload conforms to SendMessageResponse schema."""
+        req = HTTP_JSON_SVC_001
         transport = "http_json"
         if not rest_response.success:
             pytest.skip(f"SendMessage failed: {rest_response.error}")
@@ -255,11 +255,11 @@ class TestRestFormat:
 
 @http_json
 class TestRestUrlPatterns:
-    """REST-URL-001 / REST-URL-002: URL patterns and HTTP methods (client-side validation)."""
+    """HTTP_JSON-URL-001 / HTTP_JSON-URL-002: URL patterns and HTTP methods (client-side validation)."""
 
     def test_url_patterns_defined(self, compliance_collector: Any) -> None:
-        """REST-URL-001: Verify URL patterns are correctly defined in bindings."""
-        req = REST_URL_001
+        """HTTP_JSON-URL-001: Verify URL patterns are correctly defined in bindings."""
+        req = HTTP_JSON_URL_001
         transport = "http_json"
         from tck.requirements.base import (
             CANCEL_TASK_BINDING,
@@ -285,8 +285,8 @@ class TestRestUrlPatterns:
         assert not errors, _fail_msg(req, transport, "; ".join(errors))
 
     def test_http_methods_correct(self, compliance_collector: Any) -> None:
-        """REST-URL-002: Correct HTTP methods per operation."""
-        req = REST_URL_002
+        """HTTP_JSON-URL-002: Correct HTTP methods per operation."""
+        req = HTTP_JSON_URL_002
         transport = "http_json"
         from tck.requirements.base import (
             CANCEL_TASK_BINDING,
@@ -314,13 +314,13 @@ class TestRestUrlPatterns:
 
 @http_json
 class TestRestQueryParams:
-    """REST-QP-001: Query parameter names use camelCase (client-side validation)."""
+    """HTTP_JSON-QP-001: Query parameter names use camelCase (client-side validation)."""
 
     def test_query_params_are_camel_case(
         self, compliance_collector: Any
     ) -> None:
         """Verify the HttpJsonClient sends camelCase query params."""
-        req = REST_QP_001
+        req = HTTP_JSON_QP_001
         transport = "http_json"
         from tck.requirements.base import LIST_TASKS_BINDING
 
@@ -337,7 +337,7 @@ class TestRestQueryParams:
 @http_json
 @streaming
 class TestRestStreaming:
-    """REST-SSE-001: REST streaming uses Server-Sent Events."""
+    """HTTP_JSON-SSE-001: HTTP+JSON streaming uses Server-Sent Events."""
 
     def test_streaming_content_type(
         self,
@@ -345,7 +345,7 @@ class TestRestStreaming:
         compliance_collector: Any,
     ) -> None:
         """REST streaming Content-Type must be text/event-stream."""
-        req = REST_SSE_001
+        req = HTTP_JSON_SSE_001
         transport = "http_json"
         client = transport_clients.get(transport)
         if client is None:

@@ -24,9 +24,9 @@ from tck.requirements.tags import (
 )
 
 
-BINDING_REST_REQUIREMENTS: list[RequirementSpec] = [
+BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
-        id="REST-URL-001",
+        id="HTTP_JSON-URL-001",
         section="11.3",
         title="RESTful resource-based URL patterns",
         level=RequirementLevel.MUST,
@@ -39,7 +39,7 @@ BINDING_REST_REQUIREMENTS: list[RequirementSpec] = [
         tags=[REST, URL],
     ),
     RequirementSpec(
-        id="REST-URL-002",
+        id="HTTP_JSON-URL-002",
         section="11.3",
         title="Standard HTTP methods for each operation",
         level=RequirementLevel.MUST,
@@ -52,7 +52,7 @@ BINDING_REST_REQUIREMENTS: list[RequirementSpec] = [
         tags=[REST, METHOD],
     ),
     RequirementSpec(
-        id="REST-SVC-001",
+        id="HTTP_JSON-SVC-001",
         section="11.1",
         title="Content-Type is application/json",
         level=RequirementLevel.MUST,
@@ -65,7 +65,7 @@ BINDING_REST_REQUIREMENTS: list[RequirementSpec] = [
         tags=[REST, CONTENT_TYPE],
     ),
     RequirementSpec(
-        id="REST-SVC-002",
+        id="HTTP_JSON-SVC-002",
         section="11.2",
         title="Service parameters transmitted as HTTP headers",
         level=RequirementLevel.MUST,
@@ -78,7 +78,7 @@ BINDING_REST_REQUIREMENTS: list[RequirementSpec] = [
         tags=[REST, SERVICE_PARAMS],
     ),
     RequirementSpec(
-        id="REST-QP-001",
+        id="HTTP_JSON-QP-001",
         section="11.5",
         title="Query parameter names use camelCase",
         level=RequirementLevel.MUST,
@@ -91,7 +91,7 @@ BINDING_REST_REQUIREMENTS: list[RequirementSpec] = [
         tags=[REST, QUERY_PARAMS],
     ),
     RequirementSpec(
-        id="REST-ERR-001",
+        id="HTTP_JSON-ERR-001",
         section="11.6",
         title="Error responses use RFC 9457 Problem Details format",
         level=RequirementLevel.MUST,
@@ -104,7 +104,7 @@ BINDING_REST_REQUIREMENTS: list[RequirementSpec] = [
         tags=[REST, ERROR, PROBLEM_DETAILS],
     ),
     RequirementSpec(
-        id="REST-ERR-002",
+        id="HTTP_JSON-ERR-002",
         section="11.6",
         title="A2A errors use specified type URIs",
         level=RequirementLevel.MUST,
@@ -118,7 +118,7 @@ BINDING_REST_REQUIREMENTS: list[RequirementSpec] = [
         tags=[REST, ERROR, MAPPING],
     ),
     RequirementSpec(
-        id="REST-SSE-001",
+        id="HTTP_JSON-SSE-001",
         section="11.7",
         title="REST streaming uses Server-Sent Events",
         level=RequirementLevel.MUST,

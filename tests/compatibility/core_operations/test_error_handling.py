@@ -8,7 +8,7 @@ Requirements tested:
     CORE-CAP-001, CORE-CAP-002, CORE-CAP-003, CORE-CAP-004,
     VER-SERVER-002, VER-SERVER-003,
     JSONRPC-ERR-001, JSONRPC-ERR-002,
-    REST-ERR-001, REST-ERR-002,
+    HTTP_JSON-ERR-001, HTTP_JSON-ERR-002,
     GRPC-ERR-001, GRPC-ERR-002
 """
 
@@ -44,8 +44,8 @@ VER_SERVER_003 = get_requirement_by_id("VER-SERVER-003")
 JSONRPC_ERR_001 = get_requirement_by_id("JSONRPC-ERR-001")
 JSONRPC_ERR_002 = get_requirement_by_id("JSONRPC-ERR-002")
 JSONRPC_SSE_002 = get_requirement_by_id("JSONRPC-SSE-002")
-REST_ERR_001 = get_requirement_by_id("REST-ERR-001")
-REST_ERR_002 = get_requirement_by_id("REST-ERR-002")
+HTTP_JSON_ERR_001 = get_requirement_by_id("HTTP_JSON-ERR-001")
+HTTP_JSON_ERR_002 = get_requirement_by_id("HTTP_JSON-ERR-002")
 GRPC_ERR_001 = get_requirement_by_id("GRPC-ERR-001")
 GRPC_ERR_002 = get_requirement_by_id("GRPC-ERR-002")
 
@@ -555,15 +555,15 @@ class TestJsonRpcErrorStructure:
 
 @http_json
 class TestRestErrorStructure:
-    """REST-ERR-001 / REST-ERR-002: RFC 9457 Problem Details format."""
+    """HTTP_JSON-ERR-001 / HTTP_JSON-ERR-002: RFC 9457 Problem Details format."""
 
     def test_error_uses_problem_details(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compliance_collector: Any,
     ) -> None:
-        """REST-ERR-001: Error responses use RFC 9457 Problem Details."""
-        req = REST_ERR_001
+        """HTTP_JSON-ERR-001: Error responses use RFC 9457 Problem Details."""
+        req = HTTP_JSON_ERR_001
         transport = "http_json"
         base_url = _get_base_url(transport_clients, transport)
         response = _rest_call(
@@ -590,8 +590,8 @@ class TestRestErrorStructure:
         transport_clients: dict[str, BaseTransportClient],
         compliance_collector: Any,
     ) -> None:
-        """REST-ERR-002: A2A errors use specified type URIs."""
-        req = REST_ERR_002
+        """HTTP_JSON-ERR-002: A2A errors use specified type URIs."""
+        req = HTTP_JSON_ERR_002
         transport = "http_json"
         base_url = _get_base_url(transport_clients, transport)
         response = _rest_call(
