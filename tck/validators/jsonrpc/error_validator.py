@@ -9,27 +9,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from tck.requirements.base import ERROR_BINDINGS
 
-# JSON-RPC error codes as defined in A2A specification Section 9
-# Standard JSON-RPC errors (-32600 to -32699)
-# A2A-specific errors (-32001 to -32099)
+
+# JSON-RPC error codes derived from central ErrorBinding definitions.
 JSONRPC_ERROR_CODES: dict[str, int] = {
-    # A2A-specific errors
-    "TaskNotFoundError": -32001,
-    "TaskNotCancelableError": -32002,
-    "PushNotificationNotSupportedError": -32003,
-    "UnsupportedOperationError": -32004,
-    "ContentTypeNotSupportedError": -32005,
-    "InvalidAgentResponseError": -32006,
-    "ExtendedAgentCardNotConfiguredError": -32007,
-    "ExtensionSupportRequiredError": -32008,
-    "VersionNotSupportedError": -32009,
-    # Standard JSON-RPC errors
-    "InvalidRequestError": -32600,
-    "MethodNotFoundError": -32601,
-    "InvalidParamsError": -32602,
-    "InternalError": -32603,
-    "ParseError": -32700,
+    name: binding.jsonrpc_code for name, binding in ERROR_BINDINGS.items()
 }
 
 # Reverse mapping from error codes to error names

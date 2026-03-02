@@ -28,7 +28,7 @@ from tck.transport._helpers import _build_params, _parse_sse
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
-_HTTP_JSON = "http_json"
+_TRANSPORT = "http_json"
 _HTTP_ERROR_MIN = 400
 
 
@@ -53,7 +53,7 @@ class HttpJsonClient(BaseTransportClient):
     """HTTP+JSON (REST) transport client for A2A protocol."""
 
     def __init__(self, base_url: str) -> None:
-        super().__init__(base_url)
+        super().__init__(base_url, _TRANSPORT)
         self._client = httpx.Client(base_url=base_url)
 
     def close(self) -> None:
@@ -80,7 +80,7 @@ class HttpJsonClient(BaseTransportClient):
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
                 return TransportResponse(
-                    transport=_HTTP_JSON,
+                    transport=self.transport,
                     success=False,
                     raw_response=response.json() if "json" in response.headers.get("content-type", "") else None,
                     error=_extract_error(response),
@@ -89,7 +89,7 @@ class HttpJsonClient(BaseTransportClient):
                 )
             body = response.json()
             return TransportResponse(
-                transport=_HTTP_JSON,
+                transport=self.transport,
                 success=True,
                 raw_response=body,
                 headers=resp_headers,
@@ -97,7 +97,7 @@ class HttpJsonClient(BaseTransportClient):
             )
         except httpx.HTTPError as e:
             return TransportResponse(
-                transport=_HTTP_JSON, success=False, raw_response=None, error=str(e)
+                transport=self.transport, success=False, raw_response=None, error=str(e)
             )
 
     def _request_streaming(
@@ -121,7 +121,7 @@ class HttpJsonClient(BaseTransportClient):
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
                 return StreamingResponse(
-                    transport=_HTTP_JSON,
+                    transport=self.transport,
                     success=False,
                     raw_response=None,
                     events=iter([]),
@@ -130,7 +130,7 @@ class HttpJsonClient(BaseTransportClient):
                     status_code=response.status_code,
                 )
             return StreamingResponse(
-                transport=_HTTP_JSON,
+                transport=self.transport,
                 success=True,
                 raw_response=response,
                 events=_parse_sse(response.text),
@@ -139,7 +139,7 @@ class HttpJsonClient(BaseTransportClient):
             )
         except httpx.HTTPError as e:
             return StreamingResponse(
-                transport=_HTTP_JSON, success=False, raw_response=None, events=iter([]), error=str(e)
+                transport=self.transport, success=False, raw_response=None, events=iter([]), error=str(e)
             )
 
     # -- Message Operations --

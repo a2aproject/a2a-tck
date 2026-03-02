@@ -160,3 +160,160 @@ GET_EXTENDED_AGENT_CARD_BINDING = TransportBinding(
     http_json_method=HTTP_GET,
     http_json_path=PATH_EXTENDED_AGENT_CARD,
 )
+
+
+# ---------------------------------------------------------------------------
+# Error bindings (spec Section 5.4)
+# ---------------------------------------------------------------------------
+
+_A2A_ERROR_TYPE_BASE = "https://a2a-protocol.org/errors/"
+
+
+@dataclass
+class ErrorBinding:
+    """Transport-specific error code binding for an A2A error type (spec Section 5.4)."""
+
+    name: str
+    jsonrpc_code: int
+    http_status: int
+    grpc_status: str
+    type_uri: str
+
+
+# A2A-specific errors
+TASK_NOT_FOUND_ERROR = ErrorBinding(
+    name="TaskNotFoundError",
+    jsonrpc_code=-32001,
+    http_status=404,
+    grpc_status="NOT_FOUND",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}task-not-found",
+)
+
+TASK_NOT_CANCELABLE_ERROR = ErrorBinding(
+    name="TaskNotCancelableError",
+    jsonrpc_code=-32002,
+    http_status=409,
+    grpc_status="FAILED_PRECONDITION",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}task-not-cancelable",
+)
+
+PUSH_NOTIFICATION_NOT_SUPPORTED_ERROR = ErrorBinding(
+    name="PushNotificationNotSupportedError",
+    jsonrpc_code=-32003,
+    http_status=400,
+    grpc_status="UNIMPLEMENTED",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}push-notification-not-supported",
+)
+
+UNSUPPORTED_OPERATION_ERROR = ErrorBinding(
+    name="UnsupportedOperationError",
+    jsonrpc_code=-32004,
+    http_status=400,
+    grpc_status="UNIMPLEMENTED",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}unsupported-operation",
+)
+
+CONTENT_TYPE_NOT_SUPPORTED_ERROR = ErrorBinding(
+    name="ContentTypeNotSupportedError",
+    jsonrpc_code=-32005,
+    http_status=415,
+    grpc_status="INVALID_ARGUMENT",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}content-type-not-supported",
+)
+
+INVALID_AGENT_RESPONSE_ERROR = ErrorBinding(
+    name="InvalidAgentResponseError",
+    jsonrpc_code=-32006,
+    http_status=502,
+    grpc_status="INTERNAL",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}invalid-agent-response",
+)
+
+EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR = ErrorBinding(
+    name="ExtendedAgentCardNotConfiguredError",
+    jsonrpc_code=-32007,
+    http_status=400,
+    grpc_status="FAILED_PRECONDITION",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}extended-agent-card-not-configured",
+)
+
+EXTENSION_SUPPORT_REQUIRED_ERROR = ErrorBinding(
+    name="ExtensionSupportRequiredError",
+    jsonrpc_code=-32008,
+    http_status=400,
+    grpc_status="FAILED_PRECONDITION",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}extension-support-required",
+)
+
+VERSION_NOT_SUPPORTED_ERROR = ErrorBinding(
+    name="VersionNotSupportedError",
+    jsonrpc_code=-32009,
+    http_status=400,
+    grpc_status="UNIMPLEMENTED",
+    type_uri=f"{_A2A_ERROR_TYPE_BASE}version-not-supported",
+)
+
+# Standard JSON-RPC errors (no type URI or gRPC mapping)
+INVALID_REQUEST_ERROR = ErrorBinding(
+    name="InvalidRequestError",
+    jsonrpc_code=-32600,
+    http_status=400,
+    grpc_status="",
+    type_uri="",
+)
+
+METHOD_NOT_FOUND_ERROR = ErrorBinding(
+    name="MethodNotFoundError",
+    jsonrpc_code=-32601,
+    http_status=404,
+    grpc_status="",
+    type_uri="",
+)
+
+INVALID_PARAMS_ERROR = ErrorBinding(
+    name="InvalidParamsError",
+    jsonrpc_code=-32602,
+    http_status=400,
+    grpc_status="",
+    type_uri="",
+)
+
+INTERNAL_ERROR = ErrorBinding(
+    name="InternalError",
+    jsonrpc_code=-32603,
+    http_status=500,
+    grpc_status="",
+    type_uri="",
+)
+
+PARSE_ERROR = ErrorBinding(
+    name="ParseError",
+    jsonrpc_code=-32700,
+    http_status=0,
+    grpc_status="",
+    type_uri="",
+)
+
+# Collection of all error bindings keyed by error name.
+ERROR_BINDINGS: dict[str, ErrorBinding] = {
+    e.name: e
+    for e in [
+        TASK_NOT_FOUND_ERROR,
+        TASK_NOT_CANCELABLE_ERROR,
+        PUSH_NOTIFICATION_NOT_SUPPORTED_ERROR,
+        UNSUPPORTED_OPERATION_ERROR,
+        CONTENT_TYPE_NOT_SUPPORTED_ERROR,
+        INVALID_AGENT_RESPONSE_ERROR,
+        EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR,
+        EXTENSION_SUPPORT_REQUIRED_ERROR,
+        VERSION_NOT_SUPPORTED_ERROR,
+        INVALID_REQUEST_ERROR,
+        METHOD_NOT_FOUND_ERROR,
+        INVALID_PARAMS_ERROR,
+        INTERNAL_ERROR,
+        PARSE_ERROR,
+    ]
+}
+
+# Set of A2A error type URIs (excludes standard JSON-RPC errors which have no type URI).
+A2A_ERROR_TYPE_URIS: set[str] = {e.type_uri for e in ERROR_BINDINGS.values() if e.type_uri}

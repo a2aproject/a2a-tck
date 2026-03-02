@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
+from tck.transport.jsonrpc_client import _TRANSPORT
 from tests.compatibility.markers import jsonrpc, streaming
 
 
@@ -89,7 +90,7 @@ def _get_client(
     transport_clients: dict[str, BaseTransportClient],
 ) -> BaseTransportClient:
     """Get the JSON-RPC transport client, skipping if not configured."""
-    client = transport_clients.get("jsonrpc")
+    client = transport_clients.get(_TRANSPORT)
     if client is None:
         pytest.skip("jsonrpc transport not configured")
     return client

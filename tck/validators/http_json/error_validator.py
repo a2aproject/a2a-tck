@@ -9,21 +9,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from tck.requirements.base import ERROR_BINDINGS
 
-# HTTP status code mappings for A2A errors
-# Based on A2A specification Section 11
+
+# HTTP status code mappings for A2A errors, derived from central ErrorBinding definitions.
 HTTP_JSON_ERROR_STATUS: dict[str, int] = {
-    "TaskNotFoundError": 404,
-    "TaskNotCancelableError": 400,
-    "PushNotificationNotSupportedError": 400,
-    "UnsupportedOperationError": 400,
-    "ContentTypeNotSupportedError": 415,
-    "InvalidAgentResponseError": 502,
-    "VersionNotSupportedError": 400,
-    "InvalidRequestError": 400,
-    "MethodNotFoundError": 404,
-    "InvalidParamsError": 400,
-    "InternalError": 500,
+    name: binding.http_status
+    for name, binding in ERROR_BINDINGS.items()
+    if binding.http_status != 0
 }
 
 # Reverse mapping from status codes to possible error names
