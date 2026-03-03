@@ -99,7 +99,12 @@ class HTMLFormatter:
     def _render_requirement_row(
         req_id: str, req: RequirementResult, transports: list[str]
     ) -> str:
-        status_class = "pass" if req.status == "PASS" else "fail"
+        if req.status == "PASS":
+            status_class = "pass"
+        elif req.status == "SKIPPED":
+            status_class = "skipped"
+        else:
+            status_class = "fail"
         transport_cells = ""
         for t in transports:
             result = req.transports.get(t, "")
@@ -108,6 +113,8 @@ class HTMLFormatter:
                 cell_class = ' class="pass"'
             elif result == "FAIL":
                 cell_class = ' class="fail"'
+            elif result == "SKIPPED":
+                cell_class = ' class="skipped"'
             transport_cells += f"<td{cell_class}>{escape(result)}</td>"
 
         errors = "; ".join(req.errors)
@@ -131,6 +138,7 @@ class HTMLFormatter:
                 f"<td>{escape(transport)}</td>"
                 f"<td>{t.passed}</td>"
                 f"<td>{t.failed}</td>"
+                f"<td>{t.skipped}</td>"
                 f"<td>{t.total}</td>"
                 f"<td>"
                 f'<div class="bar"><div class="bar-fill" style="width:{pct:.0f}%"></div></div>'
@@ -142,7 +150,7 @@ class HTMLFormatter:
             '<div class="section">\n'
             "<h2>Per-Transport Summary</h2>\n"
             "<table>\n"
-            "<tr><th>Transport</th><th>Passed</th><th>Failed</th><th>Total</th><th>Progress</th></tr>\n"
+            "<tr><th>Transport</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Total</th><th>Progress</th></tr>\n"
             f"{rows}"
             "</table>\n"
             "</div>\n"
@@ -202,6 +210,7 @@ th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
 th { background: #f5f5f5; }
 .pass { background: #d4edda; color: #155724; }
 .fail { background: #f8d7da; color: #721c24; }
+.skipped { background: #e2e3e5; color: #383d41; }
 .bar { background: #e9ecef; border-radius: 4px; height: 18px; width: 100%; }
 .bar-fill { background: #28a745; height: 100%; border-radius: 4px; }
 """

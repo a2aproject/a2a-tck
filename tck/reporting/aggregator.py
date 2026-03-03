@@ -33,6 +33,7 @@ class TransportResult:
     total: int
     passed: int
     failed: int
+    skipped: int = 0
 
 
 @dataclass
@@ -89,14 +90,25 @@ class ComplianceAggregator:
             transports: dict[str, str] = {}
             errors: list[str] = []
             for r in results:
-                transports[r.transport] = "PASS" if r.passed else "FAIL"
-                if not r.passed:
+                if r.skipped:
+                    transports[r.transport] = "SKIPPED"
+                elif r.passed:
+                    transports[r.transport] = "PASS"
+                else:
+                    transports[r.transport] = "FAIL"
                     errors.extend(r.errors)
 
-            all_passed = all(r.passed for r in results)
+            any_failed = any(not r.passed and not r.skipped for r in results)
+            all_skipped = all(r.skipped for r in results)
+            if any_failed:
+                status = "FAIL"
+            elif all_skipped:
+                status = "SKIPPED"
+            else:
+                status = "PASS"
             out[req_id] = RequirementResult(
                 level=results[0].level,
-                status="PASS" if all_passed else "FAIL",
+                status=status,
                 transports=transports,
                 errors=errors,
             )
@@ -109,11 +121,13 @@ class ComplianceAggregator:
 
         out: dict[str, TransportResult] = {}
         for transport, results in grouped.items():
-            passed = sum(1 for r in results if r.passed)
+            passed = sum(1 for r in results if r.passed and not r.skipped)
+            skipped = sum(1 for r in results if r.skipped)
             out[transport] = TransportResult(
                 total=len(results),
                 passed=passed,
-                failed=len(results) - passed,
+                failed=len(results) - passed - skipped,
+                skipped=skipped,
             )
         return out
 
@@ -128,7 +142,7 @@ class ComplianceAggregator:
             if level is None
             else [r for r in per_requirement.values() if r.level == level]
         )
-        reqs = list(reqs)
+        reqs = [r for r in reqs if r.status != "SKIPPED"]
         if not reqs:
             return 100.0
         passing = sum(1 for r in reqs if r.status == "PASS")

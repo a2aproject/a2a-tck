@@ -86,7 +86,7 @@ class TestJsonRpcErrorCodeMappings:
         """TaskNotFoundError (-32001): GetTask with non-existent ID."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         response = client.get_task(id="tck-nonexistent-error-code-001")
         body = response.raw_response
@@ -112,7 +112,7 @@ class TestJsonRpcErrorCodeMappings:
         """TaskNotCancelableError (-32002): CancelTask on a non-existent task."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         response = client.cancel_task(id="tck-nonexistent-error-code-002")
         body = response.raw_response
@@ -153,9 +153,10 @@ class TestJsonRpcErrorCodeMappings:
 
         caps = agent_card.get("capabilities", {})
         if caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports push notifications; cannot trigger -32003")
 
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = client.create_push_notification_config(
             task_id="tck-error-code-003",
             config_id="c",
@@ -188,11 +189,12 @@ class TestJsonRpcErrorCodeMappings:
 
         caps = agent_card.get("capabilities", {})
         if caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports streaming; cannot trigger -32004")
 
         # Use raw call because the streaming client does not detect
         # JSON-RPC errors in the response body.
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "error code test"}],
@@ -225,7 +227,7 @@ class TestJsonRpcErrorCodeMappings:
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
         # Raw call required: need to send a deliberately wrong Content-Type.
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         payload = {
             "jsonrpc": "2.0",
@@ -281,7 +283,7 @@ class TestJsonRpcErrorCodeMappings:
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
         # Raw call required: need to inject a custom A2A-Version header.
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         msg = {
             "role": "ROLE_USER",
@@ -349,7 +351,7 @@ class TestJsonRpcErrorCodeRange:
         """Error codes must be in A2A range (-32001..-32099) or standard JSON-RPC range."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         # Trigger the error condition.
         if trigger_id == "get_task":

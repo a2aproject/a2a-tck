@@ -155,6 +155,29 @@ class TestTransportSummary:
         assert "\u26a0" in output
 
 
+class TestSkippedInConsole:
+    """Skipped tests appear in console output."""
+
+    def test_skipped_column_in_level_table(
+        self, collector: ComplianceCollector, formatter: ConsoleFormatter
+    ) -> None:
+        """Skipped column appears in the level table."""
+        collector.record(requirement_id="R1", transport="http", passed=False, level="MUST", skipped=True)
+        report = ComplianceAggregator(collector).aggregate()
+        output = formatter.format(report)
+        assert "Skipped" in output
+
+    def test_skipped_count_in_transport_summary(
+        self, collector: ComplianceCollector, formatter: ConsoleFormatter
+    ) -> None:
+        """Skipped count appears in transport summary."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="MUST", skipped=True)
+        report = ComplianceAggregator(collector).aggregate()
+        output = formatter.format(report)
+        assert "1 skipped" in output
+
+
 class TestFailedRequirements:
     """Failed requirements section."""
 

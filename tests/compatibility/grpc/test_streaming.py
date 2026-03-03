@@ -139,7 +139,10 @@ class TestGrpcStreaming:
     ) -> None:
         """GRPC-ERR-003: send_streaming_message returns a StreamingResponse."""
         req = GRPC_ERR_003
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
@@ -173,7 +176,10 @@ class TestGrpcStreaming:
     ) -> None:
         """GRPC-ERR-003: Each event has exactly one StreamResponse payload field set."""
         req = GRPC_ERR_003
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         events = _collect_events(client, agent_card)
 
         errors: list[str] = []
@@ -204,7 +210,10 @@ class TestGrpcStreaming:
     ) -> None:
         """STREAM-ORDER-001: Task states do not regress; last event is terminal."""
         req = STREAM_ORDER_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         events = _collect_events(client, agent_card)
 
         errors: list[str] = []
@@ -250,7 +259,10 @@ class TestGrpcStreaming:
     ) -> None:
         """GRPC-ERR-003: Client-side stream cancellation completes without unexpected errors."""
         req = GRPC_ERR_003
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
@@ -290,7 +302,10 @@ class TestGrpcStreaming:
     ) -> None:
         """STREAM-SUB-004: SubscribeToTask returns NOT_FOUND for non-existent task."""
         req = STREAM_SUB_004
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
         response = client.subscribe_to_task(id="tck-nonexistent-grpc-stream-001")
@@ -342,7 +357,10 @@ class TestGrpcStreaming:
     ) -> None:
         """STREAM-SUB-001: First event from SubscribeToTask contains a Task."""
         req = STREAM_SUB_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
         # Create a task first via send_message

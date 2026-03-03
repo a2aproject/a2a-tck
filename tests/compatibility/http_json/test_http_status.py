@@ -58,7 +58,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """TaskNotFoundError: GET /tasks/{nonexistent} returns 404."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         response = client.get_task(id="tck-nonexistent-status-001")
         if response.success:
@@ -85,7 +85,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """TaskNotCancelableError: POST /tasks/{id}:cancel on non-existent returns 409 (or 404)."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         response = client.cancel_task(id="tck-nonexistent-status-002")
         if response.success:
@@ -124,9 +124,10 @@ class TestHttpJsonStatusCodes:
 
         caps = agent_card.get("capabilities", {})
         if caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
             pytest.skip("Agent supports streaming; cannot trigger UnsupportedOperationError")
 
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "status code test"}],
@@ -157,7 +158,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """ContentTypeNotSupportedError: wrong Content-Type returns 415."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         # Send a request with a deliberately wrong Content-Type.
         response = httpx.post(
@@ -191,9 +192,10 @@ class TestHttpJsonStatusCodes:
 
         caps = agent_card.get("capabilities", {})
         if caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
             pytest.skip("Agent supports push notifications; cannot trigger error")
 
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = client.create_push_notification_config(
             task_id="tck-status-push-005",
             config_id="c",
@@ -223,7 +225,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """VersionNotSupportedError: unsupported A2A-Version returns 400."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         # Raw request needed to inject a custom A2A-Version header.
         msg = {
@@ -272,7 +274,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """Successful operations return HTTP 2xx status code."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         msg = {
             "role": "ROLE_USER",

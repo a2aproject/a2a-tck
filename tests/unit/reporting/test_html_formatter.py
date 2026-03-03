@@ -143,6 +143,21 @@ class TestColorCoding:
         assert 'class="fail"' in html
 
 
+class TestSkippedColorCoding:
+    """Skipped cells use the 'skipped' CSS class."""
+
+    def test_skipped_uses_grey(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """Skipped cells have the 'skipped' CSS class."""
+        collector.record(
+            requirement_id="R1", transport="http", passed=False, level="MUST", skipped=True
+        )
+        report = ComplianceAggregator(collector).aggregate()
+        html = formatter.format(report)
+        assert 'class="skipped"' in html
+
+
 class TestPerTransportSummary:
     """Per-transport summary section."""
 

@@ -88,7 +88,7 @@ class TestProblemDetailsFormat:
     ) -> None:
         """Error response has Content-Type: application/problem+json."""
         req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = _get_error_response(client)
 
         headers = response.headers or {}
@@ -122,7 +122,7 @@ class TestProblemDetailsFormat:
     ) -> None:
         """Body contains required fields: type, title, status."""
         req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -148,7 +148,7 @@ class TestProblemDetailsFormat:
     ) -> None:
         """The ``status`` field value equals the HTTP response status code."""
         req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -182,7 +182,7 @@ class TestProblemDetailsFormat:
     ) -> None:
         """If ``detail`` or ``instance`` are present, they must be strings."""
         req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -222,7 +222,7 @@ class TestProblemDetailsTypeUri:
     ) -> None:
         """The ``type`` field matches one of the spec-defined A2A error URIs."""
         req = HTTP_JSON_ERR_002
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -251,7 +251,7 @@ class TestProblemDetailsTypeUri:
     ) -> None:
         """For a TaskNotFound trigger, type must be the task-not-found URI."""
         req = HTTP_JSON_ERR_002
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 

@@ -155,6 +155,60 @@ class TestToDict:
         assert isinstance(d["timestamp"], str)
 
 
+class TestSkippedStatus:
+    """Skipped tests are tracked separately from pass/fail."""
+
+    def test_skipped_only_requirement(self, collector: ComplianceCollector) -> None:
+        """Requirement with only skipped results has status SKIPPED."""
+        collector.record(requirement_id="R1", transport="http", passed=False, level="MUST", skipped=True)
+
+        report = ComplianceAggregator(collector).aggregate()
+        assert report.per_requirement["R1"].status == "SKIPPED"
+        assert report.per_requirement["R1"].transports == {"http": "SKIPPED"}
+
+    def test_mixed_pass_and_skipped(self, collector: ComplianceCollector) -> None:
+        """Requirement passing on one transport and skipped on another is PASS."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R1", transport="grpc", passed=False, level="MUST", skipped=True)
+
+        report = ComplianceAggregator(collector).aggregate()
+        assert report.per_requirement["R1"].status == "PASS"
+        assert report.per_requirement["R1"].transports == {"http": "PASS", "grpc": "SKIPPED"}
+
+    def test_mixed_fail_and_skipped(self, collector: ComplianceCollector) -> None:
+        """Requirement failing on one transport and skipped on another is FAIL."""
+        collector.record(
+            requirement_id="R1", transport="http", passed=False, level="MUST", errors=["err"]
+        )
+        collector.record(requirement_id="R1", transport="grpc", passed=False, level="MUST", skipped=True)
+
+        report = ComplianceAggregator(collector).aggregate()
+        assert report.per_requirement["R1"].status == "FAIL"
+
+    def test_skipped_excluded_from_compliance(self, collector: ComplianceCollector) -> None:
+        """Skipped requirements are excluded from compliance percentage."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="MUST", skipped=True)
+
+        report = ComplianceAggregator(collector).aggregate()
+        # R1 passes, R2 skipped → only R1 counts → 100%
+        assert report.must_compliance == FULL
+        assert report.overall_compliance == FULL
+
+    def test_per_transport_includes_skipped(self, collector: ComplianceCollector) -> None:
+        """Per-transport counts include a skipped field."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="MUST", skipped=True)
+
+        report = ComplianceAggregator(collector).aggregate()
+        http = report.per_transport["http"]
+        assert http.passed == 1
+        assert http.skipped == 1
+        assert http.failed == 0
+        expected_total = 2
+        assert http.total == expected_total
+
+
 class TestErrorAggregation:
     """Errors are aggregated from failing results."""
 
