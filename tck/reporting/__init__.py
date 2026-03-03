@@ -7,6 +7,7 @@ from tck.reporting.aggregator import (
     TransportResult,
 )
 from tck.reporting.collector import ComplianceCollector, TestResult
+from tck.reporting.console_formatter import ConsoleFormatter
 from tck.reporting.html_formatter import HTMLFormatter
 from tck.reporting.json_formatter import JSONFormatter
 
@@ -15,6 +16,7 @@ __all__ = [
     "ComplianceAggregator",
     "ComplianceCollector",
     "ComplianceReport",
+    "ConsoleFormatter",
     "HTMLFormatter",
     "JSONFormatter",
     "RequirementResult",
