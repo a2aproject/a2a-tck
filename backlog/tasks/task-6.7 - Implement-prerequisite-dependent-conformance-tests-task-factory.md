@@ -1,9 +1,10 @@
 ---
 id: TASK-6.7
 title: Implement prerequisite-dependent conformance tests (task factory)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-03 08:29'
+updated_date: '2026-03-03 08:45'
 labels:
   - phase-6
   - testing
@@ -66,10 +67,16 @@ Consider also: `terminal_task_id` (a task that has reached a terminal state).
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Task factory fixture creates real tasks via SendMessage across all transports
-- [ ] #2 GetTask, CancelTask, and SubscribeToTask tests work against real tasks
-- [ ] #3 Multi-turn messaging tests (taskId reuse, contextId inference) are implemented
-- [ ] #4 Push notification CRUD tests are implemented (skipped when unsupported)
+- [x] #1 Task factory fixture creates real tasks via SendMessage across all transports
+- [x] #2 GetTask, CancelTask, and SubscribeToTask tests work against real tasks
+- [x] #3 Multi-turn messaging tests (taskId reuse, contextId inference) are implemented
+- [x] #4 Push notification CRUD tests are implemented (skipped when unsupported)
 - [ ] #5 Multi-stream ordering tests are implemented
-- [ ] #6 All tests pass `make lint` and `make unit-test`
+- [x] #6 All tests pass `make lint` and `make unit-test`
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented as a shared helper module + two test files instead of a pytest fixture, following the same self-contained pattern as existing tests.\n\n## Files created\n\n1. `tests/compatibility/_task_helpers.py` — Shared helper module with `create_task()`, `extract_task_id()`, `extract_context_id()` functions and `TaskInfo` dataclass\n2. `tests/compatibility/core_operations/test_task_lifecycle.py` — Cross-transport tests for GetTask, CancelTask, multi-turn, SubscribeToTask lifecycle\n3. `tests/compatibility/core_operations/test_push_notifications.py` — Cross-transport push notification CRUD tests\n\n## Deferred\n- Multi-stream ordering (STREAM-ORDER-002/003/004) — requires concurrent stream coordination, should be a separate task (AC #5 not checked)"
+<!-- SECTION:NOTES:END -->

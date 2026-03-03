@@ -1,0 +1,361 @@
+"""Cross-transport push notification CRUD tests.
+
+Validates push notification configuration lifecycle operations
+that require a real task to exist first.
+
+Requirements tested:
+    PUSH-CREATE-001 — CreatePushNotificationConfig returns config
+    PUSH-CREATE-002 — Config persists after creation
+    PUSH-GET-001    — GetPushNotificationConfig returns config details
+    PUSH-GET-002    — GetPushNotificationConfig for nonexistent returns error
+    PUSH-LIST-001   — ListPushNotificationConfigs includes created config
+    PUSH-DEL-001    — DeletePushNotificationConfig removes config
+    PUSH-DEL-002    — Delete is idempotent
+"""
+
+from __future__ import annotations
+
+import uuid
+
+from typing import TYPE_CHECKING, Any
+
+import pytest
+
+from tck.requirements.registry import get_requirement_by_id
+from tck.transport import ALL_TRANSPORTS
+from tests.compatibility._task_helpers import create_task
+
+
+if TYPE_CHECKING:
+    from tck.requirements.base import RequirementSpec
+    from tck.transport.base import BaseTransportClient
+
+
+# ---------------------------------------------------------------------------
+# Requirement lookups
+# ---------------------------------------------------------------------------
+
+PUSH_CREATE_001 = get_requirement_by_id("PUSH-CREATE-001")
+PUSH_CREATE_002 = get_requirement_by_id("PUSH-CREATE-002")
+PUSH_GET_001 = get_requirement_by_id("PUSH-GET-001")
+PUSH_GET_002 = get_requirement_by_id("PUSH-GET-002")
+PUSH_LIST_001 = get_requirement_by_id("PUSH-LIST-001")
+PUSH_DEL_001 = get_requirement_by_id("PUSH-DEL-001")
+PUSH_DEL_002 = get_requirement_by_id("PUSH-DEL-002")
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
+    """Build a failure message referencing the requirement."""
+    return (
+        f"{req.id} [{req.title}] failed on {transport}: "
+        f"{detail} (see {req.spec_url})"
+    )
+
+
+def _record(
+    collector: Any,
+    req: RequirementSpec,
+    transport: str,
+    passed: bool,
+    errors: list[str] | None = None,
+) -> None:
+    """Record a result in the compliance collector."""
+    collector.record(
+        requirement_id=req.id,
+        transport=transport,
+        level=req.level.value,
+        passed=passed,
+        errors=errors or [],
+    )
+
+
+def _get_client(
+    transport_clients: dict[str, BaseTransportClient],
+    transport: str,
+) -> BaseTransportClient:
+    """Get the transport client, skipping if not configured."""
+    client = transport_clients.get(transport)
+    if client is None:
+        pytest.skip(f"Transport {transport!r} not configured")
+    return client
+
+
+def _skip_if_no_push(agent_card: dict[str, Any]) -> None:
+    """Skip the test if the agent does not support push notifications."""
+    caps = agent_card.get("capabilities", {})
+    if not caps.get("pushNotifications"):
+        pytest.skip("Agent does not support push notifications")
+
+
+def _unique_config_id() -> str:
+    """Generate a unique push notification config ID."""
+    return f"tck-push-{uuid.uuid4().hex[:8]}"
+
+
+_PUSH_CONFIG = {"url": "https://example.com/tck-push-webhook"}
+
+
+# ---------------------------------------------------------------------------
+# Push notification CRUD tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("transport", ALL_TRANSPORTS)
+class TestPushNotificationCrud:
+    """Tests for push notification configuration CRUD operations."""
+
+    def test_create_push_config(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """PUSH-CREATE-001: CreatePushNotificationConfig returns the config."""
+        req = PUSH_CREATE_001
+        _skip_if_no_push(agent_card)
+        client = _get_client(transport_clients, transport)
+        info = create_task(client)
+        config_id = _unique_config_id()
+
+        response = client.create_push_notification_config(
+            task_id=info.task_id,
+            config_id=config_id,
+            config=_PUSH_CONFIG,
+        )
+
+        errors: list[str] = []
+        if not response.success:
+            errors.append(f"CreatePushNotificationConfig failed: {response.error}")
+
+        passed = not errors
+        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, _fail_msg(req, transport, "; ".join(errors))
+
+    def test_config_persists(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """PUSH-CREATE-002: Config persists and can be retrieved after creation."""
+        req = PUSH_CREATE_002
+        _skip_if_no_push(agent_card)
+        client = _get_client(transport_clients, transport)
+        info = create_task(client)
+        config_id = _unique_config_id()
+
+        create_resp = client.create_push_notification_config(
+            task_id=info.task_id,
+            config_id=config_id,
+            config=_PUSH_CONFIG,
+        )
+        if not create_resp.success:
+            pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
+
+        get_resp = client.get_push_notification_config(
+            task_id=info.task_id,
+            id=config_id,
+        )
+
+        errors: list[str] = []
+        if not get_resp.success:
+            errors.append(
+                f"GetPushNotificationConfig failed after creation: {get_resp.error}"
+            )
+
+        passed = not errors
+        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, _fail_msg(req, transport, "; ".join(errors))
+
+    def test_get_push_config(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """PUSH-GET-001: GetPushNotificationConfig returns config details."""
+        req = PUSH_GET_001
+        _skip_if_no_push(agent_card)
+        client = _get_client(transport_clients, transport)
+        info = create_task(client)
+        config_id = _unique_config_id()
+
+        create_resp = client.create_push_notification_config(
+            task_id=info.task_id,
+            config_id=config_id,
+            config=_PUSH_CONFIG,
+        )
+        if not create_resp.success:
+            pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
+
+        response = client.get_push_notification_config(
+            task_id=info.task_id,
+            id=config_id,
+        )
+
+        errors: list[str] = []
+        if not response.success:
+            errors.append(f"GetPushNotificationConfig failed: {response.error}")
+
+        passed = not errors
+        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, _fail_msg(req, transport, "; ".join(errors))
+
+    def test_get_nonexistent_config_returns_error(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """PUSH-GET-002: GetPushNotificationConfig with nonexistent ID returns error."""
+        req = PUSH_GET_002
+        _skip_if_no_push(agent_card)
+        client = _get_client(transport_clients, transport)
+        info = create_task(client)
+
+        response = client.get_push_notification_config(
+            task_id=info.task_id,
+            id=f"nonexistent-{uuid.uuid4().hex[:8]}",
+        )
+
+        errors: list[str] = []
+        if response.success:
+            errors.append(
+                "GetPushNotificationConfig with nonexistent config ID should "
+                "return an error, but succeeded"
+            )
+
+        passed = not errors
+        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, _fail_msg(req, transport, "; ".join(errors))
+
+    def test_list_push_configs(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """PUSH-LIST-001: ListPushNotificationConfigs includes the created config."""
+        req = PUSH_LIST_001
+        _skip_if_no_push(agent_card)
+        client = _get_client(transport_clients, transport)
+        info = create_task(client)
+        config_id = _unique_config_id()
+
+        create_resp = client.create_push_notification_config(
+            task_id=info.task_id,
+            config_id=config_id,
+            config=_PUSH_CONFIG,
+        )
+        if not create_resp.success:
+            pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
+
+        response = client.list_push_notification_configs(task_id=info.task_id)
+
+        errors: list[str] = []
+        if not response.success:
+            errors.append(f"ListPushNotificationConfigs failed: {response.error}")
+
+        passed = not errors
+        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, _fail_msg(req, transport, "; ".join(errors))
+
+    def test_delete_push_config(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """PUSH-DEL-001: DeletePushNotificationConfig removes the config."""
+        req = PUSH_DEL_001
+        _skip_if_no_push(agent_card)
+        client = _get_client(transport_clients, transport)
+        info = create_task(client)
+        config_id = _unique_config_id()
+
+        create_resp = client.create_push_notification_config(
+            task_id=info.task_id,
+            config_id=config_id,
+            config=_PUSH_CONFIG,
+        )
+        if not create_resp.success:
+            pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
+
+        # Delete
+        del_resp = client.delete_push_notification_config(
+            task_id=info.task_id,
+            id=config_id,
+        )
+
+        errors: list[str] = []
+        if not del_resp.success:
+            errors.append(f"DeletePushNotificationConfig failed: {del_resp.error}")
+        else:
+            # Verify it is gone
+            get_resp = client.get_push_notification_config(
+                task_id=info.task_id,
+                id=config_id,
+            )
+            if get_resp.success:
+                errors.append(
+                    "Config still exists after deletion — "
+                    "GetPushNotificationConfig should return an error"
+                )
+
+        passed = not errors
+        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, _fail_msg(req, transport, "; ".join(errors))
+
+    def test_delete_is_idempotent(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """PUSH-DEL-002: Deleting an already-deleted config does not error."""
+        req = PUSH_DEL_002
+        _skip_if_no_push(agent_card)
+        client = _get_client(transport_clients, transport)
+        info = create_task(client)
+        config_id = _unique_config_id()
+
+        create_resp = client.create_push_notification_config(
+            task_id=info.task_id,
+            config_id=config_id,
+            config=_PUSH_CONFIG,
+        )
+        if not create_resp.success:
+            pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
+
+        # Delete twice
+        client.delete_push_notification_config(
+            task_id=info.task_id,
+            id=config_id,
+        )
+        second_del = client.delete_push_notification_config(
+            task_id=info.task_id,
+            id=config_id,
+        )
+
+        errors: list[str] = []
+        if not second_del.success:
+            errors.append(
+                f"Second delete should be idempotent (no error), "
+                f"but returned: {second_del.error}"
+            )
+
+        passed = not errors
+        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, _fail_msg(req, transport, "; ".join(errors))
