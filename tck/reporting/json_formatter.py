@@ -59,6 +59,7 @@ class JSONFormatter:
                     "total": t.total,
                     "passed": t.passed,
                     "failed": t.failed,
+                    "skipped": t.skipped,
                 }
                 for transport, t in report.per_transport.items()
             },

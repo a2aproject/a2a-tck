@@ -137,6 +137,32 @@ class TestPerTransport:
         assert all(isinstance(v, int) for v in grpc.values())
 
 
+class TestSkippedInJSON:
+    """Skipped status appears in JSON output."""
+
+    def test_skipped_transport_in_per_requirement(
+        self, collector: ComplianceCollector, formatter: JSONFormatter
+    ) -> None:
+        """Skipped transport shows SKIPPED in per_requirement transports."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R1", transport="grpc", passed=False, level="MUST", skipped=True)
+        report = ComplianceAggregator(collector).aggregate()
+        data = json.loads(formatter.format(report))
+        assert data["per_requirement"]["R1"]["transports"]["grpc"] == "SKIPPED"
+
+    def test_per_transport_includes_skipped(
+        self, collector: ComplianceCollector, formatter: JSONFormatter
+    ) -> None:
+        """Per-transport entries include a skipped key."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="MUST", skipped=True)
+        report = ComplianceAggregator(collector).aggregate()
+        data = json.loads(formatter.format(report))
+        http = data["per_transport"]["http"]
+        assert "skipped" in http
+        assert http["skipped"] == 1
+
+
 class TestWriteFile:
     """write() creates a file at the given path."""
 

@@ -30,6 +30,8 @@ def record(
     transport: str,
     passed: bool,
     errors: list[str] | None = None,
+    *,
+    skipped: bool = False,
 ) -> None:
     """Record a result in the compliance collector."""
     collector.record(
@@ -38,15 +40,32 @@ def record(
         level=req.level.value,
         passed=passed,
         errors=errors or [],
+        skipped=skipped,
     )
+
+
+def skip_recording(
+    collector: Any,
+    req: RequirementSpec,
+    transport: str,
+    reason: str,
+) -> None:
+    """Record a skipped result in the compliance collector and skip the test."""
+    record(collector, req, transport, passed=False, skipped=True)
+    pytest.skip(reason)
 
 
 def get_client(
     transport_clients: dict[str, BaseTransportClient],
     transport: str,
+    *,
+    compliance_collector: Any = None,
+    req: Any = None,
 ) -> BaseTransportClient:
     """Get the transport client, skipping if not configured."""
     client = transport_clients.get(transport)
     if client is None:
+        if compliance_collector is not None and req is not None:
+            record(compliance_collector, req, transport, passed=False, skipped=True)
         pytest.skip(f"Transport {transport!r} not configured")
     return client

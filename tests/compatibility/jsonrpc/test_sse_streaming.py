@@ -119,7 +119,10 @@ class TestSseStreamingFormat:
         """JSONRPC-SSE-001: Each SSE event must be a JSON-RPC 2.0 response."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
         events = _get_streaming_events(client, agent_card)
 
         errors: list[str] = []
@@ -153,7 +156,10 @@ class TestSseStreamingFormat:
         """JSONRPC-SSE-001: Each event result contains a StreamResponse object."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
         events = _get_streaming_events(client, agent_card)
 
         errors: list[str] = []
@@ -190,7 +196,10 @@ class TestSseStreamingFormat:
         """JSONRPC-SSE-001: Stream ends with a terminal task state."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
         events = _get_streaming_events(client, agent_card)
 
         # Check the last event for a terminal state
@@ -236,10 +245,11 @@ class TestSseSubscribeToTask:
         """STREAM-SUB-004: SubscribeToTask returns TaskNotFoundError for non-existent task."""
         req = STREAM_SUB_004
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
         response = client.subscribe_to_task(id="tck-nonexistent-subscribe-001")
@@ -296,10 +306,11 @@ class TestSseSubscribeToTask:
         """STREAM-SUB-001: First event from SubscribeToTask contains a Task object."""
         req = STREAM_SUB_001
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT)
+        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
 
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
         # First, create a task via send_message

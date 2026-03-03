@@ -82,25 +82,26 @@ class ConsoleFormatter:
         return f"\nOVERALL COMPLIANCE: {value}"
 
     def _level_table(self, report: ComplianceReport) -> str:
-        rows: list[tuple[str, int, int, int]] = []
+        rows: list[tuple[str, int, int, int, int]] = []
         for level in ("MUST", "SHOULD", "MAY"):
             reqs = [r for r in report.per_requirement.values() if r.level == level]
             passed = sum(1 for r in reqs if r.status == "PASS")
-            failed = len(reqs) - passed
-            rows.append((level, passed, failed, len(reqs)))
+            skipped = sum(1 for r in reqs if r.status == "SKIPPED")
+            failed = len(reqs) - passed - skipped
+            rows.append((level, passed, failed, skipped, len(reqs)))
 
         lines = [
             "",
-            "\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-            "\u2502 Level       \u2502 Passed \u2502 Failed \u2502 Total \u2502",
-            "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524",
+            "\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
+            "\u2502 Level       \u2502 Passed \u2502 Failed \u2502 Skipped \u2502 Total \u2502",
+            "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524",
         ]
-        for level, passed, failed, total in rows:
+        for level, passed, failed, skipped, total in rows:
             lines.append(
-                f"\u2502 {level:<11} \u2502 {passed:>6} \u2502 {failed:>6} \u2502 {total:>5} \u2502"
+                f"\u2502 {level:<11} \u2502 {passed:>6} \u2502 {failed:>6} \u2502 {skipped:>7} \u2502 {total:>5} \u2502"
             )
         lines.append(
-            "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+            "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
         )
         return "\n".join(lines)
 
@@ -109,8 +110,11 @@ class ConsoleFormatter:
             return ""
         lines = ["\nBY TRANSPORT:"]
         for transport, t in report.per_transport.items():
-            marker = self._transport_marker(t.passed, t.total)
-            lines.append(f"  {transport + ':':<14} {t.passed}/{t.total} {marker}")
+            marker = self._transport_marker(t.passed, t.total - t.skipped)
+            count = f"{t.passed}/{t.total}"
+            if t.skipped > 0:
+                count += f" ({t.skipped} skipped)"
+            lines.append(f"  {transport + ':':<14} {count} {marker}")
         return "\n".join(lines)
 
     def _failed_requirements(self, report: ComplianceReport) -> str:

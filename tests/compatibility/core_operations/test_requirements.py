@@ -118,6 +118,13 @@ def test_must_requirement(
     """Verify a MUST-level requirement — hard failure on validation error."""
     client = transport_clients.get(transport)
     if client is None:
+        compliance_collector.record(
+            requirement_id=requirement.id,
+            transport=transport,
+            level=requirement.level.value,
+            passed=False,
+            skipped=True,
+        )
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
     response = execute_operation(client, requirement)
@@ -157,6 +164,13 @@ def test_should_requirement(
     """Verify a SHOULD-level requirement — xfail on validation error."""
     client = transport_clients.get(transport)
     if client is None:
+        compliance_collector.record(
+            requirement_id=requirement.id,
+            transport=transport,
+            level=requirement.level.value,
+            passed=False,
+            skipped=True,
+        )
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
     response = execute_operation(client, requirement)
@@ -202,12 +216,26 @@ def test_may_requirement(
         card_tags = set(agent_card.get("tags", []))
         available = card_capabilities | card_tags
         if not any(tag in available for tag in requirement.tags):
+            compliance_collector.record(
+                requirement_id=requirement.id,
+                transport=transport,
+                level=requirement.level.value,
+                passed=False,
+                skipped=True,
+            )
             pytest.skip(
                 f"Agent card does not declare capabilities for tags: {requirement.tags}"
             )
 
     client = transport_clients.get(transport)
     if client is None:
+        compliance_collector.record(
+            requirement_id=requirement.id,
+            transport=transport,
+            level=requirement.level.value,
+            passed=False,
+            skipped=True,
+        )
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
     response = execute_operation(client, requirement)

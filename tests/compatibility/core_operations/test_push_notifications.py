@@ -49,13 +49,6 @@ PUSH_DEL_002 = get_requirement_by_id("PUSH-DEL-002")
 # ---------------------------------------------------------------------------
 
 
-def _skip_if_no_push(agent_card: dict[str, Any]) -> None:
-    """Skip the test if the agent does not support push notifications."""
-    caps = agent_card.get("capabilities", {})
-    if not caps.get("pushNotifications"):
-        pytest.skip("Agent does not support push notifications")
-
-
 def _unique_config_id() -> str:
     """Generate a unique push notification config ID."""
     return f"tck-push-{uuid.uuid4().hex[:8]}"
@@ -82,8 +75,11 @@ class TestPushNotificationCrud:
     ) -> None:
         """PUSH-CREATE-001: CreatePushNotificationConfig returns the config."""
         req = PUSH_CREATE_001
-        _skip_if_no_push(agent_card)
-        client = get_client(transport_clients, transport)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -110,8 +106,11 @@ class TestPushNotificationCrud:
     ) -> None:
         """PUSH-CREATE-002: Config persists and can be retrieved after creation."""
         req = PUSH_CREATE_002
-        _skip_if_no_push(agent_card)
-        client = get_client(transport_clients, transport)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -147,8 +146,11 @@ class TestPushNotificationCrud:
     ) -> None:
         """PUSH-GET-001: GetPushNotificationConfig returns config details."""
         req = PUSH_GET_001
-        _skip_if_no_push(agent_card)
-        client = get_client(transport_clients, transport)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -182,8 +184,11 @@ class TestPushNotificationCrud:
     ) -> None:
         """PUSH-GET-002: GetPushNotificationConfig with nonexistent ID returns error."""
         req = PUSH_GET_002
-        _skip_if_no_push(agent_card)
-        client = get_client(transport_clients, transport)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         response = client.get_push_notification_config(
@@ -211,8 +216,11 @@ class TestPushNotificationCrud:
     ) -> None:
         """PUSH-LIST-001: ListPushNotificationConfigs includes the created config."""
         req = PUSH_LIST_001
-        _skip_if_no_push(agent_card)
-        client = get_client(transport_clients, transport)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -243,8 +251,11 @@ class TestPushNotificationCrud:
     ) -> None:
         """PUSH-DEL-001: DeletePushNotificationConfig removes the config."""
         req = PUSH_DEL_001
-        _skip_if_no_push(agent_card)
-        client = get_client(transport_clients, transport)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -290,8 +301,11 @@ class TestPushNotificationCrud:
     ) -> None:
         """PUSH-DEL-002: Deleting an already-deleted config does not error."""
         req = PUSH_DEL_002
-        _skip_if_no_push(agent_card)
-        client = get_client(transport_clients, transport)
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
         config_id = _unique_config_id()
 

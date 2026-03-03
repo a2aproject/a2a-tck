@@ -20,6 +20,7 @@ class TestResult:
     passed: bool
     errors: list[str] = field(default_factory=list)
     level: Literal["MUST", "SHOULD", "MAY"] = "MUST"
+    skipped: bool = False
 
 
 class ComplianceCollector:
@@ -41,6 +42,7 @@ class ComplianceCollector:
         passed: bool,
         errors: list[str] | None = None,
         level: str = "MUST",
+        skipped: bool = False,
     ) -> None:
         """Record a single test result."""
         self._results.append(
@@ -50,6 +52,7 @@ class ComplianceCollector:
                 passed=passed,
                 errors=errors or [],
                 level=level,  # type: ignore[arg-type]
+                skipped=skipped,
             )
         )
 
@@ -71,11 +74,18 @@ class ComplianceCollector:
 
         out: dict[str, dict[str, str]] = {}
         for req_id, results in grouped.items():
-            all_passed = all(r.passed for r in results)
+            any_failed = any(not r.passed and not r.skipped for r in results)
+            all_skipped = all(r.skipped for r in results)
             transports = sorted({r.transport for r in results})
+            if any_failed:
+                status = "FAIL"
+            elif all_skipped:
+                status = "SKIPPED"
+            else:
+                status = "PASS"
             out[req_id] = {
                 "level": results[0].level,
-                "status": "PASS" if all_passed else "FAIL",
+                "status": status,
                 "transports": ", ".join(transports),
             }
         return out
@@ -94,11 +104,13 @@ class ComplianceCollector:
 
         out: dict[str, dict[str, int]] = {}
         for transport, results in grouped.items():
-            passed = sum(1 for r in results if r.passed)
+            passed = sum(1 for r in results if r.passed and not r.skipped)
+            skipped = sum(1 for r in results if r.skipped)
             out[transport] = {
                 "total": len(results),
                 "passed": passed,
-                "failed": len(results) - passed,
+                "failed": len(results) - passed - skipped,
+                "skipped": skipped,
             }
         return out
 

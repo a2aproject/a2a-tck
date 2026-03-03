@@ -174,7 +174,7 @@ class TestGetTask:
     ) -> None:
         """CORE-GET-001: GetTask returns the current state of an existing task."""
         req = CORE_GET_001
-        client = get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         response = client.get_task(id=info.task_id)
@@ -213,7 +213,7 @@ class TestCancelTask:
     ) -> None:
         """CORE-CANCEL-001: CancelTask returns the task with updated state."""
         req = CORE_CANCEL_001
-        client = get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         response = client.cancel_task(id=info.task_id)
@@ -243,7 +243,7 @@ class TestCancelTask:
     ) -> None:
         """CORE-CANCEL-002: CancelTask on a terminal task returns TaskNotCancelableError."""
         req = CORE_CANCEL_002
-        client = get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         # Verify the task reached a terminal state
@@ -284,7 +284,7 @@ class TestMultiTurn:
     ) -> None:
         """CORE-SEND-002: SendMessage to a terminal task returns UnsupportedOperationError."""
         req = CORE_SEND_002
-        client = get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         # Verify the task reached a terminal state
@@ -322,7 +322,7 @@ class TestMultiTurn:
     ) -> None:
         """CORE-MULTI-005: SendMessage with only taskId infers contextId from the task."""
         req = CORE_MULTI_005
-        client = get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         if not info.context_id:
@@ -355,7 +355,7 @@ class TestMultiTurn:
     ) -> None:
         """CORE-MULTI-006: SendMessage with taskId + wrong contextId returns error."""
         req = CORE_MULTI_006
-        client = get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         # Send with a deliberately wrong contextId
@@ -401,9 +401,10 @@ class TestSubscribeLifecycle:
         req = STREAM_SUB_002
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        client = get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         sub_response = client.subscribe_to_task(id=info.task_id)
@@ -441,9 +442,10 @@ class TestSubscribeLifecycle:
         req = STREAM_SUB_003
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        client = get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
 
         # Verify the task reached a terminal state

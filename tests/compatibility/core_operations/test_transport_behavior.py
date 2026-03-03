@@ -162,6 +162,7 @@ class TestJsonRpcStreaming:
         transport = "jsonrpc"
         client = transport_clients.get(transport)
         if client is None:
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("JSON-RPC transport not configured")
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
         if not response.success:
@@ -326,6 +327,7 @@ class TestRestStreaming:
         transport = "http_json"
         client = transport_clients.get(transport)
         if client is None:
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("HTTP+JSON transport not configured")
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
         if not response.success:
@@ -359,6 +361,7 @@ class TestGrpcService:
         transport = "grpc"
         client = transport_clients.get(transport)
         if client is None:
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("gRPC transport not configured")
         response = client.send_message(message=_SAMPLE_MESSAGE)
         errors = []
@@ -397,6 +400,7 @@ class TestGrpcStreaming:
         transport = "grpc"
         client = transport_clients.get(transport)
         if client is None:
+            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("gRPC transport not configured")
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
         if not response.success:
