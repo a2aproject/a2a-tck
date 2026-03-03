@@ -24,6 +24,8 @@ class RequirementResult:
     status: str
     transports: dict[str, str]
     errors: list[str] = field(default_factory=list)
+    description: str = ""
+    transport_errors: dict[str, list[str]] = field(default_factory=dict)
 
 
 @dataclass
@@ -89,6 +91,7 @@ class ComplianceAggregator:
         for req_id, results in grouped.items():
             transports: dict[str, str] = {}
             errors: list[str] = []
+            transport_errors: dict[str, list[str]] = {}
             for r in results:
                 if r.skipped:
                     transports[r.transport] = "SKIPPED"
@@ -97,6 +100,10 @@ class ComplianceAggregator:
                 else:
                     transports[r.transport] = "FAIL"
                     errors.extend(r.errors)
+                    if r.errors:
+                        transport_errors.setdefault(r.transport, []).extend(
+                            r.errors
+                        )
 
             any_failed = any(not r.passed and not r.skipped for r in results)
             all_skipped = all(r.skipped for r in results)
@@ -106,11 +113,23 @@ class ComplianceAggregator:
                 status = "SKIPPED"
             else:
                 status = "PASS"
+
+            description = ""
+            try:
+                from tck.requirements.registry import get_requirement_by_id
+
+                spec = get_requirement_by_id(req_id)
+                description = spec.description
+            except (KeyError, ImportError):
+                pass
+
             out[req_id] = RequirementResult(
                 level=results[0].level,
                 status=status,
                 transports=transports,
                 errors=errors,
+                description=description,
+                transport_errors=transport_errors,
             )
         return out
 

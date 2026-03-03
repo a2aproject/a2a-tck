@@ -158,6 +158,70 @@ class TestSkippedColorCoding:
         assert 'class="skipped"' in html
 
 
+class TestRequirementTooltip:
+    """Requirement descriptions appear as tooltips."""
+
+    def test_tooltip_from_registry(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """Known requirement IDs show their description as a title attribute."""
+        collector.record(
+            requirement_id="CORE-SEND-001", transport="http", passed=True, level="MUST"
+        )
+        report = ComplianceAggregator(collector).aggregate()
+        html = formatter.format(report)
+        assert 'title="' in html
+        assert "CORE-SEND-001" in html
+
+    def test_no_tooltip_for_unknown_id(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """Unknown requirement IDs do not get a title attribute."""
+        collector.record(
+            requirement_id="UNKNOWN-999", transport="http", passed=True, level="MUST"
+        )
+        report = ComplianceAggregator(collector).aggregate()
+        html = formatter.format(report)
+        assert "UNKNOWN-999" in html
+        # The req ID cell should NOT have a title attribute
+        assert 'title="' not in html
+
+
+class TestErrorFormatting:
+    """Errors are formatted as bullet lists with transport prefixes."""
+
+    def test_errors_as_bullet_list(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """Errors appear in an unordered list."""
+        collector.record(
+            requirement_id="R1", transport="http", passed=False, level="MUST",
+            errors=["timeout"],
+        )
+        report = ComplianceAggregator(collector).aggregate()
+        html = formatter.format(report)
+        assert "<ul" in html
+        assert "<li>" in html
+        assert "timeout" in html
+
+    def test_errors_prefixed_with_transport(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """Each error is prefixed with the transport that caused it."""
+        collector.record(
+            requirement_id="R1", transport="http", passed=False, level="MUST",
+            errors=["connection refused"],
+        )
+        collector.record(
+            requirement_id="R1", transport="grpc", passed=False, level="MUST",
+            errors=["deadline exceeded"],
+        )
+        report = ComplianceAggregator(collector).aggregate()
+        html = formatter.format(report)
+        assert "<strong>http</strong>: connection refused" in html
+        assert "<strong>grpc</strong>: deadline exceeded" in html
+
+
 class TestPerTransportSummary:
     """Per-transport summary section."""
 
