@@ -4,6 +4,8 @@ Covers: URL patterns, Content-Type, camelCase query params,
 RFC 9457 Problem Details, SSE streaming.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,

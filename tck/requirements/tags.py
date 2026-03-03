@@ -4,6 +4,9 @@ All tags used by RequirementSpec objects are defined here to avoid
 hard-coded strings and enable consistent filtering.
 """
 
+from __future__ import annotations
+
+
 # --- Domain tags ---
 AGENT_CARD = "agent-card"
 ARTIFACT = "artifact"

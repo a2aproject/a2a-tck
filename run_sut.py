@@ -65,6 +65,10 @@ def load_config(config_path: str) -> dict[str, Any]:
         print(f"Error reading configuration file: {e}", file=sys.stderr)
         sys.exit(1)
 
+    if not isinstance(config, dict):
+        print("Error: Configuration file must contain a YAML mapping.", file=sys.stderr)
+        sys.exit(1)
+
     required_keys = ["sut_name", "github_repo", "prerequisites_script", "run_script"]
     for key in required_keys:
         if key not in config:

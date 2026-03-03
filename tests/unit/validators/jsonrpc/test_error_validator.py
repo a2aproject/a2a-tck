@@ -1,5 +1,6 @@
 """Tests for the JSON-RPC error validator."""
 
+from __future__ import annotations
 
 from tck.validators.jsonrpc.error_validator import (
     ERROR_CODE_NAMES,

@@ -1,5 +1,7 @@
 """A2A transport layer - clients, manager, and shared types."""
 
+from __future__ import annotations
+
 from tck.transport.base import (
     BaseTransportClient,
     StreamingResponse,

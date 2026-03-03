@@ -18,12 +18,12 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport.jsonrpc_client import _TRANSPORT
+from tck.transport.jsonrpc_client import TRANSPORT
+from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import jsonrpc, streaming
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient
 
 
@@ -59,41 +59,6 @@ _SAMPLE_MESSAGE = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    """Build a failure message referencing the requirement."""
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    """Record a result in the compliance collector."""
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
-
-
-def _get_client(
-    transport_clients: dict[str, BaseTransportClient],
-) -> BaseTransportClient:
-    """Get the JSON-RPC transport client, skipping if not configured."""
-    client = transport_clients.get(_TRANSPORT)
-    if client is None:
-        pytest.skip("jsonrpc transport not configured")
-    return client
 
 
 def _get_streaming_events(
@@ -154,7 +119,7 @@ class TestSseStreamingFormat:
         """JSONRPC-SSE-001: Each SSE event must be a JSON-RPC 2.0 response."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         events = _get_streaming_events(client, agent_card)
 
         errors: list[str] = []
@@ -170,14 +135,14 @@ class TestSseStreamingFormat:
                 errors.append(f"Event {i}: missing both 'result' and 'error' fields")
 
         passed = len(errors) == 0
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
             transport=transport,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_streaming_events_contain_stream_response(
         self,
@@ -188,7 +153,7 @@ class TestSseStreamingFormat:
         """JSONRPC-SSE-001: Each event result contains a StreamResponse object."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         events = _get_streaming_events(client, agent_card)
 
         errors: list[str] = []
@@ -207,14 +172,14 @@ class TestSseStreamingFormat:
                 )
 
         passed = len(errors) == 0
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
             transport=transport,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_streaming_has_terminal_event(
         self,
@@ -225,7 +190,7 @@ class TestSseStreamingFormat:
         """JSONRPC-SSE-001: Stream ends with a terminal task state."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         events = _get_streaming_events(client, agent_card)
 
         # Check the last event for a terminal state
@@ -242,14 +207,14 @@ class TestSseStreamingFormat:
                 f"got {last_status!r})"
             ]
         )
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
             transport=transport,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
 
 # ---------------------------------------------------------------------------
@@ -271,7 +236,7 @@ class TestSseSubscribeToTask:
         """STREAM-SUB-004: SubscribeToTask returns TaskNotFoundError for non-existent task."""
         req = STREAM_SUB_004
         transport = "jsonrpc"
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
@@ -313,14 +278,14 @@ class TestSseSubscribeToTask:
                     "Server did not return an error for non-existent task subscribe"
                 )
 
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
             transport=transport,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
     def test_subscribe_first_event_is_task(
         self,
@@ -331,7 +296,7 @@ class TestSseSubscribeToTask:
         """STREAM-SUB-001: First event from SubscribeToTask contains a Task object."""
         req = STREAM_SUB_001
         transport = "jsonrpc"
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
@@ -381,11 +346,11 @@ class TestSseSubscribeToTask:
             ]
         )
 
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
             transport=transport,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])

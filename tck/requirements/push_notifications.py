@@ -4,6 +4,8 @@ Covers: CRUD operations for push notification configs, idempotent delete,
 webhook delivery, authentication in webhook requests.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     CREATE_PUSH_CONFIG_BINDING,
     DELETE_PUSH_CONFIG_BINDING,

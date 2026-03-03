@@ -1,5 +1,7 @@
 """Requirements module for A2A protocol specification."""
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     OperationType,
     RequirementLevel,

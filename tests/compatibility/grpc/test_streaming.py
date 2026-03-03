@@ -20,14 +20,14 @@ import pytest
 
 from specification.generated import a2a_pb2
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport.grpc_client import _TRANSPORT
+from tck.transport.grpc_client import TRANSPORT
 from tck.validators.grpc.error_validator import validate_grpc_error
+from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import grpc as grpc_marker
 from tests.compatibility.markers import streaming
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient
 
 
@@ -81,41 +81,6 @@ _CONNECTIVITY_CODES = frozenset({
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    """Build a failure message referencing the requirement."""
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    """Record a result in the compliance collector."""
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
-
-
-def _get_client(
-    transport_clients: dict[str, BaseTransportClient],
-) -> BaseTransportClient:
-    """Get the gRPC transport client, skipping if not configured."""
-    client = transport_clients.get(_TRANSPORT)
-    if client is None:
-        pytest.skip("gRPC transport not configured")
-    return client
 
 
 def _skip_if_no_streaming(agent_card: dict[str, Any]) -> None:
@@ -174,7 +139,7 @@ class TestGrpcStreaming:
     ) -> None:
         """GRPC-ERR-003: send_streaming_message returns a StreamingResponse."""
         req = GRPC_ERR_003
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         _skip_if_no_streaming(agent_card)
 
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
@@ -191,14 +156,14 @@ class TestGrpcStreaming:
             errors.append("Stream yielded no events")
 
         passed = not errors
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
 
     def test_streaming_message_structure(
         self,
@@ -208,7 +173,7 @@ class TestGrpcStreaming:
     ) -> None:
         """GRPC-ERR-003: Each event has exactly one StreamResponse payload field set."""
         req = GRPC_ERR_003
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         events = _collect_events(client, agent_card)
 
         errors: list[str] = []
@@ -222,14 +187,14 @@ class TestGrpcStreaming:
                 )
 
         passed = not errors
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
 
     def test_streaming_event_ordering(
         self,
@@ -239,7 +204,7 @@ class TestGrpcStreaming:
     ) -> None:
         """STREAM-ORDER-001: Task states do not regress; last event is terminal."""
         req = STREAM_ORDER_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         events = _collect_events(client, agent_card)
 
         errors: list[str] = []
@@ -268,14 +233,14 @@ class TestGrpcStreaming:
             )
 
         passed = not errors
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
 
     def test_streaming_cancellation(
         self,
@@ -285,7 +250,7 @@ class TestGrpcStreaming:
     ) -> None:
         """GRPC-ERR-003: Client-side stream cancellation completes without unexpected errors."""
         req = GRPC_ERR_003
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         _skip_if_no_streaming(agent_card)
 
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
@@ -308,14 +273,14 @@ class TestGrpcStreaming:
                 )
 
         passed = not errors
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
 
     def test_streaming_error_propagation(
         self,
@@ -325,7 +290,7 @@ class TestGrpcStreaming:
     ) -> None:
         """STREAM-SUB-004: SubscribeToTask returns NOT_FOUND for non-existent task."""
         req = STREAM_SUB_004
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         _skip_if_no_streaming(agent_card)
 
         response = client.subscribe_to_task(id="tck-nonexistent-grpc-stream-001")
@@ -360,14 +325,14 @@ class TestGrpcStreaming:
             errors = [] if result.valid else [result.message]
             passed = result.valid
 
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
 
     def test_subscribe_first_event_is_task(
         self,
@@ -377,7 +342,7 @@ class TestGrpcStreaming:
     ) -> None:
         """STREAM-SUB-001: First event from SubscribeToTask contains a Task."""
         req = STREAM_SUB_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         _skip_if_no_streaming(agent_card)
 
         # Create a task first via send_message
@@ -414,11 +379,11 @@ class TestGrpcStreaming:
             ]
         )
 
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, _TRANSPORT, errors[0])
+        assert passed, fail_msg(req, TRANSPORT, errors[0])

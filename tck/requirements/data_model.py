@@ -4,6 +4,8 @@ Covers: Task structure, Message structure, Part oneof semantics,
 Artifact structure, valid TaskState values, camelCase naming, timestamps.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,

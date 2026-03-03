@@ -6,6 +6,8 @@ that will be tested by the TCK.
 Reference: PRD Section 5.1.3 (Requirement Registry)
 """
 
+from __future__ import annotations
+
 from tck.requirements.agent_card import AGENT_CARD_REQUIREMENTS
 from tck.requirements.auth import AUTH_REQUIREMENTS
 from tck.requirements.base import (

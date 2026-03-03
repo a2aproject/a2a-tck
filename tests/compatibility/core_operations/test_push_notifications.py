@@ -24,10 +24,10 @@ import pytest
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_task
+from tests.compatibility._test_helpers import fail_msg, get_client, record
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient
 
 
@@ -47,42 +47,6 @@ PUSH_DEL_002 = get_requirement_by_id("PUSH-DEL-002")
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    """Build a failure message referencing the requirement."""
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    """Record a result in the compliance collector."""
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
-
-
-def _get_client(
-    transport_clients: dict[str, BaseTransportClient],
-    transport: str,
-) -> BaseTransportClient:
-    """Get the transport client, skipping if not configured."""
-    client = transport_clients.get(transport)
-    if client is None:
-        pytest.skip(f"Transport {transport!r} not configured")
-    return client
 
 
 def _skip_if_no_push(agent_card: dict[str, Any]) -> None:
@@ -119,7 +83,7 @@ class TestPushNotificationCrud:
         """PUSH-CREATE-001: CreatePushNotificationConfig returns the config."""
         req = PUSH_CREATE_001
         _skip_if_no_push(agent_card)
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -134,8 +98,8 @@ class TestPushNotificationCrud:
             errors.append(f"CreatePushNotificationConfig failed: {response.error}")
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_config_persists(
         self,
@@ -147,7 +111,7 @@ class TestPushNotificationCrud:
         """PUSH-CREATE-002: Config persists and can be retrieved after creation."""
         req = PUSH_CREATE_002
         _skip_if_no_push(agent_card)
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -171,8 +135,8 @@ class TestPushNotificationCrud:
             )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_get_push_config(
         self,
@@ -184,7 +148,7 @@ class TestPushNotificationCrud:
         """PUSH-GET-001: GetPushNotificationConfig returns config details."""
         req = PUSH_GET_001
         _skip_if_no_push(agent_card)
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -206,8 +170,8 @@ class TestPushNotificationCrud:
             errors.append(f"GetPushNotificationConfig failed: {response.error}")
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_get_nonexistent_config_returns_error(
         self,
@@ -219,7 +183,7 @@ class TestPushNotificationCrud:
         """PUSH-GET-002: GetPushNotificationConfig with nonexistent ID returns error."""
         req = PUSH_GET_002
         _skip_if_no_push(agent_card)
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         response = client.get_push_notification_config(
@@ -235,8 +199,8 @@ class TestPushNotificationCrud:
             )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_list_push_configs(
         self,
@@ -248,7 +212,7 @@ class TestPushNotificationCrud:
         """PUSH-LIST-001: ListPushNotificationConfigs includes the created config."""
         req = PUSH_LIST_001
         _skip_if_no_push(agent_card)
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -267,8 +231,8 @@ class TestPushNotificationCrud:
             errors.append(f"ListPushNotificationConfigs failed: {response.error}")
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_delete_push_config(
         self,
@@ -280,7 +244,7 @@ class TestPushNotificationCrud:
         """PUSH-DEL-001: DeletePushNotificationConfig removes the config."""
         req = PUSH_DEL_001
         _skip_if_no_push(agent_card)
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -314,8 +278,8 @@ class TestPushNotificationCrud:
                 )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_delete_is_idempotent(
         self,
@@ -327,7 +291,7 @@ class TestPushNotificationCrud:
         """PUSH-DEL-002: Deleting an already-deleted config does not error."""
         req = PUSH_DEL_002
         _skip_if_no_push(agent_card)
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
         config_id = _unique_config_id()
 
@@ -357,5 +321,5 @@ class TestPushNotificationCrud:
             )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))

@@ -4,6 +4,8 @@ This module defines the core dataclasses for specifying A2A protocol requirement
 following PRD Section 5.1.1.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
 

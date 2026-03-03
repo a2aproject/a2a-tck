@@ -4,6 +4,8 @@ Covers: A2AService conformance, Protobuf v3, gRPC metadata for
 service params, ErrorInfo details.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,

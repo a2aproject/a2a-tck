@@ -21,11 +21,11 @@ import jsonschema
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
+from tests.compatibility._test_helpers import fail_msg, record
 from tests.compatibility.markers import core, grpc, http_json, jsonrpc
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient
 
 
@@ -68,31 +68,6 @@ _TASK_NOT_FOUND_ERROR_CODE = -32001
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    """Build a failure message referencing the requirement."""
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    """Record a result in the compliance collector."""
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
 
 
 def _jsonrpc_call(
@@ -170,9 +145,9 @@ class TestCoreErrorStructure:
             errors.append("JSON-RPC error must have 'code'")
         if "message" not in error:
             errors.append("JSON-RPC error must have 'message'")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_error_has_code_and_message_rest(
         self,
@@ -186,9 +161,9 @@ class TestCoreErrorStructure:
         response = _rest_call(base_url, "GET", "/tasks/tck-nonexistent-error-test")
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error status, got {response.status_code}"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
 
 @core
@@ -208,9 +183,9 @@ class TestCoreInputValidation:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Malformed request must return an error"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
     def test_malformed_request_rejected_rest(
         self,
@@ -224,9 +199,9 @@ class TestCoreInputValidation:
         response = _rest_call(base_url, "POST", "/message:send", json_body={})
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error status, got {response.status_code}"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
 
 # ---------------------------------------------------------------------------
@@ -259,9 +234,9 @@ class TestCapabilityPushNotifications:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected error for unsupported push notifications"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
     def test_push_not_supported_rest(
         self,
@@ -284,9 +259,9 @@ class TestCapabilityPushNotifications:
         )
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported push, got {response.status_code}"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
 
 @core
@@ -317,9 +292,9 @@ class TestCapabilityStreaming:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected error for unsupported streaming"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
 
 @core
@@ -343,9 +318,9 @@ class TestCapabilityExtendedCard:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected error for unsupported extended card"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
 
 # ---------------------------------------------------------------------------
@@ -380,9 +355,9 @@ class TestVersionErrors:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected VersionNotSupportedError for A2A-Version: 99.0"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
     def test_unsupported_version_returns_error_rest(
         self,
@@ -407,9 +382,9 @@ class TestVersionErrors:
         )
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported version, got {response.status_code}"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
     def test_empty_version_treated_as_default_jsonrpc(
         self,
@@ -436,9 +411,9 @@ class TestVersionErrors:
         # a valid result or a well-formed error — never crash.
         passed = "result" in body or "error" in body
         errors = [] if passed else ["Server must return result or error for empty A2A-Version"]
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, errors[0])
+        assert passed, fail_msg(req, transport, errors[0])
 
 
 # ---------------------------------------------------------------------------
@@ -482,9 +457,9 @@ class TestJsonRpcErrorStructure:
             jsonschema.validate(error, _JSONRPC_ERROR_SCHEMA)
         except jsonschema.ValidationError as exc:
             errors.append(exc.message)
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_a2a_error_codes_in_range(
         self,
@@ -517,9 +492,9 @@ class TestJsonRpcErrorStructure:
                 f"or standard JSON-RPC range "
                 f"({_JSONRPC_ERROR_CODE_MAX} to {_JSONRPC_ERROR_CODE_MIN})"
             )
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_a2a_error_type_mappings(
         self,
@@ -543,9 +518,9 @@ class TestJsonRpcErrorStructure:
             errors.append(
                 f"TaskNotFoundError should map to -32001, got {code}"
             )
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -581,9 +556,9 @@ class TestRestErrorStructure:
             body = response.json()
             if "type" not in body and "title" not in body:
                 errors.append("Problem Details must have 'type' or 'title'")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_a2a_error_type_uri(
         self,
@@ -609,9 +584,9 @@ class TestRestErrorStructure:
             errors.append(
                 f"Error type URI must start with https://, got: {error_type!r}"
             )
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -640,6 +615,6 @@ class TestGrpcErrorStructure:
             errors.append("Expected error for nonexistent task")
         elif response.error is None:
             errors.append("Error message must be present")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))

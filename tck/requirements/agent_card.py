@@ -4,6 +4,8 @@ Covers: Discovery, protocol declarations, required AgentCard fields,
 extended card auth, JCS signing.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     GET_EXTENDED_AGENT_CARD_BINDING,
     SPEC_BASE,

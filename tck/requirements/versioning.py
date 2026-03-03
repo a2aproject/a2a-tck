@@ -3,6 +3,8 @@
 Covers: A2A-Version header, version negotiation, default version.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,

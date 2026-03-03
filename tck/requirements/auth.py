@@ -4,6 +4,8 @@ Covers: TLS requirements, server authentication, client authentication,
 in-task auth, authorization scoping.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,
