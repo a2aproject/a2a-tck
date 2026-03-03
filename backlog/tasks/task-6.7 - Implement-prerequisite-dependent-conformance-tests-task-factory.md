@@ -1,10 +1,10 @@
 ---
 id: TASK-6.7
 title: Implement prerequisite-dependent conformance tests (task factory)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-03 08:29'
-updated_date: '2026-03-03 08:45'
+updated_date: '2026-03-03 09:38'
 labels:
   - phase-6
   - testing
@@ -80,3 +80,9 @@ Consider also: `terminal_task_id` (a task that has reached a terminal state).
 <!-- SECTION:NOTES:BEGIN -->
 Implemented as a shared helper module + two test files instead of a pytest fixture, following the same self-contained pattern as existing tests.\n\n## Files created\n\n1. `tests/compatibility/_task_helpers.py` — Shared helper module with `create_task()`, `extract_task_id()`, `extract_context_id()` functions and `TaskInfo` dataclass\n2. `tests/compatibility/core_operations/test_task_lifecycle.py` — Cross-transport tests for GetTask, CancelTask, multi-turn, SubscribeToTask lifecycle\n3. `tests/compatibility/core_operations/test_push_notifications.py` — Cross-transport push notification CRUD tests\n\n## Deferred\n- Multi-stream ordering (STREAM-ORDER-002/003/004) — requires concurrent stream coordination, should be a separate task (AC #5 not checked)"
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added cross-transport prerequisite-dependent conformance tests.\n\n## Files created\n- `tests/compatibility/_task_helpers.py` — Shared helper with `create_task()`, `extract_task_id()`, `extract_context_id()` and `TaskInfo` dataclass\n- `tests/compatibility/core_operations/test_task_lifecycle.py` — Tests for CORE-GET-001, CORE-CANCEL-001/002, CORE-SEND-002, CORE-MULTI-005/006, STREAM-SUB-002/003\n- `tests/compatibility/core_operations/test_push_notifications.py` — Tests for PUSH-CREATE-001/002, PUSH-GET-001/002, PUSH-LIST-001, PUSH-DEL-001/002\n\n## Deferred\n- Multi-stream ordering (STREAM-ORDER-002/003/004) — requires concurrent stream coordination, should be a separate task
+<!-- SECTION:FINAL_SUMMARY:END -->
