@@ -4,6 +4,8 @@ Covers: Functional equivalence across bindings, field presence,
 forward compatibility.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,

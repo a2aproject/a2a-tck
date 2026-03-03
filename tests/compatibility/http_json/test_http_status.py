@@ -16,13 +16,13 @@ import pytest
 
 from tck.requirements.base import SEND_MESSAGE_BINDING
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport.http_json_client import _TRANSPORT
+from tck.transport.http_json_client import TRANSPORT
 from tck.validators.http_json.error_validator import validate_http_json_error
+from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import http_json
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient
 
 
@@ -41,41 +41,6 @@ _HTTP_ERROR_MIN = 400
 _HTTP_SUCCESS_MIN = 200
 _HTTP_SUCCESS_MAX = 299
 
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    """Build a failure message referencing the requirement."""
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    """Record a result in the compliance collector."""
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
-
-
-def _get_client(
-    transport_clients: dict[str, BaseTransportClient],
-) -> BaseTransportClient:
-    """Get the HTTP+JSON transport client, skipping if not configured."""
-    client = transport_clients.get(_TRANSPORT)
-    if client is None:
-        pytest.skip("HTTP+JSON transport not configured")
-    return client
-
-
 
 # ---------------------------------------------------------------------------
 # Status code mapping tests
@@ -93,7 +58,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """TaskNotFoundError: GET /tasks/{nonexistent} returns 404."""
         req = HTTP_JSON_STATUS_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         response = client.get_task(id="tck-nonexistent-status-001")
         if response.success:
@@ -104,14 +69,14 @@ class TestHttpJsonStatusCodes:
             "TaskNotFoundError",
         )
         errors = [] if result.valid else [result.message]
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=result.valid,
             errors=errors,
         )
-        assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
     def test_task_not_cancelable_returns_409(
         self,
@@ -120,7 +85,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """TaskNotCancelableError: POST /tasks/{id}:cancel on non-existent returns 409 (or 404)."""
         req = HTTP_JSON_STATUS_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         response = client.cancel_task(id="tck-nonexistent-status-002")
         if response.success:
@@ -139,14 +104,14 @@ class TestHttpJsonStatusCodes:
                 f"got {status}"
             ]
         )
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=valid,
             errors=errors,
         )
-        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+        assert valid, fail_msg(req, TRANSPORT, errors[0])
 
     def test_unsupported_operation_returns_400(
         self,
@@ -161,7 +126,7 @@ class TestHttpJsonStatusCodes:
         if caps.get("streaming"):
             pytest.skip("Agent supports streaming; cannot trigger UnsupportedOperationError")
 
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "status code test"}],
@@ -176,14 +141,14 @@ class TestHttpJsonStatusCodes:
             "UnsupportedOperationError",
         )
         errors = [] if result.valid else [result.message]
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=result.valid,
             errors=errors,
         )
-        assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
     def test_content_type_not_supported_returns_415(
         self,
@@ -192,7 +157,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """ContentTypeNotSupportedError: wrong Content-Type returns 415."""
         req = HTTP_JSON_STATUS_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         # Send a request with a deliberately wrong Content-Type.
         response = httpx.post(
@@ -206,14 +171,14 @@ class TestHttpJsonStatusCodes:
 
         result = validate_http_json_error(response, "ContentTypeNotSupportedError")
         errors = [] if result.valid else [result.message]
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=result.valid,
             errors=errors,
         )
-        assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
     def test_push_not_supported_returns_400(
         self,
@@ -228,7 +193,7 @@ class TestHttpJsonStatusCodes:
         if caps.get("pushNotifications"):
             pytest.skip("Agent supports push notifications; cannot trigger error")
 
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         response = client.create_push_notification_config(
             task_id="tck-status-push-005",
             config_id="c",
@@ -242,14 +207,14 @@ class TestHttpJsonStatusCodes:
             "PushNotificationNotSupportedError",
         )
         errors = [] if result.valid else [result.message]
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=result.valid,
             errors=errors,
         )
-        assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
     def test_version_not_supported_returns_400(
         self,
@@ -258,7 +223,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """VersionNotSupportedError: unsupported A2A-Version returns 400."""
         req = HTTP_JSON_STATUS_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         # Raw request needed to inject a custom A2A-Version header.
         msg = {
@@ -280,25 +245,25 @@ class TestHttpJsonStatusCodes:
                 "Server MUST return VersionNotSupportedError (400) for "
                 "unsupported A2A-Version, but processed the request normally"
             )
-            _record(
+            record(
                 collector=compliance_collector,
                 req=req,
-                transport=_TRANSPORT,
+                transport=TRANSPORT,
                 passed=False,
                 errors=[detail],
             )
-            pytest.fail(_fail_msg(req, _TRANSPORT, detail))
+            pytest.fail(fail_msg(req, TRANSPORT, detail))
 
         result = validate_http_json_error(response, "VersionNotSupportedError")
         errors = [] if result.valid else [result.message]
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=result.valid,
             errors=errors,
         )
-        assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
     def test_success_returns_2xx(
         self,
@@ -307,7 +272,7 @@ class TestHttpJsonStatusCodes:
     ) -> None:
         """Successful operations return HTTP 2xx status code."""
         req = HTTP_JSON_STATUS_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         msg = {
             "role": "ROLE_USER",
@@ -325,11 +290,11 @@ class TestHttpJsonStatusCodes:
             if valid
             else [f"Successful SendMessage should return 2xx, got {status}"]
         )
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=valid,
             errors=errors,
         )
-        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+        assert valid, fail_msg(req, TRANSPORT, errors[0])

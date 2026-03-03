@@ -15,13 +15,13 @@ from tck.transport._helpers import _build_params, _parse_sse
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
-_TRANSPORT = "jsonrpc"
+TRANSPORT = "jsonrpc"
 
 class JsonRpcClient(BaseTransportClient):
     """JSON-RPC 2.0 over HTTP transport client for A2A protocol."""
 
     def __init__(self, base_url: str) -> None:
-        super().__init__(base_url, _TRANSPORT)
+        super().__init__(base_url, TRANSPORT)
         self._id_counter = itertools.count(1)
         self._client = httpx.Client(base_url=base_url)
 

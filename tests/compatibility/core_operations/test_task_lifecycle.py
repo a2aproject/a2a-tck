@@ -23,13 +23,15 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from specification.generated import a2a_pb2
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_task, extract_task_id
+from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility.markers import streaming
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient
 
 
@@ -48,70 +50,40 @@ STREAM_SUB_003 = get_requirement_by_id("STREAM-SUB-003")
 
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_SUBSCRIBE_TIMEOUT_S = 10
+
+_GRPC_TERMINAL_STATES = frozenset({
+    a2a_pb2.TASK_STATE_COMPLETED,
+    a2a_pb2.TASK_STATE_FAILED,
+    a2a_pb2.TASK_STATE_CANCELED,
+    a2a_pb2.TASK_STATE_REJECTED,
+})
+
+_JSON_TERMINAL_STATES = frozenset({"completed", "failed", "canceled", "rejected"})
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    """Build a failure message referencing the requirement."""
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    """Record a result in the compliance collector."""
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
-
-
-def _get_client(
-    transport_clients: dict[str, BaseTransportClient],
-    transport: str,
-) -> BaseTransportClient:
-    """Get the transport client, skipping if not configured."""
-    client = transport_clients.get(transport)
-    if client is None:
-        pytest.skip(f"Transport {transport!r} not configured")
-    return client
-
-
 def _is_terminal_status(response: Any, transport: str) -> bool:
     """Check whether a response contains a task in a terminal state."""
-    terminal_states_json = {"completed", "failed", "canceled", "rejected"}
-
     raw = response.raw_response
     if transport == "grpc":
-        from specification.generated import a2a_pb2
-
-        _grpc_terminal = {
-            a2a_pb2.TASK_STATE_COMPLETED,
-            a2a_pb2.TASK_STATE_FAILED,
-            a2a_pb2.TASK_STATE_CANCELED,
-            a2a_pb2.TASK_STATE_REJECTED,
-        }
         # SendMessageResponse has a "payload" oneof; Task proto does not.
         try:
             payload = raw.WhichOneof("payload")
             if payload == "task":
-                return raw.task.status.state in _grpc_terminal
+                return raw.task.status.state in _GRPC_TERMINAL_STATES
         except (ValueError, AttributeError):
             pass
         # Task proto returned directly (GetTask, CancelTask)
         if hasattr(raw, "status"):
-            return raw.status.state in _grpc_terminal
+            return raw.status.state in _GRPC_TERMINAL_STATES
         return False
 
     # JSON-RPC or HTTP+JSON
@@ -126,13 +98,63 @@ def _is_terminal_status(response: Any, transport: str) -> bool:
     if isinstance(task, dict):
         status = task.get("status", {})
         state = status.get("state", "") if isinstance(status, dict) else ""
-        return state.lower() in terminal_states_json
+        return state.lower() in _JSON_TERMINAL_STATES
     return False
 
 
-def _response_has_error(response: Any, transport: str) -> bool:
-    """Check whether the response indicates an error."""
-    return not response.success
+def _event_has_terminal_state(event: Any, transport: str) -> bool:
+    """Check whether a streaming event carries a terminal task state."""
+    if transport == "grpc":
+        if hasattr(event, "WhichOneof"):
+            payload = event.WhichOneof("payload")
+            if payload == "task":
+                return event.task.status.state in _GRPC_TERMINAL_STATES
+            if payload == "status_update":
+                return event.status_update.status.state in _GRPC_TERMINAL_STATES
+        return False
+
+    # JSON-RPC / HTTP+JSON — event is a dict
+    if not isinstance(event, dict):
+        return False
+    # JSON-RPC events are wrapped in a JSON-RPC envelope
+    result = event.get("result", event)
+    if isinstance(result, dict):
+        # Could be a task, status_update, etc.
+        task = result.get("task", result)
+        status = task.get("status", {}) if isinstance(task, dict) else {}
+        state = status.get("state", "") if isinstance(status, dict) else ""
+        if state.lower() in _JSON_TERMINAL_STATES:
+            return True
+        # Check status_update path
+        status_update = result.get("statusUpdate", result.get("status_update", {}))
+        if isinstance(status_update, dict):
+            su_status = status_update.get("status", {})
+            su_state = su_status.get("state", "") if isinstance(su_status, dict) else ""
+            if su_state.lower() in _JSON_TERMINAL_STATES:
+                return True
+    return False
+
+
+def _collect_events_with_timeout(
+    events_iter: Any,
+    timeout: float = _SUBSCRIBE_TIMEOUT_S,
+) -> list[Any]:
+    """Collect streaming events with a hard wall-clock timeout.
+
+    Runs event consumption in a daemon thread so that we can enforce
+    the deadline even when ``next(events_iter)`` itself blocks
+    (e.g. an SSE connection waiting for data that never arrives).
+    """
+    collected: list[Any] = []
+
+    def _drain() -> None:
+        for event in events_iter:
+            collected.append(event)
+
+    thread = threading.Thread(target=_drain, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout)
+    return collected
 
 
 # ---------------------------------------------------------------------------
@@ -152,7 +174,7 @@ class TestGetTask:
     ) -> None:
         """CORE-GET-001: GetTask returns the current state of an existing task."""
         req = CORE_GET_001
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         response = client.get_task(id=info.task_id)
@@ -170,8 +192,8 @@ class TestGetTask:
                 )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -191,7 +213,7 @@ class TestCancelTask:
     ) -> None:
         """CORE-CANCEL-001: CancelTask returns the task with updated state."""
         req = CORE_CANCEL_001
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         response = client.cancel_task(id=info.task_id)
@@ -210,8 +232,8 @@ class TestCancelTask:
                 )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_cancel_terminal_task_returns_error(
         self,
@@ -221,7 +243,7 @@ class TestCancelTask:
     ) -> None:
         """CORE-CANCEL-002: CancelTask on a terminal task returns TaskNotCancelableError."""
         req = CORE_CANCEL_002
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         # Verify the task reached a terminal state
@@ -241,8 +263,8 @@ class TestCancelTask:
             )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -262,7 +284,7 @@ class TestMultiTurn:
     ) -> None:
         """CORE-SEND-002: SendMessage to a terminal task returns UnsupportedOperationError."""
         req = CORE_SEND_002
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         # Verify the task reached a terminal state
@@ -289,8 +311,8 @@ class TestMultiTurn:
             )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_infer_context_from_task(
         self,
@@ -300,7 +322,7 @@ class TestMultiTurn:
     ) -> None:
         """CORE-MULTI-005: SendMessage with only taskId infers contextId from the task."""
         req = CORE_MULTI_005
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         if not info.context_id:
@@ -322,8 +344,8 @@ class TestMultiTurn:
             errors.append(f"SendMessage with taskId failed: {response.error}")
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_reject_mismatching_context(
         self,
@@ -333,7 +355,7 @@ class TestMultiTurn:
     ) -> None:
         """CORE-MULTI-006: SendMessage with taskId + wrong contextId returns error."""
         req = CORE_MULTI_006
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         # Send with a deliberately wrong contextId
@@ -354,8 +376,8 @@ class TestMultiTurn:
             )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -363,6 +385,7 @@ class TestMultiTurn:
 # ---------------------------------------------------------------------------
 
 
+@streaming
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestSubscribeLifecycle:
     """Tests for SubscribeToTask lifecycle behavior."""
@@ -380,7 +403,7 @@ class TestSubscribeLifecycle:
         if not caps.get("streaming"):
             pytest.skip("Agent does not support streaming")
 
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         sub_response = client.subscribe_to_task(id=info.task_id)
@@ -404,8 +427,8 @@ class TestSubscribeLifecycle:
                 )
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_subscribe_rejects_terminal_task(
         self,
@@ -420,7 +443,7 @@ class TestSubscribeLifecycle:
         if not caps.get("streaming"):
             pytest.skip("Agent does not support streaming")
 
-        client = _get_client(transport_clients, transport)
+        client = get_client(transport_clients, transport)
         info = create_task(client)
 
         # Verify the task reached a terminal state
@@ -446,76 +469,5 @@ class TestSubscribeLifecycle:
         # else: server returned error immediately — correct behavior
 
         passed = not errors
-        _record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, _fail_msg(req, transport, "; ".join(errors))
-
-
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
-
-_SUBSCRIBE_TIMEOUT_S = 10
-_TERMINAL_STATES_JSON = frozenset({"completed", "failed", "canceled", "rejected"})
-
-
-def _collect_events_with_timeout(
-    events_iter: Any,
-    timeout: float = _SUBSCRIBE_TIMEOUT_S,
-) -> list[Any]:
-    """Collect streaming events with a hard wall-clock timeout.
-
-    Runs event consumption in a daemon thread so that we can enforce
-    the deadline even when ``next(events_iter)`` itself blocks
-    (e.g. an SSE connection waiting for data that never arrives).
-    """
-    collected: list[Any] = []
-
-    def _drain() -> None:
-        for event in events_iter:
-            collected.append(event)
-
-    thread = threading.Thread(target=_drain, daemon=True)
-    thread.start()
-    thread.join(timeout=timeout)
-    return collected
-
-
-def _event_has_terminal_state(event: Any, transport: str) -> bool:
-    """Check whether a streaming event carries a terminal task state."""
-    if transport == "grpc":
-        from specification.generated import a2a_pb2
-
-        terminal = {
-            a2a_pb2.TASK_STATE_COMPLETED,
-            a2a_pb2.TASK_STATE_FAILED,
-            a2a_pb2.TASK_STATE_CANCELED,
-            a2a_pb2.TASK_STATE_REJECTED,
-        }
-        if hasattr(event, "WhichOneof"):
-            payload = event.WhichOneof("payload")
-            if payload == "task":
-                return event.task.status.state in terminal
-            if payload == "status_update":
-                return event.status_update.status.state in terminal
-        return False
-
-    # JSON-RPC / HTTP+JSON — event is a dict
-    if not isinstance(event, dict):
-        return False
-    # JSON-RPC events are wrapped in a JSON-RPC envelope
-    result = event.get("result", event)
-    if isinstance(result, dict):
-        # Could be a task, status_update, etc.
-        task = result.get("task", result)
-        status = task.get("status", {}) if isinstance(task, dict) else {}
-        state = status.get("state", "") if isinstance(status, dict) else ""
-        if state.lower() in _TERMINAL_STATES_JSON:
-            return True
-        # Check status_update path
-        status_update = result.get("statusUpdate", result.get("status_update", {}))
-        if isinstance(status_update, dict):
-            su_status = status_update.get("status", {})
-            su_state = su_status.get("state", "") if isinstance(su_status, dict) else ""
-            if su_state.lower() in _TERMINAL_STATES_JSON:
-                return True
-    return False
+        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        assert passed, fail_msg(req, transport, "; ".join(errors))

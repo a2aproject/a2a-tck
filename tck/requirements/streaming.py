@@ -4,6 +4,8 @@ Covers: Event ordering, lifecycle, terminal state, SubscribeToTask
 first-event semantics, multiple streams per task.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     SPEC_BASE,
     SUBSCRIBE_TO_TASK_BINDING,

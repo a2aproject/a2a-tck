@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
+from tests.compatibility._test_helpers import fail_msg, record
 from tests.compatibility.markers import core
 
 
@@ -60,29 +61,6 @@ _SAMPLE_MESSAGE = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
 
 
 def _extract_result(raw: Any) -> dict | None:
@@ -188,7 +166,7 @@ class TestSendMessageResponseSchema:
             result = validator.validate(raw, "Send Message Response")
 
             for req, _schema_ref in self._REQ_SCHEMA_PAIRS:
-                _record(
+                record(
                     collector=compliance_collector,
                     req=req,
                     transport=transport,
@@ -196,7 +174,7 @@ class TestSendMessageResponseSchema:
                     errors=result.errors if not result.valid else [],
                 )
 
-            assert result.valid, _fail_msg(
+            assert result.valid, fail_msg(
                 DM_TASK_001, transport,
                 f"Schema validation failed: {'; '.join(result.errors)}",
             )
@@ -230,9 +208,9 @@ class TestCamelCaseFieldNames:
             errors = []
             if snake_case_keys:
                 errors.append(f"Found snake_case field names: {snake_case_keys}")
-            _record(collector=compliance_collector, req=req, transport=transport,
+            record(collector=compliance_collector, req=req, transport=transport,
                     passed=not errors, errors=errors)
-            assert not errors, _fail_msg(req, transport, "; ".join(errors))
+            assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 @core
@@ -259,9 +237,9 @@ class TestEnumSerialization:
                             f"Enum '{key}' must be a string, got "
                             f"{type(val).__name__}: {val!r}"
                         )
-            _record(collector=compliance_collector, req=req, transport=transport,
+            record(collector=compliance_collector, req=req, transport=transport,
                     passed=not errors, errors=errors)
-            assert not errors, _fail_msg(req, transport, "; ".join(errors))
+            assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 @core
@@ -296,8 +274,8 @@ class TestTimestampFormat:
                             f"Timestamp '{key}' must be ISO 8601 with Z suffix, "
                             f"got: {ts!r}"
                         )
-            _record(collector=compliance_collector, req=req, transport=transport,
+            record(collector=compliance_collector, req=req, transport=transport,
                     passed=not errors, errors=errors)
-            assert not errors, _fail_msg(req, transport, "; ".join(errors))
+            assert not errors, fail_msg(req, transport, "; ".join(errors))
         if not found_timestamp:
             pytest.skip("No timestamps found in responses to validate")

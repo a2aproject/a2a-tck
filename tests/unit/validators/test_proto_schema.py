@@ -1,5 +1,7 @@
 """Tests for the Proto Schema validator."""
 
+from __future__ import annotations
+
 import pytest
 
 from specification.generated import a2a_pb2

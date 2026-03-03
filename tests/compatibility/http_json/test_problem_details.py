@@ -15,13 +15,13 @@ import pytest
 
 from tck.requirements.base import A2A_ERROR_TYPE_URIS, TASK_NOT_FOUND_ERROR
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport.http_json_client import _TRANSPORT
+from tck.transport.http_json_client import TRANSPORT
 from tck.validators.http_json.error_validator import ProblemDetails
+from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import http_json
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient
 
 
@@ -36,41 +36,6 @@ HTTP_JSON_ERR_002 = get_requirement_by_id("HTTP_JSON-ERR-002")
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    """Build a failure message referencing the requirement."""
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    """Record a result in the compliance collector."""
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
-
-
-def _get_client(
-    transport_clients: dict[str, BaseTransportClient],
-) -> BaseTransportClient:
-    """Get the HTTP+JSON transport client, skipping if not configured."""
-    client = transport_clients.get(_TRANSPORT)
-    if client is None:
-        pytest.skip("HTTP+JSON transport not configured")
-    return client
 
 
 def _get_error_response(
@@ -123,7 +88,7 @@ class TestProblemDetailsFormat:
     ) -> None:
         """Error response has Content-Type: application/problem+json."""
         req = HTTP_JSON_ERR_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         response = _get_error_response(client)
 
         headers = response.headers or {}
@@ -141,14 +106,14 @@ class TestProblemDetailsFormat:
                 f"Error Content-Type must be application/problem+json, got: {ct!r}"
             ]
         )
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=valid,
             errors=errors,
         )
-        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+        assert valid, fail_msg(req, TRANSPORT, errors[0])
 
     def test_required_fields_present(
         self,
@@ -157,7 +122,7 @@ class TestProblemDetailsFormat:
     ) -> None:
         """Body contains required fields: type, title, status."""
         req = HTTP_JSON_ERR_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -167,14 +132,14 @@ class TestProblemDetailsFormat:
         except ValueError as exc:
             errors.append(str(exc))
 
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=not errors,
             errors=errors,
         )
-        assert not errors, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+        assert not errors, fail_msg(req, TRANSPORT, "; ".join(errors))
 
     def test_status_field_matches_http_status(
         self,
@@ -183,7 +148,7 @@ class TestProblemDetailsFormat:
     ) -> None:
         """The ``status`` field value equals the HTTP response status code."""
         req = HTTP_JSON_ERR_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -201,14 +166,14 @@ class TestProblemDetailsFormat:
                 f"HTTP status code ({response.status_code})"
             ]
         )
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=valid,
             errors=errors,
         )
-        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+        assert valid, fail_msg(req, TRANSPORT, errors[0])
 
     def test_optional_fields_valid(
         self,
@@ -217,7 +182,7 @@ class TestProblemDetailsFormat:
     ) -> None:
         """If ``detail`` or ``instance`` are present, they must be strings."""
         req = HTTP_JSON_ERR_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -231,14 +196,14 @@ class TestProblemDetailsFormat:
                 f"'instance' field must be a string, got {type(body['instance']).__name__}"
             )
 
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=not errors,
             errors=errors,
         )
-        assert not errors, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+        assert not errors, fail_msg(req, TRANSPORT, "; ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -257,7 +222,7 @@ class TestProblemDetailsTypeUri:
     ) -> None:
         """The ``type`` field matches one of the spec-defined A2A error URIs."""
         req = HTTP_JSON_ERR_002
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -270,14 +235,14 @@ class TestProblemDetailsTypeUri:
                 f"type URI {error_type!r} is not a recognised A2A error URI"
             ]
         )
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=valid,
             errors=errors,
         )
-        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+        assert valid, fail_msg(req, TRANSPORT, errors[0])
 
     def test_type_uri_matches_error_condition(
         self,
@@ -286,7 +251,7 @@ class TestProblemDetailsTypeUri:
     ) -> None:
         """For a TaskNotFound trigger, type must be the task-not-found URI."""
         req = HTTP_JSON_ERR_002
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -301,11 +266,11 @@ class TestProblemDetailsTypeUri:
                 f"got {error_type!r}"
             ]
         )
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=valid,
             errors=errors,
         )
-        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+        assert valid, fail_msg(req, TRANSPORT, errors[0])

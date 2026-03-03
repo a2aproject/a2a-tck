@@ -22,12 +22,12 @@ def _dict_to_proto(data: dict, proto_class: type) -> Any:
     return ParseDict(data, proto_class())
 
 
-_TRANSPORT = "grpc"
+TRANSPORT = "grpc"
 
 class GrpcClient(BaseTransportClient):
     """gRPC transport client for A2A protocol."""
     def __init__(self, base_url: str) -> None:
-        super().__init__(base_url, _TRANSPORT)
+        super().__init__(base_url, TRANSPORT)
         self._channel = grpc.insecure_channel(base_url)
         self._stub = a2a_pb2_grpc.A2AServiceStub(self._channel)
 

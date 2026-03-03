@@ -15,16 +15,16 @@ import grpc
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport.grpc_client import _TRANSPORT
+from tck.transport.grpc_client import TRANSPORT
 from tck.validators.grpc.error_validator import (
     extract_error_info,
     validate_grpc_error,
 )
+from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import grpc as grpc_marker
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient
 
 
@@ -39,41 +39,6 @@ GRPC_ERR_002 = get_requirement_by_id("GRPC-ERR-002")
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    """Build a failure message referencing the requirement."""
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    """Record a result in the compliance collector."""
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
-
-
-def _get_client(
-    transport_clients: dict[str, BaseTransportClient],
-) -> BaseTransportClient:
-    """Get the gRPC transport client, skipping if not configured."""
-    client = transport_clients.get(_TRANSPORT)
-    if client is None:
-        pytest.skip("gRPC transport not configured")
-    return client
 
 
 _CONNECTIVITY_CODES = frozenset({
@@ -116,7 +81,7 @@ class TestGrpcStatusCodes:
     ) -> None:
         """TaskNotFoundError: GetTask with nonexistent ID returns NOT_FOUND."""
         req = GRPC_ERR_002
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         response = client.get_task(id="tck-nonexistent-grpc-status-001")
         if response.success:
@@ -125,14 +90,14 @@ class TestGrpcStatusCodes:
         rpc_error = _get_rpc_error(response)
         result = validate_grpc_error(rpc_error, "TaskNotFoundError")
         errors = [] if result.valid else [result.message]
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=result.valid,
             errors=errors,
         )
-        assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
     def test_task_not_cancelable_returns_failed_precondition(
         self,
@@ -141,7 +106,7 @@ class TestGrpcStatusCodes:
     ) -> None:
         """TaskNotCancelableError: CancelTask on nonexistent returns NOT_FOUND or FAILED_PRECONDITION."""
         req = GRPC_ERR_002
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         response = client.cancel_task(id="tck-nonexistent-grpc-status-002")
         if response.success:
@@ -161,14 +126,14 @@ class TestGrpcStatusCodes:
                 f"(TaskNotCancelableError), got {actual_status}"
             ]
         )
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=valid,
             errors=errors,
         )
-        assert valid, _fail_msg(req, _TRANSPORT, errors[0])
+        assert valid, fail_msg(req, TRANSPORT, errors[0])
 
     def test_unsupported_operation_returns_unimplemented(
         self,
@@ -183,7 +148,7 @@ class TestGrpcStatusCodes:
         if caps.get("streaming"):
             pytest.skip("Agent supports streaming; cannot trigger UnsupportedOperationError")
 
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "grpc status code test"}],
@@ -196,14 +161,14 @@ class TestGrpcStatusCodes:
         rpc_error = _get_rpc_error(response)
         result = validate_grpc_error(rpc_error, "UnsupportedOperationError")
         errors = [] if result.valid else [result.message]
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=result.valid,
             errors=errors,
         )
-        assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
     def test_push_not_supported_returns_unimplemented(
         self,
@@ -218,7 +183,7 @@ class TestGrpcStatusCodes:
         if caps.get("pushNotifications"):
             pytest.skip("Agent supports push notifications; cannot trigger error")
 
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
         response = client.create_push_notification_config(
             task_id="tck-grpc-status-push-004",
             config_id="c",
@@ -230,14 +195,14 @@ class TestGrpcStatusCodes:
         rpc_error = _get_rpc_error(response)
         result = validate_grpc_error(rpc_error, "PushNotificationNotSupportedError")
         errors = [] if result.valid else [result.message]
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=result.valid,
             errors=errors,
         )
-        assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
     def test_version_not_supported_returns_unimplemented(
         self,
@@ -246,7 +211,7 @@ class TestGrpcStatusCodes:
     ) -> None:
         """VersionNotSupportedError: unsupported A2A-Version via gRPC metadata returns UNIMPLEMENTED."""
         req = GRPC_ERR_002
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         # Use the underlying stub directly to inject custom metadata.
         from google.protobuf.json_format import ParseDict
@@ -272,14 +237,14 @@ class TestGrpcStatusCodes:
                 "Server MUST return VersionNotSupportedError (UNIMPLEMENTED) for "
                 "unsupported A2A-Version, but processed the request normally"
             )
-            _record(
+            record(
                 collector=compliance_collector,
                 req=req,
-                transport=_TRANSPORT,
+                transport=TRANSPORT,
                 passed=False,
                 errors=[detail],
             )
-            pytest.fail(_fail_msg(req, _TRANSPORT, detail))
+            pytest.fail(fail_msg(req, TRANSPORT, detail))
         except grpc.RpcError as e:
             if e.code() in _CONNECTIVITY_CODES:
                 pytest.fail(
@@ -287,14 +252,14 @@ class TestGrpcStatusCodes:
                 )
             result = validate_grpc_error(e, "VersionNotSupportedError")
             errors = [] if result.valid else [result.message]
-            _record(
+            record(
                 collector=compliance_collector,
                 req=req,
-                transport=_TRANSPORT,
+                transport=TRANSPORT,
                 passed=result.valid,
                 errors=errors,
             )
-            assert result.valid, _fail_msg(req, _TRANSPORT, result.message)
+            assert result.valid, fail_msg(req, TRANSPORT, result.message)
 
 
 # ---------------------------------------------------------------------------
@@ -313,7 +278,7 @@ class TestGrpcErrorInfo:
     ) -> None:
         """Trigger TaskNotFoundError and verify google.rpc.ErrorInfo in status details."""
         req = GRPC_ERR_001
-        client = _get_client(transport_clients)
+        client = get_client(transport_clients, TRANSPORT)
 
         response = client.get_task(id="tck-nonexistent-grpc-errinfo-001")
         if response.success:
@@ -341,11 +306,11 @@ class TestGrpcErrorInfo:
                 )
 
         passed = not errors
-        _record(
+        record(
             collector=compliance_collector,
             req=req,
-            transport=_TRANSPORT,
+            transport=TRANSPORT,
             passed=passed,
             errors=errors,
         )
-        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))

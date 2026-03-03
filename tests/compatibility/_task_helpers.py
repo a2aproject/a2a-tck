@@ -54,7 +54,7 @@ def extract_task_id(response: TransportResponse) -> str | None:
     transport = response.transport
 
     if transport == "grpc":
-        return _extract_grpc_task_id(raw)
+        return _extract_grpc_field(raw, "id")
     if transport == "jsonrpc":
         return _extract_jsonrpc_field(raw, "id")
     if transport == "http_json":
@@ -68,7 +68,7 @@ def extract_context_id(response: TransportResponse) -> str | None:
     transport = response.transport
 
     if transport == "grpc":
-        return _extract_grpc_context_id(raw)
+        return _extract_grpc_field(raw, "context_id")
     if transport == "jsonrpc":
         return _extract_jsonrpc_field(raw, "contextId")
     if transport == "http_json":
@@ -104,8 +104,8 @@ def create_task(client: BaseTransportClient) -> TaskInfo:
 # ---------------------------------------------------------------------------
 
 
-def _extract_grpc_task_id(raw: Any) -> str | None:
-    """Extract task ID from a gRPC protobuf response.
+def _extract_grpc_field(raw: Any, field: str) -> str | None:
+    """Extract a task field from a gRPC protobuf response.
 
     Handles both ``SendMessageResponse`` (oneof with ``task`` field) and
     ``Task`` (returned directly by GetTask / CancelTask).
@@ -113,31 +113,16 @@ def _extract_grpc_task_id(raw: Any) -> str | None:
     # SendMessageResponse has a "payload" oneof; Task proto does not.
     try:
         payload = raw.WhichOneof("payload")
-        if payload == "task" and raw.task.id:
-            return raw.task.id
+        if payload == "task":
+            value = getattr(raw.task, field, None)
+            if value:
+                return value
     except (ValueError, AttributeError):
         pass
     # Task proto returned directly (GetTask, CancelTask)
-    if hasattr(raw, "id") and raw.id:
-        return raw.id
-    return None
-
-
-def _extract_grpc_context_id(raw: Any) -> str | None:
-    """Extract context ID from a gRPC protobuf response.
-
-    Handles both ``SendMessageResponse`` (oneof with ``task`` field) and
-    ``Task`` (returned directly by GetTask / CancelTask).
-    """
-    try:
-        payload = raw.WhichOneof("payload")
-        if payload == "task" and raw.task.context_id:
-            return raw.task.context_id
-    except (ValueError, AttributeError):
-        pass
-    # Task proto returned directly (GetTask, CancelTask)
-    if hasattr(raw, "context_id") and raw.context_id:
-        return raw.context_id
+    value = getattr(raw, field, None)
+    if value:
+        return value
     return None
 
 

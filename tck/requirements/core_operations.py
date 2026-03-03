@@ -5,6 +5,8 @@ SubscribeToTask, blocking semantics, error handling, capability validation,
 multi-turn interactions (contextId/taskId).
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     CANCEL_TASK_BINDING,
     GET_TASK_BINDING,

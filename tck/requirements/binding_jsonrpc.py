@@ -4,6 +4,8 @@ Covers: JSON-RPC 2.0 format, Content-Type, PascalCase methods,
 error codes, SSE streaming format.
 """
 
+from __future__ import annotations
+
 from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,

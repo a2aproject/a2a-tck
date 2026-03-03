@@ -18,11 +18,11 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from tck.requirements.registry import get_requirement_by_id
+from tests.compatibility._test_helpers import fail_msg, record
 from tests.compatibility.markers import grpc, http_json, jsonrpc, streaming
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
     from tck.transport.base import BaseTransportClient, TransportResponse
 
 
@@ -52,29 +52,6 @@ _SAMPLE_MESSAGE = {
     "parts": [{"text": "Hello from TCK transport test"}],
     "messageId": "tck-transport-test-001",
 }
-
-
-def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
-    return (
-        f"{req.id} [{req.title}] failed on {transport}: "
-        f"{detail} (see {req.spec_url})"
-    )
-
-
-def _record(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    passed: bool,
-    errors: list[str] | None = None,
-) -> None:
-    collector.record(
-        requirement_id=req.id,
-        transport=transport,
-        level=req.level.value,
-        passed=passed,
-        errors=errors or [],
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -109,9 +86,9 @@ class TestJsonRpcFormat:
         result = validator.validate(
             jsonrpc_response.raw_response, "Send Message Response"
         )
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=result.valid, errors=result.errors)
-        assert result.valid, _fail_msg(req, transport, "; ".join(result.errors))
+        assert result.valid, fail_msg(req, transport, "; ".join(result.errors))
 
     def test_content_type_is_application_json(
         self,
@@ -125,9 +102,9 @@ class TestJsonRpcFormat:
         errors = []
         if "application/json" not in ct:
             errors.append(f"Expected Content-Type application/json, got: {ct!r}")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 @jsonrpc
@@ -165,9 +142,9 @@ class TestJsonRpcMethodNames:
             errors.append(f"Unexpected method names: {unexpected}")
         if missing:
             errors.append(f"Missing spec method names: {missing}")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 @jsonrpc
@@ -193,9 +170,9 @@ class TestJsonRpcStreaming:
         errors = []
         if "text/event-stream" not in ct:
             errors.append(f"Streaming Content-Type must be text/event-stream, got: {ct!r}")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -229,9 +206,9 @@ class TestRestFormat:
         errors = []
         if "application/json" not in ct:
             errors.append(f"Expected Content-Type application/json, got: {ct!r}")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_response_validates_against_schema(
         self,
@@ -248,9 +225,9 @@ class TestRestFormat:
         result = validator.validate(
             rest_response.raw_response, "Send Message Response"
         )
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=result.valid, errors=result.errors)
-        assert result.valid, _fail_msg(req, transport, "; ".join(result.errors))
+        assert result.valid, fail_msg(req, transport, "; ".join(result.errors))
 
 
 @http_json
@@ -280,9 +257,9 @@ class TestRestUrlPatterns:
             errors.append(f"LIST_TASKS path={LIST_TASKS_BINDING.http_json_path!r}")
         if CANCEL_TASK_BINDING.http_json_path != "/tasks/{id}:cancel":
             errors.append(f"CANCEL_TASK path={CANCEL_TASK_BINDING.http_json_path!r}")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_http_methods_correct(self, compliance_collector: Any) -> None:
         """HTTP_JSON-URL-002: Correct HTTP methods per operation."""
@@ -307,9 +284,9 @@ class TestRestUrlPatterns:
         for actual, expected, name in checks:
             if actual != expected:
                 errors.append(f"{name}: expected {expected}, got {actual}")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 @http_json
@@ -329,9 +306,9 @@ class TestRestQueryParams:
             errors.append(f"LIST_TASKS method={LIST_TASKS_BINDING.http_json_method}")
         if LIST_TASKS_BINDING.http_json_path != "/tasks":
             errors.append(f"LIST_TASKS path={LIST_TASKS_BINDING.http_json_path}")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 @http_json
@@ -357,9 +334,9 @@ class TestRestStreaming:
         errors = []
         if "text/event-stream" not in ct:
             errors.append(f"Streaming Content-Type must be text/event-stream, got: {ct!r}")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -400,9 +377,9 @@ class TestGrpcService:
         elif not response.success:
             # Getting an error response still proves the service is implemented
             pass
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 @grpc
@@ -427,6 +404,6 @@ class TestGrpcStreaming:
         errors = []
         if not response.is_streaming:
             errors.append("gRPC streaming response must be a StreamingResponse")
-        _record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compliance_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
-        assert not errors, _fail_msg(req, transport, "; ".join(errors))
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
