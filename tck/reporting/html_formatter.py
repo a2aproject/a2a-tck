@@ -117,14 +117,15 @@ class HTMLFormatter:
                 cell_class = ' class="skipped"'
             transport_cells += f"<td{cell_class}>{escape(result)}</td>"
 
-        errors = "; ".join(req.errors)
+        tooltip = f' title="{escape(req.description)}"' if req.description else ""
+        error_html = _format_transport_errors(req)
         return (
             f"<tr>"
-            f"<td>{escape(req_id)}</td>"
+            f"<td{tooltip}>{escape(req_id)}</td>"
             f"<td>{escape(req.level)}</td>"
             f'<td class="{status_class}">{escape(req.status)}</td>'
             f"{transport_cells}"
-            f"<td>{escape(errors)}</td>"
+            f"<td>{error_html}</td>"
             f"</tr>\n"
         )
 
@@ -173,10 +174,12 @@ class HTMLFormatter:
 
         items = ""
         for req_id, req in failed.items():
-            errors = "; ".join(req.errors) if req.errors else "no error details"
+            error_html = _format_transport_errors(req)
+            if not error_html:
+                error_html = "no error details"
             items += (
                 f"<li><strong>{escape(req_id)}</strong> "
-                f"[{escape(req.level)}]: {escape(errors)}</li>\n"
+                f"[{escape(req.level)}]: {error_html}</li>\n"
             )
 
         return (
@@ -196,6 +199,20 @@ def _format_compliance(value: float) -> str:
     return f"{value:.1f}%"
 
 
+def _format_transport_errors(req: RequirementResult) -> str:
+    """Format errors as a bullet list grouped by transport."""
+    if req.transport_errors:
+        items = ""
+        for transport, errs in req.transport_errors.items():
+            for err in errs:
+                items += f"<li><strong>{escape(transport)}</strong>: {escape(err)}</li>"
+        return f"<ul class=\"error-list\">{items}</ul>"
+    if req.errors:
+        items = "".join(f"<li>{escape(e)}</li>" for e in req.errors)
+        return f"<ul class=\"error-list\">{items}</ul>"
+    return ""
+
+
 # ------------------------------------------------------------------
 # Inline CSS
 # ------------------------------------------------------------------
@@ -213,4 +230,7 @@ th { background: #f5f5f5; }
 .skipped { background: #e2e3e5; color: #383d41; }
 .bar { background: #e9ecef; border-radius: 4px; height: 18px; width: 100%; }
 .bar-fill { background: #28a745; height: 100%; border-radius: 4px; }
+td[title] { cursor: help; text-decoration: underline dotted; }
+.error-list { margin: 0; padding-left: 1.2em; list-style: disc; }
+.error-list li { margin: 2px 0; }
 """
