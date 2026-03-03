@@ -1,0 +1,207 @@
+"""HTML formatter for A2A TCK compliance reports.
+
+Transforms a :class:`ComplianceReport` into a self-contained HTML
+document with inline CSS and optionally writes it to disk.
+"""
+
+from __future__ import annotations
+
+from html import escape
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from tck.reporting.aggregator import ComplianceReport, RequirementResult
+
+
+class HTMLFormatter:
+    """Formats a :class:`ComplianceReport` as a self-contained HTML page."""
+
+    def __init__(self, *, sut_url: str = "", spec_version: str = "") -> None:
+        self._sut_url = sut_url
+        self._spec_version = spec_version
+
+    def format(self, report: ComplianceReport) -> str:
+        """Return a complete HTML document string."""
+        return (
+            "<!DOCTYPE html>\n"
+            "<html lang=\"en\">\n"
+            "<head>\n"
+            '<meta charset="utf-8">\n'
+            "<title>A2A TCK Compliance Report</title>\n"
+            f"<style>{_CSS}</style>\n"
+            "</head>\n"
+            "<body>\n"
+            f"{self._render_executive_summary(report)}"
+            f"{self._render_per_requirement_table(report)}"
+            f"{self._render_per_transport_summary(report)}"
+            f"{self._render_failed_tests(report)}"
+            "</body>\n"
+            "</html>\n"
+        )
+
+    def write(self, report: ComplianceReport, path: Path) -> None:
+        """Write the HTML report to *path*, creating parent directories."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(self.format(report), encoding="utf-8")
+
+    # ------------------------------------------------------------------
+    # Sections
+    # ------------------------------------------------------------------
+
+    def _render_executive_summary(self, report: ComplianceReport) -> str:
+        return (
+            '<div class="section">\n'
+            "<h1>Executive Summary</h1>\n"
+            f'<div class="overall">{_format_compliance(report.overall_compliance)}</div>\n'
+            '<table class="summary-table">\n'
+            "<tr><th>Level</th><th>Compliance</th></tr>\n"
+            f"<tr><td>MUST</td><td>{_format_compliance(report.must_compliance)}</td></tr>\n"
+            f"<tr><td>SHOULD</td><td>{_format_compliance(report.should_compliance)}</td></tr>\n"
+            f"<tr><td>MAY</td><td>{_format_compliance(report.may_compliance)}</td></tr>\n"
+            "</table>\n"
+            f"<p>Timestamp: {escape(report.timestamp)}</p>\n"
+            f"<p>SUT URL: {escape(self._sut_url)}</p>\n"
+            f"<p>Spec Version: {escape(self._spec_version)}</p>\n"
+            "</div>\n"
+        )
+
+    def _render_per_requirement_table(self, report: ComplianceReport) -> str:
+        transports = sorted(report.per_transport)
+        header_cells = "".join(f"<th>{escape(t)}</th>" for t in transports)
+        header = (
+            "<tr>"
+            "<th>Requirement</th>"
+            "<th>Level</th>"
+            "<th>Status</th>"
+            f"{header_cells}"
+            "<th>Errors</th>"
+            "</tr>\n"
+        )
+
+        rows = ""
+        for req_id, req in report.per_requirement.items():
+            rows += self._render_requirement_row(req_id, req, transports)
+
+        return (
+            '<div class="section">\n'
+            "<h2>Per-Requirement Results</h2>\n"
+            '<table class="req-table">\n'
+            f"{header}"
+            f"{rows}"
+            "</table>\n"
+            "</div>\n"
+        )
+
+    @staticmethod
+    def _render_requirement_row(
+        req_id: str, req: RequirementResult, transports: list[str]
+    ) -> str:
+        status_class = "pass" if req.status == "PASS" else "fail"
+        transport_cells = ""
+        for t in transports:
+            result = req.transports.get(t, "")
+            cell_class = ""
+            if result == "PASS":
+                cell_class = ' class="pass"'
+            elif result == "FAIL":
+                cell_class = ' class="fail"'
+            transport_cells += f"<td{cell_class}>{escape(result)}</td>"
+
+        errors = "; ".join(req.errors)
+        return (
+            f"<tr>"
+            f"<td>{escape(req_id)}</td>"
+            f"<td>{escape(req.level)}</td>"
+            f'<td class="{status_class}">{escape(req.status)}</td>'
+            f"{transport_cells}"
+            f"<td>{escape(errors)}</td>"
+            f"</tr>\n"
+        )
+
+    @staticmethod
+    def _render_per_transport_summary(report: ComplianceReport) -> str:
+        rows = ""
+        for transport, t in report.per_transport.items():
+            pct = (t.passed / t.total * 100) if t.total else 0
+            rows += (
+                "<tr>"
+                f"<td>{escape(transport)}</td>"
+                f"<td>{t.passed}</td>"
+                f"<td>{t.failed}</td>"
+                f"<td>{t.total}</td>"
+                f"<td>"
+                f'<div class="bar"><div class="bar-fill" style="width:{pct:.0f}%"></div></div>'
+                f"</td>"
+                "</tr>\n"
+            )
+
+        return (
+            '<div class="section">\n'
+            "<h2>Per-Transport Summary</h2>\n"
+            "<table>\n"
+            "<tr><th>Transport</th><th>Passed</th><th>Failed</th><th>Total</th><th>Progress</th></tr>\n"
+            f"{rows}"
+            "</table>\n"
+            "</div>\n"
+        )
+
+    @staticmethod
+    def _render_failed_tests(report: ComplianceReport) -> str:
+        failed = {
+            req_id: req
+            for req_id, req in report.per_requirement.items()
+            if req.status == "FAIL"
+        }
+        if not failed:
+            return (
+                '<div class="section">\n'
+                "<h2>Failed Tests</h2>\n"
+                "<p>No failures.</p>\n"
+                "</div>\n"
+            )
+
+        items = ""
+        for req_id, req in failed.items():
+            errors = "; ".join(req.errors) if req.errors else "no error details"
+            items += (
+                f"<li><strong>{escape(req_id)}</strong> "
+                f"[{escape(req.level)}]: {escape(errors)}</li>\n"
+            )
+
+        return (
+            '<div class="section">\n'
+            "<h2>Failed Tests</h2>\n"
+            f"<ul>\n{items}</ul>\n"
+            "</div>\n"
+        )
+
+
+# ------------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------------
+
+
+def _format_compliance(value: float) -> str:
+    return f"{value:.1f}%"
+
+
+# ------------------------------------------------------------------
+# Inline CSS
+# ------------------------------------------------------------------
+
+_CSS = """
+body { font-family: sans-serif; margin: 2em; color: #222; }
+h1, h2 { margin-top: 1.5em; }
+.section { margin-bottom: 2em; }
+.overall { font-size: 2.5em; font-weight: bold; margin: 0.3em 0; }
+table { border-collapse: collapse; width: 100%; margin-top: 0.5em; }
+th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+th { background: #f5f5f5; }
+.pass { background: #d4edda; color: #155724; }
+.fail { background: #f8d7da; color: #721c24; }
+.bar { background: #e9ecef; border-radius: 4px; height: 18px; width: 100%; }
+.bar-fill { background: #28a745; height: 100%; border-radius: 4px; }
+"""
