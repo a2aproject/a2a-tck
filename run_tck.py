@@ -11,6 +11,7 @@ Usage:
     ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
     ./run_tck.py --sut-host http://localhost:9999 --level must
     ./run_tck.py --sut-host http://localhost:9999 --compliance-report report.json
+    ./run_tck.py --sut-host http://localhost:9999 --compliance-report report.html
 """
 
 from __future__ import annotations
@@ -98,8 +99,9 @@ Examples:
   # Run gRPC and JSON-RPC transports with verbose output
   ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
 
-  # Generate compliance report
+  # Generate compliance report (JSON or HTML based on file extension)
   ./run_tck.py --sut-host http://localhost:9999 --compliance-report compliance.json
+  ./run_tck.py --sut-host http://localhost:9999 --compliance-report compliance.html
 
   # Pass extra pytest flags (after --)
   ./run_tck.py --sut-host http://localhost:9999 -- -x --pdb
@@ -134,7 +136,7 @@ Requirement levels:
         "--compliance-report",
         metavar="FILENAME",
         default=None,
-        help="Output filename for compliance report (written to reports/)",
+        help="Output filename for compliance report (written to reports/; .html for HTML, .json for JSON)",
     )
     parser.add_argument(
         "-v", "--verbose",

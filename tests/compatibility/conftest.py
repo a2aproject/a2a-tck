@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for A2A TCK tests."""
+"""Shared pytest fixtures and hooks for A2A TCK tests."""
 
 from __future__ import annotations
 
@@ -27,6 +27,9 @@ _PROTOCOL_BINDING_MAP: dict[str, tuple[str, type[BaseTransportClient]]] = {
     "GRPC": ("grpc", GrpcClient),
     "HTTP+JSON": ("http_json", HttpJsonClient),
 }
+
+# Stash key for sharing the ComplianceCollector between fixtures and hooks.
+_collector_key = pytest.StashKey[ComplianceCollector]()
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -154,6 +157,52 @@ def validators() -> dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def compliance_collector() -> ComplianceCollector:
-    """Return a compliance result collector."""
-    return ComplianceCollector()
+def compliance_collector(request: pytest.FixtureRequest) -> ComplianceCollector:
+    """Return a compliance result collector.
+
+    The collector is stashed on the config so that ``pytest_sessionfinish``
+    can access it without touching private attributes.
+    """
+    collector = ComplianceCollector()
+    request.config.stash[_collector_key] = collector
+    return collector
+
+
+# ---------------------------------------------------------------------------
+# Session hooks — report generation
+# ---------------------------------------------------------------------------
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Write compliance reports and print console summary at session end."""
+    collector = session.config.stash.get(_collector_key, None)
+    if collector is None or not collector.get_results():
+        return
+
+    from tck.reporting.aggregator import ComplianceAggregator
+    from tck.reporting.console_formatter import ConsoleFormatter
+    from tck.reporting.html_formatter import HTMLFormatter
+    from tck.reporting.json_formatter import JSONFormatter
+
+    sut_url: str = session.config.getoption("--sut-host", default="")
+    report = ComplianceAggregator(collector).aggregate()
+
+    # Always print console summary
+    console = ConsoleFormatter(sut_url=sut_url)
+    session.config.pluginmanager.get_plugin("terminalreporter").write_line("")
+    session.config.pluginmanager.get_plugin("terminalreporter").write_line(
+        console.format(report)
+    )
+
+    # Write file report if --compliance-report was given
+    report_path_str: str | None = session.config.getoption(
+        "--compliance-report", default=None
+    )
+    if not report_path_str:
+        return
+
+    report_path = Path(report_path_str)
+    if report_path.suffix == ".html":
+        HTMLFormatter(sut_url=sut_url).write(report, report_path)
+    else:
+        JSONFormatter(sut_url=sut_url).write(report, report_path)
