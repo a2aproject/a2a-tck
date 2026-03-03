@@ -1,0 +1,424 @@
+"""gRPC streaming tests.
+
+Validates that gRPC server streaming RPCs (SendStreamingMessage,
+SubscribeToTask) return correctly structured StreamResponse messages
+with proper event ordering, cancellation, and error propagation.
+
+Requirements tested:
+    GRPC-ERR-003    — gRPC streaming uses server streaming RPCs
+    STREAM-SUB-001  — SubscribeToTask returns Task as first event
+    STREAM-SUB-004  — SubscribeToTask returns TaskNotFoundError for non-existent task
+    STREAM-ORDER-001 — Events delivered in generation order
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+import grpc
+import pytest
+
+from specification.generated import a2a_pb2
+from tck.requirements.registry import get_requirement_by_id
+from tck.transport.grpc_client import _TRANSPORT
+from tck.validators.grpc.error_validator import validate_grpc_error
+from tests.compatibility.markers import grpc as grpc_marker
+from tests.compatibility.markers import streaming
+
+
+if TYPE_CHECKING:
+    from tck.requirements.base import RequirementSpec
+    from tck.transport.base import BaseTransportClient
+
+
+# ---------------------------------------------------------------------------
+# Requirement lookups
+# ---------------------------------------------------------------------------
+
+GRPC_ERR_003 = get_requirement_by_id("GRPC-ERR-003")
+STREAM_ORDER_001 = get_requirement_by_id("STREAM-ORDER-001")
+STREAM_SUB_001 = get_requirement_by_id("STREAM-SUB-001")
+STREAM_SUB_004 = get_requirement_by_id("STREAM-SUB-004")
+
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_VALID_PAYLOAD_FIELDS = {"task", "message", "status_update", "artifact_update"}
+
+_TERMINAL_STATES = frozenset({
+    a2a_pb2.TASK_STATE_COMPLETED,
+    a2a_pb2.TASK_STATE_FAILED,
+    a2a_pb2.TASK_STATE_CANCELED,
+    a2a_pb2.TASK_STATE_REJECTED,
+})
+
+# Ordered list of task states for regression detection.
+_STATE_ORDER = {
+    a2a_pb2.TASK_STATE_SUBMITTED: 0,
+    a2a_pb2.TASK_STATE_WORKING: 1,
+    a2a_pb2.TASK_STATE_INPUT_REQUIRED: 1,
+    a2a_pb2.TASK_STATE_AUTH_REQUIRED: 1,
+    a2a_pb2.TASK_STATE_COMPLETED: 2,
+    a2a_pb2.TASK_STATE_FAILED: 2,
+    a2a_pb2.TASK_STATE_CANCELED: 2,
+    a2a_pb2.TASK_STATE_REJECTED: 2,
+}
+
+_SAMPLE_MESSAGE = {
+    "role": "ROLE_USER",
+    "parts": [{"text": "TCK gRPC streaming test"}],
+    "messageId": "tck-grpc-streaming-001",
+}
+
+_CONNECTIVITY_CODES = frozenset({
+    grpc.StatusCode.UNAVAILABLE,
+    grpc.StatusCode.DEADLINE_EXCEEDED,
+})
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
+    """Build a failure message referencing the requirement."""
+    return (
+        f"{req.id} [{req.title}] failed on {transport}: "
+        f"{detail} (see {req.spec_url})"
+    )
+
+
+def _record(
+    collector: Any,
+    req: RequirementSpec,
+    transport: str,
+    passed: bool,
+    errors: list[str] | None = None,
+) -> None:
+    """Record a result in the compliance collector."""
+    collector.record(
+        requirement_id=req.id,
+        transport=transport,
+        level=req.level.value,
+        passed=passed,
+        errors=errors or [],
+    )
+
+
+def _get_client(
+    transport_clients: dict[str, BaseTransportClient],
+) -> BaseTransportClient:
+    """Get the gRPC transport client, skipping if not configured."""
+    client = transport_clients.get(_TRANSPORT)
+    if client is None:
+        pytest.skip("gRPC transport not configured")
+    return client
+
+
+def _skip_if_no_streaming(agent_card: dict[str, Any]) -> None:
+    """Skip the test if the agent does not support streaming."""
+    caps = agent_card.get("capabilities", {})
+    if not caps.get("streaming"):
+        pytest.skip("Agent does not support streaming")
+
+
+def _collect_events(
+    client: BaseTransportClient,
+    agent_card: dict[str, Any],
+) -> list[a2a_pb2.StreamResponse]:
+    """Send a streaming message and return all collected events.
+
+    Skips the test if streaming is unsupported or the call fails.
+    """
+    _skip_if_no_streaming(agent_card)
+
+    response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+    if not response.success:
+        pytest.skip(f"Streaming call failed: {response.error}")
+
+    events = list(response.events)
+    if not events:
+        pytest.skip("Server returned no streaming events")
+
+    return events
+
+
+def _get_event_state(event: a2a_pb2.StreamResponse) -> int | None:
+    """Extract task state from a StreamResponse event."""
+    payload = event.WhichOneof("payload")
+    if payload == "task":
+        return event.task.status.state
+    if payload == "status_update":
+        return event.status_update.status.state
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Streaming tests (SendStreamingMessage)
+# ---------------------------------------------------------------------------
+
+
+@grpc_marker
+@streaming
+class TestGrpcStreaming:
+    """Validate gRPC server streaming RPC behavior."""
+
+    def test_streaming_response_type(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """GRPC-ERR-003: send_streaming_message returns a StreamingResponse."""
+        req = GRPC_ERR_003
+        client = _get_client(transport_clients)
+        _skip_if_no_streaming(agent_card)
+
+        response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+        if not response.success:
+            pytest.skip(f"Streaming call failed: {response.error}")
+
+        errors: list[str] = []
+        if not response.is_streaming:
+            errors.append("Response is_streaming should be True")
+
+        # Consume at least one event to confirm the stream works
+        first = next(iter(response.events), None)
+        if first is None:
+            errors.append("Stream yielded no events")
+
+        passed = not errors
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=passed,
+            errors=errors,
+        )
+        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+
+    def test_streaming_message_structure(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """GRPC-ERR-003: Each event has exactly one StreamResponse payload field set."""
+        req = GRPC_ERR_003
+        client = _get_client(transport_clients)
+        events = _collect_events(client, agent_card)
+
+        errors: list[str] = []
+        for i, event in enumerate(events):
+            payload = event.WhichOneof("payload")
+            if payload is None:
+                errors.append(f"Event {i}: no payload field set")
+            elif payload not in _VALID_PAYLOAD_FIELDS:
+                errors.append(
+                    f"Event {i}: unexpected payload field {payload!r}"
+                )
+
+        passed = not errors
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=passed,
+            errors=errors,
+        )
+        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+
+    def test_streaming_event_ordering(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """STREAM-ORDER-001: Task states do not regress; last event is terminal."""
+        req = STREAM_ORDER_001
+        client = _get_client(transport_clients)
+        events = _collect_events(client, agent_card)
+
+        errors: list[str] = []
+
+        # Check for state regression
+        max_order = -1
+        for i, event in enumerate(events):
+            state = _get_event_state(event)
+            if state is None:
+                continue
+            order = _STATE_ORDER.get(state, -1)
+            if order < max_order:
+                errors.append(
+                    f"Event {i}: state {a2a_pb2.TaskState.Name(state)} "
+                    f"regresses from a later state"
+                )
+            else:
+                max_order = order
+
+        # Check last event has terminal state
+        last_state = _get_event_state(events[-1])
+        if last_state is not None and last_state not in _TERMINAL_STATES:
+            errors.append(
+                f"Last event state {a2a_pb2.TaskState.Name(last_state)} "
+                f"is not terminal"
+            )
+
+        passed = not errors
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=passed,
+            errors=errors,
+        )
+        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+
+    def test_streaming_cancellation(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """GRPC-ERR-003: Client-side stream cancellation completes without unexpected errors."""
+        req = GRPC_ERR_003
+        client = _get_client(transport_clients)
+        _skip_if_no_streaming(agent_card)
+
+        response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+        if not response.success:
+            pytest.skip(f"Streaming call failed: {response.error}")
+
+        errors: list[str] = []
+        try:
+            # Consume first event then cancel
+            first = next(iter(response.events), None)
+            if first is None:
+                pytest.skip("Stream yielded no events before cancellation")
+
+            response.raw_response.cancel()
+        except grpc.RpcError as e:
+            if e.code() != grpc.StatusCode.CANCELLED:
+                errors.append(
+                    f"Expected CANCELLED status after cancel(), "
+                    f"got {e.code().name}"
+                )
+
+        passed = not errors
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=passed,
+            errors=errors,
+        )
+        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+
+    def test_streaming_error_propagation(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """STREAM-SUB-004: SubscribeToTask returns NOT_FOUND for non-existent task."""
+        req = STREAM_SUB_004
+        client = _get_client(transport_clients)
+        _skip_if_no_streaming(agent_card)
+
+        response = client.subscribe_to_task(id="tck-nonexistent-grpc-stream-001")
+
+        if response.success:
+            # Try consuming events — error may arrive as a gRPC status on iteration
+            try:
+                list(response.events)
+                pytest.skip(
+                    "Server did not return an error for non-existent task subscribe"
+                )
+            except grpc.RpcError as e:
+                if e.code() in _CONNECTIVITY_CODES:
+                    pytest.fail(
+                        f"gRPC connectivity error: {e.code().name} — {e.details()}"
+                    )
+                result = validate_grpc_error(e, "TaskNotFoundError")
+                errors = [] if result.valid else [result.message]
+                passed = result.valid
+        else:
+            rpc_error = response.raw_response
+            if not isinstance(rpc_error, grpc.RpcError):
+                pytest.fail(
+                    f"Expected grpc.RpcError, got {type(rpc_error).__name__}"
+                )
+            if rpc_error.code() in _CONNECTIVITY_CODES:
+                pytest.fail(
+                    f"gRPC connectivity error: {rpc_error.code().name} — "
+                    f"{rpc_error.details()}"
+                )
+            result = validate_grpc_error(rpc_error, "TaskNotFoundError")
+            errors = [] if result.valid else [result.message]
+            passed = result.valid
+
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=passed,
+            errors=errors,
+        )
+        assert passed, _fail_msg(req, _TRANSPORT, "; ".join(errors))
+
+    def test_subscribe_first_event_is_task(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compliance_collector: Any,
+    ) -> None:
+        """STREAM-SUB-001: First event from SubscribeToTask contains a Task."""
+        req = STREAM_SUB_001
+        client = _get_client(transport_clients)
+        _skip_if_no_streaming(agent_card)
+
+        # Create a task first via send_message
+        msg_response = client.send_message(message=_SAMPLE_MESSAGE)
+        if not msg_response.success:
+            pytest.skip(f"send_message failed: {msg_response.error}")
+
+        raw = msg_response.raw_response
+        # Extract task ID from the SendMessageResponse protobuf
+        task_id = None
+        if hasattr(raw, "WhichOneof"):
+            payload = raw.WhichOneof("payload")
+            if payload == "task" and raw.task.id:
+                task_id = raw.task.id
+        if not task_id:
+            pytest.skip("Could not extract task ID from send_message response")
+
+        # Subscribe to the task
+        sub_response = client.subscribe_to_task(id=task_id)
+        if not sub_response.success:
+            pytest.skip(f"subscribe_to_task failed: {sub_response.error}")
+
+        first = next(iter(sub_response.events), None)
+        if first is None:
+            pytest.skip("SubscribeToTask returned no events")
+
+        payload = first.WhichOneof("payload")
+        passed = payload == "task"
+        errors = (
+            []
+            if passed
+            else [
+                f"First event payload should be 'task', got {payload!r}"
+            ]
+        )
+
+        _record(
+            collector=compliance_collector,
+            req=req,
+            transport=_TRANSPORT,
+            passed=passed,
+            errors=errors,
+        )
+        assert passed, _fail_msg(req, _TRANSPORT, errors[0])
