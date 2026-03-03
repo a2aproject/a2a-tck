@@ -1,16 +1,17 @@
 ---
-id: task-7.1
+id: TASK-7.1
 title: Implement ComplianceAggregator for result aggregation
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:13'
+updated_date: '2026-03-03 10:36'
 labels:
   - phase-7
   - reporting
   - aggregation
 dependencies:
   - task-5.3
-parent_task_id: task-7
+parent_task_id: TASK-7
 priority: high
 ---
 
@@ -53,11 +54,17 @@ Implement the aggregator that computes compliance metrics from collected test re
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 tck/reporting/aggregator.py exists
-- [ ] #2 ComplianceAggregator takes ComplianceCollector as input
-- [ ] #3 aggregate() returns ComplianceReport dataclass
-- [ ] #4 Per-requirement grouping shows each transport's result
-- [ ] #5 Per-transport grouping shows pass/fail counts
-- [ ] #6 Overall compliance percentage is calculated correctly
-- [ ] #7 MUST compliance percentage is calculated separately
+- [x] #1 tck/reporting/aggregator.py exists
+- [x] #2 ComplianceAggregator takes ComplianceCollector as input
+- [x] #3 aggregate() returns ComplianceReport dataclass
+- [x] #4 Per-requirement grouping shows each transport's result
+- [x] #5 Per-transport grouping shows pass/fail counts
+- [x] #6 Overall compliance percentage is calculated correctly
+- [x] #7 MUST compliance percentage is calculated separately
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented `ComplianceAggregator` in `tck/reporting/aggregator.py` with dataclasses `RequirementResult`, `TransportResult`, and `ComplianceReport`. The aggregator takes a `ComplianceCollector`, groups results by requirement and transport, and computes overall, MUST, SHOULD, and MAY compliance percentages. A requirement passes only if it passes on every transport where tested. Returns 100.0% when no requirements exist for a given level.\n\nFiles created/modified:\n- `tck/reporting/aggregator.py` (new)\n- `tck/reporting/__init__.py` (updated exports)\n- `tests/unit/reporting/test_aggregator.py` (12 unit tests)\n\nCommit: 1ed1f79 on branch `refactoring`
+<!-- SECTION:FINAL_SUMMARY:END -->
