@@ -1,16 +1,17 @@
 ---
-id: task-7.3
+id: TASK-7.3
 title: Implement HTML compliance report formatter
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:13'
+updated_date: '2026-03-03 11:31'
 labels:
   - phase-7
   - reporting
   - html
 dependencies:
   - task-7.1
-parent_task_id: task-7
+parent_task_id: TASK-7
 priority: high
 ---
 
