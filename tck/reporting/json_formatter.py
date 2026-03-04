@@ -35,7 +35,7 @@ class JSONFormatter:
         path.write_text(self.format(report), encoding="utf-8")
 
     def _build_dict(self, report: ComplianceReport) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "summary": {
                 "timestamp": report.timestamp,
                 "sut_url": self._sut_url,
@@ -65,6 +65,9 @@ class JSONFormatter:
                 for transport, t in report.per_transport.items()
             },
         }
+        if report.agent_card:
+            data["agent_card"] = report.agent_card
+        return data
 
     @staticmethod
     def _format_compliance(value: float) -> str:

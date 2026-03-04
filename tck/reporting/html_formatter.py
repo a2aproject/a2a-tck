@@ -6,6 +6,8 @@ document with inline CSS and optionally writes it to disk.
 
 from __future__ import annotations
 
+import json
+
 from html import escape
 from typing import TYPE_CHECKING
 
@@ -35,6 +37,7 @@ class HTMLFormatter:
             "</head>\n"
             "<body>\n"
             f"{self._render_executive_summary(report)}"
+            f"{self._render_agent_card(report)}"
             f"{self._render_per_requirement_table(report)}"
             f"{self._render_per_transport_summary(report)}"
             f"{self._render_failed_tests(report)}"
@@ -63,8 +66,22 @@ class HTMLFormatter:
             f"<tr><td>MAY</td><td>{_format_compliance(report.may_compliance)}</td></tr>\n"
             "</table>\n"
             f"<p>Timestamp: {escape(report.timestamp)}</p>\n"
-            f"<p>SUT URL: {escape(self._sut_url)}</p>\n"
+            f'<p>SUT URL: <a href="{escape(self._sut_url)}">{escape(self._sut_url)}</a></p>\n'
             f"<p>Spec Version: {escape(self._spec_version)}</p>\n"
+            "</div>\n"
+        )
+
+    @staticmethod
+    def _render_agent_card(report: ComplianceReport) -> str:
+        if not report.agent_card:
+            return ""
+        card_json = json.dumps(report.agent_card, indent=2)
+        return (
+            '<div class="section">\n'
+            "<details>\n"
+            "<summary><h2 style=\"display:inline\">Agent Card</h2></summary>\n"
+            f'<pre class="agent-card">{escape(card_json)}</pre>\n'
+            "</details>\n"
             "</div>\n"
         )
 
@@ -252,4 +269,6 @@ td[title] { cursor: help; text-decoration: underline dotted; }
 .error-list { margin: 0; padding-left: 1.2em; list-style: disc; }
 .error-list li { margin: 2px 0; }
 .test-id { font-family: monospace; font-size: 0.85em; cursor: help; }
+.agent-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 1em; overflow-x: auto; font-size: 0.85em; }
+details summary { cursor: pointer; }
 """
