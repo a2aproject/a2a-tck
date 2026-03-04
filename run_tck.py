@@ -10,8 +10,7 @@ Usage:
     ./run_tck.py --sut-host http://localhost:9999 --transport jsonrpc
     ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
     ./run_tck.py --sut-host http://localhost:9999 --level must
-    ./run_tck.py --sut-host http://localhost:9999 --compliance-report report.json
-    ./run_tck.py --sut-host http://localhost:9999 --compliance-report report.html
+    ./run_tck.py --sut-host http://localhost:9999 --report
 """
 
 from __future__ import annotations
@@ -48,12 +47,6 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
     if args.transport:
         cmd.append(f"--transport={args.transport}")
 
-    # Compliance report
-    if args.compliance_report:
-        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        report_path = REPORTS_DIR / args.compliance_report
-        cmd.append(f"--compliance-report={report_path}")
-
     # Requirement level filter
     if args.level:
         k_expr = LEVEL_FILTERS[args.level]
@@ -67,11 +60,11 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
     else:
         cmd.append("-q")
 
-    # HTML report
+    # Reports (compliance JSON + HTML, pytest-html)
     if args.report:
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        report_path = REPORTS_DIR / "tck_report.html"
-        cmd.extend([f"--html={report_path}", "--self-contained-html"])
+        cmd.append(f"--compliance-report={REPORTS_DIR / 'compliance'}")
+        cmd.extend([f"--html={REPORTS_DIR / 'tck_report.html'}", "--self-contained-html"])
 
     # Extra pytest arguments
     if args.pytest_args:
@@ -99,9 +92,8 @@ Examples:
   # Run gRPC and JSON-RPC transports with verbose output
   ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
 
-  # Generate compliance report (JSON or HTML based on file extension)
-  ./run_tck.py --sut-host http://localhost:9999 --compliance-report compliance.json
-  ./run_tck.py --sut-host http://localhost:9999 --compliance-report compliance.html
+  # Generate all reports (compliance JSON + HTML, pytest-html) in reports/
+  ./run_tck.py --sut-host http://localhost:9999 --report
 
   # Pass extra pytest flags (after --)
   ./run_tck.py --sut-host http://localhost:9999 -- -x --pdb
@@ -133,12 +125,6 @@ Requirement levels:
         help="Run only requirements at this RFC 2119 level",
     )
     parser.add_argument(
-        "--compliance-report",
-        metavar="FILENAME",
-        default=None,
-        help="Output filename for compliance report (written to reports/; .html for HTML, .json for JSON)",
-    )
-    parser.add_argument(
         "-v", "--verbose",
         action="store_true",
         help="Verbose pytest output",
@@ -151,7 +137,7 @@ Requirement levels:
     parser.add_argument(
         "--report",
         action="store_true",
-        help="Generate HTML test report in reports/",
+        help="Generate all reports in reports/ (compliance JSON + HTML, pytest-html)",
     )
     parser.add_argument(
         "pytest_args",

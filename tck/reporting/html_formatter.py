@@ -21,9 +21,8 @@ if TYPE_CHECKING:
 class HTMLFormatter:
     """Formats a :class:`ComplianceReport` as a self-contained HTML page."""
 
-    def __init__(self, *, sut_url: str = "", spec_version: str = "") -> None:
+    def __init__(self, *, sut_url: str = "") -> None:
         self._sut_url = sut_url
-        self._spec_version = spec_version
 
     def format(self, report: ComplianceReport) -> str:
         """Return a complete HTML document string."""
@@ -67,14 +66,12 @@ class HTMLFormatter:
             "</table>\n"
             f"<p>Timestamp: {escape(report.timestamp)}</p>\n"
             f'<p>SUT URL: <a href="{escape(self._sut_url)}">{escape(self._sut_url)}</a></p>\n'
-            f"<p>Spec Version: {escape(self._spec_version)}</p>\n"
+            f"<p>SUT Version: {escape(report.agent_card['version'])}</p>\n"
             "</div>\n"
         )
 
     @staticmethod
     def _render_agent_card(report: ComplianceReport) -> str:
-        if not report.agent_card:
-            return ""
         card_json = json.dumps(report.agent_card, indent=2)
         return (
             '<div class="section">\n'
