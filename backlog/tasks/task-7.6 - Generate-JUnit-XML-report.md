@@ -1,15 +1,16 @@
 ---
-id: task-7.6
+id: TASK-7.6
 title: Generate JUnit XML report
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:13'
+updated_date: '2026-03-04 10:07'
 labels:
   - phase-7
   - reporting
   - junit
 dependencies: []
-parent_task_id: task-7
+parent_task_id: TASK-7
 priority: medium
 ---
 
