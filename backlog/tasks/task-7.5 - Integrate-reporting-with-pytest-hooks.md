@@ -1,10 +1,10 @@
 ---
 id: TASK-7.5
 title: Integrate reporting with pytest hooks
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:13'
-updated_date: '2026-02-27 13:36'
+updated_date: '2026-03-04 09:44'
 labels:
   - phase-7
   - reporting
