@@ -118,6 +118,8 @@ class HTMLFormatter:
             status_class = "pass"
         elif req.status == "SKIPPED":
             status_class = "skipped"
+        elif req.status == "NOT TESTED":
+            status_class = "not-tested"
         else:
             status_class = "fail"
         transport_cells = ""
@@ -260,6 +262,7 @@ th { background: #f5f5f5; }
 .pass { background: #d4edda; color: #155724; }
 .fail { background: #f8d7da; color: #721c24; }
 .skipped { background: #e2e3e5; color: #383d41; }
+.not-tested { background: #cce5ff; color: #004085; }
 .bar { background: #e9ecef; border-radius: 4px; height: 18px; width: 100%; }
 .bar-fill { background: #28a745; height: 100%; border-radius: 4px; }
 td[title] { cursor: help; text-decoration: underline dotted; }
