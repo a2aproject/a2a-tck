@@ -28,6 +28,7 @@ dependencies = [
     "protobuf>=4.25",
     "googleapis-common-protos>=1.62",
     "jsonschema>=4.21",
+    "pytest-html>=4.1",
 ]
 
 [project.optional-dependencies]

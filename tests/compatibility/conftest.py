@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -28,9 +30,16 @@ _PROTOCOL_BINDING_MAP: dict[str, tuple[str, type[BaseTransportClient]]] = {
     "HTTP+JSON": ("http_json", HttpJsonClient),
 }
 
+# Transport markers used on tests as an alternative to parametrize.
+_TRANSPORT_MARKERS = {"grpc", "jsonrpc", "http_json"}
+
+# Pattern for extracting requirement IDs from docstrings.
+_REQUIREMENT_ID_RE = re.compile(r"([A-Z][A-Z0-9_]+-[A-Z]+-\d+)")
+
 # Stash keys for sharing data between fixtures and hooks.
 _collector_key = pytest.StashKey[ComplianceCollector]()
 _agent_card_key = pytest.StashKey[dict]()
+_record_count_key = pytest.StashKey[int]()
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -172,6 +181,99 @@ def compliance_collector(request: pytest.FixtureRequest) -> ComplianceCollector:
 
 
 # ---------------------------------------------------------------------------
+# Safety-net hook — auto-record failures for crashed tests
+# ---------------------------------------------------------------------------
+
+
+def _extract_requirement_and_transport(
+    item: pytest.Item,
+) -> tuple[str | None, str | None]:
+    r"""Extract ``(requirement_id, transport)`` from a test item.
+
+    * **Transport**: ``item.callspec.params["transport"]`` (parametrized) or
+      a transport marker (``@grpc``, ``@jsonrpc``, ``@http_json``).
+    * **Requirement ID**: first match of ``[A-Z][A-Z0-9_]+-[A-Z]+-\d+`` in
+      the test function's docstring.
+
+    Returns ``(None, None)`` when extraction fails so the caller can skip.
+    """
+    # --- transport ---
+    transport: str | None = None
+    callspec = getattr(item, "callspec", None)
+    if callspec is not None:
+        transport = callspec.params.get("transport")
+    if transport is None:
+        for marker_name in _TRANSPORT_MARKERS:
+            if item.get_closest_marker(marker_name) is not None:
+                transport = marker_name
+                break
+
+    # --- requirement ID ---
+    requirement_id: str | None = None
+    func = getattr(item, "function", None)
+    if func is not None:
+        docstring = func.__doc__ or ""
+        m = _REQUIREMENT_ID_RE.search(docstring)
+        if m:
+            requirement_id = m.group(1)
+
+    if transport is None or requirement_id is None:
+        return None, None
+    return requirement_id, transport
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(
+    item: pytest.Item, call: pytest.CallInfo[None]
+) -> Any:
+    """Auto-record a compliance failure when a test crashes without calling ``record()``."""
+    outcome = yield
+    report: pytest.TestReport = outcome.get_result()
+
+    collector: ComplianceCollector | None = item.config.stash.get(
+        _collector_key, None
+    )
+    if collector is None:
+        return
+
+    if report.when == "setup":
+        item.stash[_record_count_key] = collector.record_count
+        return
+
+    if report.when != "call":
+        return
+    if report.passed:
+        return
+
+    before = item.stash.get(_record_count_key, None)
+    if before is None:
+        return
+    if collector.record_count != before:
+        # Test already called record() — nothing to do.
+        return
+
+    requirement_id, transport = _extract_requirement_and_transport(item)
+    if requirement_id is None or transport is None:
+        return
+
+    from tck.requirements.registry import get_requirement_by_id
+
+    try:
+        level = get_requirement_by_id(requirement_id).level.value
+    except KeyError:
+        level = "MUST"
+
+    collector.record(
+        requirement_id=requirement_id,
+        transport=transport,
+        passed=False,
+        errors=[report.longreprtext],
+        level=level,
+        test_id=report.nodeid,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Session hooks — report generation
 # ---------------------------------------------------------------------------
 
@@ -206,7 +308,5 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         return
 
     report_path = Path(report_path_str)
-    if report_path.suffix == ".html":
-        HTMLFormatter(sut_url=sut_url).write(report, report_path)
-    else:
-        JSONFormatter(sut_url=sut_url).write(report, report_path)
+    HTMLFormatter(sut_url=sut_url).write(report, report_path.with_suffix(".html"))
+    JSONFormatter(sut_url=sut_url).write(report, report_path.with_suffix(".json"))

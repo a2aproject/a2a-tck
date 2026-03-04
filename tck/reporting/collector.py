@@ -34,6 +34,7 @@ class ComplianceCollector:
 
     def __init__(self) -> None:
         self._results: list[TestResult] = []
+        self._record_count: int = 0
 
     def record(
         self,
@@ -60,6 +61,12 @@ class ComplianceCollector:
                 test_id=test_id,
             )
         )
+        self._record_count += 1
+
+    @property
+    def record_count(self) -> int:
+        """Return the number of results recorded so far."""
+        return self._record_count
 
     def get_results(self) -> list[TestResult]:
         """Return all recorded results."""
@@ -122,6 +129,7 @@ class ComplianceCollector:
     def reset(self) -> None:
         """Clear all stored results."""
         self._results.clear()
+        self._record_count = 0
 
 
 def _infer_test_id() -> str:
