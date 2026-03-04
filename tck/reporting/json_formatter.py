@@ -51,6 +51,7 @@ class JSONFormatter:
                     "status": req.status,
                     "transports": dict(req.transports),
                     "errors": list(req.errors),
+                    "test_ids": list(req.test_ids),
                 }
                 for req_id, req in report.per_requirement.items()
             },

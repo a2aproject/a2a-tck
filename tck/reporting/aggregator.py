@@ -26,6 +26,7 @@ class RequirementResult:
     errors: list[str] = field(default_factory=list)
     description: str = ""
     transport_errors: dict[str, list[str]] = field(default_factory=dict)
+    test_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -123,6 +124,8 @@ class ComplianceAggregator:
             except (KeyError, ImportError):
                 pass
 
+            test_ids = sorted({r.test_id for r in results if r.test_id})
+
             out[req_id] = RequirementResult(
                 level=results[0].level,
                 status=status,
@@ -130,6 +133,7 @@ class ComplianceAggregator:
                 errors=errors,
                 description=description,
                 transport_errors=transport_errors,
+                test_ids=test_ids,
             )
         return out
 
