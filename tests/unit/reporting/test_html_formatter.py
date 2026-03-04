@@ -318,6 +318,31 @@ class TestFailedTests:
         assert "No failures" in html
 
 
+class TestAgentCardSection:
+    """Agent card section in HTML report."""
+
+    def test_agent_card_rendered(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """Agent card JSON appears in the report when provided."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        card = {"name": "TestAgent", "version": "1.0"}
+        report = ComplianceAggregator(collector, agent_card=card).aggregate()
+        html = formatter.format(report)
+        assert "Agent Card" in html
+        assert "TestAgent" in html
+        assert "<details>" in html
+
+    def test_no_agent_card_section_when_empty(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """No agent card section when no card is provided."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        report = ComplianceAggregator(collector).aggregate()
+        html = formatter.format(report)
+        assert "Agent Card" not in html
+
+
 class TestWriteFile:
     """write() creates a file at the given path."""
 

@@ -28,8 +28,9 @@ _PROTOCOL_BINDING_MAP: dict[str, tuple[str, type[BaseTransportClient]]] = {
     "HTTP+JSON": ("http_json", HttpJsonClient),
 }
 
-# Stash key for sharing the ComplianceCollector between fixtures and hooks.
+# Stash keys for sharing data between fixtures and hooks.
 _collector_key = pytest.StashKey[ComplianceCollector]()
+_agent_card_key = pytest.StashKey[dict]()
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -70,7 +71,7 @@ def sut_host(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session")
-def agent_card(sut_host: str) -> dict[str, Any]:
+def agent_card(request: pytest.FixtureRequest, sut_host: str) -> dict[str, Any]:
     """Fetch the agent card from the well-known URL.
 
     Per the A2A spec (Section 8.2), the agent card is discovered at
@@ -80,7 +81,9 @@ def agent_card(sut_host: str) -> dict[str, Any]:
     url = f"{base}/.well-known/agent-card.json"
     response = httpx.get(url)
     response.raise_for_status()
-    return response.json()
+    card = response.json()
+    request.config.stash[_agent_card_key] = card
+    return card
 
 
 @pytest.fixture(scope="session")
@@ -185,7 +188,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     from tck.reporting.json_formatter import JSONFormatter
 
     sut_url: str = session.config.getoption("--sut-host", default="")
-    report = ComplianceAggregator(collector).aggregate()
+    agent_card = session.config.stash.get(_agent_card_key, None)
+    report = ComplianceAggregator(collector, agent_card=agent_card).aggregate()
 
     # Always print console summary
     console = ConsoleFormatter(sut_url=sut_url)

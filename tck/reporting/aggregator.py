@@ -50,6 +50,7 @@ class ComplianceReport:
     must_compliance: float
     should_compliance: float
     may_compliance: float
+    agent_card: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to a plain dict suitable for JSON serialisation."""
@@ -65,8 +66,14 @@ class ComplianceAggregator:
     for a level the compliance is 100.0 (nothing to fail).
     """
 
-    def __init__(self, collector: ComplianceCollector) -> None:
+    def __init__(
+        self,
+        collector: ComplianceCollector,
+        *,
+        agent_card: dict[str, Any] | None = None,
+    ) -> None:
         self._collector = collector
+        self._agent_card = agent_card or {}
 
     def aggregate(self) -> ComplianceReport:
         """Build a complete :class:`ComplianceReport`."""
@@ -81,6 +88,7 @@ class ComplianceAggregator:
             must_compliance=self._compute_compliance(per_requirement, level="MUST"),
             should_compliance=self._compute_compliance(per_requirement, level="SHOULD"),
             may_compliance=self._compute_compliance(per_requirement, level="MAY"),
+            agent_card=self._agent_card,
         )
 
     def _compute_per_requirement(self) -> dict[str, RequirementResult]:
