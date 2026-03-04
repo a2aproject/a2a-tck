@@ -137,6 +137,24 @@ class TestPerTransport:
         assert all(isinstance(v, int) for v in grpc.values())
 
 
+class TestTestIdsInJSON:
+    """Test IDs appear in JSON output."""
+
+    def test_test_ids_in_per_requirement(
+        self, collector: ComplianceCollector, formatter: JSONFormatter
+    ) -> None:
+        """test_ids list appears in per_requirement entries."""
+        collector.record(
+            requirement_id="R1", transport="http", passed=True, level="MUST",
+            test_id="tests/test_foo.py::TestBar::test_baz",
+        )
+        report = ComplianceAggregator(collector).aggregate()
+        data = json.loads(formatter.format(report))
+        req = data["per_requirement"]["R1"]
+        assert "test_ids" in req
+        assert "tests/test_foo.py::TestBar::test_baz" in req["test_ids"]
+
+
 class TestSkippedInJSON:
     """Skipped status appears in JSON output."""
 

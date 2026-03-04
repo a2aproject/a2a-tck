@@ -21,6 +21,7 @@ class TestResult:
     errors: list[str] = field(default_factory=list)
     level: Literal["MUST", "SHOULD", "MAY"] = "MUST"
     skipped: bool = False
+    test_id: str = ""
 
 
 class ComplianceCollector:
@@ -43,8 +44,11 @@ class ComplianceCollector:
         errors: list[str] | None = None,
         level: str = "MUST",
         skipped: bool = False,
+        test_id: str = "",
     ) -> None:
         """Record a single test result."""
+        if not test_id:
+            test_id = _infer_test_id()
         self._results.append(
             TestResult(
                 requirement_id=requirement_id,
@@ -53,6 +57,7 @@ class ComplianceCollector:
                 errors=errors or [],
                 level=level,  # type: ignore[arg-type]
                 skipped=skipped,
+                test_id=test_id,
             )
         )
 
@@ -117,3 +122,39 @@ class ComplianceCollector:
     def reset(self) -> None:
         """Clear all stored results."""
         self._results.clear()
+
+
+def _infer_test_id() -> str:
+    """Walk the call stack to find the outermost ``test_*`` function.
+
+    Returns a pytest-style node ID (``relative/path.py::ClassName::method``)
+    or an empty string when called outside a test context.
+    """
+    import inspect
+    import os
+
+    # Walk outward from the caller of record() looking for test frames.
+    best: tuple[str, str, str | None] = ("", "", None)
+    for frame_info in inspect.stack():
+        func_name = frame_info.function
+        if not func_name.startswith("test_"):
+            continue
+        filename = frame_info.filename
+        # Prefer paths relative to the project root.
+        try:
+            rel = os.path.relpath(filename)
+        except ValueError:
+            rel = filename
+        # Try to extract the class name from the frame's locals.
+        cls_name: str | None = None
+        local_self = frame_info.frame.f_locals.get("self")
+        if local_self is not None:
+            cls_name = type(local_self).__name__
+        best = (rel, func_name, cls_name)
+
+    if not best[0]:
+        return ""
+    path, func, cls = best
+    if cls:
+        return f"{path}::{cls}::{func}"
+    return f"{path}::{func}"

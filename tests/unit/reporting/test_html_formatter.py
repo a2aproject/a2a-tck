@@ -176,15 +176,52 @@ class TestRequirementTooltip:
     def test_no_tooltip_for_unknown_id(
         self, collector: ComplianceCollector, formatter: HTMLFormatter
     ) -> None:
-        """Unknown requirement IDs do not get a title attribute."""
+        """Unknown requirement IDs do not get a title attribute on the req cell."""
         collector.record(
             requirement_id="UNKNOWN-999", transport="http", passed=True, level="MUST"
         )
         report = ComplianceAggregator(collector).aggregate()
         html = formatter.format(report)
         assert "UNKNOWN-999" in html
-        # The req ID cell should NOT have a title attribute
-        assert 'title="' not in html
+        # The requirement ID cell should NOT have a title tooltip
+        assert '<td>UNKNOWN-999</td>' in html
+
+
+class TestTestIdColumn:
+    """Test IDs appear in the per-requirement table."""
+
+    def test_test_id_column_header(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """The per-requirement table has a Test column header."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        report = ComplianceAggregator(collector).aggregate()
+        html = formatter.format(report)
+        assert "<th>Test</th>" in html
+
+    def test_test_id_in_row(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """Test IDs appear in the row when recorded."""
+        collector.record(
+            requirement_id="R1", transport="http", passed=True, level="MUST",
+            test_id="tests/test_example.py::TestFoo::test_bar",
+        )
+        report = ComplianceAggregator(collector).aggregate()
+        html = formatter.format(report)
+        assert "TestFoo::test_bar" in html
+        assert 'class="test-id"' in html
+
+    def test_auto_inferred_test_id(
+        self, collector: ComplianceCollector, formatter: HTMLFormatter
+    ) -> None:
+        """Test IDs are auto-inferred from the call stack."""
+        # This test itself is the caller, so the inferred ID should contain
+        # this test's method name.
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        report = ComplianceAggregator(collector).aggregate()
+        req = report.per_requirement["R1"]
+        assert any("test_auto_inferred_test_id" in tid for tid in req.test_ids)
 
 
 class TestErrorFormatting:

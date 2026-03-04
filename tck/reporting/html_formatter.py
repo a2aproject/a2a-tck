@@ -77,6 +77,7 @@ class HTMLFormatter:
             "<th>Level</th>"
             "<th>Status</th>"
             f"{header_cells}"
+            "<th>Test</th>"
             "<th>Errors</th>"
             "</tr>\n"
         )
@@ -119,12 +120,14 @@ class HTMLFormatter:
 
         tooltip = f' title="{escape(req.description)}"' if req.description else ""
         error_html = _format_transport_errors(req)
+        test_html = _format_test_ids(req.test_ids)
         return (
             f"<tr>"
             f"<td{tooltip}>{escape(req_id)}</td>"
             f"<td>{escape(req.level)}</td>"
             f'<td class="{status_class}">{escape(req.status)}</td>'
             f"{transport_cells}"
+            f"<td>{test_html}</td>"
             f"<td>{error_html}</td>"
             f"</tr>\n"
         )
@@ -199,6 +202,21 @@ def _format_compliance(value: float) -> str:
     return f"{value:.1f}%"
 
 
+def _format_test_ids(test_ids: list[str]) -> str:
+    """Format test IDs as a compact list showing class::method."""
+    if not test_ids:
+        return ""
+    items = []
+    for tid in test_ids:
+        # Show only the Class::method part for brevity, full path as tooltip
+        parts = tid.split("::")
+        short = "::".join(parts[1:]) if len(parts) > 1 else tid
+        items.append(
+            f'<span class="test-id" title="{escape(tid)}">{escape(short)}</span>'
+        )
+    return "<br>".join(items)
+
+
 def _format_transport_errors(req: RequirementResult) -> str:
     """Format errors as a bullet list grouped by transport."""
     if req.transport_errors:
@@ -233,4 +251,5 @@ th { background: #f5f5f5; }
 td[title] { cursor: help; text-decoration: underline dotted; }
 .error-list { margin: 0; padding-left: 1.2em; list-style: disc; }
 .error-list li { margin: 2px 0; }
+.test-id { font-family: monospace; font-size: 0.85em; cursor: help; }
 """
