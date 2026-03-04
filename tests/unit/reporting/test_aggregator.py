@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
 from tck.reporting.aggregator import ComplianceAggregator
@@ -24,7 +26,8 @@ class TestEmptyCollector:
 
     def test_empty_gives_100_percent(self, collector: ComplianceCollector) -> None:
         """Empty collector yields 100% compliance everywhere."""
-        report = ComplianceAggregator(collector).aggregate()
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", []):
+            report = ComplianceAggregator(collector).aggregate()
         assert report.overall_compliance == FULL
         assert report.must_compliance == FULL
         assert report.should_compliance == FULL
@@ -239,3 +242,61 @@ class TestErrorAggregation:
 
         report = ComplianceAggregator(collector).aggregate()
         assert report.per_requirement["R1"].errors == []
+
+
+class TestUntestedRequirements:
+    """Untested requirements from the registry appear with NOT TESTED status."""
+
+    def _make_spec(self, req_id: str, level: str) -> object:
+        """Create a minimal RequirementSpec-like object."""
+        from tck.requirements.base import RequirementLevel, RequirementSpec
+
+        return RequirementSpec(
+            id=req_id,
+            title=f"Title for {req_id}",
+            description=f"Description for {req_id}",
+            level=RequirementLevel(level),
+            section="1.0",
+        )
+
+    def test_untested_requirements_included(self, collector: ComplianceCollector) -> None:
+        """Requirements in registry but not tested appear as NOT TESTED."""
+        fake_registry = [
+            self._make_spec("R1", "MUST"),
+            self._make_spec("R-UNTESTED", "SHOULD"),
+        ]
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", fake_registry):
+            report = ComplianceAggregator(collector).aggregate()
+
+        assert "R-UNTESTED" in report.per_requirement
+        untested = report.per_requirement["R-UNTESTED"]
+        assert untested.status == "NOT TESTED"
+        assert untested.level == "SHOULD"
+        assert untested.transports == {}
+        assert untested.description == "Description for R-UNTESTED"
+
+    def test_untested_excluded_from_compliance(self, collector: ComplianceCollector) -> None:
+        """NOT TESTED requirements do not affect compliance percentages."""
+        fake_registry = [
+            self._make_spec("R1", "MUST"),
+            self._make_spec("R-UNTESTED", "MUST"),
+        ]
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", fake_registry):
+            report = ComplianceAggregator(collector).aggregate()
+
+        assert report.must_compliance == FULL
+        assert report.overall_compliance == FULL
+
+    def test_tested_requirement_not_overwritten(self, collector: ComplianceCollector) -> None:
+        """A requirement that was tested keeps its actual result."""
+        fake_registry = [self._make_spec("R1", "MUST")]
+        collector.record(requirement_id="R1", transport="http", passed=False, level="MUST")
+
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", fake_registry):
+            report = ComplianceAggregator(collector).aggregate()
+
+        assert report.per_requirement["R1"].status == "FAIL"

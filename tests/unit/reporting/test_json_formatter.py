@@ -6,6 +6,7 @@ import json
 
 from datetime import datetime
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -46,7 +47,8 @@ class TestValidJSON:
         self, collector: ComplianceCollector, formatter: JSONFormatter
     ) -> None:
         """Empty collector produces valid JSON with empty sections."""
-        report = ComplianceAggregator(collector).aggregate()
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", []):
+            report = ComplianceAggregator(collector).aggregate()
         result = json.loads(formatter.format(report))
         assert isinstance(result, dict)
         assert result["per_requirement"] == {}

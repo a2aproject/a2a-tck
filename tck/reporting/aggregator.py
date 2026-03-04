@@ -143,7 +143,26 @@ class ComplianceAggregator:
                 transport_errors=transport_errors,
                 test_ids=test_ids,
             )
+
+        self._add_untested_requirements(out)
         return out
+
+    @staticmethod
+    def _add_untested_requirements(out: dict[str, RequirementResult]) -> None:
+        """Add registry requirements that were never tested."""
+        try:
+            from tck.requirements.registry import ALL_REQUIREMENTS
+
+            for spec in ALL_REQUIREMENTS:
+                if spec.id not in out:
+                    out[spec.id] = RequirementResult(
+                        level=spec.level.value,
+                        status="NOT TESTED",
+                        transports={},
+                        description=spec.description,
+                    )
+        except ImportError:
+            pass
 
     def _compute_per_transport(self) -> dict[str, TransportResult]:
         grouped: dict[str, list[TestResult]] = defaultdict(list)
@@ -173,7 +192,7 @@ class ComplianceAggregator:
             if level is None
             else [r for r in per_requirement.values() if r.level == level]
         )
-        reqs = [r for r in reqs if r.status != "SKIPPED"]
+        reqs = [r for r in reqs if r.status not in ("SKIPPED", "NOT TESTED")]
         if not reqs:
             return 100.0
         passing = sum(1 for r in reqs if r.status == "PASS")
