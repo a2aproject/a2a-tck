@@ -82,7 +82,7 @@ OPERATION_DESCRIPTORS: dict[OperationType, _OperationDescriptor] = {
     ),
     OperationType.CREATE_PUSH_CONFIG: _OperationDescriptor(
         method="create_push_notification_config",
-        required_keys=["task_id", "config_id", "config"],
+        required_keys=["task_id", "config"],
     ),
     OperationType.GET_PUSH_CONFIG: _OperationDescriptor(
         method="get_push_notification_config",

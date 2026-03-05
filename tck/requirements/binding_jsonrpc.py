@@ -36,7 +36,7 @@ BINDING_JSONRPC_REQUIREMENTS: list[RequirementSpec] = [
             "format with jsonrpc, id, method, and params fields."
         ),
         expected_behavior="Requests conform to JSON-RPC 2.0 structure",
-        spec_url=f"{SPEC_BASE}93-base-request-structure",
+        spec_url=f"{SPEC_BASE}91-protocol-requirements",
         tags=[JSONRPC, FORMAT],
     ),
     RequirementSpec(

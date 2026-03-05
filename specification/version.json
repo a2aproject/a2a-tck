@@ -1,10 +1,10 @@
 {
-  "downloadTime": "2026-02-16T09:39:00Z",
+  "downloadTime": "2026-03-05T09:25:55Z",
   "organization": "a2aproject",
   "repository": "A2A",
   "branch": "main",
-  "commitHash": "f63f6551c5eea8a573ad6111c9963d2200ef9675",
-  "sourceUrl": "https://github.com/a2aproject/A2A/tree/f63f6551c5eea8a573ad6111c9963d2200ef9675/specification",
+  "commitHash": "010b9cc936fbafd66610282ad66070da2cb28855",
+  "sourceUrl": "https://github.com/a2aproject/A2A/tree/010b9cc936fbafd66610282ad66070da2cb28855/specification",
   "files": [
     "a2a.proto",
     "buf.lock",

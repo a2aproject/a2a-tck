@@ -49,12 +49,12 @@ PUSH_DEL_002 = get_requirement_by_id("PUSH-DEL-002")
 # ---------------------------------------------------------------------------
 
 
-def _unique_config_id() -> str:
-    """Generate a unique push notification config ID."""
-    return f"tck-push-{uuid.uuid4().hex[:8]}"
-
-
-_PUSH_CONFIG = {"url": "https://example.com/tck-push-webhook"}
+def _unique_push_config() -> dict:
+    """Generate a push notification config with a unique ID."""
+    return {
+        "id": f"tck-push-{uuid.uuid4().hex[:8]}",
+        "url": "https://example.com/tck-push-webhook",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -81,12 +81,11 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
-        config_id = _unique_config_id()
+        config = _unique_push_config()
 
         response = client.create_push_notification_config(
             task_id=info.task_id,
-            config_id=config_id,
-            config=_PUSH_CONFIG,
+            config=config,
         )
 
         errors: list[str] = []
@@ -112,19 +111,18 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
-        config_id = _unique_config_id()
+        config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
-            config_id=config_id,
-            config=_PUSH_CONFIG,
+            config=config,
         )
         if not create_resp.success:
             pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
 
         get_resp = client.get_push_notification_config(
             task_id=info.task_id,
-            id=config_id,
+            id=config["id"],
         )
 
         errors: list[str] = []
@@ -152,19 +150,18 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
-        config_id = _unique_config_id()
+        config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
-            config_id=config_id,
-            config=_PUSH_CONFIG,
+            config=config,
         )
         if not create_resp.success:
             pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
 
         response = client.get_push_notification_config(
             task_id=info.task_id,
-            id=config_id,
+            id=config["id"],
         )
 
         errors: list[str] = []
@@ -222,12 +219,11 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
-        config_id = _unique_config_id()
+        config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
-            config_id=config_id,
-            config=_PUSH_CONFIG,
+            config=config,
         )
         if not create_resp.success:
             pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
@@ -257,12 +253,11 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
-        config_id = _unique_config_id()
+        config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
-            config_id=config_id,
-            config=_PUSH_CONFIG,
+            config=config,
         )
         if not create_resp.success:
             pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
@@ -270,7 +265,7 @@ class TestPushNotificationCrud:
         # Delete
         del_resp = client.delete_push_notification_config(
             task_id=info.task_id,
-            id=config_id,
+            id=config["id"],
         )
 
         errors: list[str] = []
@@ -280,7 +275,7 @@ class TestPushNotificationCrud:
             # Verify it is gone
             get_resp = client.get_push_notification_config(
                 task_id=info.task_id,
-                id=config_id,
+                id=config["id"],
             )
             if get_resp.success:
                 errors.append(
@@ -307,12 +302,11 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
         info = create_task(client)
-        config_id = _unique_config_id()
+        config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
-            config_id=config_id,
-            config=_PUSH_CONFIG,
+            config=config,
         )
         if not create_resp.success:
             pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
@@ -320,11 +314,11 @@ class TestPushNotificationCrud:
         # Delete twice
         client.delete_push_notification_config(
             task_id=info.task_id,
-            id=config_id,
+            id=config["id"],
         )
         second_del = client.delete_push_notification_config(
             task_id=info.task_id,
-            id=config_id,
+            id=config["id"],
         )
 
         errors: list[str] = []

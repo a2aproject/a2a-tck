@@ -121,7 +121,7 @@ class TestJsonRpcMethodNames:
         "SubscribeToTask",
         "CreateTaskPushNotificationConfig",
         "GetTaskPushNotificationConfig",
-        "ListTaskPushNotificationConfig",
+        "ListTaskPushNotificationConfigs",
         "DeleteTaskPushNotificationConfig",
         "GetExtendedAgentCard",
     }

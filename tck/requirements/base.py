@@ -29,7 +29,7 @@ class OperationType(Enum):
     SUBSCRIBE_TO_TASK = "SubscribeToTask"
     CREATE_PUSH_CONFIG = "CreateTaskPushNotificationConfig"
     GET_PUSH_CONFIG = "GetTaskPushNotificationConfig"
-    LIST_PUSH_CONFIGS = "ListTaskPushNotificationConfig"
+    LIST_PUSH_CONFIGS = "ListTaskPushNotificationConfigs"
     DELETE_PUSH_CONFIG = "DeleteTaskPushNotificationConfig"
     GET_EXTENDED_AGENT_CARD = "GetExtendedAgentCard"
 

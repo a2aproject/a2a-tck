@@ -100,7 +100,6 @@ class BaseTransportClient(ABC):
     def create_push_notification_config(
         self,
         task_id: str,
-        config_id: str,
         config: dict,
     ) -> TransportResponse: ...
 

@@ -23,6 +23,7 @@ tests/
     http_json/              # HTTP+JSON-specific tests
 specification/              # A2A spec files and derived resources (JSON schema, proto stubs)
   generated/                # Stubs Generated from a2a.proto
+skills/                     # Agent skills (see Skills section below)
 ```
 
 ## Key Conventions
@@ -62,6 +63,10 @@ All A2A bindings (for transport methods, error codes, etc.) are defined centrall
 - Follow the [https://www.conventionalcommits.org/en/v1.0.0/#summary](Conventional Commits) for the commit title and message
 - Always ask if the commit is related to a GitHub issue. If that's the case, add a `This fixes #{issue}" at the end of the commit message
 - Always run `make lint` and `make unit-test` before committing.
+
+## Skills
+
+- **update-a2a-spec** (`skills/update-a2a-spec/SKILL.md`): Step-by-step workflow for updating the TCK when the A2A protocol specification changes. Read the full skill file before starting an update.
 
 ## Commands
 

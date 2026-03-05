@@ -136,13 +136,12 @@ class GrpcClient(BaseTransportClient):
     def create_push_notification_config(
         self,
         task_id: str,
-        config_id: str,
         config: dict,
     ) -> TransportResponse:
         """Create a push notification config for a task."""
         try:
-            params = {"task_id": task_id, "config_id": config_id, "config": config}
-            proto_request = _dict_to_proto(params, a2a_pb2.CreateTaskPushNotificationConfigRequest)
+            params = {"task_id": task_id, **config}
+            proto_request = _dict_to_proto(params, a2a_pb2.TaskPushNotificationConfig)
             response = self._stub.CreateTaskPushNotificationConfig(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
@@ -168,8 +167,8 @@ class GrpcClient(BaseTransportClient):
         """List push notification configs for a task."""
         try:
             params = _build_params(task_id=task_id, page_size=page_size, page_token=page_token)
-            proto_request = _dict_to_proto(params, a2a_pb2.ListTaskPushNotificationConfigRequest)
-            response = self._stub.ListTaskPushNotificationConfig(proto_request)
+            proto_request = _dict_to_proto(params, a2a_pb2.ListTaskPushNotificationConfigsRequest)
+            response = self._stub.ListTaskPushNotificationConfigs(proto_request)
             return TransportResponse(transport=self.transport, success=True, raw_response=response)
         except grpc.RpcError as e:
             return TransportResponse(transport=self.transport, success=False, raw_response=e, error=str(e.details()))
