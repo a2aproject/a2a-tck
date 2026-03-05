@@ -159,19 +159,16 @@ def valid_text_message_params():
 
 @pytest.fixture
 def valid_file_message_params():
-    # Valid params for SendMessage with FilePart
-    # Note: mimeType is RECOMMENDED per A2A Specification §6.6.2 FileWithUri Object
+    # Valid params for SendMessage with a file Part (url variant)
     return {
         "message": {
             "messageId": "test-file-message-id-" + str(uuid.uuid4()),
             "role": "ROLE_USER",
             "parts": [
                 {
-                    "file": {
-                        "name": "test.txt",
-                        "mediaType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
-                        "fileWithUri": "https://example.com/test.txt",
-                    },
+                    "url": "https://example.com/test.txt",
+                    "filename": "test.txt",
+                    "mediaType": "text/plain",
                 }
             ],
         }
