@@ -482,7 +482,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     }
 
     configuration = {
-        "task_push_notification_config": {
+        "taskPushNotificationConfig": {
             "url": webhook_url,
             "token": "test-token-123",
         }
@@ -513,6 +513,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
 
         # Verify that a configuration with our webhook URL exists
         found_config = False
+        print(f"{configs}")
         for config in configs:
             if "url" in config:
                 config_url = config["url"]
@@ -610,7 +611,7 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
     }
 
     configuration = {
-        "task_push_notification_config": {
+        "taskPushNotificationConfig": {
             "url": webhook_url,
             "token": "test-streaming-token-456",
         }
