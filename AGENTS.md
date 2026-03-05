@@ -60,7 +60,7 @@ All A2A bindings (for transport methods, error codes, etc.) are defined centrall
 - Use the same code convention than existing code. If the existing convention seems incorrect, make suggestion before doing any changes
 
 ### PR instructions
-- Follow the [https://www.conventionalcommits.org/en/v1.0.0/#summary](Conventional Commits) for the commit title and message
+- Follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/#summary) for the commit title and message
 - Always ask if the commit is related to a GitHub issue. If that's the case, add a `This fixes #{issue}" at the end of the commit message
 - Always run `make lint` and `make unit-test` before committing.
 
