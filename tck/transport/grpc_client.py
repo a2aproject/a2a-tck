@@ -45,7 +45,8 @@ def _validate_task_object(task: Dict[str, Any]) -> None:
     Raises A2AValidationError if validation fails.
     """
     # Validate required fields per A2A specification
-    required_fields = ["id", "contextId", "status"]
+    # Note: contextId is no longer required in the proto
+    required_fields = ["id", "status"]
     for field in required_fields:
         if field not in task:
             raise A2AValidationError(f"Task missing required field '{field}'", TransportType.GRPC)
@@ -56,9 +57,10 @@ def _validate_task_object(task: Dict[str, Any]) -> None:
     if not isinstance(task["id"], str) or not task["id"].strip():
         raise A2AValidationError(f"Task 'id' must be a non-empty string, got '{task['id']}'", TransportType.GRPC)
 
-    # Validate 'contextId' field (must be non-empty string)
-    if not isinstance(task["contextId"], str) or not task["contextId"].strip():
-        raise A2AValidationError(f"Task 'contextId' must be a non-empty string, got '{task['contextId']}'", TransportType.GRPC)
+    # Validate 'contextId' field if present (must be non-empty string when set)
+    if "contextId" in task and task["contextId"]:
+        if not isinstance(task["contextId"], str) or not task["contextId"].strip():
+            raise A2AValidationError(f"Task 'contextId' must be a non-empty string, got '{task['contextId']}'", TransportType.GRPC)
 
     # Validate 'status' field
     if not isinstance(task["status"], dict):
@@ -189,7 +191,7 @@ def _validate_push_notification_config_list(config_list: List[Dict[str, Any]]) -
 
         # Validate TaskPushNotificationConfig structure
         # Note: 'id' field was removed from top level in proto update - it's now only in pushNotificationConfig
-        required_fields = ["pushNotificationConfig", "taskId"]
+        required_fields = ["url", "taskId"]
         for field in required_fields:
             if field not in config:
                 raise A2AValidationError(f"Push notification config[{i}] missing required field '{field}'", TransportType.GRPC)
@@ -199,10 +201,10 @@ def _validate_push_notification_config_list(config_list: List[Dict[str, Any]]) -
             raise A2AValidationError(f"Push notification config[{i}] 'name' must be a string", TransportType.GRPC)
 
         # Validate pushNotificationConfig structure
-        push_config = config["pushNotificationConfig"]
+        push_config = config
         if not isinstance(push_config, dict):
             raise A2AValidationError(
-                f"Push notification config[{i}] 'pushNotificationConfig' must be an object", TransportType.GRPC
+                f"Task Push notification config[{i}] 'pushNotificationConfig' must be an object", TransportType.GRPC
             )
 
         # PushNotificationConfig required fields
@@ -246,7 +248,7 @@ def _validate_a2a_response(response: Dict[str, Any], method_name: str) -> None:
 
         elif method_name in ["create_task_push_notification_config", "get_push_notification_config"]:
             # These methods should return TaskPushNotificationConfig objects
-            required_fields = ["pushNotificationConfig"]
+            required_fields = ["url"]
             for field in required_fields:
                 if field not in response:
                     raise A2AValidationError(
@@ -943,7 +945,7 @@ class GRPCClient(BaseTransportClient):
     # Push notification configuration methods
 
     def create_task_push_notification_config(
-        self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self, task_push_config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Set push notification config for a task via gRPC.
@@ -951,8 +953,7 @@ class GRPCClient(BaseTransportClient):
         Maps to: A2AService.CreateTaskPushNotificationConfig() RPC call
 
         Args:
-            task_id: ID of the task to configure
-            config: Push notification configuration
+            task_push_config: Push notification configuration
             **kwargs: Additional configuration options
 
         Returns:
@@ -962,39 +963,32 @@ class GRPCClient(BaseTransportClient):
             TransportError: If gRPC call fails
         """
         try:
-            logger.info(f"Setting push notification config for task via gRPC: {task_id}")
+            logger.info(f"Setting push notification config for task via gRPC: {task_push_config['taskId']}")
 
             self._load_static_stubs()
             pb = self._pb
 
-            # Build push notification config
-            push_config = pb.PushNotificationConfig(
-                id=config.get("id", config_id),
-                url=config.get("url", ""),
-                token=config.get("token", "")
-            )
-
-            # Build request (config_id is now inside the config object, not a separate field)
-            req = pb.CreateTaskPushNotificationConfigRequest(
-                task_id=task_id, config=push_config
+            # Build TaskPushNotificationConfig request with flattened fields
+            req = pb.TaskPushNotificationConfig(
+                task_id=task_push_config.get("taskId", ""),
+                id=task_push_config.get("id", ""),
+                url=task_push_config.get("url", ""),
+                token=task_push_config.get("token", ""),
             )
             metadata = self._prepare_metadata(extra_headers)
 
             resp = self.stub.CreateTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
-            # Note: TaskPushNotificationConfig no longer has top-level 'id' field
+            # Fields are now directly on TaskPushNotificationConfig (no nested push_notification_config)
             created_config = {
                     "taskId": resp.task_id,
-                    "pushNotificationConfig": {
-                        "id": resp.push_notification_config.id,
-                        "url": resp.push_notification_config.url,
-                        "token": resp.push_notification_config.token,
-                        "authentication": {},  # Convert authentication if present
-                    }
+                    "id": resp.id,
+                    "url": resp.url,
+                    "token": resp.token,
             }
 
-            logger.debug(f"Set push notification config via gRPC: {task_id}")
+            logger.debug(f"Set push notification config via gRPC: {task_push_config['taskId']}")
             # Validate response conforms to A2A specification
             _validate_a2a_response(created_config, "create_task_push_notification_config")
             return created_config
@@ -1040,13 +1034,12 @@ class GRPCClient(BaseTransportClient):
             resp = self.stub.GetTaskPushNotificationConfig(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
+            # Fields are now directly on TaskPushNotificationConfig (no nested push_notification_config)
             config_data = {
-                "pushNotificationConfig": {
-                    "id": resp.push_notification_config.id,
-                    "url": resp.push_notification_config.url,
-                    "token": resp.push_notification_config.token,
-                    "authentication": {},  # Convert authentication if present
-                }
+                "taskId": resp.task_id,
+                "id": resp.id,
+                "url": resp.url,
+                "token": resp.token,
             }
 
             logger.debug(f"Retrieved push notification config via gRPC: {task_id}/{config_id}")
@@ -1094,18 +1087,16 @@ class GRPCClient(BaseTransportClient):
             resp = self.stub.ListTaskPushNotificationConfigs(req, timeout=self.timeout, metadata=metadata)
 
             # Convert response to JSON format that matches expected test format
-            # Note: TaskPushNotificationConfig no longer has top-level 'id' field
+            # Fields are now directly on TaskPushNotificationConfig (no nested push_notification_config)
             configs_list = []
+            print(f"resp -> {resp.configs}")
             for config in resp.configs:
                 configs_list.append(
                     {
                         "taskId": config.task_id,
-                        "pushNotificationConfig": {
-                            "id": config.push_notification_config.id,
-                            "url": config.push_notification_config.url,
-                            "token": config.push_notification_config.token,
-                            "authentication": {},
-                        },
+                        "id": config.id,
+                        "url": config.url,
+                        "token": config.token,
                     }
                 )
 
@@ -1260,16 +1251,16 @@ class GRPCClient(BaseTransportClient):
                 config_kwargs["history_length"] = configuration["historyLength"]
             if "blocking" in configuration:
                 config_kwargs["blocking"] = configuration["blocking"]
-            if "pushNotificationConfig" in configuration:
-                # Build PushNotificationConfig protobuf
-                pnc = configuration["pushNotificationConfig"]
-                push_config = pb.PushNotificationConfig(
+            if "taskPushNotificationConfig" in configuration:
+                # Build TaskPushNotificationConfig protobuf (fields are now flattened)
+                pnc = configuration["taskPushNotificationConfig"]
+                push_config = pb.TaskPushNotificationConfig(
                     id=pnc.get("id", ""),
+                    task_id=pnc.get("taskId", ""),
                     url=pnc.get("url", ""),
                     token=pnc.get("token", ""),
                 )
-                # Use the renamed field name from PR #482
-                config_kwargs["push_notification_config"] = push_config
+                config_kwargs["task_push_notification_config"] = push_config
             config = pb.SendMessageConfiguration(**config_kwargs) if config_kwargs else pb.SendMessageConfiguration()
         else:
             config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=default_blocking)

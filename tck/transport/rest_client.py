@@ -570,15 +570,14 @@ class RESTClient(BaseTransportClient):
 
     # Push notification configuration methods
 
-    def create_task_push_notification_config(self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def create_task_push_notification_config(self, task_push_config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Set push notification config for a task via HTTP POST.
 
         Maps to: POST tasks/{task_id}/pushNotificationConfigs HTTP request
 
         Args:
-            task_id: ID of the task to configure
-            config: Push notification configuration
+            task_push_config: Push notification configuration
             extra_headers: Optional HTTP headers
 
         Returns:
@@ -588,28 +587,18 @@ class RESTClient(BaseTransportClient):
             TransportError: If HTTP request fails
         """
         try:
-            logger.info(f"Setting push notification config for task via REST: {task_id}")
+            logger.info(f"Setting push notification config for task via REST: {task_push_config['taskId']}")
 
             # Prepare request
-            url = urljoin(self.base_url, f"/tasks/{task_id}/pushNotificationConfigs")
+            url = urljoin(self.base_url, f"/tasks/{task_push_config['taskId']}/pushNotificationConfigs")
             headers = self._prepare_headers(extra_headers)
 
             # Format request according to protobuf CreateTaskPushNotificationConfigRequest structure
             # Note: configId field was removed from the proto - ID is now inside the config object
 
-            # Build protobuf-compatible request structure
-            protobuf_request = {
-                "taskId": task_id,
-                "config": {
-                    "id": config_id,  # ID is now inside the config object
-                    "url": config.get("url", ""),
-                    "token": config.get("token", ""),
-                    "authentication": config.get("authentication", {})
-                }
-            }
-            logger.debug(f"Set push notification config via REST: {protobuf_request}")
+            logger.debug(f"Set push notification config via REST: {task_push_config}")
             # Make real HTTP request to live SUT
-            response = self.client.post(url, json=protobuf_request, headers=headers)
+            response = self.client.post(url, json=task_push_config, headers=headers)
 
             # Handle HTTP errors
             if response.status_code >= 400:
@@ -620,7 +609,7 @@ class RESTClient(BaseTransportClient):
             # Parse JSON response
             created_config = response.json()
 
-            logger.debug(f"Set push notification config via REST: {task_id}")
+            logger.debug(f"Set push notification config via REST: {task_push_config['taskId']}")
             return created_config
 
         except httpx.RequestError as e:

@@ -208,15 +208,13 @@ class BaseTransportClient(ABC):
 
     @abstractmethod
     def create_task_push_notification_config(
-        self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self, task_push_config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Set push notification configuration for a task.
 
         Args:
-            task_id: The unique identifier of the task
-            config_id: The ID for the new config
-            config: Push notification configuration object
+            config: Task Push notification configuration object
             extra_headers: Optional transport-specific headers
 
         Returns:

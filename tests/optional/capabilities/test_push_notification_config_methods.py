@@ -132,17 +132,18 @@ def test_create_task_push_notification_config(sut_client, created_task_id, agent
     if not validator.is_capability_declared("pushNotifications"):
         pytest.skip("Push notifications capability not declared - test not applicable")
 
-    config = {
-        "url": "https://example.com/webhook"
+    task_push_config = {
+        "taskId": created_task_id,
+        "url": "https://example.com/webhook",
+        "id": "test_create_task_push_notification_config_" + str(uuid.uuid4())
     }
 
-    config_id = "test_create_task_push_notification_config_" + str(uuid.uuid4())
-    resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
+    resp = transport_helpers.transport_create_task_push_notification_config(sut_client, task_push_config)
     # Since push notifications capability is declared, this MUST work
     assert transport_helpers.is_json_rpc_success_response(resp), "Push notifications capability declared but set config failed"
 
     result = resp["result"]
-    assert result["pushNotificationConfig"]["url"] == "https://example.com/webhook", (
+    assert result["url"] == "https://example.com/webhook", (
         "Push notification config URL not echoed correctly"
     )
 
@@ -164,24 +165,24 @@ def test_get_push_notification_config(sut_client, created_task_id, agent_card_da
         pytest.skip("Push notifications capability not declared - test not applicable")
 
     # First, set a push notification config
-    config = {
+    task_push_config = {
+        "taskId": created_task_id,
+        "id": "test_get_push_notification_config_" + str(uuid.uuid4()),
         "url": "https://example.com/webhook"
     }
-    config_id = "test_get_push_notification_config_" + str(uuid.uuid4())
 
-    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, task_push_config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), "Failed to set push notification config before testing get"
 
     # Now, get the config we just set
-    resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id, config_id)
+    resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id, task_push_config["id"])
 
     # Since push notifications capability is declared, this MUST work
     assert transport_helpers.is_json_rpc_success_response(resp), "Push notifications capability declared but get config failed"
 
     result = resp["result"]
-    assert "pushNotificationConfig" in result, "Result must contain pushNotificationConfig"
-    assert "url" in result["pushNotificationConfig"], "Push notification config must have url field"
-    assert result["pushNotificationConfig"]["url"] == "https://example.com/webhook", "Retrieved URL should match what was set"
+    assert "url" in result, "Push notification config must have url field"
+    assert result["url"] == "https://example.com/webhook", "Retrieved URL should match what was set"
 
 
 @optional_capability
@@ -200,12 +201,13 @@ def test_create_task_push_notification_config_nonexistent(sut_client, agent_card
     if not validator.is_capability_declared("pushNotifications"):
         pytest.skip("Push notifications capability not declared - test not applicable")
 
-    config = {
+    task_push_config = {
+        "taskId": "nonexistent-task-id",
+        "id":  "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4()),
         "url": "https://example.com/webhook"
     }
 
-    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
-    resp = transport_helpers.transport_create_task_push_notification_config(sut_client, "nonexistent-task-id", config_id, config)
+    resp = transport_helpers.transport_create_task_push_notification_config(sut_client, task_push_config)
 
     # Should return proper JSON-RPC error for non-existent task
     assert transport_helpers.is_json_rpc_error_response(resp), (
@@ -261,13 +263,13 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
     if not validator.is_capability_declared("pushNotifications"):
         pytest.skip("Push notifications capability not declared - test not applicable")
 
-    config = {
+    task_push_config = {
+        "taskId": created_task_id,
+        "id": "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4()),
         "url": "https://example.com/webhook1"
     }
-    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
-
     # First, set one or more push notification configs
-    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, task_push_config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), "Failed to set push notification config before testing list"
 
     # Now, list the configs for this task
@@ -285,8 +287,7 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
     for config in configs:
         print(config)
         assert "taskId" in config, "Each config must contain a task ID"
-        assert "pushNotificationConfig" in config, "Each config must contain pushNotificationConfig"
-        assert "id" in config["pushNotificationConfig"], "pushNotificationConfig must contain an id"
+        assert "id" in config, "pushNotificationConfig must contain an id"
         if config["taskId"] == created_task_id:
             found_config = True
 
@@ -354,12 +355,13 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
         pytest.skip("Push notifications capability not declared - test not applicable")
 
     # First, set a push notification config
-    config = {
+    task_push_config = {
+        "taskId": created_task_id,
+        "id": "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4()),
         "url": "https://example.com/webhook-to-delete"
     }
-    config_id = "test_create_task_push_notification_config_nonexistent_" + str(uuid.uuid4())
 
-    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, created_task_id, config_id, config)
+    set_resp = transport_helpers.transport_create_task_push_notification_config(sut_client, task_push_config)
     assert transport_helpers.is_json_rpc_success_response(set_resp), (
         "Failed to set push notification config before testing delete"
     )
@@ -367,11 +369,11 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
     # Extract the config ID from the response (if provided by server)
     set_result = set_resp["result"]
     # Config ID is now inside pushNotificationConfig, not at the top level
-    assert set_result["pushNotificationConfig"].get("id") == config_id
+    assert set_result["id"] == task_push_config["id"]
 
-    if config_id:
+    if task_push_config["id"]:
         # If the server provides config ID in pushNotificationConfig, use it for deletion
-        resp = transport_helpers.transport_delete_push_notification_config(sut_client, created_task_id, config_id)
+        resp = transport_helpers.transport_delete_push_notification_config(sut_client, created_task_id, task_push_config["id"])
 
         # Since push notifications capability is declared, this MUST work
         assert transport_helpers.is_json_rpc_success_response(resp), (
@@ -383,14 +385,14 @@ def test_delete_push_notification_config(sut_client, created_task_id, agent_card
         assert result is None or len(result) == 0, "Delete should return null or empty result on success"
 
         # Verify deletion by trying to get the config
-        get_resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id, config_id)
+        get_resp = transport_helpers.transport_get_push_notification_config(sut_client, created_task_id, task_push_config["id"])
 
         # Should either return error (config not found) or success with empty/different config
         if transport_helpers.is_json_rpc_success_response(get_resp):
             # If successful, the config should be different or not contain our deleted URL
             get_result = get_resp["result"]
-            if "pushNotificationConfig" in get_result:
-                assert get_result["pushNotificationConfig"]["url"] != "https://example.com/webhook-to-delete", (
+            if "url" in get_result:
+                assert get_result["url"] != "https://example.com/webhook-to-delete", (
                     "Deleted configuration should not be retrievable"
                 )
         else:
@@ -480,7 +482,7 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
     }
 
     configuration = {
-        "pushNotificationConfig": {
+        "taskPushNotificationConfig": {
             "url": webhook_url,
             "token": "test-token-123",
         }
@@ -511,9 +513,10 @@ def test_send_message_with_push_notification_config(sut_client, agent_card_data,
 
         # Verify that a configuration with our webhook URL exists
         found_config = False
+        print(f"{configs}")
         for config in configs:
-            if "pushNotificationConfig" in config:
-                config_url = config["pushNotificationConfig"].get("url")
+            if "url" in config:
+                config_url = config["url"]
                 logger.info(f"Checking config URL: {config_url}")
                 if config_url == webhook_url:
                     found_config = True
@@ -608,10 +611,10 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
     }
 
     configuration = {
-        "pushNotificationConfig": {
+        "taskPushNotificationConfig": {
             "url": webhook_url,
             "token": "test-streaming-token-456",
-        },
+        }
     }
 
     # Send the streaming message with configuration
@@ -670,8 +673,8 @@ def test_send_streaming_message_with_push_notification_config(sut_client, agent_
         # Verify that a configuration with our webhook URL exists
         found_config = False
         for config in configs:
-            if "pushNotificationConfig" in config:
-                config_url = config["pushNotificationConfig"].get("url")
+            if "url" in config:
+                config_url = config["url"]
                 logger.info(f"Checking config URL: {config_url}")
                 if config_url == webhook_url:
                     found_config = True

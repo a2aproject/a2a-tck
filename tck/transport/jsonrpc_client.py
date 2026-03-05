@@ -466,7 +466,7 @@ class JSONRPCClient(BaseTransportClient):
             yield result
 
     def create_task_push_notification_config(
-        self, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self, task_push_config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Set push notification configuration for a task.
@@ -474,9 +474,7 @@ class JSONRPCClient(BaseTransportClient):
         Makes a real JSON-RPC call to configure push notifications.
 
         Args:
-            task_id: The unique identifier of the task
-            config_id: The ID for the new config
-            config: Push notification configuration object
+            task_push_config: Push notification configuration object
             extra_headers: Optional HTTP headers
 
         Returns:
@@ -488,14 +486,9 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §7.3 - Push Notifications
         """
         try:
-            # Note: configId parameter was removed from the proto - ID is now inside config object
-            config_with_id = config.copy()
-            if "id" not in config_with_id:
-                config_with_id["id"] = config_id
-
             response = self._make_jsonrpc_request(
                 method="CreateTaskPushNotificationConfig",
-                params={"taskId": task_id, "config": config_with_id},
+                params=task_push_config,
                 extra_headers=extra_headers,
             )
             return response.get("result", {})
