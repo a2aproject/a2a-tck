@@ -19,21 +19,21 @@ class TestValidationResult:
 
     def test_valid_result(self) -> None:
         """Test creating a valid result."""
-        result = ValidationResult(valid=True, errors=[], proto_type="a2a.v1.Task")
+        result = ValidationResult(valid=True, errors=[], proto_type="lf.a2a.v1.Task")
         assert result.valid is True
         assert result.errors == []
-        assert result.proto_type == "a2a.v1.Task"
+        assert result.proto_type == "lf.a2a.v1.Task"
 
     def test_invalid_result(self) -> None:
         """Test creating an invalid result with errors."""
         result = ValidationResult(
             valid=False,
             errors=["id: required field is not set"],
-            proto_type="a2a.v1.Task",
+            proto_type="lf.a2a.v1.Task",
         )
         assert result.valid is False
         assert len(result.errors) == 1
-        assert result.proto_type == "a2a.v1.Task"
+        assert result.proto_type == "lf.a2a.v1.Task"
 
     def test_default_values(self) -> None:
         """Test default values for errors and proto_type."""
@@ -54,7 +54,7 @@ class TestProtoSchemaValidatorTypeCheck:
         )
         result = validator.validate(task, a2a_pb2.Task)
         assert result.valid is True
-        assert result.proto_type == "a2a.v1.Task"
+        assert result.proto_type == "lf.a2a.v1.Task"
 
     def test_wrong_type(self, validator: ProtoSchemaValidator) -> None:
         """Test that wrong types fail validation."""
@@ -66,8 +66,8 @@ class TestProtoSchemaValidatorTypeCheck:
         result = validator.validate(message, a2a_pb2.Task)
         assert result.valid is False
         assert any("Type mismatch" in error for error in result.errors)
-        assert "a2a.v1.Task" in result.errors[0]
-        assert "a2a.v1.Message" in result.errors[0]
+        assert "lf.a2a.v1.Task" in result.errors[0]
+        assert "lf.a2a.v1.Message" in result.errors[0]
 
     def test_proto_type_in_result(self, validator: ProtoSchemaValidator) -> None:
         """Test that proto_type is set correctly in result."""
@@ -77,7 +77,7 @@ class TestProtoSchemaValidatorTypeCheck:
             status=a2a_pb2.TaskStatus(state=a2a_pb2.TASK_STATE_SUBMITTED),
         )
         result = validator.validate(task, a2a_pb2.Task)
-        assert result.proto_type == "a2a.v1.Task"
+        assert result.proto_type == "lf.a2a.v1.Task"
 
 
 class TestRequiredFieldValidation:
@@ -260,7 +260,7 @@ class TestAgentCardValidation:
         )
         result = validator.validate(agent_card, a2a_pb2.AgentCard)
         assert result.valid is True
-        assert result.proto_type == "a2a.v1.AgentCard"
+        assert result.proto_type == "lf.a2a.v1.AgentCard"
 
     def test_agent_card_missing_required(self, validator: ProtoSchemaValidator) -> None:
         """Test AgentCard with missing required fields."""

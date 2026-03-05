@@ -166,11 +166,10 @@ class JsonRpcClient(BaseTransportClient):
     def create_push_notification_config(
         self,
         task_id: str,
-        config_id: str,
         config: dict,
     ) -> TransportResponse:
         """Create a push notification config for a task."""
-        params = {"task_id": task_id, "config_id": config_id, "config": config}
+        params = {"task_id": task_id, **config}
         return self._call(OperationType.CREATE_PUSH_CONFIG.value, params)
 
     def get_push_notification_config(self, task_id: str, id: str) -> TransportResponse:

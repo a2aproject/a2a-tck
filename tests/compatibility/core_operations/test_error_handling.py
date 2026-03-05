@@ -236,7 +236,7 @@ class TestCapabilityPushNotifications:
         response = _jsonrpc_call(
             base_url,
             "CreateTaskPushNotificationConfig",
-            {"task_id": "t", "config_id": "c", "config": {"url": "https://example.com"}},
+            {"task_id": "t", "url": "https://example.com"},
         )
         body = response.json()
         passed = "error" in body
@@ -263,7 +263,7 @@ class TestCapabilityPushNotifications:
             base_url,
             "POST",
             "/tasks/t/pushNotificationConfigs",
-            json_body={"configId": "c", "config": {"url": "https://example.com"}},
+            json_body={"url": "https://example.com"},
         )
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported push, got {response.status_code}"]

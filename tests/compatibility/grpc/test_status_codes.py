@@ -188,7 +188,6 @@ class TestGrpcStatusCodes:
         client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
         response = client.create_push_notification_config(
             task_id="tck-grpc-status-push-004",
-            config_id="c",
             config={"url": "https://example.com"},
         )
         if response.success:

@@ -44,14 +44,13 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         ),
         operation=OperationType.CREATE_PUSH_CONFIG,
         binding=CREATE_PUSH_CONFIG_BINDING,
-        proto_request_type="CreateTaskPushNotificationConfigRequest",
-        proto_response_type="PushNotificationConfig",
+        proto_request_type="TaskPushNotificationConfig",
+        proto_response_type="TaskPushNotificationConfig",
         expected_behavior="Webhook endpoint created and config returned with ID",
         spec_url=f"{SPEC_BASE}317-create-push-notification-config",
         tags=[PUSH_NOTIFICATION, CREATE],
         sample_input={
             "task_id": "tck-existing-task",
-            "config_id": "tck-push-cfg-001",
             "config": {
                 "url": "https://example.com/tck/notifications",
                 "authentication": {
@@ -77,7 +76,6 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         tags=[PUSH_NOTIFICATION, CREATE],
         sample_input={
             "task_id": "tck-existing-task",
-            "config_id": "tck-push-cfg-002",
             "config": {
                 "url": "https://example.com/tck/notifications/persist",
                 "authentication": {
@@ -138,8 +136,8 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         ),
         operation=OperationType.LIST_PUSH_CONFIGS,
         binding=LIST_PUSH_CONFIGS_BINDING,
-        proto_request_type="ListTaskPushNotificationConfigRequest",
-        proto_response_type="ListTaskPushNotificationConfigResponse",
+        proto_request_type="ListTaskPushNotificationConfigsRequest",
+        proto_response_type="ListTaskPushNotificationConfigsResponse",
         expected_behavior="All active configs returned for task",
         spec_url=f"{SPEC_BASE}319-list-push-notification-configs",
         tags=[PUSH_NOTIFICATION, LIST],

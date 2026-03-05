@@ -1,6 +1,6 @@
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/python
+  - remote: buf.build/protocolbuffers/python:v30.2
     out: generated
-  - remote: buf.build/grpc/python
+  - remote: buf.build/grpc/python:v1.71.0
     out: generated

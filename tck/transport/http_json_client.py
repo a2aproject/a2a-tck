@@ -236,11 +236,10 @@ class HttpJsonClient(BaseTransportClient):
     def create_push_notification_config(
         self,
         task_id: str,
-        config_id: str,
         config: dict,
     ) -> TransportResponse:
         """Create a push notification config via ``POST /tasks/{id}/pushNotificationConfigs``."""
-        body = {"configId": config_id, "config": config}
+        body = config
         return self._request(
             CREATE_PUSH_CONFIG_BINDING.http_json_method,
             CREATE_PUSH_CONFIG_BINDING.http_json_path.format(id=task_id),
