@@ -456,7 +456,9 @@ class TestMultiModalFeatures:
             "parts": [
                 {"text": "Please analyze this file"},
                 {
-                    "file": {"fileWithUri": "https://example.com/test-file.txt", "mediaType": "text/plain", "name": "test-file.txt"},
+                    "url": "https://example.com/test-file.txt",
+                    "filename": "test-file.txt",
+                    "mediaType": "text/plain",
                 },
             ],
         }
@@ -494,7 +496,7 @@ class TestMultiModalFeatures:
             "role": "ROLE_USER",
             "parts": [
                 {"text": "Processing binary data"},
-                {"data": {"data": {"mimeType": "application/octet-stream", "data": encoded_data}}},
+                {"raw": encoded_data, "mediaType": "application/octet-stream"},
             ],
         }
 

@@ -125,14 +125,13 @@ def _validate_part_object(part: Dict[str, Any], context: str = "part") -> None:
         if not isinstance(part["text"], str):
             raise A2AValidationError(f"{context} TextPart 'text' must be a string", TransportType.GRPC)
 
-    elif "file" in part:
-        file_obj = part["file"]
-        if not isinstance(file_obj, dict):
-            raise A2AValidationError(f"{context} FilePart 'file' must be an object", TransportType.GRPC)
+    elif "url" in part:
+        if not isinstance(part["url"], str):
+            raise A2AValidationError(f"{context} Part 'url' must be a string", TransportType.GRPC)
 
-        # FilePart must have either 'bytes' or 'uri'
-        if "bytes" not in file_obj and "uri" not in file_obj:
-            raise A2AValidationError(f"{context} FilePart must have either 'bytes' or 'uri'", TransportType.GRPC)
+    elif "raw" in part:
+        if not isinstance(part["raw"], str):
+            raise A2AValidationError(f"{context} Part 'raw' must be a base64-encoded string", TransportType.GRPC)
 
     elif "data" in part:
         if "data" not in part["data"]:
@@ -1230,22 +1229,11 @@ class GRPCClient(BaseTransportClient):
                 value = Value()
                 value.struct_value.CopyFrom(struct)
                 parts.append(pb.Part(data=value))
-            #FIXME incorrect serialization of FilePart payload
-            elif p.get("kind") == "file" and (("file" in p and "uri" in p["file"]) or ("file" in p and "bytes" in p["file"]) or "fileUri" in p or "fileBytes" in p):
-                # Handle FilePart
-                file_part = pb.FilePart()
-                if "fileUri" in p:
-                    file_part.file_with_uri = p["fileUri"]
-                elif "fileBytes" in p:
-                    file_part.file_with_bytes = p["fileBytes"]
-                elif "file" in p:
-                    if "uri" in p["file"]:
-                        file_part.file_with_uri = p["file"]["uri"]
-                    elif "bytes" in p["file"]:
-                        file_part.file_with_bytes = p["file"]["bytes"]
-                if "mimeType" in p:
-                    file_part.mime_type = p["mimeType"]
-                parts.append(pb.Part(file=file_part))
+            elif "url" in p:
+                parts.append(pb.Part(url=p["url"], filename=p.get("filename", ""), media_type=p.get("mediaType", "")))
+            elif "raw" in p:
+                raw_bytes = base64.b64decode(p["raw"])
+                parts.append(pb.Part(raw=raw_bytes, filename=p.get("filename", ""), media_type=p.get("mediaType", "")))
             else:
                 # Empty or unrecognized part structure
                 parts.append(pb.Part())
@@ -1318,32 +1306,24 @@ class GRPCClient(BaseTransportClient):
             # Check which oneof field is set
             if part.HasField('text'):
                 json_parts.append({"kind": "text", "text": part.text})
-            elif part.HasField('file'):
-                file_part = part.file
-                file_dict = {"kind": "file", "file": {}}
-
-                # FilePart has oneof: file_with_uri or file_with_bytes
-                if file_part.HasField('file_with_uri'):
-                    file_dict["file"]["fileWithUri"] = file_part.file_with_uri
-                elif file_part.HasField('file_with_bytes'):
-                    # Base64 encode bytes for JSON
-                    file_dict["file"]["fileWithBytes"] = base64.b64encode(file_part.file_with_bytes).decode('utf-8')
-
-                # Add optional fields using spec-compliant camelCase names
-                if file_part.media_type:
-                    file_dict["file"]["mediaType"] = file_part.media_type
-                if file_part.name:
-                    file_dict["file"]["name"] = file_part.name
-
-                json_parts.append(file_dict)
+            elif part.HasField('url'):
+                part_dict = {"url": part.url}
+                if part.filename:
+                    part_dict["filename"] = part.filename
+                if part.media_type:
+                    part_dict["mediaType"] = part.media_type
+                json_parts.append(part_dict)
+            elif part.HasField('raw'):
+                part_dict = {"raw": base64.b64encode(part.raw).decode('utf-8')}
+                if part.filename:
+                    part_dict["filename"] = part.filename
+                if part.media_type:
+                    part_dict["mediaType"] = part.media_type
+                json_parts.append(part_dict)
             elif part.HasField('data'):
-                # DataPart contains a google.protobuf.Struct
-                # Convert Struct to dict using existing gRPC JSON parsing
-                data_dict = json_format.MessageToDict(part.data.data, preserving_proto_field_name=False)
-                json_parts.append({
-                    "kind": "data",
-                    "data": data_dict
-                })
+                # data is google.protobuf.Value
+                data_dict = json_format.MessageToDict(part.data, preserving_proto_field_name=False)
+                json_parts.append({"data": data_dict})
 
         return json_parts
 

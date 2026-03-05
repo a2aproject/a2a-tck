@@ -39,11 +39,9 @@ def test_invalid_file_part(sut_client):
             "role": "ROLE_USER",
             "parts": [
                 {
-                    "file": {
-                        "name": "test.txt",
-                        "mediaType": "text/plain",  # RECOMMENDED: Media Type per A2A Spec §6.6.2
-                        "fileWithUri": "invalid://url.com/file.txt",  # Invalid URL (note: uri, not url)
-                    },
+                    "url": "invalid://url.com/file.txt",  # Invalid URL
+                    "filename": "test.txt",
+                    "mediaType": "text/plain",
                 }
             ],
         }
@@ -243,11 +241,9 @@ def test_file_part_without_mimetype(sut_client):
             "role": "ROLE_USER",
             "parts": [
                 {
-                    "file": {
-                        "name": "test.txt",
-                        # mimeType is RECOMMENDED but not required per A2A Spec §6.6.2
-                        "fileWithUri": "https://example.com/test.txt",
-                    },
+                    "url": "https://example.com/test.txt",
+                    "filename": "test.txt",
+                    # mediaType is RECOMMENDED but not required per A2A Spec
                 }
             ],
         }
