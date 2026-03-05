@@ -451,7 +451,7 @@ def transport_send_json_rpc_request(
 
 
 def transport_create_task_push_notification_config(
-    client: BaseTransportClient, task_id: str, config_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+    client: BaseTransportClient, task_push_config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Set push notification configuration for a task using any transport client.
@@ -471,7 +471,7 @@ def transport_create_task_push_notification_config(
     if hasattr(client, "create_task_push_notification_config") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware create_task_push_notification_config for {client.transport_type.value}")
         try:
-            result = client.create_task_push_notification_config(task_id, config_id, config, extra_headers=extra_headers)
+            result = client.create_task_push_notification_config(task_push_config, extra_headers=extra_headers)
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
