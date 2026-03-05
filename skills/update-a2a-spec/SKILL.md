@@ -45,6 +45,8 @@ This executes `scripts/generate_grpc_stubs.sh`, which uses `buf` to regenerate `
 
 If `buf` is not installed, first run `./scripts/install_buf.sh`.
 
+After regenerating, check the protobuf version in the generated stubs (`head -5 specification/generated/a2a_pb2.py`) and verify it is compatible with the `protobuf` runtime version installed in the project (see `pyproject.toml`). If the gencode version is newer than the runtime allows, pin the plugin versions in `specification/buf.gen.yaml` to a compatible release (e.g., `buf.build/protocolbuffers/python:v30.2`).
+
 ## Step 4: Analyze specification changes
 
 Compare the old and new versions of the specification to identify changes:
@@ -84,7 +86,7 @@ For each spec change:
 - If a requirement is modified, update the existing entry.
 - If a requirement is removed, remove the entry and note it.
 
-3. Summarize the changes for the user before proceeding.
+Summarize the changes for the user before proceeding.
 
 ## Step 6: Update transport clients and validators
 
@@ -118,9 +120,21 @@ make lint
 make unit-test
 ```
 
-Fix any issues before proceeding.
+Fix any issues before proceeding. Common failures after a spec update:
+- Proto package namespace changes (e.g., `a2a.v1` to `lf.a2a.v1`) can break unit tests that assert on fully-qualified proto type names. Search for hardcoded package names in `tests/unit/`.
+- Protobuf runtime version mismatches (see Step 3).
 
-## Step 9: Summarize
+## Step 9: Audit requirements
+
+Before committing, audit all requirement files to verify:
+- Each requirement's `section` field matches the correct section in the updated specification.
+- Each requirement's `spec_url` anchor resolves to the right heading.
+- No requirements reference sections or content that was removed or renamed.
+- Any new MUST/SHOULD/MAY requirements in the spec have corresponding entries.
+
+Highlight any new, modified, or removed requirements for the user.
+
+## Step 10: Summarize
 
 Present the user with a summary of:
 - The old and new spec commit hashes (from `specification/version.json`)
