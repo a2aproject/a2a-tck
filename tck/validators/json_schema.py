@@ -85,10 +85,13 @@ class JSONSchemaValidator:
 
         for def_name in definitions:
             # Convert definition name to possible $ref patterns
-            # "Task Status" -> "TaskStatus" -> "a2a.v1.TaskStatus.jsonschema.json"
+            # "Task Status" -> "TaskStatus" -> "lf.a2a.v1.TaskStatus.jsonschema.json"
             camel_name = def_name.replace(" ", "")
-            ref_value = f"a2a.v1.{camel_name}.jsonschema.json"
+            ref_value = f"lf.a2a.v1.{camel_name}.jsonschema.json"
             mapping[ref_value] = def_name
+            # Also support legacy prefix without "lf." for older schemas
+            legacy_ref = f"a2a.v1.{camel_name}.jsonschema.json"
+            mapping[legacy_ref] = def_name
 
             # Also handle google.protobuf types
             if def_name in ("Struct", "Timestamp", "Value"):

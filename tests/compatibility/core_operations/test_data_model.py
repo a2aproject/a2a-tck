@@ -126,7 +126,7 @@ class TestSendMessageResponseSchema:
     """DM-TASK-001 through DM-STATUS-001: Validate response against JSON schema.
 
     A single schema validation of the SendMessageResponse covers:
-    - DM-TASK-001: Task required fields (id, contextId, status)
+    - DM-TASK-001: Task required fields (id, status)
     - DM-TASK-002: TaskState enum values
     - DM-MSG-001: Message required fields (role, parts, messageId)
     - DM-MSG-002: Role enum values

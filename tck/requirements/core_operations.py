@@ -514,15 +514,15 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
         id="CORE-MULTI-001",
         section="3.4.1",
-        title="Agent generates contextId when not provided",
-        level=RequirementLevel.MUST,
+        title="Agent may generate contextId when not provided",
+        level=RequirementLevel.MAY,
         description=(
-            "Agents MUST generate a new contextId when processing a Message "
+            "Agents MAY generate a new contextId when processing a Message "
             "that does not include a contextId field."
         ),
         operation=OperationType.SEND_MESSAGE,
         binding=SEND_MESSAGE_BINDING,
-        expected_behavior="Response contains server-generated contextId",
+        expected_behavior="Response may contain server-generated contextId",
         spec_url=f"{SPEC_BASE}341-context-identifier-semantics",
         tags=[CORE, MULTI_TURN, CONTEXT],
         sample_input={
@@ -534,13 +534,34 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         },
     ),
     RequirementSpec(
-        id="CORE-MULTI-002",
+        id="CORE-MULTI-001a",
         section="3.4.1",
-        title="Agent preserves client-provided contextId",
+        title="Generated contextId must be included in response",
         level=RequirementLevel.MUST,
         description=(
-            "Agents MUST accept and preserve client-provided contextId values "
-            "if validations pass."
+            "If an agent generates a new contextId, it MUST be included in "
+            "the response (either Task or Message)."
+        ),
+        operation=OperationType.SEND_MESSAGE,
+        binding=SEND_MESSAGE_BINDING,
+        expected_behavior="Generated contextId present in response",
+        spec_url=f"{SPEC_BASE}341-context-identifier-semantics",
+        tags=[CORE, MULTI_TURN, CONTEXT],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Message without contextId"}],
+                "messageId": "tck-multi-001a",
+            },
+        },
+    ),
+    RequirementSpec(
+        id="CORE-MULTI-002",
+        section="3.4.1",
+        title="Agent may accept client-provided contextId",
+        level=RequirementLevel.MAY,
+        description=(
+            "Agents MAY accept and preserve client-provided contextId values."
         ),
         operation=OperationType.SEND_MESSAGE,
         binding=SEND_MESSAGE_BINDING,
@@ -553,6 +574,30 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
                 "parts": [{"text": "Message with contextId"}],
                 "messageId": "tck-multi-002",
                 "contextId": "tck-client-context-001",
+            },
+        },
+    ),
+    RequirementSpec(
+        id="CORE-MULTI-002a",
+        section="3.4.1",
+        title="Agent rejects unacceptable client-provided contextId",
+        level=RequirementLevel.MUST,
+        description=(
+            "If an agent cannot accept a client-provided contextId, it MUST "
+            "reject the request with an error and MUST NOT generate a new "
+            "contextId for the response."
+        ),
+        operation=OperationType.SEND_MESSAGE,
+        binding=SEND_MESSAGE_BINDING,
+        expected_behavior="Error returned when client contextId not accepted",
+        spec_url=f"{SPEC_BASE}341-context-identifier-semantics",
+        tags=[CORE, MULTI_TURN, CONTEXT, ERROR],
+        sample_input={
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "Message with client contextId"}],
+                "messageId": "tck-multi-002a",
+                "contextId": "tck-client-context-rejected",
             },
         },
     ),
