@@ -26,6 +26,7 @@ from tck.requirements.tags import (
     GET,
     IDEMPOTENT,
     LIST,
+    MULTI_OPERATION,
     NOT_AUTOMATABLE,
     PUSH_NOTIFICATION,
 )
@@ -95,14 +96,12 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
             "The GetPushNotificationConfig operation MUST return configuration "
             "details including webhook URL and notification settings."
         ),
-        operation=OperationType.GET_PUSH_CONFIG,
         binding=GET_PUSH_CONFIG_BINDING,
         proto_request_type="GetTaskPushNotificationConfigRequest",
         proto_response_type="PushNotificationConfig",
         expected_behavior="Full configuration details returned",
         spec_url=f"{SPEC_BASE}318-get-push-notification-config",
-        tags=[PUSH_NOTIFICATION, GET],
-        sample_input={"task_id": "tck-existing-task", "id": "tck-push-cfg-001"},
+        tags=[PUSH_NOTIFICATION, GET, MULTI_OPERATION],
     ),
     RequirementSpec(
         id="PUSH-GET-002",
@@ -113,16 +112,11 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
             "The GetPushNotificationConfig operation MUST fail if the "
             "configuration does not exist or the client lacks access."
         ),
-        operation=OperationType.GET_PUSH_CONFIG,
         binding=GET_PUSH_CONFIG_BINDING,
         proto_request_type="GetTaskPushNotificationConfigRequest",
         expected_behavior="Error returned for nonexistent config",
         spec_url=f"{SPEC_BASE}318-get-push-notification-config",
-        tags=[PUSH_NOTIFICATION, GET, ERROR],
-        sample_input={
-            "task_id": "tck-existing-task",
-            "id": "tck-nonexistent-push-cfg",
-        },
+        tags=[PUSH_NOTIFICATION, GET, ERROR, MULTI_OPERATION],
     ),
     # --- List Push Notification Configs (Section 3.1.9) ---
     RequirementSpec(
