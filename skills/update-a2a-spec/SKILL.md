@@ -34,7 +34,9 @@ If updating from a fork or a different branch, pass arguments:
 ./scripts/update_spec.sh --org <org> --branch <branch>
 ```
 
-## Step 3: Regenerate gRPC stubs
+## Step 3: Regenerate gRPC stubs and JSON schema
+
+### gRPC stubs
 
 Run:
 ```bash
@@ -46,6 +48,19 @@ This executes `scripts/generate_grpc_stubs.sh`, which uses `buf` to regenerate `
 If `buf` is not installed, first run `./scripts/install_buf.sh`.
 
 After regenerating, check the protobuf version in the generated stubs (`head -5 specification/generated/a2a_pb2.py`) and verify it is compatible with the `protobuf` runtime version installed in the project (see `pyproject.toml`). If the gencode version is newer than the runtime allows, pin the plugin versions in `specification/buf.gen.yaml` to a compatible release (e.g., `buf.build/protocolbuffers/python:v30.2`).
+
+### JSON schema
+
+Run:
+```bash
+PATH="$HOME/go/bin:$PATH" GOOGLEAPIS_DIR=<path-to-googleapis> make jsonschema
+```
+
+This regenerates `specification/a2a.json` from the updated `a2a.proto`. It requires:
+- `protoc-gen-jsonschema`, installed via `go install github.com/bufbuild/protoschema-plugins/cmd/protoc-gen-jsonschema@latest`
+- `GOOGLEAPIS_DIR` set to a local checkout of the [googleapis](https://github.com/googleapis/googleapis) repository
+
+**IMPORTANT:** Never edit `specification/a2a.json` manually — always regenerate it from the proto.
 
 ## Step 4: Analyze specification changes
 
@@ -122,6 +137,7 @@ make unit-test
 
 Fix any issues before proceeding. Common failures after a spec update:
 - Proto package namespace changes (e.g., `a2a.v1` to `lf.a2a.v1`) can break unit tests that assert on fully-qualified proto type names. Search for hardcoded package names in `tests/unit/`.
+- Proto package namespace changes also affect `$ref` values in the regenerated JSON schema (e.g., `a2a.v1.Task.jsonschema.json` → `lf.a2a.v1.Task.jsonschema.json`). The `$ref` mapping in `tck/validators/json_schema.py` must support the new prefix, otherwise nested schema validation silently passes (refs resolve to permissive fallbacks).
 - Protobuf runtime version mismatches (see Step 3).
 
 ## Step 9: Audit requirements
