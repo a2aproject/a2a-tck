@@ -95,7 +95,7 @@ class TestRequiredFieldValidation:
 
     def test_required_field_missing(self, validator: ProtoSchemaValidator) -> None:
         """Test that missing required fields fail validation."""
-        # Task requires id, context_id, and status
+        # Task requires id and status (context_id is optional)
         task = a2a_pb2.Task()  # All fields empty
         result = validator.validate(task, a2a_pb2.Task)
         assert result.valid is False

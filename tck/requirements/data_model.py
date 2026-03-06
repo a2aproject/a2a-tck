@@ -33,7 +33,7 @@ DATA_MODEL_REQUIREMENTS: list[RequirementSpec] = [
         title="Task object contains required fields",
         level=RequirementLevel.MUST,
         description=(
-            "A Task object MUST contain required fields: id, contextId, "
+            "A Task object MUST contain required fields: id "
             "and status as defined in the Protocol Buffer definition."
         ),
         expected_behavior="Task objects include all required fields",
