@@ -496,7 +496,7 @@ class TestMultiModalFeatures:
             "role": "ROLE_USER",
             "parts": [
                 {"text": "Processing binary data"},
-                {"raw": encoded_data, "mediaType": "application/octet-stream"},
+                {"raw": encoded_data, "mediaType": "application/octet-stream", "filename":"test.txt"},
             ],
         }
 
@@ -510,5 +510,5 @@ class TestMultiModalFeatures:
         elif "error" in response:
             error = response["error"]
             # Should not be method not found
-            assert error.get("code") == -32601, "Binary data should be supported in A2A v1.0.0"
+            assert error.get("code") != -32601, "Binary data should be supported in A2A v1.0.0"
             logger.info(f"⚠️  Binary data handling error: {error}")
