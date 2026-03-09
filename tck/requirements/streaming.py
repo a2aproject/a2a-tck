@@ -12,6 +12,7 @@ from tck.requirements.base import (
     OperationType,
     RequirementLevel,
     RequirementSpec,
+    tck_id,
 )
 from tck.requirements.tags import (
     ERROR,
@@ -92,7 +93,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="First event is a Task object with current state",
         spec_url=f"{SPEC_BASE}316-subscribe-to-task",
         tags=[STREAMING, SUBSCRIBE],
-        sample_input={"id": "tck-active-task"},
+        sample_input={"id": tck_id("active-sub-001")},
     ),
     RequirementSpec(
         id="STREAM-SUB-002",
@@ -110,7 +111,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Stream closes at terminal state",
         spec_url=f"{SPEC_BASE}316-subscribe-to-task",
         tags=[STREAMING, SUBSCRIBE],
-        sample_input={"id": "tck-active-task"},
+        sample_input={"id": tck_id("active-sub-002")},
     ),
     RequirementSpec(
         id="STREAM-SUB-003",
@@ -127,7 +128,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="UnsupportedOperationError returned for terminal task",
         spec_url=f"{SPEC_BASE}316-subscribe-to-task",
         tags=[STREAMING, SUBSCRIBE, ERROR],
-        sample_input={"id": "tck-terminal-task"},
+        sample_input={"id": tck_id("terminal-sub-003")},
     ),
     RequirementSpec(
         id="STREAM-SUB-004",
@@ -144,6 +145,6 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="TaskNotFoundError returned",
         spec_url=f"{SPEC_BASE}316-subscribe-to-task",
         tags=[STREAMING, SUBSCRIBE, ERROR],
-        sample_input={"id": "tck-nonexistent-task"},
+        sample_input={"id": tck_id("nonexistent-sub-004")},
     ),
 ]

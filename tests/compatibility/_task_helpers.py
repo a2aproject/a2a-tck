@@ -8,6 +8,8 @@ calls ``send_message`` and returns the resulting task/context IDs.
 
 from __future__ import annotations
 
+import uuid
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -22,11 +24,13 @@ if TYPE_CHECKING:
 # Constants
 # ---------------------------------------------------------------------------
 
-SAMPLE_MESSAGE: dict[str, Any] = {
-    "role": "ROLE_USER",
-    "parts": [{"text": "TCK prerequisite task creation"}],
-    "messageId": "tck-task-helper-001",
-}
+def _sample_message() -> dict[str, Any]:
+    """Build a sample message with a unique messageId."""
+    return {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK prerequisite task creation"}],
+        "messageId": f"tck-task-helper-{uuid.uuid4().hex[:8]}",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +86,7 @@ def create_task(client: BaseTransportClient) -> TaskInfo:
     Calls ``pytest.skip`` if the task cannot be created (server error,
     missing task ID, etc.).
     """
-    response = client.send_message(message=SAMPLE_MESSAGE)
+    response = client.send_message(message=_sample_message())
     if not response.success:
         pytest.skip(f"send_message failed: {response.error}")
 
