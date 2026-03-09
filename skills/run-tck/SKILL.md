@@ -56,24 +56,28 @@ If the agent card is missing or malformed, help the user fix it before proceedin
 
 ## Step 3: Run the TCK
 
-Start with MUST-level requirements on a single transport to get quick feedback:
+**Important:** Always use `uv run` to invoke the test runner so that the
+project's virtual environment and dependencies are available:
 
 ```bash
-./run_tck.py --sut-host <sut-host> --level must --transport <transport> -v
+uv run ./run_tck.py --sut-host <sut-host> --level must --transport <transport> -v
 ```
+
+Running `./run_tck.py` directly may fail if the system Python lacks pytest or
+other dependencies.
 
 Where `<transport>` is one of: `grpc`, `jsonrpc`, `http_json`.
 
 Once MUST tests pass, run the full suite:
 
 ```bash
-./run_tck.py --sut-host <sut-host> -v
+uv run ./run_tck.py --sut-host <sut-host> -v
 ```
 
 To generate compliance reports:
 
 ```bash
-./run_tck.py --sut-host <sut-host> --report
+uv run ./run_tck.py --sut-host <sut-host> --report
 ```
 
 Reports are written to `reports/` (compliance JSON + HTML, pytest-html, JUnit XML).
@@ -118,13 +122,13 @@ Each requirement includes a `spec_url` linking to the relevant specification sec
 Use pytest's `-k` flag to isolate a specific test:
 
 ```bash
-./run_tck.py --sut-host <sut-host> -- -k "test_name" -v
+uv run ./run_tck.py --sut-host <sut-host> -- -k "test_name" -v
 ```
 
 Or use verbose log output for maximum detail:
 
 ```bash
-./run_tck.py --sut-host <sut-host> --verbose-log -- -k "test_name"
+uv run ./run_tck.py --sut-host <sut-host> --verbose-log -- -k "test_name"
 ```
 
 ## Step 5: Interpret compliance results
