@@ -6,8 +6,24 @@ following PRD Section 5.1.1.
 
 from __future__ import annotations
 
+import uuid
+
 from dataclasses import dataclass, field
 from enum import Enum
+
+
+# Session-unique suffix appended to all sample_input IDs so that
+# separate TCK runs never collide with stale tasks on the SUT.
+_SESSION = uuid.uuid4().hex[:8]
+
+
+def tck_id(name: str) -> str:
+    """Generate a session-unique TCK identifier.
+
+    Each test run produces fresh IDs, preventing collisions with tasks
+    left over from previous runs on the same SUT.
+    """
+    return f"tck-{name}-{_SESSION}"
 
 
 class RequirementLevel(Enum):
@@ -77,6 +93,7 @@ class RequirementSpec:
     json_schema_ref: str = ""
     sample_input: dict = field(default_factory=dict)
     expected_behavior: str = ""
+    expected_error: ErrorBinding | None = None
     spec_url: str = ""
     tags: list[str] = field(default_factory=list)
 

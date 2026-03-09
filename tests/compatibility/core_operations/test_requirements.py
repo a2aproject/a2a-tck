@@ -32,15 +32,53 @@ def _parametrize_requirements(
 ) -> list[pytest.param]:
     """Return pytest.param list from a requirement getter, handling empty lists.
 
-    Requirements without an ``operation`` are excluded because the
-    parametrized runner cannot dispatch them (they always skip).
-    Cross-cutting requirements are covered by dedicated test modules.
+    Requirements without an ``operation`` or tagged ``multi-operation``
+    are excluded because the parametrized runner cannot dispatch them.
+    Cross-cutting and multi-operation requirements are covered by
+    dedicated test modules (e.g. ``test_task_lifecycle``).
     """
-    reqs = [r for r in getter() if r.operation is not None]
+    reqs = [
+        r for r in getter()
+        if r.operation is not None and "multi-operation" not in r.tags
+    ]
     if not reqs:
         return [pytest.param(None, id="no-requirements",
                              marks=pytest.mark.skip(reason="No requirements at this level"))]
     return [pytest.param(r, id=r.id) for r in reqs]
+
+
+def _validate_expected_error(
+    response: Any,
+    transport: str,
+    requirement: Any,
+) -> list[str]:
+    """Validate that a response matches the expected error binding."""
+    errors: list[str] = []
+    expected = requirement.expected_error
+
+    if response.success:
+        errors.append(
+            f"Expected {expected.name} but operation succeeded"
+        )
+        return errors
+
+    # Validate transport-specific error code
+    raw = response.raw_response
+    if transport == "jsonrpc" and isinstance(raw, dict):
+        actual_code = raw.get("error", {}).get("code")
+        if actual_code != expected.jsonrpc_code:
+            errors.append(
+                f"Expected JSON-RPC error code {expected.jsonrpc_code} "
+                f"({expected.name}), got {actual_code}"
+            )
+    elif transport == "http_json" and response.status_code is not None:
+        if response.status_code != expected.http_status:
+            errors.append(
+                f"Expected HTTP status {expected.http_status} "
+                f"({expected.name}), got {response.status_code}"
+            )
+
+    return errors
 
 
 def _validate_response(
@@ -51,6 +89,10 @@ def _validate_response(
 ) -> list[str]:
     """Validate a transport response and return a list of error strings."""
     errors: list[str] = []
+
+    # Requirements that expect a specific error
+    if requirement.expected_error is not None:
+        return _validate_expected_error(response, transport, requirement)
 
     # For streaming responses, just verify at least one event arrives
     if isinstance(response, StreamingResponse):
