@@ -62,21 +62,13 @@ def _validate_expected_error(
         )
         return errors
 
-    # Validate transport-specific error code
-    raw = response.raw_response
-    if transport == "jsonrpc" and isinstance(raw, dict):
-        actual_code = raw.get("error", {}).get("code")
-        if actual_code != expected.jsonrpc_code:
-            errors.append(
-                f"Expected JSON-RPC error code {expected.jsonrpc_code} "
-                f"({expected.name}), got {actual_code}"
-            )
-    elif transport == "http_json" and response.status_code is not None:
-        if response.status_code != expected.http_status:
-            errors.append(
-                f"Expected HTTP status {expected.http_status} "
-                f"({expected.name}), got {response.status_code}"
-            )
+    expected_code = expected.expected_code(transport)
+    actual_code = response.error_code
+    if expected_code is not None and actual_code != expected_code:
+        errors.append(
+            f"Expected error code {expected_code} "
+            f"({expected.name}), got {actual_code}"
+        )
 
     return errors
 

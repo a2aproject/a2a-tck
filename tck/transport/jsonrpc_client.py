@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import itertools
 
+from dataclasses import dataclass
+from typing import Any
+
 import httpx
 
 from tck.requirements.base import OperationType
@@ -16,6 +19,37 @@ from tck.transport.base import BaseTransportClient, StreamingResponse, Transport
 
 
 TRANSPORT = "jsonrpc"
+
+
+class _JsonRpcErrorMixin:
+    """Mixin that derives ``error`` and ``error_code`` from a JSON-RPC raw_response."""
+
+    raw_response: Any
+
+    @property
+    def error(self) -> str | None:
+        if isinstance(self.raw_response, dict) and "error" in self.raw_response:
+            return self.raw_response["error"].get("message", str(self.raw_response["error"]))
+        if isinstance(self.raw_response, Exception):
+            return str(self.raw_response)
+        return None
+
+    @property
+    def error_code(self) -> int | str | None:
+        if isinstance(self.raw_response, dict) and "error" in self.raw_response:
+            return self.raw_response["error"].get("code")
+        return None
+
+
+@dataclass
+class JsonRpcResponse(_JsonRpcErrorMixin, TransportResponse):
+    """JSON-RPC transport response."""
+
+
+@dataclass
+class JsonRpcStreamingResponse(_JsonRpcErrorMixin, StreamingResponse):
+    """JSON-RPC streaming transport response."""
+
 
 class JsonRpcClient(BaseTransportClient):
     """JSON-RPC 2.0 over HTTP transport client for A2A protocol."""
@@ -49,25 +83,16 @@ class JsonRpcClient(BaseTransportClient):
             )
             body = response.json()
             resp_headers = dict(response.headers)
-            if "error" in body:
-                return TransportResponse(
-                    transport=self.transport,
-                    success=False,
-                    raw_response=body,
-                    error=body["error"].get("message", str(body["error"])),
-                    headers=resp_headers,
-                    status_code=response.status_code,
-                )
-            return TransportResponse(
+            return JsonRpcResponse(
                 transport=self.transport,
-                success=True,
+                success="error" not in body,
                 raw_response=body,
                 headers=resp_headers,
                 status_code=response.status_code,
             )
         except httpx.HTTPError as e:
-            return TransportResponse(
-                transport=self.transport, success=False, raw_response=None, error=str(e)
+            return JsonRpcResponse(
+                transport=self.transport, success=False, raw_response=e,
             )
 
     def _call_streaming(self, method: str, params: dict) -> StreamingResponse:
@@ -87,7 +112,7 @@ class JsonRpcClient(BaseTransportClient):
                     "Accept": "text/event-stream",
                 },
             )
-            return StreamingResponse(
+            return JsonRpcStreamingResponse(
                 transport=self.transport,
                 success=True,
                 raw_response=response,
@@ -96,8 +121,8 @@ class JsonRpcClient(BaseTransportClient):
                 status_code=response.status_code,
             )
         except httpx.HTTPError as e:
-            return StreamingResponse(
-                transport=self.transport, success=False, raw_response=None, events=iter([]), error=str(e)
+            return JsonRpcStreamingResponse(
+                transport=self.transport, success=False, raw_response=e, events=iter([]),
             )
 
     def send_message(

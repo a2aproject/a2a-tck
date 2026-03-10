@@ -13,13 +13,16 @@ from typing import Any, Iterator
 
 
 @dataclass
-class TransportResponse:
-    """Response from a transport operation."""
+class TransportResponse(ABC):
+    """Response from a transport operation.
+
+    Subclasses must implement ``error`` and ``error_code`` properties
+    that derive the error information from ``raw_response``.
+    """
 
     transport: str
     success: bool
     raw_response: Any
-    error: str | None = None
     headers: dict[str, str] = field(default_factory=dict)
     status_code: int | None = None
 
@@ -28,10 +31,24 @@ class TransportResponse:
         """Whether this response contains a stream of events."""
         return False
 
+    @property
+    @abstractmethod
+    def error(self) -> str | None:
+        """Human-readable error message, derived from ``raw_response``."""
+
+    @property
+    @abstractmethod
+    def error_code(self) -> int | str | None:
+        """Transport-specific error code, derived from ``raw_response``."""
+
 
 @dataclass
 class StreamingResponse(TransportResponse):
-    """Streaming response from a transport operation."""
+    """Streaming response from a transport operation.
+
+    Still abstract — transport-specific subclasses must provide
+    ``error`` and ``error_code``.
+    """
 
     events: Iterator[Any] = field(default_factory=iter)
 
