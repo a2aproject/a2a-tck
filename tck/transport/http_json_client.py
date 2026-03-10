@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import json
 
+from dataclasses import dataclass
+from typing import Any
+
 import httpx
 
 from tck.requirements.base import (
@@ -49,6 +52,41 @@ def _extract_error(response: httpx.Response) -> str:
     return f"[{response.status_code}] {response.text}"
 
 
+class _HttpJsonErrorMixin:
+    """Mixin that derives ``error`` and ``error_code`` from an HTTP raw_response.
+
+    On error, ``raw_response`` is an ``httpx.Response`` object.
+    On connection failure, ``raw_response`` is an ``Exception``.
+    """
+
+    raw_response: Any
+    status_code: int | None
+
+    @property
+    def error(self) -> str | None:
+        if isinstance(self.raw_response, httpx.Response):
+            return _extract_error(self.raw_response)
+        if isinstance(self.raw_response, Exception):
+            return str(self.raw_response)
+        return None
+
+    @property
+    def error_code(self) -> int | str | None:
+        if isinstance(self.raw_response, httpx.Response):
+            return self.raw_response.status_code
+        return None
+
+
+@dataclass
+class HttpJsonResponse(_HttpJsonErrorMixin, TransportResponse):
+    """HTTP+JSON transport response."""
+
+
+@dataclass
+class HttpJsonStreamingResponse(_HttpJsonErrorMixin, StreamingResponse):
+    """HTTP+JSON streaming transport response."""
+
+
 class HttpJsonClient(BaseTransportClient):
     """HTTP+JSON (REST) transport client for A2A protocol."""
 
@@ -79,16 +117,15 @@ class HttpJsonClient(BaseTransportClient):
             )
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
-                return TransportResponse(
+                return HttpJsonResponse(
                     transport=self.transport,
                     success=False,
-                    raw_response=response.json() if "json" in response.headers.get("content-type", "") else None,
-                    error=_extract_error(response),
+                    raw_response=response,
                     headers=resp_headers,
                     status_code=response.status_code,
                 )
             body = response.json()
-            return TransportResponse(
+            return HttpJsonResponse(
                 transport=self.transport,
                 success=True,
                 raw_response=body,
@@ -96,8 +133,8 @@ class HttpJsonClient(BaseTransportClient):
                 status_code=response.status_code,
             )
         except httpx.HTTPError as e:
-            return TransportResponse(
-                transport=self.transport, success=False, raw_response=None, error=str(e)
+            return HttpJsonResponse(
+                transport=self.transport, success=False, raw_response=e,
             )
 
     def _request_streaming(
@@ -120,16 +157,15 @@ class HttpJsonClient(BaseTransportClient):
             )
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
-                return StreamingResponse(
+                return HttpJsonStreamingResponse(
                     transport=self.transport,
                     success=False,
-                    raw_response=None,
+                    raw_response=response,
                     events=iter([]),
-                    error=_extract_error(response),
                     headers=resp_headers,
                     status_code=response.status_code,
                 )
-            return StreamingResponse(
+            return HttpJsonStreamingResponse(
                 transport=self.transport,
                 success=True,
                 raw_response=response,
@@ -138,8 +174,8 @@ class HttpJsonClient(BaseTransportClient):
                 status_code=response.status_code,
             )
         except httpx.HTTPError as e:
-            return StreamingResponse(
-                transport=self.transport, success=False, raw_response=None, events=iter([]), error=str(e)
+            return HttpJsonStreamingResponse(
+                transport=self.transport, success=False, raw_response=e, events=iter([]),
             )
 
     # -- Message Operations --

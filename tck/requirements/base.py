@@ -198,6 +198,16 @@ class ErrorBinding:
     grpc_status: str
     type_uri: str
 
+    def expected_code(self, transport: str) -> int | str | None:
+        """Return the expected error code for the given transport."""
+        if transport == "jsonrpc":
+            return self.jsonrpc_code
+        if transport == "http_json":
+            return self.http_status
+        if transport == "grpc":
+            return self.grpc_status
+        return None
+
 
 # A2A-specific errors
 TASK_NOT_FOUND_ERROR = ErrorBinding(
