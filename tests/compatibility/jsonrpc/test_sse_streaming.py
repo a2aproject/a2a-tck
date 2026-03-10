@@ -202,20 +202,34 @@ class TestSseStreamingFormat:
             record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
         events = _get_streaming_events(client, agent_card)
 
-        # Check the last event for a terminal state
+        # Determine which stream pattern is used
         last_event = events[-1]
-        last_status = _get_task_status(last_event)
+        last_result = last_event.get("result", {})
 
-        passed = last_status in _TERMINAL_STATES
-        errors = (
-            []
-            if passed
-            else [
-                f"Last event does not contain a terminal task state "
-                f"(expected one of {sorted(_TERMINAL_STATES)}, "
-                f"got {last_status!r})"
-            ]
-        )
+        if "message" in last_result:
+            # Message-only stream: exactly one Message, then close
+            passed = len(events) == 1
+            errors = (
+                []
+                if passed
+                else [
+                    f"Message-only stream must contain exactly one event, "
+                    f"got {len(events)}"
+                ]
+            )
+        else:
+            # Task lifecycle stream: last event must have a terminal state
+            last_status = _get_task_status(last_event)
+            passed = last_status in _TERMINAL_STATES
+            errors = (
+                []
+                if passed
+                else [
+                    f"Last event does not contain a terminal task state "
+                    f"(expected one of {sorted(_TERMINAL_STATES)}, "
+                    f"got {last_status!r})"
+                ]
+            )
         record(
             collector=compliance_collector,
             req=req,
