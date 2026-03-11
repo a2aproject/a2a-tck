@@ -24,7 +24,7 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_task
 from tests.compatibility._test_helpers import fail_msg, get_client, record
-from tests.compatibility.markers import streaming
+from tests.compatibility.markers import must, streaming
 
 
 if TYPE_CHECKING:
@@ -150,6 +150,7 @@ def _subscribe_parallel(
 # ---------------------------------------------------------------------------
 
 
+@must
 @streaming
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestMultiStreamOrdering:

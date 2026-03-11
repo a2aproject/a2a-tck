@@ -20,7 +20,7 @@ import pytest
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tests.compatibility._test_helpers import fail_msg, get_client, record
-from tests.compatibility.markers import jsonrpc, streaming
+from tests.compatibility.markers import jsonrpc, must, streaming
 
 
 if TYPE_CHECKING:
@@ -107,6 +107,7 @@ def _get_task_status(event: dict) -> str | None:
 # ---------------------------------------------------------------------------
 
 
+@must
 @jsonrpc
 @streaming
 class TestSseStreamingFormat:
@@ -247,6 +248,7 @@ class TestSseStreamingFormat:
 # ---------------------------------------------------------------------------
 
 
+@must
 @jsonrpc
 @streaming
 class TestSseSubscribeToTask:

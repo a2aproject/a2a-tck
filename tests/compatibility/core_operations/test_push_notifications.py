@@ -25,6 +25,7 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_task
 from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility.markers import must
 
 
 if TYPE_CHECKING:
@@ -62,6 +63,7 @@ def _unique_push_config() -> dict:
 # ---------------------------------------------------------------------------
 
 
+@must
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestPushNotificationCrud:
     """Tests for push notification configuration CRUD operations."""

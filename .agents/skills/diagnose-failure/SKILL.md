@@ -15,9 +15,12 @@ Ask the user for one of:
 - A test name from the TCK output
 - A transport + error description
 
-If the user ran the TCK with `--report`, read `reports/compliance.json` to find the failing requirement, its status per transport, and any recorded errors.
+Read `reports/compliance.json` to find the failing requirement, its status per
+transport, recorded errors, and `test_ids`. This file is always available when
+the TCK was run with `--report` (which is the recommended default).
 
-Use the SUT URL from the current session or from `reports/compliance.json` (`summary.sut_url`) rather than asking the user again.
+Use the SUT URL from the current session or from `reports/compliance.json`
+(`summary.sut_url`) rather than asking the user again.
 
 ## Step 2: Gather requirement context
 
@@ -109,6 +112,9 @@ grpcurl -plaintext -d '<JSON>' <GRPC_HOST>:<PORT> a2a.v1.A2AService/<RPC>
 
 ## Step 6: Draft the GitHub issue
 
+Use the `test_ids` array from the requirement's entry in `reports/compliance.json`
+for the "TCK test" section — no need to search for test node IDs manually.
+
 Compose the issue using this template:
 
 ```markdown
@@ -141,7 +147,7 @@ Compose the issue using this template:
 
 ## TCK test
 
-`<full pytest node ID from compliance.json>`
+`<full pytest node ID from compliance.json test_ids>`
 ```
 
 ## Step 7: Present and refine

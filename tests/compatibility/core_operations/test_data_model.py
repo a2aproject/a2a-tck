@@ -19,7 +19,7 @@ import pytest
 
 from tck.requirements.registry import get_requirement_by_id
 from tests.compatibility._test_helpers import fail_msg, record
-from tests.compatibility.markers import core
+from tests.compatibility.markers import core, must
 
 
 if TYPE_CHECKING:
@@ -121,6 +121,7 @@ def send_message_responses(
 # ---------------------------------------------------------------------------
 
 
+@must
 @core
 class TestSendMessageResponseSchema:
     """DM-TASK-001 through DM-STATUS-001: Validate response against JSON schema.
@@ -188,6 +189,7 @@ class TestSendMessageResponseSchema:
 # ---------------------------------------------------------------------------
 
 
+@must
 @core
 class TestCamelCaseFieldNames:
     """DM-SERIAL-001: JSON serialization uses camelCase field names."""
@@ -213,6 +215,7 @@ class TestCamelCaseFieldNames:
             assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
+@must
 @core
 class TestEnumSerialization:
     """DM-SERIAL-002: Enum values are strings, not integers."""
@@ -242,6 +245,7 @@ class TestEnumSerialization:
             assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
+@must
 @core
 class TestTimestampFormat:
     """DM-SERIAL-003: Timestamps use ISO 8601 format with Z suffix."""

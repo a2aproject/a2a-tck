@@ -24,11 +24,11 @@ from pathlib import Path
 
 REPORTS_DIR = Path("reports")
 
-# Maps --level choices to pytest -k expressions
+# Maps --level choices to pytest -m marker expressions
 LEVEL_FILTERS: dict[str, str] = {
-    "must": "test_must_requirement",
-    "should": "test_should_requirement",
-    "may": "test_may_requirement",
+    "must": "must",
+    "should": "should",
+    "may": "may",
 }
 
 
@@ -49,8 +49,8 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
 
     # Requirement level filter
     if args.level:
-        k_expr = LEVEL_FILTERS[args.level]
-        cmd.extend(["-k", k_expr])
+        m_expr = LEVEL_FILTERS[args.level]
+        cmd.extend(["-m", m_expr])
 
     # Verbosity
     if args.verbose_log:

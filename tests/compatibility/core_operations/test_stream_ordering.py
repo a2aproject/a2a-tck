@@ -17,7 +17,7 @@ from specification.generated import a2a_pb2
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._test_helpers import fail_msg, get_client, record
-from tests.compatibility.markers import streaming
+from tests.compatibility.markers import must, streaming
 
 
 if TYPE_CHECKING:
@@ -201,6 +201,7 @@ def _check_ordering_json(events: list[dict]) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+@must
 @streaming
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestStreamEventOrdering:

@@ -18,7 +18,7 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
 from tests.compatibility._test_helpers import fail_msg, get_client, record
-from tests.compatibility.markers import jsonrpc
+from tests.compatibility.markers import jsonrpc, must
 
 
 if TYPE_CHECKING:
@@ -74,6 +74,7 @@ def _jsonrpc_call(
 # ---------------------------------------------------------------------------
 
 
+@must
 @jsonrpc
 class TestJsonRpcErrorCodeMappings:
     """JSONRPC-SSE-002: Each A2A error type maps to the correct JSON-RPC error code."""
@@ -329,6 +330,7 @@ class TestJsonRpcErrorCodeMappings:
 # ---------------------------------------------------------------------------
 
 
+@must
 @jsonrpc
 class TestJsonRpcErrorCodeRange:
     """Validate that returned error codes fall within valid ranges."""

@@ -18,7 +18,7 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
 from tck.validators.http_json.error_validator import ProblemDetails
 from tests.compatibility._test_helpers import fail_msg, get_client, record
-from tests.compatibility.markers import http_json
+from tests.compatibility.markers import http_json, must
 
 
 if TYPE_CHECKING:
@@ -77,6 +77,7 @@ def _get_problem_body(response: Any) -> dict[str, Any] | None:
 # ---------------------------------------------------------------------------
 
 
+@must
 @http_json
 class TestProblemDetailsFormat:
     """HTTP_JSON-ERR-001: Error responses use RFC 9457 Problem Details format."""
@@ -211,6 +212,7 @@ class TestProblemDetailsFormat:
 # ---------------------------------------------------------------------------
 
 
+@must
 @http_json
 class TestProblemDetailsTypeUri:
     """HTTP_JSON-ERR-002: A2A errors use specified type URIs."""
