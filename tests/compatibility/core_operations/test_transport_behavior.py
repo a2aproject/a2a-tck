@@ -19,7 +19,7 @@ import pytest
 
 from tck.requirements.registry import get_requirement_by_id
 from tests.compatibility._test_helpers import fail_msg, record
-from tests.compatibility.markers import grpc, http_json, jsonrpc, streaming
+from tests.compatibility.markers import grpc, http_json, jsonrpc, must, streaming
 
 
 if TYPE_CHECKING:
@@ -59,6 +59,7 @@ _SAMPLE_MESSAGE = {
 # ---------------------------------------------------------------------------
 
 
+@must
 @jsonrpc
 class TestJsonRpcFormat:
     """JSONRPC-FMT-001 / JSONRPC-FMT-002: JSON-RPC 2.0 format and Content-Type."""
@@ -107,6 +108,7 @@ class TestJsonRpcFormat:
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
+@must
 @jsonrpc
 class TestJsonRpcMethodNames:
     """JSONRPC-SVC-001: Method names match the spec-defined set."""
@@ -147,6 +149,7 @@ class TestJsonRpcMethodNames:
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
+@must
 @jsonrpc
 @streaming
 class TestJsonRpcStreaming:
@@ -181,6 +184,7 @@ class TestJsonRpcStreaming:
 # ---------------------------------------------------------------------------
 
 
+@must
 @http_json
 class TestRestFormat:
     """HTTP_JSON-SVC-001: Content-Type and response schema validation."""
@@ -231,6 +235,7 @@ class TestRestFormat:
         assert result.valid, fail_msg(req, transport, "; ".join(result.errors))
 
 
+@must
 @http_json
 class TestRestUrlPatterns:
     """HTTP_JSON-URL-001 / HTTP_JSON-URL-002: URL patterns and HTTP methods (client-side validation)."""
@@ -290,6 +295,7 @@ class TestRestUrlPatterns:
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
+@must
 @http_json
 class TestRestQueryParams:
     """HTTP_JSON-QP-001: Query parameter names use camelCase (client-side validation)."""
@@ -312,6 +318,7 @@ class TestRestQueryParams:
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
+@must
 @http_json
 @streaming
 class TestRestStreaming:
@@ -346,6 +353,7 @@ class TestRestStreaming:
 # ---------------------------------------------------------------------------
 
 
+@must
 @grpc
 class TestGrpcService:
     """GRPC-SVC-001: A2AService gRPC service implemented."""
@@ -385,6 +393,7 @@ class TestGrpcService:
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
+@must
 @grpc
 @streaming
 class TestGrpcStreaming:

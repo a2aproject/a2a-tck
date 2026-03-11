@@ -22,6 +22,7 @@ from tck.validators.grpc.error_validator import (
 )
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import grpc as grpc_marker
+from tests.compatibility.markers import must
 
 
 if TYPE_CHECKING:
@@ -70,6 +71,7 @@ def _get_rpc_error(response: Any) -> grpc.RpcError:
 # ---------------------------------------------------------------------------
 
 
+@must
 @grpc_marker
 class TestGrpcStatusCodes:
     """GRPC-ERR-002: A2A errors map to correct gRPC status codes."""
@@ -268,6 +270,7 @@ class TestGrpcStatusCodes:
 # ---------------------------------------------------------------------------
 
 
+@must
 @grpc_marker
 class TestGrpcErrorInfo:
     """GRPC-ERR-001: A2A errors include ErrorInfo in gRPC status details."""

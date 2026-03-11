@@ -23,7 +23,7 @@ from tck.transport.grpc_client import TRANSPORT
 from tck.validators.grpc.error_validator import validate_grpc_error
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import grpc as grpc_marker
-from tests.compatibility.markers import streaming
+from tests.compatibility.markers import must, streaming
 
 
 if TYPE_CHECKING:
@@ -102,6 +102,7 @@ def _collect_events(
 # ---------------------------------------------------------------------------
 
 
+@must
 @grpc_marker
 @streaming
 class TestGrpcStreaming:

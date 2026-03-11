@@ -72,7 +72,11 @@ Start with MUST-level tests to catch blocking issues first:
 uv run ./run_tck.py --sut-host <sut-host> --level must --report -v
 ```
 
-Where `<transport>` is one of: `grpc`, `jsonrpc`, `http_json` (optional filter).
+Optionally filter by transport (`grpc`, `jsonrpc`, `http_json`):
+
+```bash
+uv run ./run_tck.py --sut-host <sut-host> --transport jsonrpc --level must --report -v
+```
 
 Once MUST tests pass, run the full suite:
 
@@ -82,11 +86,21 @@ uv run ./run_tck.py --sut-host <sut-host> --report -v
 
 Reports are written to `reports/` (compliance JSON + HTML, pytest-html, JUnit XML).
 
-## Step 4: Diagnose failures
+## Step 4: Review failures
 
-When tests fail, use the **diagnose-failure** skill for detailed diagnosis and
-GitHub issue drafting. It will gather the requirement context, spec text,
-failure details, build a curl reproducer, and draft a ready-to-file issue.
+After a run completes, read `reports/compliance.json` to get a structured
+overview of all failures. The `per_requirement` object lists every requirement
+with its status, transports, errors, and test IDs.
+
+To show the user all failures at a glance, extract requirements where
+`status` is `"FAIL"` and present them in a table with:
+- Requirement ID
+- Transport(s) that failed
+- Error summary
+
+For detailed diagnosis and GitHub issue drafting, use the **diagnose-failure**
+skill. It will gather the requirement context, spec text, failure details,
+build a curl reproducer, and draft a ready-to-file issue.
 
 For a quick triage without a full diagnosis, you can also:
 

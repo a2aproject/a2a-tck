@@ -22,7 +22,7 @@ import pytest
 
 from tck.requirements.registry import get_requirement_by_id
 from tests.compatibility._test_helpers import fail_msg, record
-from tests.compatibility.markers import core, grpc, http_json, jsonrpc
+from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must
 
 
 if TYPE_CHECKING:
@@ -128,6 +128,7 @@ def _get_base_url(
 # ---------------------------------------------------------------------------
 
 
+@must
 @core
 class TestCoreErrorStructure:
     """CORE-ERR-001: Server returns appropriate errors with actionable info."""
@@ -172,6 +173,7 @@ class TestCoreErrorStructure:
         assert passed, fail_msg(req, transport, errors[0])
 
 
+@must
 @core
 class TestCoreInputValidation:
     """CORE-ERR-002: Server validates input parameters."""
@@ -215,6 +217,7 @@ class TestCoreInputValidation:
 # ---------------------------------------------------------------------------
 
 
+@must
 @core
 class TestCapabilityPushNotifications:
     """CORE-CAP-001: Push operations return error when not supported."""
@@ -272,6 +275,7 @@ class TestCapabilityPushNotifications:
         assert passed, fail_msg(req, transport, errors[0])
 
 
+@must
 @core
 class TestCapabilityStreaming:
     """CORE-CAP-002: Streaming operations return error when not supported."""
@@ -306,6 +310,7 @@ class TestCapabilityStreaming:
         assert passed, fail_msg(req, transport, errors[0])
 
 
+@must
 @core
 class TestCapabilityExtendedCard:
     """CORE-CAP-003: Extended agent card returns error when not supported."""
@@ -338,6 +343,7 @@ class TestCapabilityExtendedCard:
 # ---------------------------------------------------------------------------
 
 
+@must
 @core
 class TestVersionErrors:
     """VER-SERVER-002 / VER-SERVER-003: Version error handling."""
@@ -442,6 +448,7 @@ _JSONRPC_ERROR_SCHEMA = {
 }
 
 
+@must
 @jsonrpc
 class TestJsonRpcErrorStructure:
     """JSONRPC-ERR-001 / JSONRPC-ERR-002: JSON-RPC error object structure."""
@@ -538,6 +545,7 @@ class TestJsonRpcErrorStructure:
 # ---------------------------------------------------------------------------
 
 
+@must
 @http_json
 class TestRestErrorStructure:
     """HTTP_JSON-ERR-001 / HTTP_JSON-ERR-002: RFC 9457 Problem Details format."""
@@ -604,6 +612,7 @@ class TestRestErrorStructure:
 # ---------------------------------------------------------------------------
 
 
+@must
 @grpc
 class TestGrpcErrorStructure:
     """GRPC-ERR-001 / GRPC-ERR-002: gRPC error handling."""

@@ -19,7 +19,7 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tests.compatibility._test_helpers import fail_msg, get_client, record
-from tests.compatibility.markers import http_json
+from tests.compatibility.markers import http_json, must
 
 
 if TYPE_CHECKING:
@@ -47,6 +47,7 @@ _HTTP_SUCCESS_MAX = 299
 # ---------------------------------------------------------------------------
 
 
+@must
 @http_json
 class TestHttpJsonStatusCodes:
     """HTTP_JSON-STATUS-001: A2A errors map to correct HTTP status codes."""
