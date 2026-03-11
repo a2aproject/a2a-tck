@@ -665,7 +665,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         binding=SEND_MESSAGE_BINDING,
         expected_behavior="contextId inferred from referenced task",
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
-        tags=[CORE, MULTI_TURN],
+        tags=[CORE, MULTI_TURN, MULTI_OPERATION],
         sample_input={
             "message": {
                 "role": "ROLE_USER",
@@ -689,7 +689,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         binding=SEND_MESSAGE_BINDING,
         expected_behavior="Error returned for mismatching contextId/taskId",
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
-        tags=[CORE, MULTI_TURN, ERROR],
+        tags=[CORE, MULTI_TURN, ERROR, MULTI_OPERATION],
         sample_input={
             "message": {
                 "role": "ROLE_USER",
