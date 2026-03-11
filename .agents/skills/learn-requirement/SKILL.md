@@ -40,7 +40,7 @@ Present the following fields to the user:
 - **Description** — what the requirement says
 - **Operation** — which A2A operation it applies to
 - **Expected behavior** — what a compliant implementation should do
-- **Spec URL** — link to the relevant specification section
+- **Spec URL** — convert the local `spec_url` to a GitHub link: read `specification/version.json` for `sourceUrl`, replace `/tree/` with `/blob/`, replace trailing `/specification` with `/docs`, then append the filename and anchor from `spec_url`
 - **Tags** — categorization tags
 - **Sample input** — example request payload (if provided)
 

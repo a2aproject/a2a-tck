@@ -155,33 +155,33 @@ class TestSkippedColorCoding:
         assert 'class="skipped"' in html
 
 
-class TestRequirementTooltip:
-    """Requirement descriptions appear as tooltips."""
+class TestSpecUrlLink:
+    """Requirement IDs link to the specification when spec_url is available."""
 
-    def test_tooltip_from_registry(
+    def test_known_requirement_links_to_spec(
         self, collector: ComplianceCollector, agent_card: dict, formatter: HTMLFormatter
     ) -> None:
-        """Known requirement IDs show their description as a title attribute."""
+        """Known requirement IDs are rendered as links to the GitHub specification."""
         collector.record(
             requirement_id="CORE-SEND-001", transport="http", passed=True, level="MUST"
         )
         report = ComplianceAggregator(collector, agent_card=agent_card).aggregate()
         html = formatter.format(report)
-        assert 'title="' in html
-        assert "CORE-SEND-001" in html
+        assert "github.com/a2aproject/A2A/blob/" in html
+        assert "/docs/specification.md#311-send-message" in html
+        assert "CORE-SEND-001</a>" in html
 
-    def test_no_tooltip_for_unknown_id(
+    def test_unknown_requirement_has_no_link(
         self, collector: ComplianceCollector, agent_card: dict, formatter: HTMLFormatter
     ) -> None:
-        """Unknown requirement IDs do not get a title attribute on the req cell."""
+        """Unknown requirement IDs are not rendered as links."""
         collector.record(
             requirement_id="UNKNOWN-999", transport="http", passed=True, level="MUST"
         )
         report = ComplianceAggregator(collector, agent_card=agent_card).aggregate()
         html = formatter.format(report)
         assert "UNKNOWN-999" in html
-        # The requirement ID cell should NOT have a title tooltip
-        assert '<td>UNKNOWN-999</td>' in html
+        assert "href" not in html.split("UNKNOWN-999")[0].split("<td")[-1]
 
 
 class TestTestIdColumn:
