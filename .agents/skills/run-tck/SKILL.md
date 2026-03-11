@@ -30,7 +30,7 @@ Ask the user for their SUT URL (e.g., `http://localhost:9999`).
 Verify the SUT is running by fetching its agent card:
 
 ```bash
-curl -s <sut-host>/.well-known/agent-card.json | python -m json.tool
+curl -s <sut-host>/.well-known/agent-card.json | uv run python -m json.tool
 ```
 
 The agent card **must** be served at `{sut-host}/.well-known/agent-card.json` per A2A spec Section 8.2.
