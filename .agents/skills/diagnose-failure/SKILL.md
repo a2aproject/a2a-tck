@@ -41,7 +41,19 @@ Extract:
 - **ID**, **section**, **title**, **level**, **description**
 - **Transport binding** — the HTTP method + path, JSON-RPC method, and gRPC RPC name
 - **Expected behavior**
-- **spec_url** — link to the specification section
+- **spec_url** — convert to a GitHub link (see below)
+
+### Converting spec_url to a GitHub link
+
+The requirement's `spec_url` is a local path like `specification/specification.md#anchor`. To build the GitHub URL:
+
+1. Read `specification/version.json` to get `sourceUrl` (e.g., `https://github.com/a2aproject/A2A/tree/<hash>/specification`)
+2. Replace `/tree/` with `/blob/`
+3. Replace the trailing `/specification` with `/docs` (because `specification.md` lives under `docs/` on GitHub)
+4. Append `/<filename>#<anchor>` from the `spec_url`
+
+Example: `specification/specification.md#343-multi-turn-conversation-patterns` becomes
+`https://github.com/a2aproject/A2A/blob/<hash>/docs/specification.md#343-multi-turn-conversation-patterns`
 
 ## Step 3: Find the specification text
 
@@ -60,7 +72,7 @@ Determine:
 
 Create a minimal curl command sequence that reproduces the failure. The reproducer should:
 
-1. **Set up prerequisites** — if the failing operation needs an existing task (e.g., GetTask, CancelTask, push notification CRUD), first create one via `message:send` or the appropriate endpoint.
+1. **Set up prerequisites** — if the failing operation needs an existing task (e.g., GetTask, CancelTask, push notification CRUD), first create one via SendMessage or the appropriate endpoint.
 2. **Execute the failing operation** — use the transport binding from Step 2 to construct the correct curl command.
 3. **Show the actual vs expected result** — add comments explaining what the SUT returns vs what the spec requires.
 
@@ -69,6 +81,12 @@ Create a minimal curl command sequence that reproduces the failure. The reproduc
 Use the actual endpoint URLs from the agent card's `supportedInterfaces` array
 (fetch from `<sut-host>/.well-known/agent-card.json`) to build accurate
 reproducers. Each interface entry has a `url` field with the correct endpoint.
+
+**IMPORTANT:** Always look up the exact method names, paths, and RPC names from
+`tck/requirements/base.py` (`TransportBinding` definitions and `OperationType`
+enum). Never guess or invent method names — they must match what the TCK
+actually uses (e.g., the JSON-RPC method for sending a message is `SendMessage`,
+not `message/send`).
 
 **HTTP+JSON:**
 ```bash
