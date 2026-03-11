@@ -113,6 +113,10 @@ def _validate_response(
             if not result.valid:
                 errors.extend(result.errors)
 
+    # Custom content validation
+    for validator in requirement.validators:
+        errors.extend(validator(response, transport))
+
     return errors
 
 

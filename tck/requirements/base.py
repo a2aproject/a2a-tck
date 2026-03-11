@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import uuid
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 # Session-unique suffix appended to all sample_input IDs so that
@@ -96,6 +98,7 @@ class RequirementSpec:
     expected_error: ErrorBinding | None = None
     spec_url: str = ""
     tags: list[str] = field(default_factory=list)
+    validators: list[Callable[[Any, str], list[str]]] = field(default_factory=list)
 
 
 # Shared spec URL base pointing to the local specification file.
