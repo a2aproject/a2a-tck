@@ -151,6 +151,8 @@ When run with `--report`, the TCK generates:
 
 Read `reports/compliance.json` to get a structured view of which requirements passed/failed per transport.
 
+Let the user know about `reports/compliance.html` & `reports/tck_report.html`.
+
 ## Step 6: Iterate
 
 Guide the user through a fix-and-retest cycle:
