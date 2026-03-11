@@ -1137,8 +1137,8 @@
                     },
                     "type": "array"
                 },
-                "blocking": {
-                    "description": "If the server should treat the client as a blocking request.",
+                "returnImmediately": {
+                    "description": "If true, the operation returns immediately after creating the task, even if processing is still in progress.",
                     "type": "boolean"
                 },
                 "historyLength": {

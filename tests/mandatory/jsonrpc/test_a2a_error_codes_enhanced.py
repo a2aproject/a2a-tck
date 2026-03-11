@@ -188,7 +188,7 @@ def test_unsupported_operation_error_32004_enhanced(sut_client):
     params = {
         "message": test_message,
         "configuration": {
-            "blocking": True,
+            "returnImmediately": False,
             "historyLength": 999999999,  # Extremely large number
             "acceptedOutputModes": ["application/x-invalid-format"],
             # Add non-standard configuration fields

@@ -1145,7 +1145,7 @@ _If the task were longer-running, the server might initially respond with `statu
          "messageId": "0db1d6c4-3976-40ed-b9b8-0043ea7a03d3"
        },
        "configuration": {
-         "blocking": true
+         "returnImmediately": false
        }
      }
    }
