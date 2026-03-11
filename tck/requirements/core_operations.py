@@ -41,6 +41,7 @@ from tck.requirements.tags import (
     TASK_ID,
     VALIDATION,
 )
+from tck.validators.payload import validate_field_is_present
 
 
 CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
@@ -559,6 +560,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
                 "messageId": tck_id("multi-001a"),
             },
         },
+        validators=[validate_field_is_present("contextId")],
     ),
     RequirementSpec(
         id="CORE-MULTI-002",
