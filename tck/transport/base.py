@@ -51,6 +51,7 @@ class StreamingResponse(TransportResponse):
     """
 
     events: Iterator[Any] = field(default_factory=iter)
+    timed_out: bool = False
 
     @property
     def is_streaming(self) -> bool:

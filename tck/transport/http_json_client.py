@@ -154,6 +154,7 @@ class HttpJsonClient(BaseTransportClient):
                     "Content-Type": "application/json",
                     "Accept": "text/event-stream",
                 },
+                timeout=httpx.Timeout(5.0, read=10.0),
             )
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
@@ -172,6 +173,11 @@ class HttpJsonClient(BaseTransportClient):
                 events=_parse_sse(response.text),
                 headers=resp_headers,
                 status_code=response.status_code,
+            )
+        except httpx.ReadTimeout as e:
+            return HttpJsonStreamingResponse(
+                transport=self.transport, success=False, raw_response=e, events=iter([]),
+                timed_out=True,
             )
         except httpx.HTTPError as e:
             return HttpJsonStreamingResponse(
