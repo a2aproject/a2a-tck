@@ -59,6 +59,9 @@ If the agent card is missing or malformed, help the user fix it before proceedin
 **Important:** Always use `uv run` to invoke the test runner so that the
 project's virtual environment and dependencies are available:
 
+Ask the user if they want to generate compliance reports and point them to the
+`reports/compliance.html` & `reports/tck_report.html` file if that is the case.
+
 ```bash
 uv run ./run_tck.py --sut-host <sut-host> --level must --transport <transport> -v
 ```
@@ -150,8 +153,6 @@ When run with `--report`, the TCK generates:
 - `reports/junitreport.xml` — JUnit XML for CI integration
 
 Read `reports/compliance.json` to get a structured view of which requirements passed/failed per transport.
-
-Let the user know about `reports/compliance.html` & `reports/tck_report.html`.
 
 ## Step 6: Iterate
 
