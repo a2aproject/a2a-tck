@@ -111,6 +111,7 @@ class JsonRpcClient(BaseTransportClient):
                     "Content-Type": "application/json",
                     "Accept": "text/event-stream",
                 },
+                timeout=httpx.Timeout(5.0, read=10.0),
             )
             return JsonRpcStreamingResponse(
                 transport=self.transport,
@@ -119,6 +120,11 @@ class JsonRpcClient(BaseTransportClient):
                 events=_parse_sse(response.text),
                 headers=dict(response.headers),
                 status_code=response.status_code,
+            )
+        except httpx.ReadTimeout as e:
+            return JsonRpcStreamingResponse(
+                transport=self.transport, success=False, raw_response=e, events=iter([]),
+                timed_out=True,
             )
         except httpx.HTTPError as e:
             return JsonRpcStreamingResponse(

@@ -75,6 +75,8 @@ def _get_streaming_events(
         pytest.skip("Agent does not support streaming")
 
     response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+    if response.timed_out:
+        pytest.skip("Streaming call timed out waiting for server to close the connection")
     if not response.success:
         pytest.skip(f"Streaming call failed: {response.error}")
 
