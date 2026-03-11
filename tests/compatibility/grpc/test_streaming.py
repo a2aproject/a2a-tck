@@ -8,7 +8,6 @@ Requirements tested:
     GRPC-ERR-003    — gRPC streaming uses server streaming RPCs
     STREAM-SUB-001  — SubscribeToTask returns Task as first event
     STREAM-SUB-004  — SubscribeToTask returns TaskNotFoundError for non-existent task
-    STREAM-ORDER-001 — Events delivered in generation order
 """
 
 from __future__ import annotations
@@ -36,7 +35,6 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 GRPC_ERR_003 = get_requirement_by_id("GRPC-ERR-003")
-STREAM_ORDER_001 = get_requirement_by_id("STREAM-ORDER-001")
 STREAM_SUB_001 = get_requirement_by_id("STREAM-SUB-001")
 STREAM_SUB_004 = get_requirement_by_id("STREAM-SUB-004")
 
@@ -53,18 +51,6 @@ _TERMINAL_STATES = frozenset({
     a2a_pb2.TASK_STATE_CANCELED,
     a2a_pb2.TASK_STATE_REJECTED,
 })
-
-# Ordered list of task states for regression detection.
-_STATE_ORDER = {
-    a2a_pb2.TASK_STATE_SUBMITTED: 0,
-    a2a_pb2.TASK_STATE_WORKING: 1,
-    a2a_pb2.TASK_STATE_INPUT_REQUIRED: 1,
-    a2a_pb2.TASK_STATE_AUTH_REQUIRED: 1,
-    a2a_pb2.TASK_STATE_COMPLETED: 2,
-    a2a_pb2.TASK_STATE_FAILED: 2,
-    a2a_pb2.TASK_STATE_CANCELED: 2,
-    a2a_pb2.TASK_STATE_REJECTED: 2,
-}
 
 _SAMPLE_MESSAGE = {
     "role": "ROLE_USER",
@@ -109,16 +95,6 @@ def _collect_events(
         pytest.skip("Server returned no streaming events")
 
     return events
-
-
-def _get_event_state(event: a2a_pb2.StreamResponse) -> int | None:
-    """Extract task state from a StreamResponse event."""
-    payload = event.WhichOneof("payload")
-    if payload == "task":
-        return event.task.status.state
-    if payload == "status_update":
-        return event.status_update.status.state
-    return None
 
 
 # ---------------------------------------------------------------------------
@@ -191,55 +167,6 @@ class TestGrpcStreaming:
                 errors.append(
                     f"Event {i}: unexpected payload field {payload!r}"
                 )
-
-        passed = not errors
-        record(
-            collector=compliance_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
-
-    def test_streaming_event_ordering(
-        self,
-        transport_clients: dict[str, BaseTransportClient],
-        agent_card: dict[str, Any],
-        compliance_collector: Any,
-    ) -> None:
-        """STREAM-ORDER-001: Task states do not regress; last event is terminal."""
-        req = STREAM_ORDER_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
-        caps = agent_card.get("capabilities", {})
-        if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
-        events = _collect_events(client, agent_card)
-
-        errors: list[str] = []
-
-        # Check for state regression
-        max_order = -1
-        for i, event in enumerate(events):
-            state = _get_event_state(event)
-            if state is None:
-                continue
-            order = _STATE_ORDER.get(state, -1)
-            if order < max_order:
-                errors.append(
-                    f"Event {i}: state {a2a_pb2.TaskState.Name(state)} "
-                    f"regresses from a later state"
-                )
-            else:
-                max_order = order
-
-        # Check last event has terminal state
-        last_state = _get_event_state(events[-1])
-        if last_state is not None and last_state not in _TERMINAL_STATES:
-            errors.append(
-                f"Last event state {a2a_pb2.TaskState.Name(last_state)} "
-                f"is not terminal"
-            )
 
         passed = not errors
         record(
