@@ -57,11 +57,13 @@ def _collect_events_with_timeout(
     timeout: float = _SUBSCRIBE_TIMEOUT_S,
     *,
     stop_after_first: bool = False,
-) -> list[Any]:
+) -> tuple[list[Any], bool]:
     """Collect streaming events with a hard wall-clock timeout.
 
     When *stop_after_first* is ``True`` the iterator is abandoned after the
     first event — used to simulate a client closing a stream early.
+
+    Returns a tuple of (events, timed_out).
     """
     collected: list[Any] = []
 
@@ -74,7 +76,8 @@ def _collect_events_with_timeout(
     thread = threading.Thread(target=_drain, daemon=True)
     thread.start()
     thread.join(timeout=timeout)
-    return collected
+    timed_out = thread.is_alive()
+    return collected, timed_out
 
 
 def _normalize_event(event: Any) -> str:
@@ -123,7 +126,7 @@ def _subscribe_parallel(
         with contextlib.suppress(threading.BrokenBarrierError):
             barrier.wait(timeout=5)
         early = stop_first_early and index == 0
-        results[index] = _collect_events_with_timeout(
+        results[index], _ = _collect_events_with_timeout(
             sub.events,
             stop_after_first=early,
         )

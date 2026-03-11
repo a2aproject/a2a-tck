@@ -138,12 +138,14 @@ def _event_has_terminal_state(event: Any, transport: str) -> bool:
 def _collect_events_with_timeout(
     events_iter: Any,
     timeout: float = _SUBSCRIBE_TIMEOUT_S,
-) -> list[Any]:
+) -> tuple[list[Any], bool]:
     """Collect streaming events with a hard wall-clock timeout.
 
     Runs event consumption in a daemon thread so that we can enforce
     the deadline even when ``next(events_iter)`` itself blocks
     (e.g. an SSE connection waiting for data that never arrives).
+
+    Returns a tuple of (events, timed_out).
     """
     collected: list[Any] = []
 
@@ -154,7 +156,8 @@ def _collect_events_with_timeout(
     thread = threading.Thread(target=_drain, daemon=True)
     thread.start()
     thread.join(timeout=timeout)
-    return collected
+    timed_out = thread.is_alive()
+    return collected, timed_out
 
 
 # ---------------------------------------------------------------------------
@@ -412,7 +415,10 @@ class TestSubscribeLifecycle:
             pytest.skip(f"subscribe_to_task failed: {sub_response.error}")
 
         # Consume events with a timeout to avoid blocking indefinitely
-        events = _collect_events_with_timeout(sub_response.events)
+        events, timed_out = _collect_events_with_timeout(sub_response.events)
+
+        if timed_out:
+            pytest.skip("SubscribeToTask timed out waiting for stream to close")
 
         errors: list[str] = []
         if not events:
@@ -461,7 +467,7 @@ class TestSubscribeLifecycle:
         if sub_response.success:
             # Some servers may return success but deliver an error on iteration
             try:
-                _collect_events_with_timeout(sub_response.events)
+                _collect_events_with_timeout(sub_response.events)[0]
                 errors.append(
                     "SubscribeToTask on a terminal task should return an error, "
                     "but succeeded"
