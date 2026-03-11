@@ -8,8 +8,7 @@ are handled internally.
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from tck.validators.grpc.payload import (
     validate_message_response_contains_field as _grpc_validate,
@@ -20,6 +19,10 @@ from tck.validators.http_json.payload import (
 from tck.validators.jsonrpc.payload import (
     validate_message_response_contains_field as _jsonrpc_validate,
 )
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 _TRANSPORT_VALIDATORS = {
     "grpc": _grpc_validate,
