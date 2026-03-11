@@ -5,10 +5,14 @@ from __future__ import annotations
 from typing import Any
 
 
-def validate_field_is_present(
+def validate_message_response_contains_field(
     response: Any, field: str,
 ) -> list[str]:
-    """Validate that a field is present and non-empty in the gRPC response.
+    """Validate that a field is present in the SendMessageResponse.
+
+    The gRPC response for SendMessage is a ``SendMessageResponse`` protobuf
+    with a ``task`` or ``message`` oneof field.  The field is looked up in
+    the inner object first, then on the top-level response.
 
     Args:
         response: The transport response object with a ``raw_response`` protobuf message.
@@ -17,7 +21,9 @@ def validate_field_is_present(
     Returns:
         A list of error strings (empty if the field is present).
     """
-    value = getattr(response.raw_response, field, None)
+    msg = response.raw_response
+    inner = getattr(msg, "task", None) or getattr(msg, "message", None) or msg
+    value = getattr(inner, field, None)
     if not value:
         return [f"Response must include '{field}'"]
     return []

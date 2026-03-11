@@ -12,13 +12,13 @@ from collections.abc import Callable
 from typing import Any
 
 from tck.validators.grpc.payload import (
-    validate_field_is_present as _grpc_validate,
+    validate_message_response_contains_field as _grpc_validate,
 )
 from tck.validators.http_json.payload import (
-    validate_field_is_present as _http_json_validate,
+    validate_message_response_contains_field as _http_json_validate,
 )
 from tck.validators.jsonrpc.payload import (
-    validate_field_is_present as _jsonrpc_validate,
+    validate_message_response_contains_field as _jsonrpc_validate,
 )
 
 _TRANSPORT_VALIDATORS = {
@@ -40,10 +40,13 @@ def _to_snake_case(name: str) -> str:
     return "".join(result).lstrip("_")
 
 
-def validate_field_is_present(
+def validate_message_response_contains_field(
     field: str,
 ) -> Callable[[Any, str], list[str]]:
-    """Return a validator that checks a field is present and non-empty.
+    """Return a validator that checks a field is present in a SendMessageResponse.
+
+    Unwraps the SendMessageResponse envelope (``task`` or ``message``) before
+    checking the field.
 
     Args:
         field: The camelCase field name (e.g. "contextId"). Automatically
