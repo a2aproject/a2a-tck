@@ -68,6 +68,7 @@ All A2A bindings (for transport methods, error codes, etc.) are defined centrall
 
 - **update-a2a-spec** (`skills/update-a2a-spec/SKILL.md`): Step-by-step workflow for updating the TCK when the A2A protocol specification changes. Read the full skill file before starting an update.
 - **run-tck** (`skills/run-tck/SKILL.md`): Guide an SDK implementor through running the TCK against their System Under Test (SUT), diagnosing failures, and achieving compliance.
+- **learn-requirement** (`skills/learn-requirement/SKILL.md`): Learn about a specific TCK requirement — its definition, spec context, related tests, and what an SUT needs to do to satisfy it.
 
 ## Commands
 
