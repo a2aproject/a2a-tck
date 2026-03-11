@@ -25,6 +25,7 @@ class RequirementResult:
     transports: dict[str, str]
     errors: list[str] = field(default_factory=list)
     description: str = ""
+    spec_url: str = ""
     transport_errors: dict[str, list[str]] = field(default_factory=dict)
     test_ids: list[str] = field(default_factory=list)
 
@@ -124,11 +125,13 @@ class ComplianceAggregator:
                 status = "PASS"
 
             description = ""
+            spec_url = ""
             try:
                 from tck.requirements.registry import get_requirement_by_id
 
                 spec = get_requirement_by_id(req_id)
                 description = spec.description
+                spec_url = spec.spec_url
             except (KeyError, ImportError):
                 pass
 
@@ -140,6 +143,7 @@ class ComplianceAggregator:
                 transports=transports,
                 errors=errors,
                 description=description,
+                spec_url=spec_url,
                 transport_errors=transport_errors,
                 test_ids=test_ids,
             )
@@ -160,6 +164,7 @@ class ComplianceAggregator:
                         status="NOT TESTED",
                         transports={},
                         description=spec.description,
+                        spec_url=spec.spec_url,
                     )
         except ImportError:
             pass

@@ -9,13 +9,27 @@ from __future__ import annotations
 import json
 
 from html import escape
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from tck.reporting.aggregator import ComplianceReport, RequirementResult
+
+_SPEC_SOURCE_URL: str | None = None
+
+
+def _get_spec_source_url() -> str:
+    """Read the sourceUrl from specification/version.json (cached)."""
+    global _SPEC_SOURCE_URL  # noqa: PLW0603
+    if _SPEC_SOURCE_URL is None:
+        version_file = Path("specification/version.json")
+        if version_file.exists():
+            data = json.loads(version_file.read_text(encoding="utf-8"))
+            _SPEC_SOURCE_URL = data.get("sourceUrl", "")
+        else:
+            _SPEC_SOURCE_URL = ""
+    return _SPEC_SOURCE_URL
 
 
 class HTMLFormatter:
@@ -134,12 +148,15 @@ class HTMLFormatter:
                 cell_class = ' class="skipped"'
             transport_cells += f"<td{cell_class}>{escape(result)}</td>"
 
-        tooltip = f' title="{escape(req.description)}"' if req.description else ""
         error_html = _format_transport_errors(req)
         test_html = _format_test_ids(req.test_ids)
+        req_label = escape(req_id)
+        if req.spec_url:
+            href = _spec_url_to_href(req.spec_url)
+            req_label = f'<a href="{escape(href)}">{req_label}</a>'
         return (
             f"<tr>"
-            f"<td{tooltip}>{escape(req_id)}</td>"
+            f"<td>{req_label}</td>"
             f"<td>{escape(req.level)}</td>"
             f'<td class="{status_class}">{escape(req.status)}</td>'
             f"{transport_cells}"
@@ -214,6 +231,34 @@ class HTMLFormatter:
 # ------------------------------------------------------------------
 
 
+def _spec_url_to_href(spec_url: str) -> str:
+    """Convert a spec_url to an absolute GitHub link using the spec sourceUrl."""
+    source_url = _get_spec_source_url()
+    if not source_url:
+        return spec_url
+
+    # spec_url looks like 'specification/specification.md#anchor'
+    # The local 'specification/' directory maps to different GitHub paths:
+    #   - specification.md lives under 'docs/' on GitHub
+    #   - other files (a2a.proto, buf.*) live under 'specification/'
+    prefix = "specification/"
+    path = spec_url[len(prefix) :] if spec_url.startswith(prefix) else spec_url
+
+    # source_url is like https://github.com/a2aproject/A2A/tree/<hash>/specification
+    # Convert /tree/ to /blob/ for linking to a specific file
+    base = source_url.replace("/tree/", "/blob/", 1)
+
+    # Map specification.md to docs/ directory (its actual location on GitHub)
+    file_part = path.split("#", 1)[0] if "#" in path else path
+    if file_part == "specification.md":
+        base = base.rsplit("/specification", 1)[0] + "/docs"
+
+    if "#" in path:
+        file_part, anchor = path.split("#", 1)
+        return f"{base}/{file_part}#{anchor}"
+    return f"{base}/{path}"
+
+
 def _format_compliance(value: float) -> str:
     return f"{value:.1f}%"
 
@@ -265,7 +310,7 @@ th { background: #f5f5f5; }
 .not-tested { background: #cce5ff; color: #004085; }
 .bar { background: #e9ecef; border-radius: 4px; height: 18px; width: 100%; }
 .bar-fill { background: #28a745; height: 100%; border-radius: 4px; }
-td[title] { cursor: help; text-decoration: underline dotted; }
+td a { color: inherit; text-decoration: underline; }
 .error-list { margin: 0; padding-left: 1.2em; list-style: disc; }
 .error-list li { margin: 2px 0; }
 .test-id { font-family: monospace; font-size: 0.85em; cursor: help; }
