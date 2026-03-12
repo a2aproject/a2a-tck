@@ -1,15 +1,16 @@
 ---
-id: task-8.5
+id: TASK-8.5
 title: Improve error messages for actionable feedback
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:14'
+updated_date: '2026-03-12 09:09'
 labels:
   - phase-8
   - ux
   - errors
 dependencies: []
-parent_task_id: task-8
+parent_task_id: TASK-8
 priority: medium
 ---
 
@@ -61,3 +62,9 @@ Suggestion: Verify error code mapping in Section 9
 - [ ] #5 Error messages suggest possible fixes where applicable
 - [ ] #6 Connection errors are clear about which transport failed
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Audit (2026-03-12): Transport-specific error validators exist with structured messages (grpc, jsonrpc, http_json). Test helpers use fail_msg() for formatted output. No formal audit of message quality/clarity for end users has been conducted.
+<!-- SECTION:NOTES:END -->

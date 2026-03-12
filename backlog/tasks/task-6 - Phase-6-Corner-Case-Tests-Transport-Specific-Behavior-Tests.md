@@ -1,9 +1,10 @@
 ---
-id: task-6
+id: TASK-6
 title: 'Phase 6: Corner Case Tests - Transport-Specific Behavior Tests'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:11'
+updated_date: '2026-03-12 09:09'
 labels:
   - phase-6
   - testing
@@ -35,3 +36,9 @@ Implement transport-specific corner case tests that validate behaviors unique to
 - [ ] #5 Problem Details (RFC 7807) is tested for REST
 - [ ] #6 All transport-specific tests pass
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+All transport-specific behavior tests are implemented: gRPC status codes and streaming (tests/compatibility/grpc/), JSON-RPC error codes and SSE streaming (tests/compatibility/jsonrpc/), HTTP+JSON status codes and Problem Details (tests/compatibility/http_json/).
+<!-- SECTION:NOTES:END -->

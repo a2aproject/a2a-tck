@@ -1,9 +1,10 @@
 ---
 id: TASK-6.8
 title: Implement multi-stream ordering conformance tests
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-03 09:47'
+updated_date: '2026-03-12 09:09'
 labels:
   - phase-6
   - testing
@@ -48,3 +49,9 @@ This likely requires threading or async coordination to consume multiple streams
 - [ ] #3 STREAM-ORDER-004 test verifies closing one stream does not affect others
 - [ ] #4 All tests pass `make lint` and `make unit-test`
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Fully implemented in tests/compatibility/core_operations/test_multi_stream.py with threading-based concurrent stream coordination. Tests STREAM-ORDER-002, STREAM-ORDER-003, and STREAM-ORDER-004 across all transports.
+<!-- SECTION:NOTES:END -->
