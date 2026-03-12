@@ -1,15 +1,16 @@
 ---
-id: task-8.4
+id: TASK-8.4
 title: Optimize test execution performance
 status: To Do
 assignee: []
 created_date: '2026-01-28 09:14'
+updated_date: '2026-03-12 09:09'
 labels:
   - phase-8
   - performance
   - optimization
 dependencies: []
-parent_task_id: task-8
+parent_task_id: TASK-8
 priority: low
 ---
 
@@ -55,3 +56,9 @@ Review and optimize test execution performance for faster feedback.
 - [ ] #4 Full test suite completes in reasonable time
 - [ ] #5 No obvious performance bottlenecks remain
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Audit (2026-03-12): Session-scoped fixtures exist for sut_host, agent_card, transport_clients, and validators. Basic caching is in place but no formal profiling or benchmarking has been done. No pytest-xdist or parallel execution setup.
+<!-- SECTION:NOTES:END -->

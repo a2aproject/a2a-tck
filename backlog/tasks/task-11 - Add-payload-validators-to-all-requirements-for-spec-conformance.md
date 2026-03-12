@@ -4,6 +4,7 @@ title: Add payload validators to all requirements for spec conformance
 status: To Do
 assignee: []
 created_date: '2026-03-11 16:36'
+updated_date: '2026-03-12 09:09'
 labels:
   - validators
   - conformance
@@ -62,3 +63,9 @@ Review every requirement and attach payload validators where the spec mandates s
 - [ ] #4 make lint and make unit-test pass
 - [ ] #5 Validator coverage is tracked (number of requirements with validators vs total)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Audit (2026-03-12): Validator infrastructure is ready (tck/validators/payload.py with transport-specific dispatchers). Only 1 of 114 requirements has validators attached (CORE-MULTI-001a with validate_message_response_contains_field). Coverage expansion is the main remaining work.
+<!-- SECTION:NOTES:END -->

@@ -1,14 +1,15 @@
 ---
-id: task-8.1
+id: TASK-8.1
 title: Write README.md with usage instructions
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:14'
+updated_date: '2026-03-12 09:09'
 labels:
   - phase-8
   - documentation
 dependencies: []
-parent_task_id: task-8
+parent_task_id: TASK-8
 priority: medium
 ---
 
@@ -69,3 +70,9 @@ Write comprehensive README documentation for the A2A TCK.
 - [ ] #6 Compatibility levels are explained
 - [ ] #7 Transport support is documented
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+README.md is comprehensive: overview, installation, quick start, CLI reference, examples, compatibility levels, transports, reports, and development commands.
+<!-- SECTION:NOTES:END -->
