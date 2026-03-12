@@ -35,6 +35,7 @@ class CompatibilityCollector:
     def __init__(self) -> None:
         self._results: list[TestResult] = []
         self._record_count: int = 0
+        self.current_nodeid: str = ""
 
     def record(
         self,
@@ -49,7 +50,7 @@ class CompatibilityCollector:
     ) -> None:
         """Record a single test result."""
         if not test_id:
-            test_id = _infer_test_id()
+            test_id = self.current_nodeid or _infer_test_id()
         self._results.append(
             TestResult(
                 requirement_id=requirement_id,
@@ -130,6 +131,7 @@ class CompatibilityCollector:
         """Clear all stored results."""
         self._results.clear()
         self._record_count = 0
+        self.current_nodeid = ""
 
 
 def _infer_test_id() -> str:

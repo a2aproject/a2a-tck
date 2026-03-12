@@ -264,7 +264,7 @@ def _format_compatibility(value: float) -> str:
 
 
 def _format_test_ids(test_ids: list[str]) -> str:
-    """Format test IDs as a compact list showing class::method."""
+    """Format test IDs as links to the corresponding entry in tck_report.html."""
     if not test_ids:
         return ""
     items = []
@@ -272,8 +272,10 @@ def _format_test_ids(test_ids: list[str]) -> str:
         # Show only the Class::method part for brevity, full path as tooltip
         parts = tid.split("::")
         short = "::".join(parts[1:]) if len(parts) > 1 else tid
+        href = f"tck_report.html#{escape(tid)}"
         items.append(
-            f'<span class="test-id" title="{escape(tid)}">{escape(short)}</span>'
+            f'<a class="test-id" href="{href}" title="{escape(tid)}">'
+            f"{escape(short)}</a>"
         )
     return "<br>".join(items)
 
@@ -313,7 +315,7 @@ th { background: #f5f5f5; }
 td a { color: inherit; text-decoration: underline; }
 .error-list { margin: 0; padding-left: 1.2em; list-style: disc; }
 .error-list li { margin: 2px 0; }
-.test-id { font-family: monospace; font-size: 0.85em; cursor: help; }
+.test-id { font-family: monospace; font-size: 0.85em; }
 .agent-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 1em; overflow-x: auto; font-size: 0.85em; }
 details summary { cursor: pointer; }
 """
