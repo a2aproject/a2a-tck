@@ -23,12 +23,12 @@ from tck.requirements.base import (
 from tck.requirements.tags import (
     AGENT_CARD,
     AUTHORIZATION,
-    BLOCKING,
     CANCEL_TASK,
     CAPABILITY,
     CONTEXT,
     CORE,
     ERROR,
+    EXECUTION_MODE,
     EXTENSION,
     GET_TASK,
     LIST_TASKS,
@@ -382,16 +382,17 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         tags=[CORE, CANCEL_TASK, ERROR],
         sample_input={"id": tck_id("nonexistent-cancel-003")},
     ),
-    # --- Blocking Semantics (Section 3.2.2) ---
+    # --- Execution Mode (Section 3.2.2) ---
     RequirementSpec(
-        id="CORE-BLOCK-001",
+        id="CORE-EXECUTION-MODE-001",
         section="3.2.2",
         title="Blocking mode waits for terminal or interrupted state",
         level=RequirementLevel.MUST,
         description=(
-            "When blocking is true, the operation MUST wait until the task "
-            "reaches a terminal state (completed, failed, canceled, rejected) "
-            "or an interrupted state (input_required, auth_required) before returning."
+            "When return_immediately is false or unset, the operation MUST wait "
+            "until the task reaches a terminal state (completed, failed, canceled, "
+            "rejected) or an interrupted state (input_required, auth_required) "
+            "before returning. This is the default behavior."
         ),
         operation=OperationType.SEND_MESSAGE,
         binding=SEND_MESSAGE_BINDING,
@@ -399,23 +400,23 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         proto_response_type="SendMessageResponse",
         expected_behavior="Response delayed until terminal or interrupted state",
         spec_url=f"{SPEC_BASE}322-sendmessageconfiguration",
-        tags=[CORE, BLOCKING],
+        tags=[CORE, EXECUTION_MODE],
         sample_input={
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Blocking request"}],
                 "messageId": tck_id("block-001"),
             },
-            "configuration": {"blocking": True},
+            "configuration": {"returnImmediately": False},
         },
     ),
     RequirementSpec(
-        id="CORE-BLOCK-002",
+        id="CORE-EXECUTION-MODE-002",
         section="3.2.2",
         title="Non-blocking mode returns immediately",
         level=RequirementLevel.MUST,
         description=(
-            "When blocking is false, the operation MUST return immediately "
+            "When return_immediately is true, the operation MUST return immediately "
             "after creating the task, even if processing is still in progress."
         ),
         operation=OperationType.SEND_MESSAGE,
@@ -424,14 +425,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         proto_response_type="SendMessageResponse",
         expected_behavior="Response returned immediately with in-progress state",
         spec_url=f"{SPEC_BASE}322-sendmessageconfiguration",
-        tags=[CORE, BLOCKING],
+        tags=[CORE, EXECUTION_MODE],
         sample_input={
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Non-blocking request"}],
                 "messageId": tck_id("block-002"),
             },
-            "configuration": {"blocking": False},
+            "configuration": {"returnImmediately": True},
         },
     ),
     # --- Error Handling (Section 3.3.2) ---

@@ -19,7 +19,7 @@ STREAMING = "streaming"
 VERSIONING = "versioning"
 
 # --- Operation tags ---
-BLOCKING = "blocking"
+EXECUTION_MODE = "execution-mode"
 CANCEL_TASK = "cancel-task"
 CREATE = "create"
 DELETE = "delete"
