@@ -10,7 +10,6 @@ Usage:
     ./run_tck.py --sut-host http://localhost:9999 --transport jsonrpc
     ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
     ./run_tck.py --sut-host http://localhost:9999 --level must
-    ./run_tck.py --sut-host http://localhost:9999 --report
 """
 
 from __future__ import annotations
@@ -60,12 +59,11 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
     else:
         cmd.append("-q")
 
-    # Reports (compatibility JSON + HTML, pytest-html, JUnit XML)
-    if args.report:
-        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        cmd.append(f"--compatibility-report={REPORTS_DIR / 'compatibility'}")
-        cmd.extend([f"--html={REPORTS_DIR / 'tck_report.html'}", "--self-contained-html"])
-        cmd.append(f"--junitxml={REPORTS_DIR / 'junitreport.xml'}")
+    # Reports (always generated: compatibility JSON + HTML, pytest-html, JUnit XML)
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    cmd.append(f"--compatibility-report={REPORTS_DIR / 'compatibility'}")
+    cmd.extend([f"--html={REPORTS_DIR / 'tck_report.html'}", "--self-contained-html"])
+    cmd.append(f"--junitxml={REPORTS_DIR / 'junitreport.xml'}")
 
     # Extra pytest arguments
     if args.pytest_args:
@@ -92,9 +90,6 @@ Examples:
 
   # Run gRPC and JSON-RPC transports with verbose output
   ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
-
-  # Generate all reports (compatibility JSON + HTML, pytest-html, JUnit XML) in reports/
-  ./run_tck.py --sut-host http://localhost:9999 --report
 
   # Pass extra pytest flags (after --)
   ./run_tck.py --sut-host http://localhost:9999 -- -x --pdb
@@ -134,11 +129,6 @@ Requirement levels:
         "--verbose-log",
         action="store_true",
         help="Verbose output with log capture (adds -v -s --log-cli-level=INFO)",
-    )
-    parser.add_argument(
-        "--report",
-        action="store_true",
-        help="Generate all reports in reports/ (compatibility JSON + HTML, pytest-html, JUnit XML)",
     )
     parser.add_argument(
         "pytest_args",

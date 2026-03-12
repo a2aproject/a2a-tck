@@ -16,8 +16,8 @@ Ask the user for one of:
 - A transport + error description
 
 Read `reports/compatibility.json` to find the failing requirement, its status per
-transport, recorded errors, and `test_ids`. This file is always available when
-the TCK was run with `--report` (which is the recommended default).
+transport, recorded errors, and `test_ids`. This file is always generated after
+every TCK run.
 
 Use the SUT URL from the current session or from `reports/compatibility.json`
 (`summary.sut_url`) rather than asking the user again.

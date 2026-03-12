@@ -61,30 +61,26 @@ project's virtual environment and dependencies are available.
 Running `./run_tck.py` directly may fail if the system Python lacks pytest or
 other dependencies.
 
-Before running, ask the user if they want to generate compatibility reports.
-If yes (recommended), add `--report` to every run so reports are ready without
-a second pass. Point them to `reports/compatibility.html` and
-`reports/tck_report.html` after the run completes.
+Reports are always generated in `reports/` after every run. Point the user to
+`reports/compatibility.html` and `reports/tck_report.html` after the run completes.
 
 Start with MUST-level tests to catch blocking issues first:
 
 ```bash
-uv run ./run_tck.py --sut-host <sut-host> --level must --report -v
+uv run ./run_tck.py --sut-host <sut-host> --level must -v
 ```
 
 Optionally filter by transport (`grpc`, `jsonrpc`, `http_json`):
 
 ```bash
-uv run ./run_tck.py --sut-host <sut-host> --transport jsonrpc --level must --report -v
+uv run ./run_tck.py --sut-host <sut-host> --transport jsonrpc --level must -v
 ```
 
 Once MUST tests pass, run the full suite:
 
 ```bash
-uv run ./run_tck.py --sut-host <sut-host> --report -v
+uv run ./run_tck.py --sut-host <sut-host> -v
 ```
-
-Reports are written to `reports/` (compatibility JSON + HTML, pytest-html, JUnit XML).
 
 ## Step 4: Review failures
 
@@ -139,7 +135,7 @@ uv run ./run_tck.py --sut-host <sut-host> --verbose-log -- -k "test_name"
 
 ### Compatibility reports
 
-When run with `--report`, the TCK generates:
+Every TCK run generates:
 - `reports/compatibility.json` — machine-readable results with per-requirement and per-transport breakdowns
 - `reports/compatibility.html` — self-contained HTML report with executive summary
 - `reports/tck_report.html` — standard pytest-html report
