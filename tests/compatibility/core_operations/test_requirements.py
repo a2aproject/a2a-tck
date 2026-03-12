@@ -18,6 +18,7 @@ from tck.requirements.registry import (
 from tck.transport import ALL_TRANSPORTS
 from tck.transport.base import StreamingResponse
 from tck.transport.dispatch import execute_operation
+from tck.validators.error_binding import validate_expected_error
 from tests.compatibility.markers import may, must, should
 
 
@@ -47,31 +48,6 @@ def _parametrize_requirements(
     return [pytest.param(r, id=r.id) for r in reqs]
 
 
-def _validate_expected_error(
-    response: Any,
-    transport: str,
-    requirement: Any,
-) -> list[str]:
-    """Validate that a response matches the expected error binding."""
-    errors: list[str] = []
-    expected = requirement.expected_error
-
-    if response.success:
-        errors.append(
-            f"Expected {expected.name} but operation succeeded"
-        )
-        return errors
-
-    expected_code = expected.expected_code(transport)
-    actual_code = response.error_code
-    if expected_code is not None and actual_code != expected_code:
-        errors.append(
-            f"Expected error code {expected_code} "
-            f"({expected.name}), got {actual_code}"
-        )
-
-    return errors
-
 
 def _validate_response(
     response: Any,
@@ -84,7 +60,7 @@ def _validate_response(
 
     # Requirements that expect a specific error
     if requirement.expected_error is not None:
-        return _validate_expected_error(response, transport, requirement)
+        return validate_expected_error(response, transport, requirement.expected_error)
 
     # For streaming responses, just verify at least one event arrives
     if isinstance(response, StreamingResponse):
