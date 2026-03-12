@@ -80,18 +80,87 @@ AUTH_REQUIREMENTS: list[RequirementSpec] = [
         spec_url=f"{SPEC_BASE}74-server-authentication-responsibilities",
         tags=[AUTH, SERVER],
     ),
-    # --- In-Task Authentication (Section 7.5) ---
+    # --- In-Task Authorization (Section 7.6) ---
     RequirementSpec(
         id="AUTH-INTASK-001",
-        section="7.5",
-        title="Agent transitions to auth_required state for secondary credentials",
+        section="7.6.1",
+        title="Agent MUST use a Task to track operation requiring authorization",
+        level=RequirementLevel.MUST,
+        description=(
+            "To request that a client fulfills an authorization request, "
+            "the agent MUST use a Task to track the operation it is performing."
+        ),
+        expected_behavior="Task used to track authorization-requiring operation",
+        spec_url=f"{SPEC_BASE}761-in-task-authorization-agent-responsibilities",
+        tags=[AUTH, IN_TASK],
+    ),
+    RequirementSpec(
+        id="AUTH-INTASK-002",
+        section="7.6.1",
+        title="Agent MUST transition to auth_required state",
+        level=RequirementLevel.MUST,
+        description=(
+            "To request that a client fulfills an authorization request, "
+            "the agent MUST transition the TaskState to TASK_STATE_AUTH_REQUIRED."
+        ),
+        expected_behavior="Task transitions to auth_required for authorization",
+        spec_url=f"{SPEC_BASE}761-in-task-authorization-agent-responsibilities",
+        tags=[AUTH, IN_TASK],
+    ),
+    RequirementSpec(
+        id="AUTH-INTASK-003",
+        section="7.6.1",
+        title="Agent MUST include status message explaining authorization",
+        level=RequirementLevel.MUST,
+        description=(
+            "The agent MUST include a TaskStatus message explaining the required "
+            "authorization, unless the details have been negotiated out-of-band "
+            "or via an extension."
+        ),
+        expected_behavior="TaskStatus message explains required authorization",
+        spec_url=f"{SPEC_BASE}761-in-task-authorization-agent-responsibilities",
+        tags=[AUTH, IN_TASK],
+    ),
+    RequirementSpec(
+        id="AUTH-INTASK-004",
+        section="7.6.1",
+        title="Agent MUST arrange to receive credentials out-of-band",
+        level=RequirementLevel.MUST,
+        description=(
+            "Agents MUST arrange to receive credentials via an out-of-band means, "
+            "unless an in-band mechanism has been negotiated out-of-band or via "
+            "an extension."
+        ),
+        expected_behavior="Credentials received out-of-band",
+        spec_url=f"{SPEC_BASE}761-in-task-authorization-agent-responsibilities",
+        tags=[AUTH, IN_TASK],
+    ),
+    RequirementSpec(
+        id="AUTH-INTASK-005",
+        section="7.6.1",
+        title="Agent SHOULD maintain active response streams during auth_required",
         level=RequirementLevel.SHOULD,
         description=(
-            "If an agent requires additional credentials during task execution, "
-            "it SHOULD transition the task to the TASK_STATE_AUTH_REQUIRED state."
+            "If the credential is received out-of-band, the agent SHOULD maintain "
+            "any active response streams with the client after setting the TaskState "
+            "to TASK_STATE_AUTH_REQUIRED."
         ),
-        expected_behavior="Task transitions to auth_required when more creds needed",
-        spec_url=f"{SPEC_BASE}75-in-task-authentication-secondary-credentials",
+        expected_behavior="Response streams maintained during auth_required",
+        spec_url=f"{SPEC_BASE}761-in-task-authorization-agent-responsibilities",
+        tags=[AUTH, IN_TASK],
+    ),
+    RequirementSpec(
+        id="AUTH-INTASK-006",
+        section="7.6.1",
+        title="Agent SHOULD support receiving messages during auth_required",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "Agents SHOULD support receiving messages directed to the Task while "
+            "the Task remains in TASK_STATE_AUTH_REQUIRED, enabling clients to "
+            "negotiate, correct, or reject an authorization request."
+        ),
+        expected_behavior="Agent accepts messages while in auth_required state",
+        spec_url=f"{SPEC_BASE}761-in-task-authorization-agent-responsibilities",
         tags=[AUTH, IN_TASK],
     ),
     # --- Authorization Scoping (Section 13.1) ---
