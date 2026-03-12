@@ -123,7 +123,7 @@ Each test class uses markers from `tests/compatibility/markers.py` (`@grpc`, `@j
 
 Tests record results with:
 ```python
-compliance_collector.record(requirement_id, transport, level, passed, errors)
+compatibility_collector.record(requirement_id, transport, level, passed, errors)
 ```
 
 ## Step 8: Validate

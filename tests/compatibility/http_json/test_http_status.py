@@ -55,11 +55,11 @@ class TestHttpJsonStatusCodes:
     def test_task_not_found_returns_404(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """TaskNotFoundError: GET /tasks/{nonexistent} returns 404."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         response = client.get_task(id="tck-nonexistent-status-001")
         if response.success:
@@ -71,7 +71,7 @@ class TestHttpJsonStatusCodes:
         )
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=result.valid,
@@ -82,11 +82,11 @@ class TestHttpJsonStatusCodes:
     def test_task_not_cancelable_returns_409(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """TaskNotCancelableError: POST /tasks/{id}:cancel on non-existent returns 409 (or 404)."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         response = client.cancel_task(id="tck-nonexistent-status-002")
         if response.success:
@@ -106,7 +106,7 @@ class TestHttpJsonStatusCodes:
             ]
         )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=valid,
@@ -118,17 +118,17 @@ class TestHttpJsonStatusCodes:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """UnsupportedOperationError: streaming when unsupported returns 400."""
         req = HTTP_JSON_STATUS_001
 
         caps = agent_card.get("capabilities", {})
         if caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
             pytest.skip("Agent supports streaming; cannot trigger UnsupportedOperationError")
 
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "status code test"}],
@@ -144,7 +144,7 @@ class TestHttpJsonStatusCodes:
         )
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=result.valid,
@@ -155,11 +155,11 @@ class TestHttpJsonStatusCodes:
     def test_content_type_not_supported_returns_415(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """ContentTypeNotSupportedError: wrong Content-Type returns 415."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         # Send a request with a deliberately wrong Content-Type.
         response = httpx.post(
@@ -174,7 +174,7 @@ class TestHttpJsonStatusCodes:
         result = validate_http_json_error(response, "ContentTypeNotSupportedError")
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=result.valid,
@@ -186,17 +186,17 @@ class TestHttpJsonStatusCodes:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PushNotificationNotSupportedError: push config when unsupported returns 400."""
         req = HTTP_JSON_STATUS_001
 
         caps = agent_card.get("capabilities", {})
         if caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
             pytest.skip("Agent supports push notifications; cannot trigger error")
 
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = client.create_push_notification_config(
             task_id="tck-status-push-005",
             config={"url": "https://example.com"},
@@ -210,7 +210,7 @@ class TestHttpJsonStatusCodes:
         )
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=result.valid,
@@ -221,11 +221,11 @@ class TestHttpJsonStatusCodes:
     def test_version_not_supported_returns_400(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """VersionNotSupportedError: unsupported A2A-Version returns 400."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         # Raw request needed to inject a custom A2A-Version header.
         msg = {
@@ -248,7 +248,7 @@ class TestHttpJsonStatusCodes:
                 "unsupported A2A-Version, but processed the request normally"
             )
             record(
-                collector=compliance_collector,
+                collector=compatibility_collector,
                 req=req,
                 transport=TRANSPORT,
                 passed=False,
@@ -259,7 +259,7 @@ class TestHttpJsonStatusCodes:
         result = validate_http_json_error(response, "VersionNotSupportedError")
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=result.valid,
@@ -270,11 +270,11 @@ class TestHttpJsonStatusCodes:
     def test_success_returns_2xx(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Successful operations return HTTP 2xx status code."""
         req = HTTP_JSON_STATUS_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         msg = {
             "role": "ROLE_USER",
@@ -293,7 +293,7 @@ class TestHttpJsonStatusCodes:
             else [f"Successful SendMessage should return 2xx, got {status}"]
         )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=valid,

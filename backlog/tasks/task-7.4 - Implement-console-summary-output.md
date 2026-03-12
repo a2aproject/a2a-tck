@@ -24,19 +24,19 @@ Implement the console formatter that outputs a quick summary to the terminal.
 
 **Location**: `tck/reporting/formatters.py` (or `tck/reporting/console_formatter.py`)
 
-**Function/Class**: `ConsoleFormatter` or `format_console(report: ComplianceReport) -> str`
+**Function/Class**: `ConsoleFormatter` or `format_console(report: CompatibilityReport) -> str`
 
 **Output format**:
 ```
 ═══════════════════════════════════════════════════════
-           A2A TCK Compliance Report
+           A2A TCK Compatibility Report
 ═══════════════════════════════════════════════════════
 
 SUT: http://localhost:9999
 Spec Version: 1.0
 Timestamp: 2025-01-27 10:30:00
 
-OVERALL COMPLIANCE: 98.5%
+OVERALL COMPATIBILITY: 98.5%
 
 ┌─────────────┬────────┬────────┬───────┐
 │ Level       │ Passed │ Failed │ Total │
@@ -66,7 +66,7 @@ FAILED REQUIREMENTS:
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Console formatter function/class exists
-- [ ] #2 Output shows overall compliance prominently
+- [ ] #2 Output shows overall compatibility prominently
 - [ ] #3 Table shows pass/fail counts by level
 - [ ] #4 Per-transport summary is included
 - [ ] #5 Failed requirements are listed with brief error

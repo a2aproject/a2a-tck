@@ -1,6 +1,6 @@
 ---
 id: TASK-5.3
-title: Implement ComplianceCollector for result aggregation
+title: Implement CompatibilityCollector for result aggregation
 status: Done
 assignee: []
 created_date: '2026-01-28 09:11'
@@ -17,9 +17,9 @@ priority: high
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Implement the compliance collector that aggregates test results during test execution.
+Implement the compatibility collector that aggregates test results during test execution.
 
-**Reference**: PRD Section 5.5.1 (Compliance Report Structure)
+**Reference**: PRD Section 5.5.1 (Compatibility Report Structure)
 
 **Location**: `tck/reporting/collector.py`
 
@@ -32,7 +32,7 @@ Implement the compliance collector that aggregates test results during test exec
    - errors: list[str]
    - level: Literal["MUST", "SHOULD", "MAY"]
 
-2. `ComplianceCollector`:
+2. `CompatibilityCollector`:
    - `record(requirement_id, transport, passed, errors, level="MUST")`: Record single test result
    - `get_results() -> list[TestResult]`: Get all recorded results
    - `get_per_requirement() -> dict[str, dict[str, str]]`: Group by requirement
@@ -46,7 +46,7 @@ This collector will be used by both tests and the reporting layer.
 <!-- AC:BEGIN -->
 - [x] #1 tck/reporting/collector.py exists
 - [x] #2 TestResult dataclass has all required fields
-- [x] #3 ComplianceCollector.record() stores test results
+- [x] #3 CompatibilityCollector.record() stores test results
 - [x] #4 get_results() returns all recorded results
 - [x] #5 get_per_requirement() groups results by requirement ID
 - [x] #6 get_per_transport() groups results by transport

@@ -1,6 +1,6 @@
 ---
 id: TASK-7
-title: 'Phase 7: Reporting Layer - Compliance Report Generation'
+title: 'Phase 7: Reporting Layer - Compatibility Report Generation'
 status: Done
 assignee: []
 created_date: '2026-01-28 09:12'
@@ -18,11 +18,11 @@ priority: high
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Implement the compliance reporting system that generates machine-readable and human-readable reports.
+Implement the compatibility reporting system that generates machine-readable and human-readable reports.
 
 **Reference**: PRD Section 6 - Phase 7, Section 5.5 (Reporting Layer)
 
-**Goal**: Complete reporting system with multiple output formats showing per-requirement and per-transport compliance views.
+**Goal**: Complete reporting system with multiple output formats showing per-requirement and per-transport compatibility views.
 
 **Report views**:
 1. Per-Requirement: Did REQ-3.1 pass on all transports?

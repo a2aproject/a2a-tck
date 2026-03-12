@@ -60,10 +60,10 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
     else:
         cmd.append("-q")
 
-    # Reports (compliance JSON + HTML, pytest-html, JUnit XML)
+    # Reports (compatibility JSON + HTML, pytest-html, JUnit XML)
     if args.report:
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        cmd.append(f"--compliance-report={REPORTS_DIR / 'compliance'}")
+        cmd.append(f"--compatibility-report={REPORTS_DIR / 'compatibility'}")
         cmd.extend([f"--html={REPORTS_DIR / 'tck_report.html'}", "--self-contained-html"])
         cmd.append(f"--junitxml={REPORTS_DIR / 'junitreport.xml'}")
 
@@ -93,7 +93,7 @@ Examples:
   # Run gRPC and JSON-RPC transports with verbose output
   ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
 
-  # Generate all reports (compliance JSON + HTML, pytest-html, JUnit XML) in reports/
+  # Generate all reports (compatibility JSON + HTML, pytest-html, JUnit XML) in reports/
   ./run_tck.py --sut-host http://localhost:9999 --report
 
   # Pass extra pytest flags (after --)
@@ -138,7 +138,7 @@ Requirement levels:
     parser.add_argument(
         "--report",
         action="store_true",
-        help="Generate all reports in reports/ (compliance JSON + HTML, pytest-html, JUnit XML)",
+        help="Generate all reports in reports/ (compatibility JSON + HTML, pytest-html, JUnit XML)",
     )
     parser.add_argument(
         "pytest_args",

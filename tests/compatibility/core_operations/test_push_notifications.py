@@ -73,15 +73,15 @@ class TestPushNotificationCrud:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PUSH-CREATE-001: CreatePushNotificationConfig returns the config."""
         req = PUSH_CREATE_001
         caps = agent_card.get("capabilities", {})
         if not caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
         config = _unique_push_config()
 
@@ -95,7 +95,7 @@ class TestPushNotificationCrud:
             errors.append(f"CreatePushNotificationConfig failed: {response.error}")
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_config_persists(
@@ -103,15 +103,15 @@ class TestPushNotificationCrud:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PUSH-CREATE-002: Config persists and can be retrieved after creation."""
         req = PUSH_CREATE_002
         caps = agent_card.get("capabilities", {})
         if not caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
         config = _unique_push_config()
 
@@ -134,7 +134,7 @@ class TestPushNotificationCrud:
             )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_get_push_config(
@@ -142,15 +142,15 @@ class TestPushNotificationCrud:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PUSH-GET-001: GetPushNotificationConfig returns config details."""
         req = PUSH_GET_001
         caps = agent_card.get("capabilities", {})
         if not caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
         config = _unique_push_config()
 
@@ -171,7 +171,7 @@ class TestPushNotificationCrud:
             errors.append(f"GetPushNotificationConfig failed: {response.error}")
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_get_nonexistent_config_returns_error(
@@ -179,15 +179,15 @@ class TestPushNotificationCrud:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PUSH-GET-002: GetPushNotificationConfig with nonexistent ID returns error."""
         req = PUSH_GET_002
         caps = agent_card.get("capabilities", {})
         if not caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         response = client.get_push_notification_config(
@@ -203,7 +203,7 @@ class TestPushNotificationCrud:
             )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_list_push_configs(
@@ -211,15 +211,15 @@ class TestPushNotificationCrud:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PUSH-LIST-001: ListPushNotificationConfigs includes the created config."""
         req = PUSH_LIST_001
         caps = agent_card.get("capabilities", {})
         if not caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
         config = _unique_push_config()
 
@@ -237,7 +237,7 @@ class TestPushNotificationCrud:
             errors.append(f"ListPushNotificationConfigs failed: {response.error}")
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_delete_push_config(
@@ -245,15 +245,15 @@ class TestPushNotificationCrud:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PUSH-DEL-001: DeletePushNotificationConfig removes the config."""
         req = PUSH_DEL_001
         caps = agent_card.get("capabilities", {})
         if not caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
         config = _unique_push_config()
 
@@ -286,7 +286,7 @@ class TestPushNotificationCrud:
                 )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_delete_is_idempotent(
@@ -294,15 +294,15 @@ class TestPushNotificationCrud:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PUSH-DEL-002: Deleting an already-deleted config does not error."""
         req = PUSH_DEL_002
         caps = agent_card.get("capabilities", {})
         if not caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
         config = _unique_push_config()
 
@@ -331,5 +331,5 @@ class TestPushNotificationCrud:
             )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))

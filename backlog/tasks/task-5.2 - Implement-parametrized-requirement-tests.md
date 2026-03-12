@@ -30,7 +30,7 @@ TRANSPORTS = ["grpc", "jsonrpc", "http+json"]
 
 @pytest.mark.parametrize("transport", TRANSPORTS)
 @pytest.mark.parametrize("requirement", MUST_REQUIREMENTS, ids=lambda r: r.id)
-def test_must_requirement(transport, requirement, transport_clients, validators, compliance_collector):
+def test_must_requirement(transport, requirement, transport_clients, validators, compatibility_collector):
     # Execute
     client = transport_clients[transport]
     response = client.execute(requirement.operation, requirement.sample_input)
@@ -40,7 +40,7 @@ def test_must_requirement(transport, requirement, transport_clients, validators,
     result = validator.validate(response, requirement)
     
     # Record
-    compliance_collector.record(requirement.id, transport, result.valid, result.errors)
+    compatibility_collector.record(requirement.id, transport, result.valid, result.errors)
     
     # Assert
     assert result.valid, f"{requirement.id} failed: {result.errors}"
@@ -58,5 +58,5 @@ def test_must_requirement(transport, requirement, transport_clients, validators,
 - [ ] #3 test_should_requirement handles SHOULD-level as warnings
 - [ ] #4 Test IDs include requirement ID (e.g., test[grpc-REQ-3.1.1])
 - [ ] #5 Failure messages include requirement ID, title, and spec_url
-- [ ] #6 Results are recorded to compliance_collector
+- [ ] #6 Results are recorded to compatibility_collector
 <!-- AC:END -->

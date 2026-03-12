@@ -81,5 +81,5 @@ Created `tests/compatibility/http_json/test_problem_details.py` with 6 tests in 
 5. `test_type_is_a2a_error_uri` — `type` matches a spec-defined A2A error URI
 6. `test_type_uri_matches_error_condition` — TaskNotFound trigger produces `task-not-found` URI
 
-All tests follow existing patterns (helpers, markers, compliance recording). Triggers errors via `client.get_task()` on a non-existent task ID.
+All tests follow existing patterns (helpers, markers, compatibility recording). Triggers errors via `client.get_task()` on a non-existent task ID.
 <!-- SECTION:FINAL_SUMMARY:END -->

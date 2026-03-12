@@ -1,6 +1,6 @@
 ---
 id: TASK-10
-title: Report skipped tests in compliance collection
+title: Report skipped tests in compatibility collection
 status: Done
 assignee: []
 created_date: '2026-03-03 11:50'
@@ -17,17 +17,17 @@ priority: medium
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Enhance the compliance reporting pipeline to track and report skipped tests (e.g. when a MAY-level capability is not declared by the SUT, or when a transport is not configured).
+Enhance the compatibility reporting pipeline to track and report skipped tests (e.g. when a MAY-level capability is not declared by the SUT, or when a transport is not configured).
 
-Currently, skipped tests are invisible in the compliance report — only PASS and FAIL are recorded. This makes it unclear whether a requirement was not tested vs. tested and passed.
+Currently, skipped tests are invisible in the compatibility report — only PASS and FAIL are recorded. This makes it unclear whether a requirement was not tested vs. tested and passed.
 
 **Changes needed**:
 
-1. **`ComplianceCollector`** — Allow recording a `skipped` result (new status or a `skipped: bool` field alongside `passed`), with an optional `reason` string.
+1. **`CompatibilityCollector`** — Allow recording a `skipped` result (new status or a `skipped: bool` field alongside `passed`), with an optional `reason` string.
 
-2. **`ComplianceAggregator`** — Handle skipped results in aggregation:
+2. **`CompatibilityAggregator`** — Handle skipped results in aggregation:
    - A requirement that is only skipped (never passed/failed) should show status `SKIPPED`, not `PASS` or `FAIL`.
-   - Skipped results should not count toward compliance percentages.
+   - Skipped results should not count toward compatibility percentages.
    - Per-transport counts should include a `skipped` field.
 
 3. **Formatters** (JSON, HTML, Console) — Display skipped status:
@@ -40,9 +40,9 @@ Currently, skipped tests are invisible in the compliance report — only PASS an
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 Skipped tests are recorded in ComplianceCollector with a reason
-- [x] #2 ComplianceAggregator produces SKIPPED status for requirements that were only skipped
-- [x] #3 Skipped results do not affect compliance percentages
+- [x] #1 Skipped tests are recorded in CompatibilityCollector with a reason
+- [x] #2 CompatibilityAggregator produces SKIPPED status for requirements that were only skipped
+- [x] #3 Skipped results do not affect compatibility percentages
 - [x] #4 Per-transport summary includes skipped count
 - [x] #5 All three formatters (JSON, HTML, Console) display skipped status
 - [x] #6 Existing PASS/FAIL behaviour is unchanged
@@ -51,10 +51,10 @@ Currently, skipped tests are invisible in the compliance report — only PASS an
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Implemented SKIPPED status throughout the compliance reporting pipeline:
+Implemented SKIPPED status throughout the compatibility reporting pipeline:
 
-- Added `skipped: bool = False` to `TestResult` and `ComplianceCollector.record()`
-- Aggregator produces SKIPPED status for requirements only skipped, excludes them from compliance %
+- Added `skipped: bool = False` to `TestResult` and `CompatibilityCollector.record()`
+- Aggregator produces SKIPPED status for requirements only skipped, excludes them from compatibility %
 - Per-transport counts include `skipped` field
 - All three formatters (JSON, HTML, Console) display SKIPPED status with appropriate styling
 - All compatibility test files record skips before `pytest.skip()` for transport/capability checks

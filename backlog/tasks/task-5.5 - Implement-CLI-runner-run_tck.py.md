@@ -36,8 +36,8 @@ Implement the main CLI entry point for running the TCK.
 # Run only gRPC tests
 ./run_tck.py --sut-url http://localhost:9999 --transport grpc
 
-# Run with compliance report
-./run_tck.py --sut-url http://localhost:9999 --compliance-report report.json
+# Run with compatibility report
+./run_tck.py --sut-url http://localhost:9999 --compatibility-report report.json
 
 # Run only MUST requirements
 ./run_tck.py --sut-url http://localhost:9999 --level must
@@ -49,7 +49,7 @@ Implement the main CLI entry point for running the TCK.
 **Implementation**:
 - Use argparse for CLI argument parsing
 - Delegate to pytest with appropriate arguments
-- Handle compliance report generation
+- Handle compatibility report generation
 - Return appropriate exit codes (0=pass, 1=fail)
 
 **Also register as console script** in pyproject.toml:
@@ -64,7 +64,7 @@ a2a-tck = "run_tck:main"
 - [ ] #1 run_tck.py exists and is executable
 - [ ] #2 --sut-url option is required
 - [ ] #3 --transport option filters to specific transport
-- [ ] #4 --compliance-report option generates report file
+- [ ] #4 --compatibility-report option generates report file
 - [ ] #5 --level option filters by requirement level
 - [ ] #6 --requirement option runs specific requirement
 - [ ] #7 Exit code 0 on success, 1 on failure

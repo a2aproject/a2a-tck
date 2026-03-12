@@ -1,7 +1,7 @@
-"""Compliance aggregation for A2A TCK reports.
+"""Compatibility aggregation for A2A TCK reports.
 
-Takes raw results from a :class:`ComplianceCollector` and computes
-compliance metrics broken down by requirement level and transport.
+Takes raw results from a :class:`CompatibilityCollector` and computes
+compatibility metrics broken down by requirement level and transport.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 
 if TYPE_CHECKING:
-    from tck.reporting.collector import ComplianceCollector, TestResult
+    from tck.reporting.collector import CompatibilityCollector, TestResult
 
 
 @dataclass
@@ -41,16 +41,16 @@ class TransportResult:
 
 
 @dataclass
-class ComplianceReport:
-    """Full compliance report produced by :class:`ComplianceAggregator`."""
+class CompatibilityReport:
+    """Full compatibility report produced by :class:`CompatibilityAggregator`."""
 
     timestamp: str
     per_requirement: dict[str, RequirementResult]
     per_transport: dict[str, TransportResult]
-    overall_compliance: float
-    must_compliance: float
-    should_compliance: float
-    may_compliance: float
+    overall_compatibility: float
+    must_compatibility: float
+    should_compatibility: float
+    may_compatibility: float
     agent_card: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -58,37 +58,37 @@ class ComplianceReport:
         return asdict(self)
 
 
-class ComplianceAggregator:
-    """Computes compliance metrics from collected test results.
+class CompatibilityAggregator:
+    """Computes compatibility metrics from collected test results.
 
     A requirement *passes* only when it passes on **every** transport
-    where it was tested.  Compliance for a given level is the percentage
+    where it was tested.  Compatibility for a given level is the percentage
     of requirements at that level which pass.  When no requirements exist
-    for a level the compliance is 100.0 (nothing to fail).
+    for a level the compatibility is 100.0 (nothing to fail).
     """
 
     def __init__(
         self,
-        collector: ComplianceCollector,
+        collector: CompatibilityCollector,
         *,
         agent_card: dict[str, Any] | None = None,
     ) -> None:
         self._collector = collector
         self._agent_card = agent_card or {}
 
-    def aggregate(self) -> ComplianceReport:
-        """Build a complete :class:`ComplianceReport`."""
+    def aggregate(self) -> CompatibilityReport:
+        """Build a complete :class:`CompatibilityReport`."""
         per_requirement = self._compute_per_requirement()
         per_transport = self._compute_per_transport()
 
-        return ComplianceReport(
+        return CompatibilityReport(
             timestamp=datetime.now(timezone.utc).isoformat(),
             per_requirement=per_requirement,
             per_transport=per_transport,
-            overall_compliance=self._compute_compliance(per_requirement, level=None),
-            must_compliance=self._compute_compliance(per_requirement, level="MUST"),
-            should_compliance=self._compute_compliance(per_requirement, level="SHOULD"),
-            may_compliance=self._compute_compliance(per_requirement, level="MAY"),
+            overall_compatibility=self._compute_compatibility(per_requirement, level=None),
+            must_compatibility=self._compute_compatibility(per_requirement, level="MUST"),
+            should_compatibility=self._compute_compatibility(per_requirement, level="SHOULD"),
+            may_compatibility=self._compute_compatibility(per_requirement, level="MAY"),
             agent_card=self._agent_card,
         )
 
@@ -187,7 +187,7 @@ class ComplianceAggregator:
         return out
 
     @staticmethod
-    def _compute_compliance(
+    def _compute_compatibility(
         per_requirement: dict[str, RequirementResult],
         *,
         level: str | None,

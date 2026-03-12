@@ -1,6 +1,6 @@
-"""Console formatter for A2A TCK compliance reports.
+"""Console formatter for A2A TCK compatibility reports.
 
-Transforms a :class:`ComplianceReport` into a compact, human-readable
+Transforms a :class:`CompatibilityReport` into a compact, human-readable
 terminal summary with optional ANSI colour support.
 """
 
@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from tck.reporting.aggregator import ComplianceReport, RequirementResult
+    from tck.reporting.aggregator import CompatibilityReport, RequirementResult
 
 
 # -- ANSI helpers ------------------------------------------------------------
@@ -37,14 +37,14 @@ def _use_color() -> bool:
 
 
 class ConsoleFormatter:
-    """Formats a :class:`ComplianceReport` as a concise terminal summary."""
+    """Formats a :class:`CompatibilityReport` as a concise terminal summary."""
 
     def __init__(self, *, sut_url: str = "", spec_version: str = "", color: bool | None = None) -> None:
         self._sut_url = sut_url
         self._spec_version = spec_version
         self._color = color if color is not None else _use_color()
 
-    def format(self, report: ComplianceReport) -> str:
+    def format(self, report: CompatibilityReport) -> str:
         """Return a formatted console string."""
         lines: list[str] = []
         lines.append(self._header())
@@ -60,28 +60,28 @@ class ConsoleFormatter:
 
     def _header(self) -> str:
         rule = self._rule()
-        title = "A2A TCK Compliance Report"
+        title = "A2A TCK Compatibility Report"
         return f"{rule}\n{title:^55}\n{rule}"
 
-    def _metadata(self, report: ComplianceReport) -> str:
+    def _metadata(self, report: CompatibilityReport) -> str:
         parts = [f"SUT: {self._sut_url}"]
         if self._spec_version:
             parts.append(f"Spec Version: {self._spec_version}")
         parts.append(f"Timestamp: {report.timestamp}")
         return "\n".join(parts)
 
-    def _overall(self, report: ComplianceReport) -> str:
-        value = f"{report.overall_compliance:.1f}%"
+    def _overall(self, report: CompatibilityReport) -> str:
+        value = f"{report.overall_compatibility:.1f}%"
         if self._color:
-            if report.overall_compliance == _THRESHOLD_PERFECT:
+            if report.overall_compatibility == _THRESHOLD_PERFECT:
                 value = f"{_GREEN}{_BOLD}{value}{_RESET}"
-            elif report.overall_compliance >= _THRESHOLD_GOOD:
+            elif report.overall_compatibility >= _THRESHOLD_GOOD:
                 value = f"{_YELLOW}{_BOLD}{value}{_RESET}"
             else:
                 value = f"{_RED}{_BOLD}{value}{_RESET}"
-        return f"\nOVERALL COMPLIANCE: {value}"
+        return f"\nOVERALL COMPATIBILITY: {value}"
 
-    def _level_table(self, report: ComplianceReport) -> str:
+    def _level_table(self, report: CompatibilityReport) -> str:
         rows: list[tuple[str, int, int, int, int]] = []
         for level in ("MUST", "SHOULD", "MAY"):
             reqs = [r for r in report.per_requirement.values() if r.level == level]
@@ -105,7 +105,7 @@ class ConsoleFormatter:
         )
         return "\n".join(lines)
 
-    def _transport_summary(self, report: ComplianceReport) -> str:
+    def _transport_summary(self, report: CompatibilityReport) -> str:
         if not report.per_transport:
             return ""
         lines = ["\nBY TRANSPORT:"]
@@ -117,7 +117,7 @@ class ConsoleFormatter:
             lines.append(f"  {transport + ':':<14} {count} {marker}")
         return "\n".join(lines)
 
-    def _failed_requirements(self, report: ComplianceReport) -> str:
+    def _failed_requirements(self, report: CompatibilityReport) -> str:
         failed: dict[str, RequirementResult] = {
             req_id: req
             for req_id, req in report.per_requirement.items()

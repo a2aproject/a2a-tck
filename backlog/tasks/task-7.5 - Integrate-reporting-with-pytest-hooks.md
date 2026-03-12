@@ -31,19 +31,19 @@ Integrate the reporting system with pytest hooks for automatic report generation
 1. `pytest_runtest_makereport`:
    - Capture test results as they complete
    - Extract requirement ID and transport from test name
-   - Record to ComplianceCollector
+   - Record to CompatibilityCollector
 
 2. `pytest_sessionfinish`:
-   - Aggregate results using ComplianceAggregator
-   - Generate reports if --compliance-report specified
+   - Aggregate results using CompatibilityAggregator
+   - Generate reports if --compatibility-report specified
    - Print console summary
 
 3. `pytest_configure`:
-   - Initialize ComplianceCollector
+   - Initialize CompatibilityCollector
    - Set up report output paths
 
 **Integration with CLI**:
-- Honor --compliance-report path for output
+- Honor --compatibility-report path for output
 - Generate all formats (JSON, HTML) when report requested
 - Always show console summary at end
 <!-- SECTION:DESCRIPTION:END -->
@@ -52,7 +52,7 @@ Integrate the reporting system with pytest hooks for automatic report generation
 <!-- AC:BEGIN -->
 - [ ] #1 pytest_runtest_makereport hook captures results
 - [ ] #2 pytest_sessionfinish generates reports
-- [ ] #3 Reports are generated when --compliance-report is specified
+- [ ] #3 Reports are generated when --compatibility-report is specified
 - [ ] #4 Console summary is printed after test run
 - [ ] #5 Requirement ID and transport are extracted from test names
 - [ ] #6 Reports directory is created if it doesn't exist

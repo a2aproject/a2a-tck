@@ -212,18 +212,18 @@ class TestStreamEventOrdering:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-ORDER-001: Task states do not regress; last event is terminal."""
         req = STREAM_ORDER_001
         client = get_client(
             transport_clients, transport,
-            compliance_collector=compliance_collector, req=req,
+            compatibility_collector=compatibility_collector, req=req,
         )
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
             record(
-                collector=compliance_collector, req=req,
+                collector=compatibility_collector, req=req,
                 transport=transport, passed=False, skipped=True,
             )
             pytest.skip("Agent does not support streaming")
@@ -234,7 +234,7 @@ class TestStreamEventOrdering:
 
         passed = not errors
         record(
-            collector=compliance_collector, req=req,
+            collector=compatibility_collector, req=req,
             transport=transport, passed=passed, errors=errors,
         )
         assert passed, fail_msg(req, transport, "; ".join(errors))

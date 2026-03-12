@@ -11,11 +11,11 @@ tck/                        # Main package
   requirements/             # Requirement specs and error bindings
   transport/                # Implemenation of Transport clients
   validators/               # Response validators per transport
-  reporting/                # Compliance reporting
+  reporting/                # Compatibility reporting
 tests/
   unit/                     # Unit tests (no SUT needed)
   compatibility/            # Conformance tests (require running SUT)
-    conftest.py             # Fixtures: transport_clients, agent_card, compliance_collector
+    conftest.py             # Fixtures: transport_clients, agent_card, compatibility_collector
     markers.py              # Pytest marker aliases: grpc, jsonrpc, http_json, must, should, may
     core_operations/        # Cross-transport parametrized tests
     grpc/                   # gRPC-specific tests
@@ -43,7 +43,7 @@ All A2A bindings (for transport methods, error codes, etc.) are defined centrall
 
 - Transport-specific test classes use the corresponding marker decorator (`@grpc`, `@jsonrpc`, `@http_json` from `tests/compatibility/markers.py`)
 - Tests get clients via `transport_clients` fixture (dict keyed by transport name: `"grpc"`, `"jsonrpc"`, `"http_json"`)
-- Each test records results with `compliance_collector.record(requirement_id, transport, level, passed, errors)`
+- Each test records results with `compatibility_collector.record(requirement_id, transport, level, passed, errors)`
 
 ### Code Style
 
@@ -67,7 +67,7 @@ All A2A bindings (for transport methods, error codes, etc.) are defined centrall
 ## Skills
 
 - **update-a2a-spec** (`.agents/skills/update-a2a-spec/SKILL.md`): Step-by-step workflow for updating the TCK when the A2A protocol specification changes. Read the full skill file before starting an update.
-- **run-tck** (`.agents/skills/run-tck/SKILL.md`): Guide an SDK implementor through running the TCK against their System Under Test (SUT), diagnosing failures, and achieving compliance.
+- **run-tck** (`.agents/skills/run-tck/SKILL.md`): Guide an SDK implementor through running the TCK against their System Under Test (SUT), diagnosing failures, and achieving compatibility.
 - **learn-requirement** (`.agents/skills/learn-requirement/SKILL.md`): Learn about a specific TCK requirement — its definition, spec context, related tests, and what an SUT needs to do to satisfy it.
 - **diagnose-failure** (`.agents/skills/diagnose-failure/SKILL.md`): Diagnose a TCK requirement failure and draft a GitHub issue with requirement context, failure details, and a curl reproducer.
 

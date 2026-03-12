@@ -85,5 +85,5 @@ Present a concise summary to the user:
 
 1. **What it requires** — plain-language explanation of the requirement
 2. **Why it matters** — the purpose in the context of the A2A protocol
-3. **How it's tested** — what the TCK does to verify compliance
+3. **How it's tested** — what the TCK does to verify compatibility
 4. **How to pass** — what an SUT implementation needs to do to satisfy this requirement

@@ -111,14 +111,14 @@ def _get_base_url(
     transport_clients: dict[str, BaseTransportClient],
     transport: str,
     *,
-    compliance_collector: Any = None,
+    compatibility_collector: Any = None,
     req: Any = None,
 ) -> str:
     """Get the base URL for a transport client."""
     client = transport_clients.get(transport)
     if client is None:
-        if compliance_collector is not None and req is not None:
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+        if compatibility_collector is not None and req is not None:
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
         pytest.skip(f"{transport} transport not configured")
     return client.base_url
 
@@ -136,12 +136,12 @@ class TestCoreErrorStructure:
     def test_error_has_code_and_message_jsonrpc(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSON-RPC error responses include code and message."""
         req = CORE_ERR_001
         transport = "jsonrpc"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _jsonrpc_call(base_url, "NonExistentMethod", {})
         body = response.json()
         if "error" not in body:
@@ -152,23 +152,23 @@ class TestCoreErrorStructure:
             errors.append("JSON-RPC error must have 'code'")
         if "message" not in error:
             errors.append("JSON-RPC error must have 'message'")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_error_has_code_and_message_rest(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """REST error responses include error information."""
         req = CORE_ERR_001
         transport = "http_json"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _rest_call(base_url, "GET", "/tasks/tck-nonexistent-error-test")
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error status, got {response.status_code}"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
@@ -181,33 +181,33 @@ class TestCoreInputValidation:
     def test_malformed_request_rejected_jsonrpc(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Send a SendMessage with missing required 'message' field."""
         req = CORE_ERR_002
         transport = "jsonrpc"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _jsonrpc_call(base_url, "SendMessage", {})
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Malformed request must return an error"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
     def test_malformed_request_rejected_rest(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Send a POST to /message:send with empty body."""
         req = CORE_ERR_002
         transport = "http_json"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _rest_call(base_url, "POST", "/message:send", json_body={})
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error status, got {response.status_code}"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
@@ -226,16 +226,16 @@ class TestCapabilityPushNotifications:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Push notification operations must return error when unsupported."""
         req = CORE_CAP_001
         transport = "jsonrpc"
         caps = agent_card.get("capabilities", {})
         if caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports push notifications")
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _jsonrpc_call(
             base_url,
             "CreateTaskPushNotificationConfig",
@@ -244,7 +244,7 @@ class TestCapabilityPushNotifications:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected error for unsupported push notifications"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
@@ -252,16 +252,16 @@ class TestCapabilityPushNotifications:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Push notification operations must return error when unsupported (REST)."""
         req = CORE_CAP_001
         transport = "http_json"
         caps = agent_card.get("capabilities", {})
         if caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports push notifications")
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _rest_call(
             base_url,
             "POST",
@@ -270,7 +270,7 @@ class TestCapabilityPushNotifications:
         )
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported push, got {response.status_code}"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
@@ -284,16 +284,16 @@ class TestCapabilityStreaming:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Streaming operations must return error when unsupported."""
         req = CORE_CAP_002
         transport = "jsonrpc"
         caps = agent_card.get("capabilities", {})
         if caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports streaming")
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "stream test"}],
@@ -305,7 +305,7 @@ class TestCapabilityStreaming:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected error for unsupported streaming"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
@@ -319,21 +319,21 @@ class TestCapabilityExtendedCard:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Extended agent card must return error when unsupported."""
         req = CORE_CAP_003
         transport = "jsonrpc"
         caps = agent_card.get("capabilities", {})
         if caps.get("extendedAgentCard"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports extended agent card")
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _jsonrpc_call(base_url, "GetExtendedAgentCard", {})
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected error for unsupported extended card"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
@@ -351,12 +351,12 @@ class TestVersionErrors:
     def test_unsupported_version_returns_error_jsonrpc(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """VER-SERVER-002: Unsupported A2A-Version returns VersionNotSupportedError."""
         req = VER_SERVER_002
         transport = "jsonrpc"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version test"}],
@@ -371,19 +371,19 @@ class TestVersionErrors:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected VersionNotSupportedError for A2A-Version: 99.0"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
     def test_unsupported_version_returns_error_rest(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """VER-SERVER-002: Unsupported A2A-Version returns error via REST."""
         req = VER_SERVER_002
         transport = "http_json"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version test"}],
@@ -398,19 +398,19 @@ class TestVersionErrors:
         )
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported version, got {response.status_code}"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
     def test_empty_version_treated_as_default_jsonrpc(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """VER-SERVER-003: Empty A2A-Version treated as 0.3 (should succeed)."""
         req = VER_SERVER_003
         transport = "jsonrpc"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "empty version test"}],
@@ -427,7 +427,7 @@ class TestVersionErrors:
         # a valid result or a well-formed error — never crash.
         passed = "result" in body or "error" in body
         errors = [] if passed else ["Server must return result or error for empty A2A-Version"]
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, errors[0])
 
@@ -456,12 +456,12 @@ class TestJsonRpcErrorStructure:
     def test_error_object_structure(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSONRPC-ERR-001: Error object has code, message, optional data."""
         req = JSONRPC_ERR_001
         transport = "jsonrpc"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _jsonrpc_call(
             base_url, "GetTask", {"id": "tck-nonexistent-err-test"}
         )
@@ -474,19 +474,19 @@ class TestJsonRpcErrorStructure:
             jsonschema.validate(error, _JSONRPC_ERROR_SCHEMA)
         except jsonschema.ValidationError as exc:
             errors.append(exc.message)
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_a2a_error_codes_in_range(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSONRPC-ERR-002: A2A-specific errors use codes -32001 to -32099."""
         req = JSONRPC_ERR_002
         transport = "jsonrpc"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _jsonrpc_call(
             base_url, "GetTask", {"id": "tck-nonexistent-err-range"}
         )
@@ -509,19 +509,19 @@ class TestJsonRpcErrorStructure:
                 f"or standard JSON-RPC range "
                 f"({_JSONRPC_ERROR_CODE_MAX} to {_JSONRPC_ERROR_CODE_MIN})"
             )
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_a2a_error_type_mappings(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSONRPC-SSE-002: A2A error types mapped to correct JSON-RPC error codes."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         # Trigger TaskNotFoundError (expected code: -32001)
         response = _jsonrpc_call(
             base_url, "GetTask", {"id": "tck-nonexistent-mapping-test"}
@@ -535,7 +535,7 @@ class TestJsonRpcErrorStructure:
             errors.append(
                 f"TaskNotFoundError should map to -32001, got {code}"
             )
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -553,12 +553,12 @@ class TestRestErrorStructure:
     def test_error_uses_problem_details(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """HTTP_JSON-ERR-001: Error responses use RFC 9457 Problem Details."""
         req = HTTP_JSON_ERR_001
         transport = "http_json"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _rest_call(
             base_url, "GET", "/tasks/tck-nonexistent-pd-test"
         )
@@ -572,21 +572,24 @@ class TestRestErrorStructure:
             )
         else:
             body = response.json()
-            if "type" not in body and "title" not in body:
-                errors.append("Problem Details must have 'type' or 'title'")
-        record(collector=compliance_collector, req=req, transport=transport,
+            if "type" not in body:
+                errors.append(
+                    "A2A error response must include 'type' with the "
+                    "error URI from Section 5.4 Error Code Mappings"
+                )
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
     def test_a2a_error_type_uri(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """HTTP_JSON-ERR-002: A2A errors use specified type URIs."""
         req = HTTP_JSON_ERR_002
         transport = "http_json"
-        base_url = _get_base_url(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        base_url = _get_base_url(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = _rest_call(
             base_url, "GET", "/tasks/tck-nonexistent-uri-test"
         )
@@ -602,7 +605,7 @@ class TestRestErrorStructure:
             errors.append(
                 f"Error type URI must start with https://, got: {error_type!r}"
             )
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -620,14 +623,14 @@ class TestGrpcErrorStructure:
     def test_grpc_error_for_nonexistent_task(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """GRPC-ERR-001: A2A errors include ErrorInfo in status details."""
         req = GRPC_ERR_001
         transport = "grpc"
         client = transport_clients.get(transport)
         if client is None:
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("gRPC transport not configured")
         response = client.get_task(id="tck-nonexistent-grpc-err")
         errors = []
@@ -635,6 +638,6 @@ class TestGrpcErrorStructure:
             errors.append("Expected error for nonexistent task")
         elif response.error is None:
             errors.append("Error message must be present")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))

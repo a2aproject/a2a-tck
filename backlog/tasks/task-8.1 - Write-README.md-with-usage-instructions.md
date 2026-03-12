@@ -42,7 +42,7 @@ Write comprehensive README documentation for the A2A TCK.
    - Examples for common use cases
 
 5. **Understanding Results**:
-   - Compliance levels (MUST/SHOULD/MAY)
+   - Compatibility levels (MUST/SHOULD/MAY)
    - Report formats
    - Interpreting failures
 
@@ -66,6 +66,6 @@ Write comprehensive README documentation for the A2A TCK.
 - [ ] #3 Installation instructions are complete and accurate
 - [ ] #4 Quick start example is provided
 - [ ] #5 All CLI options are documented
-- [ ] #6 Compliance levels are explained
+- [ ] #6 Compatibility levels are explained
 - [ ] #7 Transport support is documented
 <!-- AC:END -->

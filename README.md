@@ -44,7 +44,7 @@ Run a specific transport and generate reports:
 | `--sut-host URL` | **(required)** Base URL of the System Under Test |
 | `--transport LIST` | Comma-separated transport filter (e.g. `grpc`, `jsonrpc,http_json`). Default: all transports declared in the agent card |
 | `--level LEVEL` | Run only requirements at a specific RFC 2119 level: `must`, `should`, or `may` |
-| `--report` | Generate all reports in `reports/` (compliance JSON + HTML, pytest-html, JUnit XML) |
+| `--report` | Generate all reports in `reports/` (compatibility JSON + HTML, pytest-html, JUnit XML) |
 | `-v, --verbose` | Verbose pytest output |
 | `--verbose-log` | Verbose output with log capture (`-v -s --log-cli-level=INFO`) |
 | `-- pytest_args...` | Additional arguments passed through to pytest (e.g. `-- -x --pdb`) |
@@ -65,14 +65,14 @@ Run a specific transport and generate reports:
 ./run_tck.py --sut-host http://localhost:9999 -- -x --pdb
 ```
 
-## Compliance Levels
+## Compatibility Levels
 
 Tests are organized by [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) requirement levels:
 
 | Level | Meaning | Test behavior |
 |-------|---------|---------------|
 | **MUST** | Absolute requirement | Hard failure if not met |
-| **SHOULD** | Expected unless there is a valid reason to differ | Expected failure (`xfail`), does not block compliance |
+| **SHOULD** | Expected unless there is a valid reason to differ | Expected failure (`xfail`), does not block compatibility |
 | **MAY** | Truly optional | Skipped if the agent doesn't declare the capability |
 
 Use `--level` to run only a specific level:
@@ -101,8 +101,8 @@ The `--report` flag generates all reports in the `reports/` directory:
 
 | Report | File | Description |
 |--------|------|-------------|
-| Compliance JSON | `reports/compliance.json` | Machine-readable compliance results with per-requirement and per-transport breakdowns |
-| Compliance HTML | `reports/compliance.html` | Self-contained HTML report with executive summary, agent card details, and test results |
+| Compatibility JSON | `reports/compatibility.json` | Machine-readable compatibility results with per-requirement and per-transport breakdowns |
+| Compatibility HTML | `reports/compatibility.html` | Self-contained HTML report with executive summary, agent card details, and test results |
 | pytest HTML | `reports/tck_report.html` | Standard pytest-html report |
 | JUnit XML | `reports/junitreport.xml` | JUnit XML for CI integration |
 

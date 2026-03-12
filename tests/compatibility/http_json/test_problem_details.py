@@ -85,11 +85,11 @@ class TestProblemDetailsFormat:
     def test_error_content_type(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Error response has Content-Type: application/problem+json."""
         req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
 
         headers = response.headers or {}
@@ -108,7 +108,7 @@ class TestProblemDetailsFormat:
             ]
         )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=valid,
@@ -119,11 +119,11 @@ class TestProblemDetailsFormat:
     def test_required_fields_present(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Body contains required fields: type, title, status."""
         req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -134,7 +134,7 @@ class TestProblemDetailsFormat:
             errors.append(str(exc))
 
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=not errors,
@@ -145,11 +145,11 @@ class TestProblemDetailsFormat:
     def test_status_field_matches_http_status(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """The ``status`` field value equals the HTTP response status code."""
         req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -168,7 +168,7 @@ class TestProblemDetailsFormat:
             ]
         )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=valid,
@@ -179,11 +179,11 @@ class TestProblemDetailsFormat:
     def test_optional_fields_valid(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """If ``detail`` or ``instance`` are present, they must be strings."""
         req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -198,7 +198,7 @@ class TestProblemDetailsFormat:
             )
 
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=not errors,
@@ -220,11 +220,11 @@ class TestProblemDetailsTypeUri:
     def test_type_is_a2a_error_uri(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """The ``type`` field matches one of the spec-defined A2A error URIs."""
         req = HTTP_JSON_ERR_002
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -238,7 +238,7 @@ class TestProblemDetailsTypeUri:
             ]
         )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=valid,
@@ -249,11 +249,11 @@ class TestProblemDetailsTypeUri:
     def test_type_uri_matches_error_condition(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """For a TaskNotFound trigger, type must be the task-not-found URI."""
         req = HTTP_JSON_ERR_002
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
         body = _get_problem_body(response)
 
@@ -269,7 +269,7 @@ class TestProblemDetailsTypeUri:
             ]
         )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=valid,
