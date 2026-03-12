@@ -19,6 +19,7 @@ from tck.transport import ALL_TRANSPORTS
 from tck.transport.base import StreamingResponse
 from tck.transport.dispatch import execute_operation
 from tck.validators.error_binding import validate_expected_error
+from tck.validators.streaming import validate_streaming_events
 from tests.compatibility.markers import may, must, should
 
 
@@ -67,14 +68,7 @@ def _validate_response(
         if not response.success:
             errors.append(f"Streaming operation failed: {response.error}")
         else:
-            try:
-                first_event = next(response.events)
-                if first_event is None:
-                    errors.append("Streaming response yielded None as first event")
-            except StopIteration:
-                errors.append("Streaming response produced no events")
-            except Exception as exc:
-                errors.append(f"Streaming iteration failed: {exc}")
+            errors.extend(validate_streaming_events(response))
         return errors
 
     # Non-streaming: check success flag
