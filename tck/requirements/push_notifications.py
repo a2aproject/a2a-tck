@@ -15,7 +15,6 @@ from tck.requirements.base import (
     OperationType,
     RequirementLevel,
     RequirementSpec,
-    tck_id,
 )
 from tck.requirements.tags import (
     AUTH,
@@ -51,16 +50,6 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Webhook endpoint created and config returned with ID",
         spec_url=f"{SPEC_BASE}317-create-push-notification-config",
         tags=[PUSH_NOTIFICATION, CREATE, MULTI_OPERATION],
-        sample_input={
-            "task_id": tck_id("existing-push-create-001"),
-            "config": {
-                "url": "https://example.com/tck/notifications",
-                "authentication": {
-                    "scheme": "Bearer",
-                    "credentials": "tck-test-token",
-                },
-            },
-        },
     ),
     RequirementSpec(
         id="PUSH-CREATE-002",
@@ -76,16 +65,6 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Config persists across multiple task updates",
         spec_url=f"{SPEC_BASE}317-create-push-notification-config",
         tags=[PUSH_NOTIFICATION, CREATE, MULTI_OPERATION],
-        sample_input={
-            "task_id": tck_id("existing-push-create-002"),
-            "config": {
-                "url": "https://example.com/tck/notifications/persist",
-                "authentication": {
-                    "scheme": "Bearer",
-                    "credentials": "tck-test-token",
-                },
-            },
-        },
     ),
     # --- Get Push Notification Config (Section 3.1.8) ---
     RequirementSpec(
@@ -136,7 +115,6 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="All active configs returned for task",
         spec_url=f"{SPEC_BASE}319-list-push-notification-configs",
         tags=[PUSH_NOTIFICATION, LIST, MULTI_OPERATION],
-        sample_input={"task_id": tck_id("existing-push-list-001")},
     ),
     # --- Delete Push Notification Config (Section 3.1.10) ---
     RequirementSpec(
@@ -154,7 +132,6 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Config permanently removed, no further notifications",
         spec_url=f"{SPEC_BASE}3110-delete-push-notification-config",
         tags=[PUSH_NOTIFICATION, DELETE, MULTI_OPERATION],
-        sample_input={"task_id": tck_id("existing-push-del-001"), "id": tck_id("push-cfg-001")},
     ),
     RequirementSpec(
         id="PUSH-DEL-002",
@@ -171,10 +148,6 @@ PUSH_NOTIFICATION_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Repeated deletions succeed without error",
         spec_url=f"{SPEC_BASE}3110-delete-push-notification-config",
         tags=[PUSH_NOTIFICATION, DELETE, IDEMPOTENT, MULTI_OPERATION],
-        sample_input={
-            "task_id": tck_id("existing-push-del-002"),
-            "id": tck_id("push-cfg-idempotent"),
-        },
     ),
     # --- Webhook Delivery (Section 4.3.3) ---
     RequirementSpec(

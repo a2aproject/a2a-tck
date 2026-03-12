@@ -217,7 +217,6 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Current task state returned with status and artifacts",
         spec_url=f"{SPEC_BASE}313-get-task",
         tags=[CORE, GET_TASK, MULTI_OPERATION],
-        sample_input={"id": tck_id("existing-get-001")},
     ),
     RequirementSpec(
         id="CORE-GET-002",
@@ -345,7 +344,6 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Updated Task with cancellation status returned",
         spec_url=f"{SPEC_BASE}315-cancel-task",
         tags=[CORE, CANCEL_TASK, MULTI_OPERATION],
-        sample_input={"id": tck_id("cancelable-cancel-001")},
     ),
     RequirementSpec(
         id="CORE-CANCEL-002",
@@ -362,7 +360,6 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="TaskNotCancelableError returned",
         spec_url=f"{SPEC_BASE}315-cancel-task",
         tags=[CORE, CANCEL_TASK, ERROR, MULTI_OPERATION],
-        sample_input={"id": tck_id("terminal-cancel-002")},
     ),
     RequirementSpec(
         id="CORE-CANCEL-003",
@@ -667,14 +664,6 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="contextId inferred from referenced task",
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
         tags=[CORE, MULTI_TURN, MULTI_OPERATION],
-        sample_input={
-            "message": {
-                "role": "ROLE_USER",
-                "parts": [{"text": "Follow-up with taskId only"}],
-                "messageId": tck_id("multi-005"),
-                "taskId": tck_id("existing-multi-005"),
-            },
-        },
     ),
     RequirementSpec(
         id="CORE-MULTI-006",
@@ -691,14 +680,5 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Error returned for mismatching contextId/taskId",
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
         tags=[CORE, MULTI_TURN, ERROR, MULTI_OPERATION],
-        sample_input={
-            "message": {
-                "role": "ROLE_USER",
-                "parts": [{"text": "Mismatched context"}],
-                "messageId": tck_id("multi-006"),
-                "taskId": tck_id("existing-multi-006"),
-                "contextId": tck_id("wrong-context"),
-            },
-        },
     ),
 ]
