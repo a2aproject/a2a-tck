@@ -27,11 +27,13 @@ Run the full conformance suite against your A2A agent:
 ./run_tck.py --sut-host http://localhost:9999
 ```
 
-Run a specific transport and generate reports:
+Run a specific transport:
 
 ```bash
-./run_tck.py --sut-host http://localhost:9999 --transport grpc --report
+./run_tck.py --sut-host http://localhost:9999 --transport grpc
 ```
+
+Compatibility reports are generated in the `reports/` directory after every run.
 
 ## CLI Reference
 
@@ -44,7 +46,6 @@ Run a specific transport and generate reports:
 | `--sut-host URL` | **(required)** Base URL of the System Under Test |
 | `--transport LIST` | Comma-separated transport filter (e.g. `grpc`, `jsonrpc,http_json`). Default: all transports declared in the agent card |
 | `--level LEVEL` | Run only requirements at a specific RFC 2119 level: `must`, `should`, or `may` |
-| `--report` | Generate all reports in `reports/` (compatibility JSON + HTML, pytest-html, JUnit XML) |
 | `-v, --verbose` | Verbose pytest output |
 | `--verbose-log` | Verbose output with log capture (`-v -s --log-cli-level=INFO`) |
 | `-- pytest_args...` | Additional arguments passed through to pytest (e.g. `-- -x --pdb`) |
@@ -57,9 +58,6 @@ Run a specific transport and generate reports:
 
 # Run gRPC and JSON-RPC transports with verbose output
 ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
-
-# Generate all reports
-./run_tck.py --sut-host http://localhost:9999 --report
 
 # Pass extra pytest flags
 ./run_tck.py --sut-host http://localhost:9999 -- -x --pdb
@@ -97,7 +95,7 @@ Transport selection is driven by the agent card's `supportedInterfaces`. The TCK
 
 ## Reports
 
-The `--report` flag generates all reports in the `reports/` directory:
+Reports are always generated in the `reports/` directory after every run:
 
 | Report | File | Description |
 |--------|------|-------------|
