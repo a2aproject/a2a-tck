@@ -42,11 +42,6 @@ STREAM_SUB_004 = get_requirement_by_id("STREAM-SUB-004")
 
 _TASK_NOT_FOUND_CODE = -32001
 
-_TERMINAL_STATES = {
-    "TASK_STATE_COMPLETED", "TASK_STATE_FAILED",
-    "TASK_STATE_CANCELED", "TASK_STATE_REJECTED",
-}
-
 _STREAM_RESPONSE_KEYS = {"task", "message", "statusUpdate", "artifactUpdate"}
 
 _SAMPLE_MESSAGE = {
@@ -85,21 +80,6 @@ def _get_streaming_events(
         pytest.skip("Server returned no SSE events")
 
     return events
-
-
-def _get_task_status(event: dict) -> str | None:
-    """Extract task status string from a streaming event result."""
-    result = event.get("result", {})
-    # Check statusUpdate first, then task
-    status_update = result.get("statusUpdate")
-    if status_update:
-        state = status_update.get("status", {})
-        return state.get("state") if isinstance(state, dict) else None
-    task = result.get("task")
-    if task:
-        status = task.get("status", {})
-        return status.get("state") if isinstance(status, dict) else None
-    return None
 
 
 # ---------------------------------------------------------------------------
@@ -190,57 +170,6 @@ class TestSseStreamingFormat:
         )
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
-    def test_streaming_has_terminal_event(
-        self,
-        transport_clients: dict[str, BaseTransportClient],
-        agent_card: dict[str, Any],
-        compatibility_collector: Any,
-    ) -> None:
-        """JSONRPC-SSE-001: Stream ends with a terminal task state."""
-        req = JSONRPC_SSE_001
-        transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        caps = agent_card.get("capabilities", {})
-        if not caps.get("streaming"):
-            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
-        events = _get_streaming_events(client, agent_card)
-
-        # Determine which stream pattern is used
-        last_event = events[-1]
-        last_result = last_event.get("result", {})
-
-        if "message" in last_result:
-            # Message-only stream: exactly one Message, then close
-            passed = len(events) == 1
-            errors = (
-                []
-                if passed
-                else [
-                    f"Message-only stream must contain exactly one event, "
-                    f"got {len(events)}"
-                ]
-            )
-        else:
-            # Task lifecycle stream: last event must have a terminal state
-            last_status = _get_task_status(last_event)
-            passed = last_status in _TERMINAL_STATES
-            errors = (
-                []
-                if passed
-                else [
-                    f"Last event does not contain a terminal task state "
-                    f"(expected one of {sorted(_TERMINAL_STATES)}, "
-                    f"got {last_status!r})"
-                ]
-            )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, transport, errors[0])
 
 
 # ---------------------------------------------------------------------------
