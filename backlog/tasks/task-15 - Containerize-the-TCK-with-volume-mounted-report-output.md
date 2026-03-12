@@ -1,10 +1,10 @@
 ---
 id: TASK-15
 title: Containerize the TCK with volume-mounted report output
-status: Done
+status: To Do
 assignee: []
 created_date: '2026-03-12 09:53'
-updated_date: '2026-03-12 10:02'
+updated_date: '2026-03-12 15:22'
 labels:
   - container
   - infrastructure
