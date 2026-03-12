@@ -1,15 +1,16 @@
 ---
-id: task-8.2
+id: TASK-8.2
 title: Write CONTRIBUTING.md development guide
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:14'
+updated_date: '2026-03-12 09:15'
 labels:
   - phase-8
   - documentation
   - contributing
 dependencies: []
-parent_task_id: task-8
+parent_task_id: TASK-8
 priority: medium
 ---
 
@@ -60,10 +61,10 @@ Write the contributing guide for developers who want to extend or modify the TCK
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 CONTRIBUTING.md exists in project root
-- [ ] #2 Development setup instructions are complete
-- [ ] #3 Code style guidelines are documented
-- [ ] #4 Process for adding requirements is explained
-- [ ] #5 Process for adding tests is explained
-- [ ] #6 PR process is documented
+- [x] #1 CONTRIBUTING.md exists in project root
+- [x] #2 Development setup instructions are complete
+- [x] #3 Code style guidelines are documented
+- [x] #4 Process for adding requirements is explained
+- [x] #5 Process for adding tests is explained
+- [x] #6 PR process is documented
 <!-- AC:END -->
