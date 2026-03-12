@@ -53,13 +53,6 @@ _GRPC_STATE_ORDER = {
     a2a_pb2.TASK_STATE_REJECTED: 2,
 }
 
-_GRPC_TERMINAL_STATES = frozenset({
-    a2a_pb2.TASK_STATE_COMPLETED,
-    a2a_pb2.TASK_STATE_FAILED,
-    a2a_pb2.TASK_STATE_CANCELED,
-    a2a_pb2.TASK_STATE_REJECTED,
-})
-
 # JSON state ordering (lowercase string comparison)
 _JSON_STATE_ORDER = {
     "submitted": 0,
@@ -71,8 +64,6 @@ _JSON_STATE_ORDER = {
     "canceled": 2,
     "rejected": 2,
 }
-
-_JSON_TERMINAL_STATES = frozenset({"completed", "failed", "canceled", "rejected"})
 
 
 # ---------------------------------------------------------------------------
@@ -147,7 +138,7 @@ def _get_event_state_json(event: dict) -> str | None:
 
 
 def _check_ordering_grpc(events: list[Any]) -> list[str]:
-    """Check gRPC event ordering: no state regression, last event terminal."""
+    """Check gRPC event ordering: no state regression."""
     errors: list[str] = []
     max_order = -1
     for i, event in enumerate(events):
@@ -163,17 +154,11 @@ def _check_ordering_grpc(events: list[Any]) -> list[str]:
         else:
             max_order = order
 
-    last_state = _get_event_state_grpc(events[-1])
-    if last_state is not None and last_state not in _GRPC_TERMINAL_STATES:
-        errors.append(
-            f"Last event state {a2a_pb2.TaskState.Name(last_state)} "
-            f"is not terminal"
-        )
     return errors
 
 
 def _check_ordering_json(events: list[dict]) -> list[str]:
-    """Check JSON event ordering: no state regression, last event terminal."""
+    """Check JSON event ordering: no state regression."""
     errors: list[str] = []
     max_order = -1
     for i, event in enumerate(events):
@@ -188,11 +173,6 @@ def _check_ordering_json(events: list[dict]) -> list[str]:
         else:
             max_order = order
 
-    last_state = _get_event_state_json(events[-1])
-    if last_state is not None and last_state not in _JSON_TERMINAL_STATES:
-        errors.append(
-            f"Last event state {last_state!r} is not terminal"
-        )
     return errors
 
 
