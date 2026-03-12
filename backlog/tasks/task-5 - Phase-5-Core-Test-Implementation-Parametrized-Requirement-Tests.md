@@ -40,5 +40,5 @@ Implement the core parametrized test framework that runs each requirement across
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-All subtasks completed: conftest.py fixtures (TASK-5.1), parametrized requirement tests (TASK-5.2), ComplianceCollector (TASK-5.3), custom pytest markers (TASK-5.4), and CLI runner (TASK-5.5).
+All subtasks completed: conftest.py fixtures (TASK-5.1), parametrized requirement tests (TASK-5.2), CompatibilityCollector (TASK-5.3), custom pytest markers (TASK-5.4), and CLI runner (TASK-5.5).
 <!-- SECTION:FINAL_SUMMARY:END -->

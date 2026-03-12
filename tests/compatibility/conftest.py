@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 import pytest
 
-from tck.reporting.collector import ComplianceCollector
+from tck.reporting.collector import CompatibilityCollector
 from tck.transport.grpc_client import GrpcClient
 from tck.transport.http_json_client import HttpJsonClient
 from tck.transport.jsonrpc_client import JsonRpcClient
@@ -37,7 +37,7 @@ _TRANSPORT_MARKERS = {"grpc", "jsonrpc", "http_json"}
 _REQUIREMENT_ID_RE = re.compile(r"([A-Z][A-Z0-9_]+-[A-Z]+-\d+)")
 
 # Stash keys for sharing data between fixtures and hooks.
-_collector_key = pytest.StashKey[ComplianceCollector]()
+_collector_key = pytest.StashKey[CompatibilityCollector]()
 _agent_card_key = pytest.StashKey[dict]()
 _record_count_key = pytest.StashKey[int]()
 
@@ -61,10 +61,10 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         ),
     )
     group.addoption(
-        "--compliance-report",
-        dest="compliance_report",
+        "--compatibility-report",
+        dest="compatibility_report",
         default=None,
-        help="Output path for the compliance report.",
+        help="Output path for the compatibility report.",
     )
 
 
@@ -169,13 +169,13 @@ def validators() -> dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def compliance_collector(request: pytest.FixtureRequest) -> ComplianceCollector:
-    """Return a compliance result collector.
+def compatibility_collector(request: pytest.FixtureRequest) -> CompatibilityCollector:
+    """Return a compatibility result collector.
 
     The collector is stashed on the config so that ``pytest_sessionfinish``
     can access it without touching private attributes.
     """
-    collector = ComplianceCollector()
+    collector = CompatibilityCollector()
     request.config.stash[_collector_key] = collector
     return collector
 
@@ -226,11 +226,11 @@ def _extract_requirement_and_transport(
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo[None]
 ) -> Any:
-    """Auto-record a compliance failure when a test crashes without calling ``record()``."""
+    """Auto-record a compatibility failure when a test crashes without calling ``record()``."""
     outcome = yield
     report: pytest.TestReport = outcome.get_result()
 
-    collector: ComplianceCollector | None = item.config.stash.get(
+    collector: CompatibilityCollector | None = item.config.stash.get(
         _collector_key, None
     )
     if collector is None:
@@ -279,19 +279,19 @@ def pytest_runtest_makereport(
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    """Write compliance reports and print console summary at session end."""
+    """Write compatibility reports and print console summary at session end."""
     collector = session.config.stash.get(_collector_key, None)
     if collector is None or not collector.get_results():
         return
 
-    from tck.reporting.aggregator import ComplianceAggregator
+    from tck.reporting.aggregator import CompatibilityAggregator
     from tck.reporting.console_formatter import ConsoleFormatter
     from tck.reporting.html_formatter import HTMLFormatter
     from tck.reporting.json_formatter import JSONFormatter
 
     sut_url: str = session.config.getoption("--sut-host", default="")
     agent_card = session.config.stash.get(_agent_card_key, None)
-    report = ComplianceAggregator(collector, agent_card=agent_card).aggregate()
+    report = CompatibilityAggregator(collector, agent_card=agent_card).aggregate()
 
     # Always print console summary
     console = ConsoleFormatter(sut_url=sut_url)
@@ -300,9 +300,9 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         console.format(report)
     )
 
-    # Write file report if --compliance-report was given
+    # Write file report if --compatibility-report was given
     report_path_str: str | None = session.config.getoption(
-        "--compliance-report", default=None
+        "--compatibility-report", default=None
     )
     if not report_path_str:
         return

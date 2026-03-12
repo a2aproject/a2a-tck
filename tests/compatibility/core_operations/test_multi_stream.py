@@ -165,16 +165,16 @@ class TestMultiStreamOrdering:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-ORDER-002: Events are broadcast to all active streams."""
         req = STREAM_ORDER_002
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         event_lists = _subscribe_parallel(client, info.task_id, n=2)
@@ -185,7 +185,7 @@ class TestMultiStreamOrdering:
                 errors.append(f"Stream {i} received no events")
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_streams_receive_same_events_in_order(
@@ -193,16 +193,16 @@ class TestMultiStreamOrdering:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-ORDER-003: Each stream receives the same events in the same order."""
         req = STREAM_ORDER_003
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         event_lists = _subscribe_parallel(client, info.task_id, n=2)
@@ -227,7 +227,7 @@ class TestMultiStreamOrdering:
                 )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_closing_one_stream_does_not_affect_others(
@@ -235,16 +235,16 @@ class TestMultiStreamOrdering:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-ORDER-004: Closing one stream does not affect other active streams."""
         req = STREAM_ORDER_004
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         event_lists = _subscribe_parallel(
@@ -263,5 +263,5 @@ class TestMultiStreamOrdering:
             errors.append("Stream 1 received no events after stream 0 was closed")
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))

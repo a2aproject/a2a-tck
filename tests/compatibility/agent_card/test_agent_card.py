@@ -1,6 +1,6 @@
 """Agent card structure validation tests.
 
-Tests the agent card fixture directly for structural compliance
+Tests the agent card fixture directly for structural compatibility
 with the A2A specification. No transport operations needed.
 
 Requirements tested:
@@ -87,7 +87,7 @@ class TestAgentCardDiscovery:
     def test_agent_card_retrievable(
         self,
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Agent card must be retrievable at the well-known URL."""
         req = CARD_DISC_001
@@ -96,7 +96,7 @@ class TestAgentCardDiscovery:
             errors.append("Agent card could not be retrieved")
         elif not isinstance(agent_card, dict):
             errors.append("Agent card is not a JSON object")
-        _record(collector=compliance_collector, req=req,
+        _record(collector=compatibility_collector, req=req,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))
 
@@ -110,20 +110,20 @@ class TestAgentCardStructure:
         self,
         agent_card: dict[str, Any],
         validators: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Agent card must validate against the Agent Card JSON schema."""
         req = CARD_STRUCT_001
         json_validator: JSONSchemaValidator = validators["http_json"]
         result = json_validator.validate(agent_card, "Agent Card")
-        _record(collector=compliance_collector, req=req,
+        _record(collector=compatibility_collector, req=req,
                 passed=result.valid, errors=result.errors)
         assert result.valid, _fail_msg(req, "; ".join(result.errors))
 
     def test_required_fields_present(
         self,
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """All required AgentCard fields must be present."""
         req = CARD_STRUCT_001
@@ -131,7 +131,7 @@ class TestAgentCardStructure:
         errors = []
         if missing:
             errors.append(f"Missing required fields: {missing}")
-        _record(collector=compliance_collector, req=req,
+        _record(collector=compatibility_collector, req=req,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))
 
@@ -144,7 +144,7 @@ class TestAgentCardProtocol:
     def test_supported_interfaces_non_empty(
         self,
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """CARD-PROTO-001: supportedInterfaces must be a non-empty list."""
         req = CARD_PROTO_001
@@ -154,7 +154,7 @@ class TestAgentCardProtocol:
             errors.append("supportedInterfaces must be a list")
         elif len(interfaces) == 0:
             errors.append("supportedInterfaces must not be empty")
-        _record(collector=compliance_collector, req=req,
+        _record(collector=compatibility_collector, req=req,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))
 
@@ -162,7 +162,7 @@ class TestAgentCardProtocol:
         self,
         agent_card: dict[str, Any],
         validators: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """CARD-PROTO-002: Each interface must validate against AgentInterface schema."""
         req = CARD_PROTO_002
@@ -173,7 +173,7 @@ class TestAgentCardProtocol:
             result = json_validator.validate(iface, "Agent Interface")
             for err in result.errors:
                 errors.append(f"Interface [{i}]: {err}")
-        _record(collector=compliance_collector, req=req,
+        _record(collector=compatibility_collector, req=req,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))
 
@@ -186,7 +186,7 @@ class TestBindingFieldDeclaration:
     def test_all_protocols_declared(
         self,
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """All protocols the agent supports must be declared in supportedInterfaces."""
         req = BIND_FIELD_001
@@ -200,6 +200,6 @@ class TestBindingFieldDeclaration:
         errors = []
         if len(bindings) < 1:
             errors.append("At least one protocol binding must be declared")
-        _record(collector=compliance_collector, req=req,
+        _record(collector=compatibility_collector, req=req,
                 passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))

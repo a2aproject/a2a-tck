@@ -1,6 +1,6 @@
 # A2A SDK Validation Guide
 
-This guide helps SDK developers understand how to use the A2A Technology Compatibility Kit (TCK) to validate their implementations and achieve A2A specification compliance.
+This guide helps SDK developers understand how to use the A2A Technology Compatibility Kit (TCK) to validate their implementations and achieve A2A specification compatibility.
 
 ## Quick Start
 
@@ -23,7 +23,7 @@ This guide helps SDK developers understand how to use the A2A Technology Compati
 ./run_tck.py --sut-url http://localhost:8000 --category quality
 ```
 
-**Result**: Quality issues don't block compliance but indicate areas for production improvement.
+**Result**: Quality issues don't block compatibility but indicate areas for production improvement.
 
 ### 4. Check Feature Completeness
 ```bash
@@ -34,14 +34,14 @@ This guide helps SDK developers understand how to use the A2A Technology Compati
 
 ### 5. Generate Comprehensive Report
 ```bash
-./run_tck.py --sut-url http://localhost:8000 --category all --compliance-report compliance.json
+./run_tck.py --sut-url http://localhost:8000 --category all --compatibility-report compatibility.json
 ```
 
-**Result**: Complete assessment with compliance level, scores, and actionable recommendations.
+**Result**: Complete assessment with compatibility level, scores, and actionable recommendations.
 
 ## Understanding Test Categories
 
-### 🔴 **MANDATORY TESTS** (Must Pass for Compliance)
+### 🔴 **MANDATORY TESTS** (Must Pass for Compatibility)
 - **What**: JSON-RPC 2.0 + A2A protocol core requirements
 - **When to Run**: First step in validation
 - **Impact**: Failure = NOT A2A compliant
@@ -72,7 +72,7 @@ This guide helps SDK developers understand how to use the A2A Technology Compati
 ### 🛡️ **QUALITY TESTS** (Production Readiness)
 - **What**: Concurrency, edge cases, resilience validation
 - **When to Run**: Before production deployment
-- **Impact**: Never blocks compliance, but indicates production issues
+- **Impact**: Never blocks compatibility, but indicates production issues
 - **Files**: `tests/optional/quality/`
 - **Markers**: `@quality_basic`, `@quality_production`
 
@@ -90,7 +90,7 @@ This guide helps SDK developers understand how to use the A2A Technology Compati
 - **Files**: `tests/optional/features/`
 - **Markers**: `@optional_feature`
 
-## Compliance Levels
+## Compatibility Levels
 
 ### 🔴 **NON_COMPLIANT** - Not A2A Compliant
 - **Criteria**: Any mandatory test failure
@@ -204,7 +204,7 @@ Unicode characters corrupted in task storage
 
 ## Deployment Decision Matrix
 
-| Compliance Level | Development | Testing | Staging | Production |
+| Compatibility Level | Development | Testing | Staging | Production |
 |------------------|-------------|---------|---------|------------|
 | 🔴 NON_COMPLIANT | ❌ | ❌ | ❌ | ❌ |
 | 🟡 MANDATORY | ✅ | ✅ | ⚠️ | ❌ |
@@ -230,28 +230,28 @@ fi
 
 ### Advanced CI Pipeline
 ```bash
-# Full compliance assessment
-./run_tck.py --sut-url $SUT_URL --category all --compliance-report compliance.json
+# Full compatibility assessment
+./run_tck.py --sut-url $SUT_URL --category all --compatibility-report compatibility.json
 
-# Parse compliance level from report
-COMPLIANCE_LEVEL=$(jq -r '.summary.compliance_level' compliance.json)
+# Parse compatibility level from report
+COMPATIBILITY_LEVEL=$(jq -r '.summary.compatibility_level' compatibility.json)
 
-case $COMPLIANCE_LEVEL in
+case $COMPATIBILITY_LEVEL in
     "NON_COMPLIANT")
         echo "❌ Not A2A compliant - blocking all deployments"
         exit 1
         ;;
     "MANDATORY")
-        echo "🟡 Basic compliance - allowing dev/test deployment only"
+        echo "🟡 Basic compatibility - allowing dev/test deployment only"
         if [ "$ENVIRONMENT" = "production" ]; then
             exit 1
         fi
         ;;
     "RECOMMENDED")
-        echo "🟢 Recommended compliance - allowing staging deployment"
+        echo "🟢 Recommended compatibility - allowing staging deployment"
         ;;
     "FULL_FEATURED")
-        echo "🏆 Full compliance - allowing production deployment"
+        echo "🏆 Full compatibility - allowing production deployment"
         ;;
 esac
 ```
@@ -261,7 +261,7 @@ esac
 ### 1. **Run Tests Frequently**
 - Run mandatory tests on every commit
 - Run full suite before releases
-- Use compliance reports to track progress
+- Use compatibility reports to track progress
 
 ### 2. **Fix Issues in Order**
 1. Mandatory failures (blocking)
@@ -274,10 +274,10 @@ esac
 - Test capability implementations thoroughly
 - Update Agent Card when adding/removing features
 
-### 4. **Monitor Compliance Over Time**
-- Track compliance scores across releases
-- Set up alerts for compliance regressions
-- Use compliance reports for release decisions
+### 4. **Monitor Compatibility Over Time**
+- Track compatibility scores across releases
+- Set up alerts for compatibility regressions
+- Use compatibility reports for release decisions
 
 ### 5. **Understand Your Users**
 - Development: MANDATORY level sufficient
@@ -307,7 +307,7 @@ pytest tests/optional/capabilities/ --collect-only
 curl $SUT_URL/agent | jq .capabilities
 ```
 
-### Compliance Report Empty
+### Compatibility Report Empty
 ```bash
 # Ensure pytest-json-report is installed
 pip install pytest-json-report
@@ -322,10 +322,10 @@ ls -la *.json
 - **Q**: Why are streaming tests skipping?  
   **A**: Your Agent Card likely has `streaming: false` or missing. This is allowed.
 
-- **Q**: Why do quality tests fail but compliance is still achieved?  
-  **A**: Quality tests never block compliance - they indicate production readiness.
+- **Q**: Why do quality tests fail but compatibility is still achieved?  
+  **A**: Quality tests never block compatibility - they indicate production readiness.
 
-- **Q**: Can I deploy with MANDATORY compliance level?  
+- **Q**: Can I deploy with MANDATORY compatibility level?  
   **A**: For development/testing yes, for production we recommend RECOMMENDED+ level.
 
 ### Support Resources
@@ -338,9 +338,9 @@ ls -la *.json
 
 The A2A TCK provides progressive validation:
 
-1. **🔴 Mandatory** → Basic A2A compliance
+1. **🔴 Mandatory** → Basic A2A compatibility
 2. **🔄 Capabilities** → Honest capability advertising  
 3. **🛡️ Quality** → Production readiness assessment
 4. **🎨 Features** → Completeness evaluation
 
-Use the compliance reports to make informed deployment decisions and track your SDK's A2A specification compliance over time. 
+Use the compatibility reports to make informed deployment decisions and track your SDK's A2A specification compatibility over time. 

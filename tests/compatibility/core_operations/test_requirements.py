@@ -151,12 +151,12 @@ def test_must_requirement(
     requirement: Any,
     transport_clients: dict[str, Any],
     validators: dict[str, Any],
-    compliance_collector: Any,
+    compatibility_collector: Any,
 ) -> None:
     """Verify a MUST-level requirement — hard failure on validation error."""
     client = transport_clients.get(transport)
     if client is None:
-        compliance_collector.record(
+        compatibility_collector.record(
             requirement_id=requirement.id,
             transport=transport,
             level=requirement.level.value,
@@ -168,7 +168,7 @@ def test_must_requirement(
     response = execute_operation(client, requirement)
     errors = _validate_response(response, transport, requirement, validators)
 
-    compliance_collector.record(
+    compatibility_collector.record(
         requirement_id=requirement.id,
         transport=transport,
         level=requirement.level.value,
@@ -197,12 +197,12 @@ def test_should_requirement(
     requirement: Any,
     transport_clients: dict[str, Any],
     validators: dict[str, Any],
-    compliance_collector: Any,
+    compatibility_collector: Any,
 ) -> None:
     """Verify a SHOULD-level requirement — xfail on validation error."""
     client = transport_clients.get(transport)
     if client is None:
-        compliance_collector.record(
+        compatibility_collector.record(
             requirement_id=requirement.id,
             transport=transport,
             level=requirement.level.value,
@@ -214,7 +214,7 @@ def test_should_requirement(
     response = execute_operation(client, requirement)
     errors = _validate_response(response, transport, requirement, validators)
 
-    compliance_collector.record(
+    compatibility_collector.record(
         requirement_id=requirement.id,
         transport=transport,
         level=requirement.level.value,
@@ -244,7 +244,7 @@ def test_may_requirement(
     requirement: Any,
     transport_clients: dict[str, Any],
     validators: dict[str, Any],
-    compliance_collector: Any,
+    compatibility_collector: Any,
     agent_card: dict[str, Any],
 ) -> None:
     """Verify a MAY-level requirement — skip if capability not declared."""
@@ -254,7 +254,7 @@ def test_may_requirement(
         card_tags = set(agent_card.get("tags", []))
         available = card_capabilities | card_tags
         if not any(tag in available for tag in requirement.tags):
-            compliance_collector.record(
+            compatibility_collector.record(
                 requirement_id=requirement.id,
                 transport=transport,
                 level=requirement.level.value,
@@ -267,7 +267,7 @@ def test_may_requirement(
 
     client = transport_clients.get(transport)
     if client is None:
-        compliance_collector.record(
+        compatibility_collector.record(
             requirement_id=requirement.id,
             transport=transport,
             level=requirement.level.value,
@@ -279,7 +279,7 @@ def test_may_requirement(
     response = execute_operation(client, requirement)
     errors = _validate_response(response, transport, requirement, validators)
 
-    compliance_collector.record(
+    compatibility_collector.record(
         requirement_id=requirement.id,
         transport=transport,
         level=requirement.level.value,

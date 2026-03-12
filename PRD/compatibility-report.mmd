@@ -2,7 +2,7 @@
 
 flowchart TB
     subgraph "Test Execution"
-        PYTEST["pytest<br/>--compliance-report"]
+        PYTEST["pytest<br/>--compatibility-report"]
         HOOK["pytest_runtest_makereport<br/>hook"]
     end
 
@@ -17,7 +17,7 @@ flowchart TB
     HOOK --> CORNER_RESULTS
 
     subgraph "Report Generation"
-        AGGREGATOR["ComplianceAggregator"]
+        AGGREGATOR["CompatibilityAggregator"]
 
         PER_REQ["Per-Requirement View"]
         PER_TRANS["Per-Transport View"]
@@ -34,8 +34,8 @@ flowchart TB
     AGGREGATOR --> SUMMARY
 
     subgraph "Output Formats"
-        JSON_OUT["compliance.json<br/>Machine-readable"]
-        HTML_OUT["compliance.html<br/>Human-readable"]
+        JSON_OUT["compatibility.json<br/>Machine-readable"]
+        HTML_OUT["compatibility.html<br/>Human-readable"]
         CONSOLE["Console Summary<br/>Quick overview"]
     end
 
@@ -52,7 +52,7 @@ flowchart TB
         STRUCT["
         {
           summary: {
-            overall_compliance: 98.5%,
+            overall_compatibility: 98.5%,
             transports: {...}
           },
           per_requirement: {

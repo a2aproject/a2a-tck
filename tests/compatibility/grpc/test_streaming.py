@@ -112,14 +112,14 @@ class TestGrpcStreaming:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """GRPC-ERR-003: send_streaming_message returns a StreamingResponse."""
         req = GRPC_ERR_003
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
@@ -137,7 +137,7 @@ class TestGrpcStreaming:
 
         passed = not errors
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=passed,
@@ -149,14 +149,14 @@ class TestGrpcStreaming:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """GRPC-ERR-003: Each event has exactly one StreamResponse payload field set."""
         req = GRPC_ERR_003
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         events = _collect_events(client, agent_card)
 
         errors: list[str] = []
@@ -171,7 +171,7 @@ class TestGrpcStreaming:
 
         passed = not errors
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=passed,
@@ -183,14 +183,14 @@ class TestGrpcStreaming:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """GRPC-ERR-003: Client-side stream cancellation completes without unexpected errors."""
         req = GRPC_ERR_003
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
@@ -214,7 +214,7 @@ class TestGrpcStreaming:
 
         passed = not errors
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=passed,
@@ -226,14 +226,14 @@ class TestGrpcStreaming:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-SUB-004: SubscribeToTask returns NOT_FOUND for non-existent task."""
         req = STREAM_SUB_004
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
         response = client.subscribe_to_task(id="tck-nonexistent-grpc-stream-001")
@@ -269,7 +269,7 @@ class TestGrpcStreaming:
             passed = result.valid
 
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=passed,
@@ -281,14 +281,14 @@ class TestGrpcStreaming:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-SUB-001: First event from SubscribeToTask contains a Task."""
         req = STREAM_SUB_001
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
         # Create a task first via send_message
@@ -326,7 +326,7 @@ class TestGrpcStreaming:
         )
 
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
             passed=passed,

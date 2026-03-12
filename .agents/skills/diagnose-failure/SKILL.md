@@ -15,11 +15,11 @@ Ask the user for one of:
 - A test name from the TCK output
 - A transport + error description
 
-Read `reports/compliance.json` to find the failing requirement, its status per
+Read `reports/compatibility.json` to find the failing requirement, its status per
 transport, recorded errors, and `test_ids`. This file is always available when
 the TCK was run with `--report` (which is the recommended default).
 
-Use the SUT URL from the current session or from `reports/compliance.json`
+Use the SUT URL from the current session or from `reports/compatibility.json`
 (`summary.sut_url`) rather than asking the user again.
 
 ## Step 2: Gather requirement context
@@ -69,7 +69,7 @@ Read the test code that covers this requirement (search `tests/compatibility/` f
 Determine:
 - What request the test sends
 - What response was expected
-- What response was actually received (from `reports/compliance.json` errors or by re-running the test)
+- What response was actually received (from `reports/compatibility.json` errors or by re-running the test)
 
 ## Step 5: Build a curl reproducer
 
@@ -112,7 +112,7 @@ grpcurl -plaintext -d '<JSON>' <GRPC_HOST>:<PORT> a2a.v1.A2AService/<RPC>
 
 ## Step 6: Draft the GitHub issue
 
-Use the `test_ids` array from the requirement's entry in `reports/compliance.json`
+Use the `test_ids` array from the requirement's entry in `reports/compatibility.json`
 for the "TCK test" section — no need to search for test node IDs manually.
 
 Compose the issue using this template:
@@ -147,7 +147,7 @@ Compose the issue using this template:
 
 ## TCK test
 
-`<full pytest node ID from compliance.json test_ids>`
+`<full pytest node ID from compatibility.json test_ids>`
 ```
 
 ## Step 7: Present and refine

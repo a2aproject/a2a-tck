@@ -1,6 +1,6 @@
-"""HTML formatter for A2A TCK compliance reports.
+"""HTML formatter for A2A TCK compatibility reports.
 
-Transforms a :class:`ComplianceReport` into a self-contained HTML
+Transforms a :class:`CompatibilityReport` into a self-contained HTML
 document with inline CSS and optionally writes it to disk.
 """
 
@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from tck.reporting.aggregator import ComplianceReport, RequirementResult
+    from tck.reporting.aggregator import CompatibilityReport, RequirementResult
 
 _SPEC_SOURCE_URL: str | None = None
 
@@ -33,19 +33,19 @@ def _get_spec_source_url() -> str:
 
 
 class HTMLFormatter:
-    """Formats a :class:`ComplianceReport` as a self-contained HTML page."""
+    """Formats a :class:`CompatibilityReport` as a self-contained HTML page."""
 
     def __init__(self, *, sut_url: str = "") -> None:
         self._sut_url = sut_url
 
-    def format(self, report: ComplianceReport) -> str:
+    def format(self, report: CompatibilityReport) -> str:
         """Return a complete HTML document string."""
         return (
             "<!DOCTYPE html>\n"
             "<html lang=\"en\">\n"
             "<head>\n"
             '<meta charset="utf-8">\n'
-            "<title>A2A TCK Compliance Report</title>\n"
+            "<title>A2A TCK Compatibility Report</title>\n"
             f"<style>{_CSS}</style>\n"
             "</head>\n"
             "<body>\n"
@@ -58,7 +58,7 @@ class HTMLFormatter:
             "</html>\n"
         )
 
-    def write(self, report: ComplianceReport, path: Path) -> None:
+    def write(self, report: CompatibilityReport, path: Path) -> None:
         """Write the HTML report to *path*, creating parent directories."""
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(self.format(report), encoding="utf-8")
@@ -67,16 +67,16 @@ class HTMLFormatter:
     # Sections
     # ------------------------------------------------------------------
 
-    def _render_executive_summary(self, report: ComplianceReport) -> str:
+    def _render_executive_summary(self, report: CompatibilityReport) -> str:
         return (
             '<div class="section">\n'
             "<h1>Executive Summary</h1>\n"
-            f'<div class="overall">{_format_compliance(report.overall_compliance)}</div>\n'
+            f'<div class="overall">{_format_compatibility(report.overall_compatibility)}</div>\n'
             '<table class="summary-table">\n'
-            "<tr><th>Level</th><th>Compliance</th></tr>\n"
-            f"<tr><td>MUST</td><td>{_format_compliance(report.must_compliance)}</td></tr>\n"
-            f"<tr><td>SHOULD</td><td>{_format_compliance(report.should_compliance)}</td></tr>\n"
-            f"<tr><td>MAY</td><td>{_format_compliance(report.may_compliance)}</td></tr>\n"
+            "<tr><th>Level</th><th>Compatibility</th></tr>\n"
+            f"<tr><td>MUST</td><td>{_format_compatibility(report.must_compatibility)}</td></tr>\n"
+            f"<tr><td>SHOULD</td><td>{_format_compatibility(report.should_compatibility)}</td></tr>\n"
+            f"<tr><td>MAY</td><td>{_format_compatibility(report.may_compatibility)}</td></tr>\n"
             "</table>\n"
             f"<p>Timestamp: {escape(report.timestamp)}</p>\n"
             f'<p>SUT URL: <a href="{escape(self._sut_url)}">{escape(self._sut_url)}</a></p>\n'
@@ -85,7 +85,7 @@ class HTMLFormatter:
         )
 
     @staticmethod
-    def _render_agent_card(report: ComplianceReport) -> str:
+    def _render_agent_card(report: CompatibilityReport) -> str:
         card_json = json.dumps(report.agent_card, indent=2)
         return (
             '<div class="section">\n'
@@ -96,7 +96,7 @@ class HTMLFormatter:
             "</div>\n"
         )
 
-    def _render_per_requirement_table(self, report: ComplianceReport) -> str:
+    def _render_per_requirement_table(self, report: CompatibilityReport) -> str:
         transports = sorted(report.per_transport)
         header_cells = "".join(f"<th>{escape(t)}</th>" for t in transports)
         header = (
@@ -166,7 +166,7 @@ class HTMLFormatter:
         )
 
     @staticmethod
-    def _render_per_transport_summary(report: ComplianceReport) -> str:
+    def _render_per_transport_summary(report: CompatibilityReport) -> str:
         rows = ""
         for transport, t in report.per_transport.items():
             pct = (t.passed / t.total * 100) if t.total else 0
@@ -194,7 +194,7 @@ class HTMLFormatter:
         )
 
     @staticmethod
-    def _render_failed_tests(report: ComplianceReport) -> str:
+    def _render_failed_tests(report: CompatibilityReport) -> str:
         failed = {
             req_id: req
             for req_id, req in report.per_requirement.items()
@@ -259,7 +259,7 @@ def _spec_url_to_href(spec_url: str) -> str:
     return f"{base}/{path}"
 
 
-def _format_compliance(value: float) -> str:
+def _format_compatibility(value: float) -> str:
     return f"{value:.1f}%"
 
 

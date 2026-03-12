@@ -45,7 +45,7 @@ The A2A TCK (Technology Compatibility Kit) is a comprehensive test suite that va
 ### 1.3 Success Criteria
 
 - 100% coverage of MUST requirements from the specification
-- Clear compliance reporting per-requirement AND per-transport
+- Clear compatibility reporting per-requirement AND per-transport
 - Transport-native validation with zero cross-format conversion errors
 - Easy traceability from test to specification section
 
@@ -57,9 +57,9 @@ The A2A TCK (Technology Compatibility Kit) is a comprehensive test suite that va
 
 | ID | Goal | Priority |
 |----|------|----------|
-| G1 | Validate A2A v1.0 specification compliance | P0 |
+| G1 | Validate A2A v1.0 specification compatibility | P0 |
 | G2 | Support all three transports (gRPC, JSON-RPC, REST) | P0 |
-| G3 | Generate machine-readable compliance reports | P0 |
+| G3 | Generate machine-readable compatibility reports | P0 |
 | G4 | Clear test-to-spec traceability | P0 |
 | G5 | Extensible architecture for future spec versions | P1 |
 | G6 | Developer-friendly error messages | P1 |
@@ -71,7 +71,7 @@ The A2A TCK (Technology Compatibility Kit) is a comprehensive test suite that va
 | NG1 | Backward compatibility with v0.3 | Clean break to v1.0 |
 | NG2 | Performance benchmarking | Focus is correctness, not speed |
 | NG3 | Client SDK validation | TCK tests servers, not clients |
-| NG4 | Security penetration testing | Out of scope for compliance |
+| NG4 | Security penetration testing | Out of scope for compatibility |
 
 ---
 
@@ -188,7 +188,7 @@ See: [architecture.mmd](./architecture.mmd)
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │                   Reporting Layer                           │
-│       (Compliance reports: JSON, HTML, Console)             │
+│       (Compatibility reports: JSON, HTML, Console)             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -236,7 +236,7 @@ a2a-tck/
 │   │   ├── rest_client.py    # REST client
 │   │   └── manager.py        # Transport orchestration
 │   │
-│   └── reporting/             # Compliance reporting
+│   └── reporting/             # Compatibility reporting
 │       ├── __init__.py
 │       ├── collector.py      # Test result collection
 │       ├── aggregator.py     # Result aggregation
@@ -263,9 +263,9 @@ a2a-tck/
 │       └── test_sse_streaming.py
 │
 └── reports/                    # Generated reports (gitignored)
-    ├── compliance.json
+    ├── compatibility.json
     ├── junitreport.xml
-    └── compliance.html
+    └── compatibility.html
 ```
 
 ### 4.3 Key Design Patterns
@@ -301,9 +301,9 @@ def test_requirement(transport, requirement, transport_clients, validators):
     assert result.valid, f"{requirement.id} failed: {result.errors}"
 ```
 
-#### 4.3.3 Compliance Reporting
+#### 4.3.3 Compatibility Reporting
 
-See: [compliance-report.mmd](./compliance-report.mmd)
+See: [compatibility-report.mmd](./compatibility-report.mmd)
 
 **Two views**:
 1. **Per-Requirement**: Did REQ-3.1 pass on all transports?
@@ -981,7 +981,7 @@ def test_must_requirement(
     requirement: RequirementSpec,
     transport_clients: dict,
     validators: dict,
-    compliance_collector,
+    compatibility_collector,
 ):
     """Test MUST-level requirements across all transports."""
     # Get transport-specific client and validator
@@ -994,8 +994,8 @@ def test_must_requirement(
     # Validate response
     result = validator.validate(response, requirement)
 
-    # Record result for compliance report
-    compliance_collector.record(requirement.id, transport, result.valid, result.errors)
+    # Record result for compatibility report
+    compatibility_collector.record(requirement.id, transport, result.valid, result.errors)
 
     # Assert
     assert result.valid, (
@@ -1016,7 +1016,7 @@ def test_should_requirement(
     requirement: RequirementSpec,
     transport_clients: dict,
     validators: dict,
-    compliance_collector,
+    compatibility_collector,
 ):
     """Test SHOULD-level requirements (warnings, not failures)."""
     client = transport_clients[transport]
@@ -1026,7 +1026,7 @@ def test_should_requirement(
 
     result = validator.validate(response, requirement)
 
-    compliance_collector.record(
+    compatibility_collector.record(
         requirement.id,
         transport,
         result.valid,
@@ -1122,7 +1122,7 @@ class TestHttpJsonStatus:
 
 ### 5.5 Reporting Layer
 
-#### 5.5.1 Compliance Report Structure
+#### 5.5.1 Compatibility Report Structure
 
 ```python
 # tck/reporting/collector.py
@@ -1138,8 +1138,8 @@ class TestResult:
     level: Literal["MUST", "SHOULD", "MAY"] = "MUST"
 
 @dataclass
-class ComplianceReport:
-    """Complete compliance report structure."""
+class CompatibilityReport:
+    """Complete compatibility report structure."""
 
     # Summary
     timestamp: str
@@ -1158,9 +1158,9 @@ class ComplianceReport:
     corner_cases: dict[str, dict[str, str]] = field(default_factory=dict)
 
     # Aggregates
-    overall_compliance: float = 0.0
-    must_compliance: float = 0.0
-    should_compliance: float = 0.0
+    overall_compatibility: float = 0.0
+    must_compatibility: float = 0.0
+    should_compatibility: float = 0.0
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
@@ -1169,9 +1169,9 @@ class ComplianceReport:
                 "timestamp": self.timestamp,
                 "sut_url": self.sut_url,
                 "spec_version": self.spec_version,
-                "overall_compliance": f"{self.overall_compliance:.1%}",
-                "must_compliance": f"{self.must_compliance:.1%}",
-                "should_compliance": f"{self.should_compliance:.1%}",
+                "overall_compatibility": f"{self.overall_compatibility:.1%}",
+                "must_compatibility": f"{self.must_compatibility:.1%}",
+                "should_compatibility": f"{self.should_compatibility:.1%}",
             },
             "per_requirement": self.per_requirement,
             "per_transport": self.per_transport,
@@ -1279,7 +1279,7 @@ class ComplianceReport:
 |------|-------------|-------------|
 | 5.1 | Implement conftest.py fixtures | Transport clients, validators, collectors |
 | 5.2 | Implement test_requirements.py | Parametrized tests per Section 5.4.1 |
-| 5.3 | Implement compliance collector | Test result collection |
+| 5.3 | Implement compatibility collector | Test result collection |
 | 5.4 | Add pytest markers | Requirement level markers |
 | 5.5 | Implement CLI runner | run_tck.py with options |
 
@@ -1316,13 +1316,13 @@ class ComplianceReport:
 
 ### Phase 7: Reporting Layer (Weeks 13-14)
 
-**Goal**: Implement compliance reporting.
+**Goal**: Implement compatibility reporting.
 
 | Task | Description | Deliverable |
 |------|-------------|-------------|
-| 7.1 | Implement ComplianceAggregator | Result aggregation logic |
-| 7.2 | Implement JSON formatter | compliance.json output |
-| 7.3 | Implement HTML formatter | compliance.html output |
+| 7.1 | Implement CompatibilityAggregator | Result aggregation logic |
+| 7.2 | Implement JSON formatter | compatibility.json output |
+| 7.3 | Implement HTML formatter | compatibility.html output |
 | 7.4 | Implement console summary | Terminal output |
 | 7.5 | Integrate with pytest hooks | Automatic report generation |
 | 7.6 | Generate junitreport.xml | report.html output |
@@ -1367,7 +1367,7 @@ class ComplianceReport:
 |----------|---------|----------|
 | **Unit Tests** | Validator logic, requirement parsing | `tests/unit/` |
 | **Integration Tests** | Transport clients, end-to-end flows | `tests/integration/` |
-| **Core Requirement Tests** | Spec compliance (parametrized) | `tests/core/` |
+| **Core Requirement Tests** | Spec compatibility (parametrized) | `tests/core/` |
 | **Corner Case Tests** | Transport-specific behaviors | `tests/{transport}/` |
 
 ### 7.2 Test Fixtures
@@ -1384,7 +1384,7 @@ from tck.validators.proto_schema import ProtoSchemaValidator
 def pytest_addoption(parser):
     parser.addoption("--sut-url", required=True, help="SUT base URL")
     parser.addoption("--transport", default="all", help="Transport to test")
-    parser.addoption("--compliance-report", help="Output report path")
+    parser.addoption("--compatibility-report", help="Output report path")
 
 @pytest.fixture(scope="session")
 def sut_url(request):
@@ -1407,9 +1407,9 @@ def validators():
     }
 
 @pytest.fixture(scope="session")
-def compliance_collector():
-    from tck.reporting.collector import ComplianceCollector
-    return ComplianceCollector()
+def compatibility_collector():
+    from tck.reporting.collector import CompatibilityCollector
+    return CompatibilityCollector()
 ```
 
 ### 7.3 Running Tests
@@ -1421,8 +1421,8 @@ pytest tests/ --sut-url http://localhost:9999
 # Run only gRPC tests
 pytest tests/ --sut-url http://localhost:9999 --transport grpc
 
-# Run with compliance report
-pytest tests/ --sut-url http://localhost:9999 --compliance-report report.json
+# Run with compatibility report
+pytest tests/ --sut-url http://localhost:9999 --compatibility-report report.json
 
 # Run only MUST requirements
 pytest tests/core/ --sut-url http://localhost:9999 -m must
@@ -1476,13 +1476,13 @@ pytest tests/core/ --sut-url http://localhost:9999 -k "REQ-3.1"
 - [Overall Architecture](./architecture.mmd)
 - [Validation Flow](./validation-flow.mmd)
 - [Test Parametrization](./test-parametrization.mmd)
-- [Compliance Reporting](./compliance-report.mmd)
+- [Compatibility Reporting](./compatibility-report.mmd)
 
 ### 8.4 Glossary
 
 | Term | Definition |
 |------|------------|
-| **TCK** | Technology Compatibility Kit - test suite for spec compliance |
+| **TCK** | Technology Compatibility Kit - test suite for spec compatibility |
 | **SUT** | System Under Test - the A2A server being validated |
 | **Proto** | Protocol Buffers - the canonical message format |
 | **Binding** | Transport-specific protocol mapping |

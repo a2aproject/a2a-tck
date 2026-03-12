@@ -1,6 +1,6 @@
 ---
 id: TASK-7.3
-title: Implement HTML compliance report formatter
+title: Implement HTML compatibility report formatter
 status: Done
 assignee: []
 created_date: '2026-01-28 09:13'
@@ -18,18 +18,18 @@ priority: high
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Implement the HTML formatter that outputs human-readable compliance reports.
+Implement the HTML formatter that outputs human-readable compatibility reports.
 
 **Reference**: PRD Section 6 Task 7.3
 
 **Location**: `tck/reporting/formatters.py` (or `tck/reporting/html_formatter.py`)
 
-**Function/Class**: `HTMLFormatter` or `format_html(report: ComplianceReport) -> str`
+**Function/Class**: `HTMLFormatter` or `format_html(report: CompatibilityReport) -> str`
 
 **Report sections**:
 
 1. **Executive Summary**:
-   - Overall compliance score (large, prominent)
+   - Overall compatibility score (large, prominent)
    - MUST/SHOULD/MAY breakdowns
    - Timestamp and SUT URL
 
@@ -46,7 +46,7 @@ Implement the HTML formatter that outputs human-readable compliance reports.
    - List of failed requirements with error messages
    - Links to spec sections
 
-**Output file**: `reports/compliance.html`
+**Output file**: `reports/compatibility.html`
 
 **Styling**: Use inline CSS or minimal external CSS for portability.
 <!-- SECTION:DESCRIPTION:END -->
@@ -60,5 +60,5 @@ Implement the HTML formatter that outputs human-readable compliance reports.
 - [ ] #5 Per-transport summary is included
 - [ ] #6 Failed tests section shows error details
 - [ ] #7 HTML is valid and renders correctly in browsers
-- [ ] #8 File is written to reports/compliance.html
+- [ ] #8 File is written to reports/compatibility.html
 <!-- AC:END -->

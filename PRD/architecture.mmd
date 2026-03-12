@@ -67,9 +67,9 @@ graph TB
     end
 
     subgraph "Reporting Layer"
-        REPORTER["reporting/compliance.py<br/>Compliance report generator"]
-        REPORT_JSON["reports/compliance.json<br/>Machine-readable output"]
-        REPORT_HTML["reports/compliance.html<br/>Human-readable output"]
+        REPORTER["reporting/compatibility.py<br/>Compatibility report generator"]
+        REPORT_JSON["reports/compatibility.json<br/>Machine-readable output"]
+        REPORT_HTML["reports/compatibility.html<br/>Human-readable output"]
 
         CORE_TESTS --> REPORTER
         GRPC_CORNER --> REPORTER

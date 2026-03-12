@@ -1,29 +1,29 @@
-"""Tests for ComplianceCollector.record_count."""
+"""Tests for CompatibilityCollector.record_count."""
 
 from __future__ import annotations
 
 import pytest
 
-from tck.reporting.collector import ComplianceCollector
+from tck.reporting.collector import CompatibilityCollector
 
 
 TWO = 2
 
 
 @pytest.fixture
-def collector() -> ComplianceCollector:
-    """Return a fresh ComplianceCollector."""
-    return ComplianceCollector()
+def collector() -> CompatibilityCollector:
+    """Return a fresh CompatibilityCollector."""
+    return CompatibilityCollector()
 
 
 class TestRecordCount:
     """record_count tracks calls to record()."""
 
-    def test_starts_at_zero(self, collector: ComplianceCollector) -> None:
+    def test_starts_at_zero(self, collector: CompatibilityCollector) -> None:
         """Fresh collector has a zero record count."""
         assert collector.record_count == 0
 
-    def test_increments_on_record(self, collector: ComplianceCollector) -> None:
+    def test_increments_on_record(self, collector: CompatibilityCollector) -> None:
         """Each call to record() increments the counter."""
         collector.record(
             requirement_id="CORE-GET-001",
@@ -40,7 +40,7 @@ class TestRecordCount:
         )
         assert collector.record_count == TWO
 
-    def test_reset_clears_count(self, collector: ComplianceCollector) -> None:
+    def test_reset_clears_count(self, collector: CompatibilityCollector) -> None:
         """reset() zeroes the record count."""
         collector.record(
             requirement_id="CORE-GET-001",

@@ -51,7 +51,7 @@ Perform final end-to-end validation of the TCK against a real A2A implementation
    - Any implementation variations
 
 **Success criteria**:
-- 100% MUST compliance on reference implementation
+- 100% MUST compatibility on reference implementation
 - All reports generate correctly
 - No false positives or negatives
 <!-- SECTION:DESCRIPTION:END -->

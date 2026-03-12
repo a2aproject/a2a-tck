@@ -117,15 +117,15 @@ class TestSseStreamingFormat:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSONRPC-SSE-001: Each SSE event must be a JSON-RPC 2.0 response."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
         events = _get_streaming_events(client, agent_card)
 
         errors: list[str] = []
@@ -142,7 +142,7 @@ class TestSseStreamingFormat:
 
         passed = len(errors) == 0
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=passed,
@@ -154,15 +154,15 @@ class TestSseStreamingFormat:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSONRPC-SSE-001: Each event result contains a StreamResponse object."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
         events = _get_streaming_events(client, agent_card)
 
         errors: list[str] = []
@@ -182,7 +182,7 @@ class TestSseStreamingFormat:
 
         passed = len(errors) == 0
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=passed,
@@ -194,15 +194,15 @@ class TestSseStreamingFormat:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSONRPC-SSE-001: Stream ends with a terminal task state."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
         events = _get_streaming_events(client, agent_card)
 
         # Determine which stream pattern is used
@@ -234,7 +234,7 @@ class TestSseStreamingFormat:
                 ]
             )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=passed,
@@ -258,16 +258,16 @@ class TestSseSubscribeToTask:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-SUB-004: SubscribeToTask returns TaskNotFoundError for non-existent task."""
         req = STREAM_SUB_004
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
         response = client.subscribe_to_task(id="tck-nonexistent-subscribe-001")
@@ -307,7 +307,7 @@ class TestSseSubscribeToTask:
                 )
 
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=passed,
@@ -319,16 +319,16 @@ class TestSseSubscribeToTask:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-SUB-001: First event from SubscribeToTask contains a Task object."""
         req = STREAM_SUB_001
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
         # First, create a task via send_message
@@ -376,7 +376,7 @@ class TestSseSubscribeToTask:
         )
 
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=passed,

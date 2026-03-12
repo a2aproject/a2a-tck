@@ -82,12 +82,12 @@ class TestJsonRpcErrorCodeMappings:
     def test_task_not_found_error(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """TaskNotFoundError (-32001): GetTask with non-existent ID."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         response = client.get_task(id="tck-nonexistent-error-code-001")
         body = response.raw_response
@@ -97,7 +97,7 @@ class TestJsonRpcErrorCodeMappings:
         result = validate_jsonrpc_error(body, "TaskNotFoundError")
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=result.valid,
@@ -108,12 +108,12 @@ class TestJsonRpcErrorCodeMappings:
     def test_task_not_cancelable_error(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """TaskNotCancelableError (-32002): CancelTask on a non-existent task."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         response = client.cancel_task(id="tck-nonexistent-error-code-002")
         body = response.raw_response
@@ -134,7 +134,7 @@ class TestJsonRpcErrorCodeMappings:
             ]
         )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=valid,
@@ -146,7 +146,7 @@ class TestJsonRpcErrorCodeMappings:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """PushNotificationNotSupportedError (-32003): push config when unsupported."""
         req = JSONRPC_SSE_002
@@ -154,10 +154,10 @@ class TestJsonRpcErrorCodeMappings:
 
         caps = agent_card.get("capabilities", {})
         if caps.get("pushNotifications"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports push notifications; cannot trigger -32003")
 
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = client.create_push_notification_config(
             task_id="tck-error-code-003",
             config={"url": "https://example.com"},
@@ -169,7 +169,7 @@ class TestJsonRpcErrorCodeMappings:
         result = validate_jsonrpc_error(body, "PushNotificationNotSupportedError")
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=result.valid,
@@ -181,7 +181,7 @@ class TestJsonRpcErrorCodeMappings:
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """UnsupportedOperationError (-32004): streaming when unsupported."""
         req = JSONRPC_SSE_002
@@ -189,12 +189,12 @@ class TestJsonRpcErrorCodeMappings:
 
         caps = agent_card.get("capabilities", {})
         if caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports streaming; cannot trigger -32004")
 
         # Use raw call because the streaming client does not detect
         # JSON-RPC errors in the response body.
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "error code test"}],
@@ -210,7 +210,7 @@ class TestJsonRpcErrorCodeMappings:
         result = validate_jsonrpc_error(body, "UnsupportedOperationError")
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=result.valid,
@@ -221,13 +221,13 @@ class TestJsonRpcErrorCodeMappings:
     def test_content_type_not_supported_error(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """ContentTypeNotSupportedError (-32005): wrong Content-Type header."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
         # Raw call required: need to send a deliberately wrong Content-Type.
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         payload = {
             "jsonrpc": "2.0",
@@ -266,7 +266,7 @@ class TestJsonRpcErrorCodeMappings:
         result = validate_jsonrpc_error(body, "ContentTypeNotSupportedError")
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=result.valid,
@@ -277,13 +277,13 @@ class TestJsonRpcErrorCodeMappings:
     def test_version_not_supported_error(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """VersionNotSupportedError (-32009): unsupported A2A-Version header."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
         # Raw call required: need to inject a custom A2A-Version header.
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         msg = {
             "role": "ROLE_USER",
@@ -299,13 +299,13 @@ class TestJsonRpcErrorCodeMappings:
         body = response.json()
         if "error" not in body:
             # The spec requires servers to return VersionNotSupportedError
-            # for unsupported A2A-Version values — this is a compliance failure.
+            # for unsupported A2A-Version values — this is a compatibility failure.
             detail = (
                 "Server MUST return VersionNotSupportedError (-32009) for "
                 "unsupported A2A-Version, but processed the request normally"
             )
             record(
-                collector=compliance_collector,
+                collector=compatibility_collector,
                 req=req,
                 transport=transport,
                 passed=False,
@@ -316,7 +316,7 @@ class TestJsonRpcErrorCodeMappings:
         result = validate_jsonrpc_error(body, "VersionNotSupportedError")
         errors = [] if result.valid else [result.message]
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=result.valid,
@@ -346,13 +346,13 @@ class TestJsonRpcErrorCodeRange:
     def test_error_code_in_valid_range(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
         trigger_id: str,
     ) -> None:
         """Error codes must be in A2A range (-32001..-32099) or standard JSON-RPC range."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        client = get_client(transport_clients, TRANSPORT, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         # Trigger the error condition.
         if trigger_id == "get_task":
@@ -398,7 +398,7 @@ class TestJsonRpcErrorCodeRange:
             ]
         )
         record(
-            collector=compliance_collector,
+            collector=compatibility_collector,
             req=req,
             transport=transport,
             passed=valid,

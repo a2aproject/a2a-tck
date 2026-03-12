@@ -61,9 +61,9 @@ project's virtual environment and dependencies are available.
 Running `./run_tck.py` directly may fail if the system Python lacks pytest or
 other dependencies.
 
-Before running, ask the user if they want to generate compliance reports.
+Before running, ask the user if they want to generate compatibility reports.
 If yes (recommended), add `--report` to every run so reports are ready without
-a second pass. Point them to `reports/compliance.html` and
+a second pass. Point them to `reports/compatibility.html` and
 `reports/tck_report.html` after the run completes.
 
 Start with MUST-level tests to catch blocking issues first:
@@ -84,11 +84,11 @@ Once MUST tests pass, run the full suite:
 uv run ./run_tck.py --sut-host <sut-host> --report -v
 ```
 
-Reports are written to `reports/` (compliance JSON + HTML, pytest-html, JUnit XML).
+Reports are written to `reports/` (compatibility JSON + HTML, pytest-html, JUnit XML).
 
 ## Step 4: Review failures
 
-After a run completes, read `reports/compliance.json` to get a structured
+After a run completes, read `reports/compatibility.json` to get a structured
 overview of all failures. The `per_requirement` object lists every requirement
 with its status, transports, errors, and test IDs.
 
@@ -127,25 +127,25 @@ uv run ./run_tck.py --sut-host <sut-host> --verbose-log -- -k "test_name"
 5. **Missing required fields** — Response is missing MUST-level fields per the spec
 6. **Wrong error codes** — SUT returns incorrect error codes for error scenarios
 
-## Step 5: Interpret compliance results
+## Step 5: Interpret compatibility results
 
 ### Requirement levels
 
 | Level | Meaning | Test behavior |
 |-------|---------|---------------|
-| **MUST** | Absolute requirement | Hard failure — blocks compliance |
+| **MUST** | Absolute requirement | Hard failure — blocks compatibility |
 | **SHOULD** | Expected unless valid reason to differ | Expected failure (`xfail`) — does not block |
 | **MAY** | Truly optional | Skipped if agent doesn't declare the capability |
 
-### Compliance reports
+### Compatibility reports
 
 When run with `--report`, the TCK generates:
-- `reports/compliance.json` — machine-readable results with per-requirement and per-transport breakdowns
-- `reports/compliance.html` — self-contained HTML report with executive summary
+- `reports/compatibility.json` — machine-readable results with per-requirement and per-transport breakdowns
+- `reports/compatibility.html` — self-contained HTML report with executive summary
 - `reports/tck_report.html` — standard pytest-html report
 - `reports/junitreport.xml` — JUnit XML for CI integration
 
-Read `reports/compliance.json` to get a structured view of which requirements passed/failed per transport.
+Read `reports/compatibility.json` to get a structured view of which requirements passed/failed per transport.
 
 ## Step 6: Iterate
 

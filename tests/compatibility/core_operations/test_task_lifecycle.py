@@ -174,11 +174,11 @@ class TestGetTask:
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """CORE-GET-001: GetTask returns the current state of an existing task."""
         req = CORE_GET_001
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         response = client.get_task(id=info.task_id)
@@ -196,7 +196,7 @@ class TestGetTask:
                 )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
 
@@ -214,11 +214,11 @@ class TestCancelTask:
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """CORE-CANCEL-001: CancelTask returns the task with updated state."""
         req = CORE_CANCEL_001
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         response = client.cancel_task(id=info.task_id)
@@ -237,18 +237,18 @@ class TestCancelTask:
                 )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_cancel_terminal_task_returns_error(
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """CORE-CANCEL-002: CancelTask on a terminal task returns TaskNotCancelableError."""
         req = CORE_CANCEL_002
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         # Verify the task reached a terminal state
@@ -268,7 +268,7 @@ class TestCancelTask:
             )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
 
@@ -286,11 +286,11 @@ class TestMultiTurn:
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """CORE-SEND-002: SendMessage to a terminal task returns UnsupportedOperationError."""
         req = CORE_SEND_002
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         # Verify the task reached a terminal state
@@ -317,18 +317,18 @@ class TestMultiTurn:
             )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_infer_context_from_task(
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """CORE-MULTI-005: SendMessage with only taskId infers contextId from the task."""
         req = CORE_MULTI_005
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         if not info.context_id:
@@ -350,18 +350,18 @@ class TestMultiTurn:
             errors.append(f"SendMessage with taskId failed: {response.error}")
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_reject_mismatching_context(
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """CORE-MULTI-006: SendMessage with taskId + wrong contextId returns error."""
         req = CORE_MULTI_006
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         # Send with a deliberately wrong contextId
@@ -382,7 +382,7 @@ class TestMultiTurn:
             )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
 
@@ -402,16 +402,16 @@ class TestSubscribeLifecycle:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-SUB-002: SubscribeToTask stream closes at terminal state."""
         req = STREAM_SUB_002
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         sub_response = client.subscribe_to_task(id=info.task_id)
@@ -438,7 +438,7 @@ class TestSubscribeLifecycle:
                 )
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))
 
     def test_subscribe_rejects_terminal_task(
@@ -446,16 +446,16 @@ class TestSubscribeLifecycle:
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """STREAM-SUB-003: SubscribeToTask on a terminal task returns error."""
         req = STREAM_SUB_003
         caps = agent_card.get("capabilities", {})
         if not caps.get("streaming"):
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        client = get_client(transport_clients, transport, compliance_collector=compliance_collector, req=req)
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_task(client)
 
         # Verify the task reached a terminal state
@@ -481,5 +481,5 @@ class TestSubscribeLifecycle:
         # else: server returned error immediately — correct behavior
 
         passed = not errors
-        record(collector=compliance_collector, req=req, transport=transport, passed=passed, errors=errors)
+        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
         assert passed, fail_msg(req, transport, "; ".join(errors))

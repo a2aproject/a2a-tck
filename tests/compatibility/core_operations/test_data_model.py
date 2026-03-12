@@ -1,4 +1,4 @@
-"""Data model compliance tests via schema validation.
+"""Data model compatibility tests via schema validation.
 
 Sends a single SendMessage per transport, then validates the response
 against the A2A JSON Schema and protobuf definitions.
@@ -153,7 +153,7 @@ class TestSendMessageResponseSchema:
         self,
         send_message_responses: dict[str, Any],
         validators: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Validate each response against the SendMessageResponse JSON schema."""
         if not send_message_responses:
@@ -168,7 +168,7 @@ class TestSendMessageResponseSchema:
 
             for req, _schema_ref in self._REQ_SCHEMA_PAIRS:
                 record(
-                    collector=compliance_collector,
+                    collector=compatibility_collector,
                     req=req,
                     transport=transport,
                     passed=result.valid,
@@ -197,7 +197,7 @@ class TestCamelCaseFieldNames:
     def test_no_snake_case_keys(
         self,
         send_message_responses: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Field names must use camelCase, not snake_case."""
         req = DM_SERIAL_001
@@ -210,7 +210,7 @@ class TestCamelCaseFieldNames:
             errors = []
             if snake_case_keys:
                 errors.append(f"Found snake_case field names: {snake_case_keys}")
-            record(collector=compliance_collector, req=req, transport=transport,
+            record(collector=compatibility_collector, req=req, transport=transport,
                     passed=not errors, errors=errors)
             assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -223,7 +223,7 @@ class TestEnumSerialization:
     def test_enum_values_are_strings(
         self,
         send_message_responses: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Enum values must be serialized as strings, not integers."""
         req = DM_SERIAL_002
@@ -240,7 +240,7 @@ class TestEnumSerialization:
                             f"Enum '{key}' must be a string, got "
                             f"{type(val).__name__}: {val!r}"
                         )
-            record(collector=compliance_collector, req=req, transport=transport,
+            record(collector=compatibility_collector, req=req, transport=transport,
                     passed=not errors, errors=errors)
             assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -255,7 +255,7 @@ class TestTimestampFormat:
     def test_timestamps_are_iso8601_utc(
         self,
         send_message_responses: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Timestamps must use ISO 8601 format with Z suffix."""
         req = DM_SERIAL_003
@@ -278,7 +278,7 @@ class TestTimestampFormat:
                             f"Timestamp '{key}' must be ISO 8601 with Z suffix, "
                             f"got: {ts!r}"
                         )
-            record(collector=compliance_collector, req=req, transport=transport,
+            record(collector=compatibility_collector, req=req, transport=transport,
                     passed=not errors, errors=errors)
             assert not errors, fail_msg(req, transport, "; ".join(errors))
         if not found_timestamp:

@@ -1,4 +1,4 @@
-"""Shared test helper functions for compliance tests.
+"""Shared test helper functions for compatibility tests.
 
 Provides ``fail_msg``, ``record``, and ``get_client`` — utilities used
 across all conformance test modules.
@@ -33,7 +33,7 @@ def record(
     *,
     skipped: bool = False,
 ) -> None:
-    """Record a result in the compliance collector."""
+    """Record a result in the compatibility collector."""
     collector.record(
         requirement_id=req.id,
         transport=transport,
@@ -50,7 +50,7 @@ def skip_recording(
     transport: str,
     reason: str,
 ) -> None:
-    """Record a skipped result in the compliance collector and skip the test."""
+    """Record a skipped result in the compatibility collector and skip the test."""
     record(collector, req, transport, passed=False, skipped=True)
     pytest.skip(reason)
 
@@ -59,13 +59,13 @@ def get_client(
     transport_clients: dict[str, BaseTransportClient],
     transport: str,
     *,
-    compliance_collector: Any = None,
+    compatibility_collector: Any = None,
     req: Any = None,
 ) -> BaseTransportClient:
     """Get the transport client, skipping if not configured."""
     client = transport_clients.get(transport)
     if client is None:
-        if compliance_collector is not None and req is not None:
-            record(compliance_collector, req, transport, passed=False, skipped=True)
+        if compatibility_collector is not None and req is not None:
+            record(compatibility_collector, req, transport, passed=False, skipped=True)
         pytest.skip(f"Transport {transport!r} not configured")
     return client

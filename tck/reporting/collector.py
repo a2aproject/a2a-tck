@@ -1,4 +1,4 @@
-"""Compliance result collector for A2A TCK tests.
+"""Compatibility result collector for A2A TCK tests.
 
 Aggregates test results during execution and provides grouping
 by requirement and transport for downstream reporting.
@@ -24,8 +24,8 @@ class TestResult:
     test_id: str = ""
 
 
-class ComplianceCollector:
-    """Collects and aggregates compliance test results.
+class CompatibilityCollector:
+    """Collects and aggregates compatibility test results.
 
     Used as a session-scoped pytest fixture.  Tests call :meth:`record` to
     store individual results; the reporting layer later queries grouped

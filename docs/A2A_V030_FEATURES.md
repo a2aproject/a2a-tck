@@ -25,7 +25,7 @@ This document describes the new features and testing capabilities introduced in 
 ### Quality & Enterprise Features
 - **Connection Management**: Robust handling of long-lived connections and graceful degradation
 - **Performance Optimizations**: Transport-specific performance enhancements
-- **Enterprise Security**: Comprehensive security headers, certificate validation, and compliance
+- **Enterprise Security**: Comprehensive security headers, certificate validation, and compatibility
 
 ## 🧪 TCK Testing Coverage
 
@@ -37,13 +37,13 @@ This document describes the new features and testing capabilities introduced in 
 - **Security Scheme Validation**: Tests all supported authentication types
 - **Multi-Transport Auth**: Validates authentication works across transports
 - **Error Handling**: Comprehensive auth error scenarios
-- **Security Compliance**: Enterprise security best practices
+- **Security Compatibility**: Enterprise security best practices
 
 **Location**: `tests/optional/capabilities/test_transport_security_v030.py`
 
 - **TLS Configuration**: Certificate validation and cipher strength
 - **Transport Security**: HTTPS enforcement and security headers  
-- **Compliance Validation**: Security standard adherence
+- **Compatibility Validation**: Security standard adherence
 
 #### 2. Enhanced Method Testing
 **Location**: `tests/optional/capabilities/test_a2a_v030_method_enhancements.py`
@@ -75,8 +75,8 @@ This document describes the new features and testing capabilities introduced in 
 **Location**: `tests/mandatory/protocol/test_a2a_v030_new_methods.py`
 
 - **New Method Integration**: Tests for new v0.3.0 methods
-- **Transport Compliance**: Method mapping validation
-- **Specification Compliance**: Enhanced validation rules
+- **Transport Compatibility**: Method mapping validation
+- **Specification Compatibility**: Enhanced validation rules
 
 #### Streaming Methods
 **Location**: `tests/optional/capabilities/test_streaming_methods.py`
@@ -119,7 +119,7 @@ This document describes the new features and testing capabilities introduced in 
 ./run_tck.py --sut-url https://your-agent.com --transport-strategy rest_only
 ```
 
-## 📊 v0.3.0 Compliance Levels
+## 📊 v0.3.0 Compatibility Levels
 
 ### 🔴 **A2A v0.3.0 Core Compliant**
 - All mandatory tests pass
@@ -170,7 +170,7 @@ This document describes the new features and testing capabilities introduced in 
 ## 🛠️ Implementation Guidance
 
 ### For Agent Developers
-1. **Start with Core Compliance**: Ensure all mandatory tests pass
+1. **Start with Core Compatibility**: Ensure all mandatory tests pass
 2. **Declare Capabilities Honestly**: Only claim features you actually support
 3. **Implement Security Properly**: Use HTTPS and proper authentication
 4. **Test Multi-Transport**: If supporting multiple transports, ensure equivalence
@@ -179,7 +179,7 @@ This document describes the new features and testing capabilities introduced in 
 1. **Security First**: Validate all security tests pass
 2. **Performance Testing**: Run quality tests under load
 3. **Transport Strategy**: Choose appropriate transport for your use case
-4. **Monitoring**: Use TCK for ongoing compliance validation
+4. **Monitoring**: Use TCK for ongoing compatibility validation
 
 ### For Multi-Agent Systems
 1. **Transport Equivalence**: Ensure agents work across different transports
@@ -194,7 +194,7 @@ The A2A v0.3.0 TCK is designed to be extensible:
 - **Custom Test Plugins**: Add organization-specific validation
 - **Performance Benchmarking**: Extended performance testing capabilities
 - **Integration Testing**: Multi-agent scenario testing
-- **Compliance Automation**: CI/CD integration for continuous validation
+- **Compatibility Automation**: CI/CD integration for continuous validation
 
 ---
 

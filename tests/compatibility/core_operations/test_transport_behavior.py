@@ -78,7 +78,7 @@ class TestJsonRpcFormat:
         self,
         jsonrpc_response: TransportResponse,
         validators: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSONRPC-FMT-001: Response conforms to JSON-RPC 2.0 via JsonRpcResponseValidator."""
         req = JSONRPC_FMT_001
@@ -87,14 +87,14 @@ class TestJsonRpcFormat:
         result = validator.validate(
             jsonrpc_response.raw_response, "Send Message Response"
         )
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=result.valid, errors=result.errors)
         assert result.valid, fail_msg(req, transport, "; ".join(result.errors))
 
     def test_content_type_is_application_json(
         self,
         jsonrpc_response: TransportResponse,
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """JSONRPC-FMT-002: Content-Type must be application/json."""
         req = JSONRPC_FMT_002
@@ -103,7 +103,7 @@ class TestJsonRpcFormat:
         errors = []
         if "application/json" not in ct:
             errors.append(f"Expected Content-Type application/json, got: {ct!r}")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -129,7 +129,7 @@ class TestJsonRpcMethodNames:
     }
 
     def test_bindings_use_spec_method_names(
-        self, compliance_collector: Any
+        self, compatibility_collector: Any
     ) -> None:
         """JSONRPC-SVC-001: JSON-RPC method names match the spec-defined names."""
         req = JSONRPC_SVC_001
@@ -144,7 +144,7 @@ class TestJsonRpcMethodNames:
             errors.append(f"Unexpected method names: {unexpected}")
         if missing:
             errors.append(f"Missing spec method names: {missing}")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -158,14 +158,14 @@ class TestJsonRpcStreaming:
     def test_streaming_content_type(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Streaming Content-Type must be text/event-stream."""
         req = JSONRPC_SSE_001
         transport = "jsonrpc"
         client = transport_clients.get(transport)
         if client is None:
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("JSON-RPC transport not configured")
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
         if not response.success:
@@ -174,7 +174,7 @@ class TestJsonRpcStreaming:
         errors = []
         if "text/event-stream" not in ct:
             errors.append(f"Streaming Content-Type must be text/event-stream, got: {ct!r}")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -202,7 +202,7 @@ class TestRestFormat:
     def test_response_content_type(
         self,
         rest_response: TransportResponse,
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """HTTP_JSON-SVC-001: Content-Type must be application/json."""
         req = HTTP_JSON_SVC_001
@@ -211,7 +211,7 @@ class TestRestFormat:
         errors = []
         if "application/json" not in ct:
             errors.append(f"Expected Content-Type application/json, got: {ct!r}")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -219,7 +219,7 @@ class TestRestFormat:
         self,
         rest_response: TransportResponse,
         validators: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """HTTP_JSON-SVC-001: Response payload conforms to SendMessageResponse schema."""
         req = HTTP_JSON_SVC_001
@@ -230,7 +230,7 @@ class TestRestFormat:
         result = validator.validate(
             rest_response.raw_response, "Send Message Response"
         )
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=result.valid, errors=result.errors)
         assert result.valid, fail_msg(req, transport, "; ".join(result.errors))
 
@@ -240,7 +240,7 @@ class TestRestFormat:
 class TestRestUrlPatterns:
     """HTTP_JSON-URL-001 / HTTP_JSON-URL-002: URL patterns and HTTP methods (client-side validation)."""
 
-    def test_url_patterns_defined(self, compliance_collector: Any) -> None:
+    def test_url_patterns_defined(self, compatibility_collector: Any) -> None:
         """HTTP_JSON-URL-001: Verify URL patterns are correctly defined in bindings."""
         req = HTTP_JSON_URL_001
         transport = "http_json"
@@ -263,11 +263,11 @@ class TestRestUrlPatterns:
             errors.append(f"LIST_TASKS path={LIST_TASKS_BINDING.http_json_path!r}")
         if CANCEL_TASK_BINDING.http_json_path != "/tasks/{id}:cancel":
             errors.append(f"CANCEL_TASK path={CANCEL_TASK_BINDING.http_json_path!r}")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
-    def test_http_methods_correct(self, compliance_collector: Any) -> None:
+    def test_http_methods_correct(self, compatibility_collector: Any) -> None:
         """HTTP_JSON-URL-002: Correct HTTP methods per operation."""
         req = HTTP_JSON_URL_002
         transport = "http_json"
@@ -290,7 +290,7 @@ class TestRestUrlPatterns:
         for actual, expected, name in checks:
             if actual != expected:
                 errors.append(f"{name}: expected {expected}, got {actual}")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -301,7 +301,7 @@ class TestRestQueryParams:
     """HTTP_JSON-QP-001: Query parameter names use camelCase (client-side validation)."""
 
     def test_query_params_are_camel_case(
-        self, compliance_collector: Any
+        self, compatibility_collector: Any
     ) -> None:
         """Verify the HttpJsonClient sends camelCase query params."""
         req = HTTP_JSON_QP_001
@@ -313,7 +313,7 @@ class TestRestQueryParams:
             errors.append(f"LIST_TASKS method={LIST_TASKS_BINDING.http_json_method}")
         if LIST_TASKS_BINDING.http_json_path != "/tasks":
             errors.append(f"LIST_TASKS path={LIST_TASKS_BINDING.http_json_path}")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -327,14 +327,14 @@ class TestRestStreaming:
     def test_streaming_content_type(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """REST streaming Content-Type must be text/event-stream."""
         req = HTTP_JSON_SSE_001
         transport = "http_json"
         client = transport_clients.get(transport)
         if client is None:
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("HTTP+JSON transport not configured")
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
         if not response.success:
@@ -343,7 +343,7 @@ class TestRestStreaming:
         errors = []
         if "text/event-stream" not in ct:
             errors.append(f"Streaming Content-Type must be text/event-stream, got: {ct!r}")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -362,14 +362,14 @@ class TestGrpcService:
         self,
         transport_clients: dict[str, BaseTransportClient],
         validators: dict[str, Any],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """GRPC-SVC-001: gRPC service responds and payload validates against proto."""
         req = GRPC_SVC_001
         transport = "grpc"
         client = transport_clients.get(transport)
         if client is None:
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("gRPC transport not configured")
         response = client.send_message(message=_SAMPLE_MESSAGE)
         errors = []
@@ -388,7 +388,7 @@ class TestGrpcService:
         elif not response.success:
             # Getting an error response still proves the service is implemented
             pass
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
@@ -402,14 +402,14 @@ class TestGrpcStreaming:
     def test_grpc_streaming_works(
         self,
         transport_clients: dict[str, BaseTransportClient],
-        compliance_collector: Any,
+        compatibility_collector: Any,
     ) -> None:
         """Verify gRPC streaming is functional (server streaming RPC)."""
         req = GRPC_ERR_003
         transport = "grpc"
         client = transport_clients.get(transport)
         if client is None:
-            record(collector=compliance_collector, req=req, transport=transport, passed=False, skipped=True)
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("gRPC transport not configured")
         response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
         if not response.success:
@@ -417,6 +417,6 @@ class TestGrpcStreaming:
         errors = []
         if not response.is_streaming:
             errors.append("gRPC streaming response must be a StreamingResponse")
-        record(collector=compliance_collector, req=req, transport=transport,
+        record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
         assert not errors, fail_msg(req, transport, "; ".join(errors))

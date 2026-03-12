@@ -80,7 +80,7 @@ cat spec_analysis_report.md
 4. **Remove obsolete tests** for removed specification features
 
 **Test categories to check:**
-- `tests/mandatory/` - Core compliance tests
+- `tests/mandatory/` - Core compatibility tests
 - `tests/optional/capabilities/` - Capability-specific tests  
 - `tests/optional/quality/` - Quality and robustness tests
 - `tests/optional/features/` - Optional feature tests

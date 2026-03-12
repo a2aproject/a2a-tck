@@ -39,7 +39,7 @@ def test_example():
     
     The specification states: "Servers MUST..." (exact quote)
     
-    Test validates core A2A compliance requirement.
+    Test validates core A2A compatibility requirement.
     
     Failure Impact: SDK is NOT A2A compliant
     Fix Suggestion: [Specific implementation guidance]
@@ -74,7 +74,7 @@ def test_production_readiness():
     QUALITY PRODUCTION: Production Deployment Readiness
     
     Tests implementation robustness for production environments.
-    While not required for A2A compliance, failures indicate
+    While not required for A2A compatibility, failures indicate
     areas for improvement before production deployment.
     
     Test validates [specific quality aspect].
@@ -92,7 +92,7 @@ def test_convenience_feature():
     OPTIONAL FEATURE: A2A Specification §X.Y - Feature Name
     
     Tests optional implementation that enhances user experience
-    but is not required for A2A compliance.
+    but is not required for A2A compatibility.
     
     Test validates [specific optional behavior].
     
@@ -213,7 +213,7 @@ Specification Coverage:
 - JSON-RPC 2.0 §N.M - Section covered
 
 Test Categories:
-- MANDATORY: X tests - Core compliance requirements
+- MANDATORY: X tests - Core compatibility requirements
 - CONDITIONAL: Y tests - Capability-dependent requirements  
 - QUALITY: Z tests - Production readiness validation
 """
@@ -249,7 +249,7 @@ For every test, verify:
 - [ ] **Specification section cited** with exact reference format
 - [ ] **Requirement quoted exactly** from specification
 - [ ] **RFC 2119 keyword included** (MUST/SHOULD/MAY)
-- [ ] **Failure impact documented** (compliance/production/feature impact)
+- [ ] **Failure impact documented** (compatibility/production/feature impact)
 - [ ] **Fix suggestion provided** with actionable guidance
 - [ ] **Assertions documented** with what each validates
 - [ ] **Error messages reference specification** when possible
@@ -320,6 +320,6 @@ def test_message_stream_basic(agent_card_data):
 
 This documentation standard ensures every test clearly communicates:
 1. **What** it validates (specification requirement)
-2. **Why** it matters (compliance/quality impact)
+2. **Why** it matters (compatibility/quality impact)
 3. **How** to fix failures (actionable guidance)
 4. **Where** it comes from (exact specification reference) 
