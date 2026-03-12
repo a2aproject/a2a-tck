@@ -21,6 +21,7 @@ from specification.generated import a2a_pb2
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
 from tck.validators.grpc.error_validator import validate_grpc_error
+from tck.validators.streaming import drain_stream
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import grpc as grpc_marker
 from tests.compatibility.markers import must, streaming
@@ -138,6 +139,7 @@ class TestGrpcStreaming:
         first = next(iter(response.events), None)
         if first is None:
             errors.append("Stream yielded no events")
+        drain_stream(response)
 
         passed = not errors
         record(
@@ -318,6 +320,7 @@ class TestGrpcStreaming:
         first = next(iter(sub_response.events), None)
         if first is None:
             pytest.skip("SubscribeToTask returned no events")
+        drain_stream(sub_response)
 
         payload = first.WhichOneof("payload")
         passed = payload == "task"
