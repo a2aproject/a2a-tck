@@ -9,6 +9,7 @@ from __future__ import annotations
 from tck.requirements.base import (
     SPEC_BASE,
     SUBSCRIBE_TO_TASK_BINDING,
+    TASK_NOT_FOUND_ERROR,
     OperationType,
     RequirementLevel,
     RequirementSpec,
@@ -140,6 +141,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         binding=SUBSCRIBE_TO_TASK_BINDING,
         proto_request_type="SubscribeToTaskRequest",
         expected_behavior="TaskNotFoundError returned",
+        expected_error=TASK_NOT_FOUND_ERROR,
         spec_url=f"{SPEC_BASE}316-subscribe-to-task",
         tags=[STREAMING, SUBSCRIBE, ERROR],
         sample_input={"id": tck_id("nonexistent-sub-004")},
