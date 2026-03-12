@@ -91,6 +91,12 @@ enum). Never guess or invent method names — they must match what the TCK
 actually uses (e.g., the JSON-RPC method for sending a message is `SendMessage`,
 not `message/send`).
 
+**IMPORTANT (gRPC):** The fully qualified gRPC service name must include the
+proto package. Look up the `package` declaration in `specification/a2a.proto`
+and combine it with the service name. For example, with `package lf.a2a.v1;`
+and `service A2AService`, the fully qualified name is `lf.a2a.v1.A2AService`.
+Do NOT guess the package — always read it from the proto file.
+
 **HTTP+JSON:**
 ```bash
 curl -s -X <METHOD> <HTTP_JSON_URL><PATH> \
@@ -107,8 +113,15 @@ curl -s -X POST <JSONRPC_URL> \
 
 **gRPC** (using grpcurl if available):
 ```bash
-grpcurl -plaintext -d '<JSON>' <GRPC_HOST>:<PORT> a2a.v1.A2AService/<RPC>
+grpcurl -plaintext -d '<JSON>' <GRPC_HOST>:<PORT> <PACKAGE>.<SERVICE>/<RPC>
 ```
+
+### Verify the reproducer
+
+Always run the reproducer command against the SUT to confirm it triggers the
+failure. If the reproducer passes in isolation (e.g., because the failure is
+timing-dependent or requires prior state from a full TCK run), note this in
+the issue and provide the full TCK run command as the reliable reproducer instead.
 
 ## Step 6: Draft the GitHub issue
 
