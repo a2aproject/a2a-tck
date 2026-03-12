@@ -97,6 +97,8 @@ def _validate_response(
                     errors.append("Streaming response yielded None as first event")
             except StopIteration:
                 errors.append("Streaming response produced no events")
+            except Exception as exc:
+                errors.append(f"Streaming iteration failed: {exc}")
         return errors
 
     # Non-streaming: check success flag

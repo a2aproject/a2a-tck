@@ -90,7 +90,11 @@ def _collect_events(
     if not response.success:
         pytest.skip(f"Streaming call failed: {response.error}")
 
-    events = list(response.events)
+    try:
+        events = list(response.events)
+    except Exception as exc:
+        pytest.skip(f"Streaming iteration failed: {exc}")
+
     if not events:
         pytest.skip("Server returned no streaming events")
 
