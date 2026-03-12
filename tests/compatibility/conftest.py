@@ -238,6 +238,7 @@ def pytest_runtest_makereport(
 
     if report.when == "setup":
         item.stash[_record_count_key] = collector.record_count
+        collector.current_nodeid = item.nodeid
         return
 
     if report.when != "call":

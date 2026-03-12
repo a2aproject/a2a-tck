@@ -208,6 +208,7 @@ class TestTestIdColumn:
         html = formatter.format(report)
         assert "TestFoo::test_bar" in html
         assert 'class="test-id"' in html
+        assert 'href="tck_report.html#tests/test_example.py::TestFoo::test_bar"' in html
 
     def test_auto_inferred_test_id(
         self, collector: CompatibilityCollector, agent_card: dict, formatter: HTMLFormatter
