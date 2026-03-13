@@ -20,15 +20,15 @@ import io.a2a.spec.TransportProtocol;
 @ApplicationScoped
 public class TckAgentCardProducer {
 
-    private static final String DEFAULT_SUT_URL = "http://localhost:9999";
+    private static final String host = getEnvOrDefault("SUT_HOST", "localhost:9999");
 
     @Produces
     @PublicAgentCard
     public AgentCard agentCard() {
-        String sutJsonRpcUrl = getEnvOrDefault("SUT_JSONRPC_URL", DEFAULT_SUT_URL);
-        String sutGrpcUrl = getEnvOrDefault("SUT_GRPC_URL", DEFAULT_SUT_URL);
-        String sutRestUrl = getEnvOrDefault("SUT_REST_URL", DEFAULT_SUT_URL);
-
+        String sutJsonRpcUrl = String.format("http://%s", host);
+        String sutRestUrl = sutJsonRpcUrl;
+        String sutGrpcUrl = host;
+        
         return AgentCard.builder()
                 .name("A2A TCK SUT")
                 .description("Auto-generated System Under Test for A2A TCK conformance")
