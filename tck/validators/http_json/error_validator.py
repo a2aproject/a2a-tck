@@ -1,12 +1,12 @@
 """HTTP+JSON error validator for A2A protocol responses.
 
 This module provides validation of HTTP+JSON error responses according to
-Section 11 of the A2A specification, including RFC 7807 Problem Details support.
+Section 11 of the A2A specification, using the AIP-193 error format.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from tck.requirements.base import ERROR_BINDINGS
@@ -27,52 +27,46 @@ for _name, _status in HTTP_JSON_ERROR_STATUS.items():
 
 
 @dataclass
-class ProblemDetails:
-    """RFC 7807 Problem Details structure.
+class AIP193Error:
+    """AIP-193 error representation.
 
-    This dataclass represents the standard problem details format for HTTP APIs
-    as defined in RFC 7807 (https://tools.ietf.org/html/rfc7807).
+    This dataclass represents the error format specified in AIP-193
+    (https://google.aip.dev/193#http11json-representation).
 
     Attributes:
-        type: A URI reference that identifies the problem type.
-        title: A short, human-readable summary of the problem type.
-        status: The HTTP status code for this occurrence of the problem.
-        detail: A human-readable explanation specific to this occurrence.
-        instance: A URI reference that identifies the specific occurrence.
+        code: The HTTP status code.
+        status: The gRPC status string (e.g., "NOT_FOUND").
+        message: A human-readable error message.
+        details: An array of google.protobuf.Any messages in ProtoJSON format.
     """
 
-    type: str
-    title: str
-    status: int
-    detail: str = ""
-    instance: str = ""
+    code: int
+    status: str = ""
+    message: str = ""
+    details: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> ProblemDetails:
-        """Create a ProblemDetails instance from a dictionary.
+    def from_dict(cls, data: dict[str, Any]) -> AIP193Error:
+        """Create an AIP193Error instance from a response body dictionary.
 
-        Args:
-            data: A dictionary containing problem details fields.
-
-        Returns:
-            A ProblemDetails instance.
+        Expects the AIP-193 format: ``{"error": {"code": ..., "status": ..., ...}}``.
 
         Raises:
-            ValueError: If required fields are missing.
+            ValueError: If the required structure is missing.
         """
-        if "type" not in data:
-            raise ValueError("Problem details missing required 'type' field")
-        if "title" not in data:
-            raise ValueError("Problem details missing required 'title' field")
-        if "status" not in data:
-            raise ValueError("Problem details missing required 'status' field")
+        if "error" not in data:
+            raise ValueError("Response body missing required 'error' field")
+        error = data["error"]
+        if not isinstance(error, dict):
+            raise ValueError(f"'error' field must be an object, got {type(error).__name__}")
+        if "code" not in error:
+            raise ValueError("Error object missing required 'code' field")
 
         return cls(
-            type=str(data["type"]),
-            title=str(data["title"]),
-            status=int(data["status"]),
-            detail=str(data.get("detail", "")),
-            instance=str(data.get("instance", "")),
+            code=int(error["code"]),
+            status=str(error.get("status", "")),
+            message=str(error.get("message", "")),
+            details=error.get("details", []),
         )
 
 
@@ -84,23 +78,19 @@ class ErrorValidationResult:
         valid: True if the error response matches the expected error.
         expected_status: The expected HTTP status code.
         actual_status: The actual HTTP status code from the response.
-        problem_details: Parsed RFC 7807 Problem Details, if present.
+        aip193_error: Parsed AIP-193 error, if present.
         message: A descriptive message about the validation result.
     """
 
     valid: bool
     expected_status: int
     actual_status: int | None
-    problem_details: ProblemDetails | None = None
+    aip193_error: AIP193Error | None = None
     message: str = ""
 
 
 class HTTPResponse(Protocol):
-    """Protocol for HTTP response objects.
-
-    This protocol defines the minimal interface required for HTTP responses
-    to be validated. It is compatible with httpx.Response and similar libraries.
-    """
+    """Protocol for HTTP response objects."""
 
     @property
     def status_code(self) -> int:
@@ -129,12 +119,6 @@ def validate_http_json_error(
 
     Returns:
         An ErrorValidationResult with validation status and details.
-
-    Example:
-        >>> response = {"status_code": 404, "headers": {}, "body": {"type": "...", "title": "Not Found", "status": 404}}
-        >>> result = validate_http_json_error(response, "TaskNotFoundError")
-        >>> print(result.valid)
-        True
     """
     # Get the expected status code
     if expected_error not in HTTP_JSON_ERROR_STATUS:
@@ -142,7 +126,7 @@ def validate_http_json_error(
             valid=False,
             expected_status=0,
             actual_status=None,
-            problem_details=None,
+            aip193_error=None,
             message=f"Unknown error type: {expected_error}. "
             f"Valid types: {', '.join(sorted(HTTP_JSON_ERROR_STATUS.keys()))}",
         )
@@ -153,11 +137,9 @@ def validate_http_json_error(
     try:
         if isinstance(response, dict):
             actual_status = response.get("status_code")
-            headers = response.get("headers", {})
             body = response.get("body")
         else:
             actual_status = response.status_code
-            headers = dict(response.headers)
             try:
                 body = response.json()
             except Exception:
@@ -167,7 +149,7 @@ def validate_http_json_error(
             valid=False,
             expected_status=expected_status,
             actual_status=None,
-            problem_details=None,
+            aip193_error=None,
             message=f"Failed to extract response data: {e}",
         )
 
@@ -177,7 +159,7 @@ def validate_http_json_error(
             valid=False,
             expected_status=expected_status,
             actual_status=None,
-            problem_details=None,
+            aip193_error=None,
             message="Response does not contain a status code",
         )
 
@@ -187,23 +169,22 @@ def validate_http_json_error(
             valid=False,
             expected_status=expected_status,
             actual_status=None,
-            problem_details=None,
+            aip193_error=None,
             message=f"Status code is not an integer: {type(actual_status).__name__}",
         )
 
-    # Parse Problem Details if Content-Type indicates it
-    problem_details = None
-    content_type = _get_content_type(headers)
-    if content_type and "application/problem+json" in content_type.lower() and isinstance(body, dict):
+    # Parse AIP-193 error if body is a dict with 'error' key
+    aip193_error = None
+    if isinstance(body, dict) and "error" in body:
         try:
-            problem_details = ProblemDetails.from_dict(body)
+            aip193_error = AIP193Error.from_dict(body)
         except ValueError as e:
             return ErrorValidationResult(
                 valid=False,
                 expected_status=expected_status,
                 actual_status=actual_status,
-                problem_details=None,
-                message=f"Invalid Problem Details: {e}",
+                aip193_error=None,
+                message=f"Invalid AIP-193 error: {e}",
             )
 
     # Compare status codes
@@ -212,7 +193,7 @@ def validate_http_json_error(
             valid=True,
             expected_status=expected_status,
             actual_status=actual_status,
-            problem_details=problem_details,
+            aip193_error=aip193_error,
             message=f"Status code matches: {expected_error} ({expected_status})",
         )
 
@@ -224,21 +205,14 @@ def validate_http_json_error(
         valid=False,
         expected_status=expected_status,
         actual_status=actual_status,
-        problem_details=problem_details,
+        aip193_error=aip193_error,
         message=f"Status code mismatch: expected {expected_error} ({expected_status}), "
         f"got {actual_status}{actual_error_info}",
     )
 
 
 def _get_content_type(headers: dict[str, str]) -> str | None:
-    """Get the Content-Type header value (case-insensitive).
-
-    Args:
-        headers: The response headers dict.
-
-    Returns:
-        The Content-Type value, or None if not present.
-    """
+    """Get the Content-Type header value (case-insensitive)."""
     for key, value in headers.items():
         if key.lower() == "content-type":
             return value
@@ -246,24 +220,10 @@ def _get_content_type(headers: dict[str, str]) -> str | None:
 
 
 def get_expected_status(error_name: str) -> int | None:
-    """Get the expected HTTP status code for an error name.
-
-    Args:
-        error_name: The error name (e.g., "TaskNotFoundError").
-
-    Returns:
-        The expected HTTP status code, or None if unknown.
-    """
+    """Get the expected HTTP status code for an error name."""
     return HTTP_JSON_ERROR_STATUS.get(error_name)
 
 
 def get_possible_errors(status_code: int) -> list[str]:
-    """Get the possible error names for a given HTTP status code.
-
-    Args:
-        status_code: The HTTP status code.
-
-    Returns:
-        A list of possible error names, or empty list if unknown.
-    """
+    """Get the possible error names for a given HTTP status code."""
     return STATUS_TO_ERRORS.get(status_code, [])

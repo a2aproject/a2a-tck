@@ -15,6 +15,7 @@ from tck.requirements.tags import (
     CODE,
     CONTENT_TYPE,
     ERROR,
+    ERRORINFO,
     FORMAT,
     JSONRPC,
     MAPPING,
@@ -85,9 +86,11 @@ BINDING_JSONRPC_REQUIREMENTS: list[RequirementSpec] = [
         level=RequirementLevel.MUST,
         description=(
             "JSON-RPC error responses MUST use the standard JSON-RPC 2.0 "
-            "error object structure with code, message, and optional data."
+            "error object structure with code, message, and optional data. "
+            "The data field, when present, MUST be an array containing "
+            "google.protobuf.Any messages in ProtoJSON representation."
         ),
-        expected_behavior="Errors include numeric code, message, optional data",
+        expected_behavior="Errors include numeric code, message, and data array",
         spec_url=f"{SPEC_BASE}95-error-handling",
         tags=[JSONRPC, ERROR],
     ),
@@ -103,6 +106,20 @@ BINDING_JSONRPC_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="A2A error codes within specified range",
         spec_url=f"{SPEC_BASE}95-error-handling",
         tags=[JSONRPC, ERROR, CODE],
+    ),
+    RequirementSpec(
+        id="JSONRPC-ERR-003",
+        section="9.5",
+        title="A2A errors include ErrorInfo in data array",
+        level=RequirementLevel.MUST,
+        description=(
+            "For A2A-specific errors, implementations MUST include a "
+            "google.rpc.ErrorInfo message in the data array with reason "
+            "(UPPER_SNAKE_CASE), domain (a2a-protocol.org), and optional metadata."
+        ),
+        expected_behavior="Error data array contains ErrorInfo with correct reason and domain",
+        spec_url=f"{SPEC_BASE}95-error-handling",
+        tags=[JSONRPC, ERROR, ERRORINFO, MAPPING],
     ),
     RequirementSpec(
         id="JSONRPC-SSE-001",

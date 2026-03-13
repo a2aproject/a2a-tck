@@ -1,7 +1,7 @@
 """HTTP+JSON/REST protocol binding requirements from A2A specification Section 11.
 
 Covers: URL patterns, Content-Type, camelCase query params,
-RFC 9457 Problem Details, SSE streaming.
+AIP-193 error format, SSE streaming.
 """
 
 from __future__ import annotations
@@ -12,11 +12,12 @@ from tck.requirements.base import (
     RequirementSpec,
 )
 from tck.requirements.tags import (
+    AIP193,
     CONTENT_TYPE,
     ERROR,
+    ERRORINFO,
     MAPPING,
     METHOD,
-    PROBLEM_DETAILS,
     QUERY_PARAMS,
     REST,
     SERVICE_PARAMS,
@@ -96,29 +97,30 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
         id="HTTP_JSON-ERR-001",
         section="11.6",
-        title="Error responses use RFC 9457 Problem Details format",
+        title="Error responses use AIP-193 format",
         level=RequirementLevel.MUST,
         description=(
-            "HTTP error responses MUST use RFC 9457 Problem Details format "
-            "with Content-Type application/problem+json."
+            "HTTP error responses MUST use the AIP-193 representation with "
+            "Content-Type application/json containing an error object with "
+            "code, status, message, and details fields."
         ),
-        expected_behavior="Error responses conform to Problem Details structure",
+        expected_behavior="Error responses conform to AIP-193 structure",
         spec_url=f"{SPEC_BASE}116-error-handling",
-        tags=[REST, ERROR, PROBLEM_DETAILS],
+        tags=[REST, ERROR, AIP193],
     ),
     RequirementSpec(
         id="HTTP_JSON-ERR-002",
         section="11.6",
-        title="A2A errors use specified type URIs",
+        title="A2A errors include ErrorInfo in details array",
         level=RequirementLevel.MUST,
         description=(
-            "For A2A-specific errors, the type field MUST use the URI from "
-            "the error code mappings table (e.g., "
-            "https://a2a-protocol.org/errors/task-not-found)."
+            "For A2A-specific errors, implementations MUST include a "
+            "google.rpc.ErrorInfo message in the details array with reason "
+            "(UPPER_SNAKE_CASE), domain (a2a-protocol.org), and optional metadata."
         ),
-        expected_behavior="Error type field contains correct A2A URI",
+        expected_behavior="Error details array contains ErrorInfo with correct reason and domain",
         spec_url=f"{SPEC_BASE}116-error-handling",
-        tags=[REST, ERROR, MAPPING],
+        tags=[REST, ERROR, ERRORINFO, MAPPING],
     ),
     RequirementSpec(
         id="HTTP_JSON-STATUS-001",

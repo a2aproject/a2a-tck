@@ -38,17 +38,17 @@ _HTTP_ERROR_MIN = 400
 def _extract_error(response: httpx.Response) -> str:
     """Extract error message from an HTTP error response.
 
-    Handles RFC 9457 Problem Details when Content-Type is application/problem+json,
-    otherwise falls back to the response text.
+    Handles AIP-193 error format (``{"error": {"code": ..., "message": ...}}``)
+    when present, otherwise falls back to the response text.
     """
-    content_type = response.headers.get("content-type", "")
-    if "application/problem+json" in content_type:
-        try:
-            problem = response.json()
-            detail = problem.get("detail", problem.get("title", ""))
-            return f"[{response.status_code}] {detail}" if detail else f"[{response.status_code}]"
-        except (json.JSONDecodeError, ValueError):
-            pass
+    try:
+        body = response.json()
+        if isinstance(body, dict) and "error" in body:
+            error = body["error"]
+            message = error.get("message", "")
+            return f"[{response.status_code}] {message}" if message else f"[{response.status_code}]"
+    except (json.JSONDecodeError, ValueError):
+        pass
     return f"[{response.status_code}] {response.text}"
 
 

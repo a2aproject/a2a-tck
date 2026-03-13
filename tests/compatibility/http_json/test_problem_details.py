@@ -1,7 +1,7 @@
-"""HTTP+JSON Problem Details validation tests.
+"""HTTP+JSON AIP-193 error format validation tests.
 
-Validates that HTTP+JSON error responses conform to RFC 9457 Problem Details
-format as required by Section 11.6 of the A2A specification.
+Validates that HTTP+JSON error responses conform to the AIP-193 error
+representation as required by Section 11.6 of the A2A specification.
 
 Requirements tested:
     HTTP_JSON-ERR-001, HTTP_JSON-ERR-002
@@ -13,10 +13,11 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import A2A_ERROR_TYPE_URIS, TASK_NOT_FOUND_ERROR
+from tck.requirements.base import TASK_NOT_FOUND_ERROR
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
-from tck.validators.http_json.error_validator import ProblemDetails
+from tck.validators.error_info import find_error_info, validate_error_info
+from tck.validators.http_json.error_validator import AIP193Error
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import http_json, must
 
@@ -52,42 +53,40 @@ def _get_error_response(
     return response
 
 
-def _get_problem_body(response: Any) -> dict[str, Any] | None:
-    """Extract the Problem Details body from a response, if applicable.
+def _get_error_body(response: Any) -> dict[str, Any] | None:
+    """Extract the AIP-193 error body from a response.
 
-    Returns None (and skips the test) when the response Content-Type is not
-    ``application/problem+json``.
+    Returns None (and skips the test) when the response body is not
+    an AIP-193 error object.
     """
-    headers = response.headers or {}
-    ct = ""
-    for key, value in headers.items():
-        if key.lower() == "content-type":
-            ct = value
-            break
-    if "application/problem+json" not in ct.lower():
-        pytest.skip("Response is not Problem Details format")
-    body = response.raw_response
-    if not isinstance(body, dict):
-        pytest.skip("Response body is not a JSON object")
+    raw = response.raw_response
+    if not hasattr(raw, "json"):
+        pytest.skip("Response does not support JSON parsing")
+    try:
+        body = raw.json()
+    except Exception:
+        pytest.skip("Response body is not valid JSON")
+    if not isinstance(body, dict) or "error" not in body:
+        pytest.skip("Response body is not an AIP-193 error object")
     return body
 
 
 # ---------------------------------------------------------------------------
-# Problem Details format tests (HTTP_JSON-ERR-001)
+# AIP-193 error format tests (HTTP_JSON-ERR-001)
 # ---------------------------------------------------------------------------
 
 
 @must
 @http_json
-class TestProblemDetailsFormat:
-    """HTTP_JSON-ERR-001: Error responses use RFC 9457 Problem Details format."""
+class TestAIP193ErrorFormat:
+    """HTTP_JSON-ERR-001: Error responses use AIP-193 format."""
 
     def test_error_content_type(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """Error response has Content-Type: application/problem+json."""
+        """Error response has Content-Type: application/json."""
         req = HTTP_JSON_ERR_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
@@ -99,12 +98,12 @@ class TestProblemDetailsFormat:
                 ct = value
                 break
 
-        valid = "application/problem+json" in ct.lower()
+        valid = "application/json" in ct.lower()
         errors = (
             []
             if valid
             else [
-                f"Error Content-Type must be application/problem+json, got: {ct!r}"
+                f"Error Content-Type must be application/json, got: {ct!r}"
             ]
         )
         record(
@@ -116,20 +115,20 @@ class TestProblemDetailsFormat:
         )
         assert valid, fail_msg(req, TRANSPORT, errors[0])
 
-    def test_required_fields_present(
+    def test_error_object_present(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """Body contains required fields: type, title, status."""
+        """Body contains an 'error' object with required 'code' field."""
         req = HTTP_JSON_ERR_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
-        body = _get_problem_body(response)
+        body = _get_error_body(response)
 
         errors: list[str] = []
         try:
-            ProblemDetails.from_dict(body)
+            AIP193Error.from_dict(body)
         except ValueError as exc:
             errors.append(str(exc))
 
@@ -142,28 +141,28 @@ class TestProblemDetailsFormat:
         )
         assert not errors, fail_msg(req, TRANSPORT, "; ".join(errors))
 
-    def test_status_field_matches_http_status(
+    def test_code_field_matches_http_status(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """The ``status`` field value equals the HTTP response status code."""
+        """The error.code field value equals the HTTP response status code."""
         req = HTTP_JSON_ERR_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
-        body = _get_problem_body(response)
+        body = _get_error_body(response)
 
         try:
-            pd = ProblemDetails.from_dict(body)
+            aip_error = AIP193Error.from_dict(body)
         except ValueError:
-            pytest.skip("Problem Details missing required fields")
+            pytest.skip("AIP-193 error missing required fields")
 
-        valid = pd.status == response.status_code
+        valid = aip_error.code == response.status_code
         errors = (
             []
             if valid
             else [
-                f"Problem Details status ({pd.status}) does not match "
+                f"error.code ({aip_error.code}) does not match "
                 f"HTTP status code ({response.status_code})"
             ]
         )
@@ -176,25 +175,22 @@ class TestProblemDetailsFormat:
         )
         assert valid, fail_msg(req, TRANSPORT, errors[0])
 
-    def test_optional_fields_valid(
+    def test_message_field_is_string(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """If ``detail`` or ``instance`` are present, they must be strings."""
+        """If error.message is present, it must be a string."""
         req = HTTP_JSON_ERR_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
-        body = _get_problem_body(response)
+        body = _get_error_body(response)
 
+        error_obj = body.get("error", {})
         errors: list[str] = []
-        if "detail" in body and not isinstance(body["detail"], str):
+        if "message" in error_obj and not isinstance(error_obj["message"], str):
             errors.append(
-                f"'detail' field must be a string, got {type(body['detail']).__name__}"
-            )
-        if "instance" in body and not isinstance(body["instance"], str):
-            errors.append(
-                f"'instance' field must be a string, got {type(body['instance']).__name__}"
+                f"'message' field must be a string, got {type(error_obj['message']).__name__}"
             )
 
         record(
@@ -208,33 +204,37 @@ class TestProblemDetailsFormat:
 
 
 # ---------------------------------------------------------------------------
-# Problem Details type URI tests (HTTP_JSON-ERR-002)
+# ErrorInfo in details array tests (HTTP_JSON-ERR-002)
 # ---------------------------------------------------------------------------
 
 
 @must
 @http_json
-class TestProblemDetailsTypeUri:
-    """HTTP_JSON-ERR-002: A2A errors use specified type URIs."""
+class TestAIP193ErrorInfo:
+    """HTTP_JSON-ERR-002: A2A errors include ErrorInfo in details array."""
 
-    def test_type_is_a2a_error_uri(
+    def test_details_contains_error_info(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """The ``type`` field matches one of the spec-defined A2A error URIs."""
+        """The details array contains a google.rpc.ErrorInfo entry."""
         req = HTTP_JSON_ERR_002
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
-        body = _get_problem_body(response)
+        body = _get_error_body(response)
 
-        error_type = body.get("type", "")
-        valid = error_type in A2A_ERROR_TYPE_URIS
+        try:
+            aip_error = AIP193Error.from_dict(body)
+        except ValueError:
+            pytest.skip("AIP-193 error missing required fields")
+
+        valid = find_error_info(aip_error.details) is not None
         errors = (
             []
             if valid
             else [
-                f"type URI {error_type!r} is not a recognised A2A error URI"
+                "details array must contain a google.rpc.ErrorInfo entry"
             ]
         )
         record(
@@ -246,33 +246,56 @@ class TestProblemDetailsTypeUri:
         )
         assert valid, fail_msg(req, TRANSPORT, errors[0])
 
-    def test_type_uri_matches_error_condition(
+    def test_error_info_valid(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """For a TaskNotFound trigger, type must be the task-not-found URI."""
+        """ErrorInfo has correct domain and valid reason."""
         req = HTTP_JSON_ERR_002
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
-        body = _get_problem_body(response)
+        body = _get_error_body(response)
 
-        expected_uri = TASK_NOT_FOUND_ERROR.type_uri
-        error_type = body.get("type", "")
-        valid = error_type == expected_uri
-        errors = (
-            []
-            if valid
-            else [
-                f"TaskNotFoundError should have type {expected_uri!r}, "
-                f"got {error_type!r}"
-            ]
-        )
+        try:
+            aip_error = AIP193Error.from_dict(body)
+        except ValueError:
+            pytest.skip("AIP-193 error missing required fields")
+
+        result = validate_error_info(aip_error.details)
+        errors = [] if result.valid else [result.message]
         record(
             collector=compatibility_collector,
             req=req,
             transport=TRANSPORT,
-            passed=valid,
+            passed=result.valid,
             errors=errors,
         )
-        assert valid, fail_msg(req, TRANSPORT, errors[0])
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+
+    def test_error_info_reason_matches_condition(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """For a TaskNotFound trigger, reason must be TASK_NOT_FOUND."""
+        req = HTTP_JSON_ERR_002
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
+        response = _get_error_response(client)
+        body = _get_error_body(response)
+
+        try:
+            aip_error = AIP193Error.from_dict(body)
+        except ValueError:
+            pytest.skip("AIP-193 error missing required fields")
+
+        result = validate_error_info(aip_error.details, expected_reason=TASK_NOT_FOUND_ERROR.reason)
+        errors = [] if result.valid else [result.message]
+        record(
+            collector=compatibility_collector,
+            req=req,
+            transport=TRANSPORT,
+            passed=result.valid,
+            errors=errors,
+        )
+        assert result.valid, fail_msg(req, TRANSPORT, result.message)

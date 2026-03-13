@@ -16,6 +16,7 @@ from tck.requirements.base import (
 from tck.requirements.tags import (
     AGENT_CARD,
     AUTH,
+    CACHING,
     DISCOVERY,
     ERROR,
     EXTENDED,
@@ -25,6 +26,7 @@ from tck.requirements.tags import (
     NOT_AUTOMATABLE,
     PROTOCOL,
     SECURITY,
+    SERVER,
     SIGNING,
     STRUCTURE,
 )
@@ -176,5 +178,47 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Expired/revoked keys rejected during verification",
         spec_url=f"{SPEC_BASE}843-signature-verification",
         tags=[AGENT_CARD, SIGNING, SECURITY, NOT_AUTOMATABLE],
+    ),
+    # --- Agent Card Caching (Section 8.6) ---
+    RequirementSpec(
+        id="CARD-CACHE-001",
+        section="8.6.1",
+        title="Agent Card endpoint includes Cache-Control header",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "Agent Card HTTP endpoints SHOULD include a Cache-Control "
+            "response header with a max-age directive appropriate for the "
+            "agent's expected update frequency."
+        ),
+        expected_behavior="Cache-Control header with max-age present in response",
+        spec_url=f"{SPEC_BASE}861-server-requirements",
+        tags=[AGENT_CARD, CACHING, SERVER],
+    ),
+    RequirementSpec(
+        id="CARD-CACHE-002",
+        section="8.6.1",
+        title="Agent Card endpoint includes ETag header",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "Agent Card HTTP endpoints SHOULD include an ETag response "
+            "header derived from the Agent Card's version field or a hash "
+            "of the card content."
+        ),
+        expected_behavior="ETag header present in response",
+        spec_url=f"{SPEC_BASE}861-server-requirements",
+        tags=[AGENT_CARD, CACHING, SERVER],
+    ),
+    RequirementSpec(
+        id="CARD-CACHE-003",
+        section="8.6.1",
+        title="Agent Card endpoint may include Last-Modified header",
+        level=RequirementLevel.MAY,
+        description=(
+            "Agent Card HTTP endpoints MAY include a Last-Modified "
+            "response header."
+        ),
+        expected_behavior="Last-Modified header present in response",
+        spec_url=f"{SPEC_BASE}861-server-requirements",
+        tags=[AGENT_CARD, CACHING, SERVER],
     ),
 ]
