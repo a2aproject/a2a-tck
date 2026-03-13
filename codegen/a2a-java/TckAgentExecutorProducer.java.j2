@@ -6,6 +6,7 @@ import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 
+import io.a2a.A2A;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.tasks.AgentEmitter;
@@ -41,8 +42,7 @@ public class TckAgentExecutorProducer {
                 {% endfor %}
 
                 // Default: complete the task with an echo response
-                emitter.sendMessage("Unhandled messageId prefix: " + messageId);
-                emitter.complete();
+                emitter.complete(A2A.toAgentMessage("Unhandled messageId prefix: " + messageId));
             }
 
             @Override

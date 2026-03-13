@@ -6,6 +6,7 @@ import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 
+import io.a2a.A2A;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.tasks.AgentEmitter;
@@ -32,14 +33,12 @@ public class TckAgentExecutorProducer {
                 String messageId = context.getMessage().messageId();
 
                 if (messageId.startsWith("tck-send-001")) {
-                    emitter.sendMessage(List.of(new TextPart("Hello from TCK")));
-                    emitter.complete();
+                    emitter.complete(A2A.toAgentMessage("Hello from TCK"));
                     return;
                 }
 
                 if (messageId.startsWith("tck-terminal-send-002")) {
-                    emitter.sendMessage(List.of(new TextPart("Task completed")));
-                    emitter.complete();
+                    emitter.complete(A2A.toAgentMessage("Hello from TCK"));
                     return;
                 }
 
@@ -76,26 +75,22 @@ public class TckAgentExecutorProducer {
                 }
 
                 if (messageId.startsWith("tck-block-001")) {
-                    emitter.sendMessage(List.of(new TextPart("Blocking response")));
-                    emitter.complete();
+                    emitter.complete(A2A.toAgentMessage("Blocking response"));
                     return;
                 }
 
                 if (messageId.startsWith("tck-block-002")) {
-                    emitter.sendMessage(List.of(new TextPart("Non-blocking response")));
-                    emitter.complete();
+                    emitter.complete(A2A.toAgentMessage("Non-blocking response"));
                     return;
                 }
 
                 if (messageId.startsWith("tck-task-helper")) {
-                    emitter.sendMessage(List.of(new TextPart("Task helper response")));
-                    emitter.complete();
+                    emitter.complete(A2A.toAgentMessage("Task helper response"));
                     return;
                 }
 
                 // Default: complete the task with an echo response
-                emitter.sendMessage("Unhandled messageId prefix: " + messageId);
-                emitter.complete();
+                emitter.complete(A2A.toAgentMessage("Unhandled messageId prefix: " + messageId));
             }
 
             @Override

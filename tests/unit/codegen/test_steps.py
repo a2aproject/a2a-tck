@@ -6,12 +6,12 @@ import pytest
 
 from codegen.model import (
     AddArtifact,
+    CompleteTask,
     DataPartDef,
     FilePartDef,
     MessageTrigger,
     RejectWithError,
     ReturnMessage,
-    ReturnTask,
     StreamArtifact,
     StreamStatusUpdate,
     StreamingMessageTrigger,
@@ -58,14 +58,14 @@ class TestResolveAction:
     """Tests for resolve_action()."""
 
     def test_complete_task_with_text(self) -> None:
-        """Complete with text resolves to ReturnTask with TextPartDef."""
+        """Complete with text resolves to CompleteTask with TextPartDef."""
         a = resolve_action('complete the task with a text part "Hello"')
-        assert a == ReturnTask(parts=[TextPartDef(text="Hello")])
+        assert a == CompleteTask(parts=[TextPartDef(text="Hello")])
 
     def test_complete_task_bare(self) -> None:
-        """Bare complete resolves to ReturnTask with no parts."""
+        """Bare complete resolves to CompleteTask with no parts."""
         a = resolve_action("complete the task")
-        assert a == ReturnTask()
+        assert a == CompleteTask()
 
     def test_add_artifact_text(self) -> None:
         """Text artifact resolves to AddArtifact with TextPartDef."""

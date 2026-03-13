@@ -15,11 +15,11 @@ Feature: Core Operations
 
   Scenario: Basic task completion (CORE-SEND-001)
     When a message is received with prefix "tck-send-001"
-    Then complete the task with a text part "Hello from TCK"
+    Then complete the task with the message "Hello from TCK"
 
   Scenario: Setup terminal task for rejection test (CORE-SEND-002)
     When a message is received with prefix "tck-terminal-send-002"
-    Then complete the task with a text part "Task completed"
+    Then complete the task with the message "Hello from TCK"
 
   # CORE-SEND-003: ContentTypeNotSupportedError is detected by the SDK framework
   # based on the agent card's supported input content types. No executor scenario needed.
@@ -72,11 +72,11 @@ Feature: Core Operations
 
   Scenario: Blocking mode task (CORE-EXECUTION-MODE-001)
     When a message is received with prefix "tck-block-001"
-    Then complete the task with a text part "Blocking response"
+    Then complete the task with the message "Blocking response"
 
   Scenario: Non-blocking mode task (CORE-EXECUTION-MODE-002)
     When a message is received with prefix "tck-block-002"
-    Then complete the task with a text part "Non-blocking response"
+    Then complete the task with the message "Non-blocking response"
 
   # ---------------------------------------------------------------------------
   # Generic Setup (for multi-operation tests)
@@ -88,4 +88,4 @@ Feature: Core Operations
   # and SubscribeToTask lifecycle (STREAM-SUB-002, STREAM-SUB-003).
   Scenario: Generic task creation for multi-operation setup
     When a message is received with prefix "tck-task-helper"
-    Then complete the task with a text part "Task helper response"
+    Then complete the task with the message "Task helper response"

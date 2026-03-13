@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 from codegen.java_emitter import emit_java_project
 from codegen.model import (
+    CompleteTask,
     MessageTrigger,
     RejectWithError,
     ReturnMessage,
-    ReturnTask,
     Scenario,
     StreamArtifact,
     StreamStatusUpdate,
@@ -32,7 +32,7 @@ def _basic_scenarios() -> list[Scenario]:
         Scenario(
             name="Basic completion",
             trigger=MessageTrigger(prefix="tck-send-001"),
-            actions=[ReturnTask(parts=[TextPartDef(text="Hello")])],
+            actions=[CompleteTask(message="Hello")],
         ),
         Scenario(
             name="Return message",
@@ -113,7 +113,7 @@ class TestEmitJavaProject:
         )
         content = executor.read_text()
 
-        assert "emitter.complete();" in content
+        assert "emitter.complete(A2A.toAgentMessage(" in content
         assert "emitter.sendMessage(" in content
         assert "emitter.requiresInput();" in content
 
