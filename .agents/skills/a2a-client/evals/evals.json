@@ -1,0 +1,23 @@
+{
+  "skill_name": "a2a-client",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I have an A2A agent running at http://localhost:9999. What can it do?",
+      "expected_output": "Discovers the agent by fetching its AgentCard and presents a summary of the agent's capabilities, skills, and supported interfaces.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "Send 'hi' to the A2A agent at http://localhost:9999",
+      "expected_output": "Sends a message to the agent using the appropriate protocol binding and displays the agent's response.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Send a streaming message to the A2A agent at http://localhost:9999 saying 'hello world'",
+      "expected_output": "Uses the streaming endpoint to send a message and displays the SSE events as they arrive.",
+      "files": []
+    }
+  ]
+}
