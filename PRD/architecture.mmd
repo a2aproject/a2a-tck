@@ -1,0 +1,83 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#4a90a4', 'secondaryColor': '#f4f4f4', 'tertiaryColor': '#fff'}}}%%
+
+graph TB
+    subgraph "A2A Specification (Source of Truth)"
+        PROTO["a2a.proto<br/>Canonical Definition"]
+        JSON_SCHEMA["a2a.json<br/>JSON Schema (derived)"]
+        SPEC_MD["specification.md<br/>Requirements & Bindings"]
+
+        PROTO --> JSON_SCHEMA
+        PROTO --> SPEC_MD
+    end
+
+    subgraph "Requirement Layer"
+        REQ_BASE["requirements/base.py<br/>RequirementSpec base class"]
+        REQ_DEFS["requirements/REQ_*.py<br/>~100 requirement definitions"]
+        REQ_REGISTRY["requirements/registry.py<br/>ALL_REQUIREMENTS collection"]
+
+        REQ_BASE --> REQ_DEFS
+        REQ_DEFS --> REQ_REGISTRY
+    end
+
+    subgraph "Validation Layer"
+        subgraph "Schema Validators"
+            JSON_VAL["validators/json_schema.py<br/>JSON Schema validation"]
+            PROTO_VAL["validators/proto_schema.py<br/>Proto descriptor validation"]
+        end
+
+        subgraph "Transport Validators"
+            GRPC_VAL["validators/grpc/<br/>gRPC-native validation"]
+            JSONRPC_VAL["validators/jsonrpc/<br/>JSON-RPC specifics"]
+            REST_VAL["validators/rest/<br/>REST/HTTP specifics"]
+        end
+
+        JSON_SCHEMA --> JSON_VAL
+        PROTO --> PROTO_VAL
+
+        JSON_VAL --> JSONRPC_VAL
+        JSON_VAL --> REST_VAL
+        PROTO_VAL --> GRPC_VAL
+    end
+
+    subgraph "Transport Layer"
+        GRPC_CLIENT["transport/grpc_client.py<br/>Native gRPC client"]
+        JSONRPC_CLIENT["transport/jsonrpc_client.py<br/>JSON-RPC over HTTP"]
+        REST_CLIENT["transport/rest_client.py<br/>HTTP/REST client"]
+        TRANSPORT_MGR["transport/manager.py<br/>Transport orchestration"]
+
+        TRANSPORT_MGR --> GRPC_CLIENT
+        TRANSPORT_MGR --> JSONRPC_CLIENT
+        TRANSPORT_MGR --> REST_CLIENT
+    end
+
+    subgraph "Test Layer"
+        CORE_TESTS["tests/core/test_requirements.py<br/>Parametrized requirement tests"]
+        GRPC_CORNER["tests/grpc/<br/>gRPC corner cases"]
+        JSONRPC_CORNER["tests/jsonrpc/<br/>JSON-RPC corner cases"]
+        REST_CORNER["tests/rest/<br/>REST corner cases"]
+
+        REQ_REGISTRY --> CORE_TESTS
+        GRPC_VAL --> CORE_TESTS
+        JSONRPC_VAL --> CORE_TESTS
+        REST_VAL --> CORE_TESTS
+
+        JSONRPC_VAL --> JSONRPC_CORNER
+        REST_VAL --> REST_CORNER
+        GRPC_VAL --> GRPC_CORNER
+    end
+
+    subgraph "Reporting Layer"
+        REPORTER["reporting/compliance.py<br/>Compliance report generator"]
+        REPORT_JSON["reports/compliance.json<br/>Machine-readable output"]
+        REPORT_HTML["reports/compliance.html<br/>Human-readable output"]
+
+        CORE_TESTS --> REPORTER
+        GRPC_CORNER --> REPORTER
+        JSONRPC_CORNER --> REPORTER
+        REST_CORNER --> REPORTER
+
+        REPORTER --> REPORT_JSON
+        REPORTER --> REPORT_HTML
+    end
+
+    TRANSPORT_MGR --> CORE_TESTS

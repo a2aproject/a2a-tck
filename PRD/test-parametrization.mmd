@@ -1,0 +1,53 @@
+%%{init: {'theme': 'base'}}%%
+
+flowchart LR
+    subgraph "Requirement Registry"
+        R1["REQ-3.1<br/>SendMessage"]
+        R2["REQ-3.2<br/>Streaming"]
+        R3["REQ-3.3<br/>GetTask"]
+        RN["...<br/>~100 requirements"]
+    end
+
+    subgraph "Transport Matrix"
+        T1["gRPC"]
+        T2["JSON-RPC"]
+        T3["REST"]
+    end
+
+    subgraph "Pytest Parametrization"
+        PARAM["@pytest.mark.parametrize<br/>('transport', 'requirement')"]
+    end
+
+    R1 --> PARAM
+    R2 --> PARAM
+    R3 --> PARAM
+    RN --> PARAM
+    T1 --> PARAM
+    T2 --> PARAM
+    T3 --> PARAM
+
+    subgraph "Generated Tests (~300)"
+        TEST1["test[grpc-REQ-3.1]"]
+        TEST2["test[jsonrpc-REQ-3.1]"]
+        TEST3["test[rest-REQ-3.1]"]
+        TEST4["test[grpc-REQ-3.2]"]
+        TEST5["test[jsonrpc-REQ-3.2]"]
+        TEST6["..."]
+    end
+
+    PARAM --> TEST1
+    PARAM --> TEST2
+    PARAM --> TEST3
+    PARAM --> TEST4
+    PARAM --> TEST5
+    PARAM --> TEST6
+
+    subgraph "Corner Case Tests (Separate)"
+        CC1["tests/jsonrpc/<br/>test_error_codes.py"]
+        CC2["tests/rest/<br/>test_http_status.py"]
+        CC3["tests/grpc/<br/>test_status_codes.py"]
+    end
+
+    TEST6 -.-> CC1
+    TEST6 -.-> CC2
+    TEST6 -.-> CC3

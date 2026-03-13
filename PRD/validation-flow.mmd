@@ -1,0 +1,65 @@
+%%{init: {'theme': 'base'}}%%
+
+flowchart TD
+    START((Test Execution))
+
+    subgraph "Input"
+        REQ["Requirement Definition<br/>REQ-X.Y"]
+        TRANSPORT["Transport Type<br/>grpc | jsonrpc | rest"]
+    end
+
+    START --> REQ
+    START --> TRANSPORT
+
+    TRANSPORT --> ROUTE{Transport<br/>Router}
+
+    subgraph "gRPC Path"
+        GRPC_CLIENT["gRPC Client<br/>Execute RPC"]
+        GRPC_RESP["Proto Response<br/>(native)"]
+        PROTO_VAL["Proto Descriptor<br/>Validation"]
+
+        GRPC_CLIENT --> GRPC_RESP
+        GRPC_RESP --> PROTO_VAL
+    end
+
+    subgraph "JSON-RPC Path"
+        JSONRPC_CLIENT["JSON-RPC Client<br/>HTTP POST"]
+        JSONRPC_RESP["JSON Response<br/>(native)"]
+        JSONRPC_UNWRAP["Unwrap JSON-RPC<br/>envelope"]
+        JSON_VAL_JR["JSON Schema<br/>Validation"]
+
+        JSONRPC_CLIENT --> JSONRPC_RESP
+        JSONRPC_RESP --> JSONRPC_UNWRAP
+        JSONRPC_UNWRAP --> JSON_VAL_JR
+    end
+
+    subgraph "REST Path"
+        REST_CLIENT["REST Client<br/>HTTP verb + path"]
+        REST_RESP["JSON Response<br/>(native)"]
+        JSON_VAL_REST["JSON Schema<br/>Validation"]
+
+        REST_CLIENT --> REST_RESP
+        REST_RESP --> JSON_VAL_REST
+    end
+
+    ROUTE -->|grpc| GRPC_CLIENT
+    ROUTE -->|jsonrpc| JSONRPC_CLIENT
+    ROUTE -->|rest| REST_CLIENT
+
+    PROTO_VAL --> RESULT
+    JSON_VAL_JR --> RESULT
+    JSON_VAL_REST --> RESULT
+
+    subgraph "Validation Result"
+        RESULT{Valid?}
+        PASS["✅ PASS<br/>Record success"]
+        FAIL["❌ FAIL<br/>Record errors"]
+    end
+
+    RESULT -->|yes| PASS
+    RESULT -->|no| FAIL
+
+    PASS --> REPORT
+    FAIL --> REPORT
+
+    REPORT["Compliance<br/>Reporter"]
