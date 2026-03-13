@@ -36,6 +36,8 @@ If updating from a fork or a different branch, pass arguments:
 
 ## Step 3: Regenerate gRPC stubs and JSON schema
 
+Skip this step if `specification/a2a.proto` did not change (diff shows no proto changes).
+
 ### gRPC stubs
 
 Run:
@@ -51,14 +53,14 @@ After regenerating, check the protobuf version in the generated stubs (`head -5 
 
 ### JSON schema
 
-Run:
+Ask the user for the path to their local [googleapis](https://github.com/googleapis/googleapis) checkout, then run:
 ```bash
 PATH="$HOME/go/bin:$PATH" GOOGLEAPIS_DIR=<path-to-googleapis> make jsonschema
 ```
 
 This regenerates `specification/a2a.json` from the updated `a2a.proto`. It requires:
 - `protoc-gen-jsonschema`, installed via `go install github.com/bufbuild/protoschema-plugins/cmd/protoc-gen-jsonschema@latest`
-- `GOOGLEAPIS_DIR` set to a local checkout of the [googleapis](https://github.com/googleapis/googleapis) repository
+- `GOOGLEAPIS_DIR` set to the user's local googleapis checkout
 
 **IMPORTANT:** Never edit `specification/a2a.json` manually — always regenerate it from the proto.
 
@@ -109,6 +111,11 @@ If the spec changes affect transport-level behavior:
 
 - Transport clients are in `tck/transport/`
 - Response validators are in `tck/validators/`
+  - `tck/validators/error_info.py` — shared ErrorInfo validation for JSON-RPC and HTTP+JSON (ProtoJSON `@type` format)
+  - `tck/validators/grpc/error_validator.py` — gRPC ErrorInfo extraction (binary protobuf)
+  - `tck/validators/http_json/error_validator.py` — AIP-193 error format parsing
+  - `tck/validators/jsonrpc/error_validator.py` — JSON-RPC error code validation
+  - `tck/validators/error_binding.py` — cross-transport expected-error validation
 
 ## Step 7: Update or add conformance tests
 
@@ -118,13 +125,21 @@ Tests are in `tests/compatibility/`:
 - `grpc/` - gRPC-specific tests
 - `jsonrpc/` - JSON-RPC-specific tests
 - `http_json/` - HTTP+JSON-specific tests
+- `agent_card/` - Agent card tests (discovery, caching, signing)
 
-Each test class uses markers from `tests/compatibility/markers.py` (`@grpc`, `@jsonrpc`, `@http_json`, `@must`, `@should`, `@may`).
+Each test class uses markers from `tests/compatibility/markers.py` (`@grpc`, `@jsonrpc`, `@http_json`, `@core`, `@must`, `@should`, `@may`).
+
+Tests use helpers from `tests/compatibility/_test_helpers.py`:
+- `get_client()` — get transport client with skip-on-missing handling
+- `record()` — record result to compatibility collector
+- `fail_msg()` — format assertion message with requirement context
 
 Tests record results with:
 ```python
 compatibility_collector.record(requirement_id, transport, level, passed, errors)
 ```
+
+When writing tests, prefer using transport clients (`client.get_task()`, `client.cancel_task()`, etc.) over raw HTTP calls. Only use raw `httpx` calls when the test needs custom headers (e.g., `A2A-Version`), invalid methods, malformed payloads, or wrong `Content-Type`.
 
 ## Step 8: Validate
 
@@ -147,6 +162,8 @@ Before committing, audit all requirement files to verify:
 - Each requirement's `spec_url` anchor resolves to the right heading.
 - No requirements reference sections or content that was removed or renamed.
 - Any new MUST/SHOULD/MAY requirements in the spec have corresponding entries.
+
+To verify anchors programmatically, note that GitHub strips dots and special characters from heading text when generating anchors. For example, heading `#### 3.1.1. Send Message` produces anchor `#311-send-message` (not `#3.1.1.-send-message`). The `SPEC_BASE` constant in `base.py` is `specification/specification.md#`, and the `_spec_url_to_href()` function in `html_formatter.py` converts these to absolute GitHub URLs using the commit hash from `version.json`.
 
 Highlight any new, modified, or removed requirements for the user.
 
