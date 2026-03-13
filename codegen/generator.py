@@ -2,7 +2,7 @@
 
 Usage::
 
-    python -m codegen.generator --output sut/java/
+    python -m codegen.generator --output sut/a2a-java/
 
 Reads all ``scenarios/*.feature`` files, parses them into Scenario
 objects, and invokes the Java emitter to generate a complete Quarkus
