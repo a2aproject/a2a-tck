@@ -48,7 +48,7 @@ The TCK tests use `tck_id("send-001")` which generates `tck-send-001-<session_he
 The a2a-java SDK version is controlled by the `A2A_JAVA_SDK_VERSION` environment variable.
 The default value is defined in `codegen/java_emitter.py` (`_DEFAULT_A2A_JAVA_SDK_VERSION`).
 
-Report to the user which version will be used and propose setting the env var if they want a different version:
+Read the actual default version from `codegen/java_emitter.py` (grep for `_DEFAULT_A2A_JAVA_SDK_VERSION`) and check the env var. Report to the user which version will be used and propose setting the env var if they want a different version:
 
 ```bash
 # Use default version
@@ -104,8 +104,10 @@ cd sut/a2a-java && mvn package
 ## Step 3: Start the SUT
 
 ```bash
-cd sut/a2a-java && mvn quarkus:dev
+cd sut/a2a-java && mvn quarkus:dev -Dquarkus.console.enabled=false
 ```
+
+The `-Dquarkus.console.enabled=false` flag disables the interactive Quarkus console, which is required when running in the background or non-interactively.
 
 The SUT listens on port **9999** and serves all three transports:
 - **JSON-RPC** — `http://localhost:9999` (POST)

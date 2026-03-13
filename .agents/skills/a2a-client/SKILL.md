@@ -77,14 +77,14 @@ curl -s -X POST <ENDPOINT_URL> \
     "method": "SendMessage",
     "params": {
       "message": {
-        "message_id": "'$(uuidgen | tr A-Z a-z)'",
+        "messageId": "'$(uuidgen | tr A-Z a-z)'",
         "role": "ROLE_USER",
         "parts": [
           {"text": "Your message to the agent"}
         ]
       },
       "configuration": {
-        "accepted_output_modes": ["text/plain", "application/json"]
+        "acceptedOutputModes": ["text/plain", "application/json"]
       }
     }
   }' | jq .
@@ -193,7 +193,7 @@ curl -s "<ENDPOINT_URL>/tasks?context_id=<CONTEXT_ID>" | jq .
 # JSON-RPC
 curl -s -X POST <ENDPOINT_URL> \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"ListTasks","params":{"context_id":"<CONTEXT_ID>"}}' | jq .
+  -d '{"jsonrpc":"2.0","id":1,"method":"ListTasks","params":{"contextId":"<CONTEXT_ID>"}}' | jq .
 ```
 
 ### Cancel a Task
@@ -243,7 +243,7 @@ This is especially important when the task status is `TASK_STATE_INPUT_REQUIRED`
 - **Track context**: Save `task.id` and `context_id` for follow-up messages and task management.
 - **Handle all task states**: Not every task completes immediately. Be prepared for `WORKING`, `INPUT_REQUIRED`, and error states.
 - **Use `jq` for readability**: Always pipe JSON responses through `jq` for clear output.
-- **Generate unique message IDs**: Use `uuidgen` for each message.
+- **Message IDs**: Use the user-provided message ID if they specify one, otherwise generate a unique one with `uuidgen`.
 
 ## Protocol Reference
 
