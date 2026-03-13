@@ -104,6 +104,23 @@ Reports are always generated in the `reports/` directory after every run:
 | pytest HTML | `reports/tck_report.html` | Standard pytest-html report |
 | JUnit XML | `reports/junitreport.xml` | JUnit XML for CI integration |
 
+## SUT Code Generation
+
+The TCK includes a code generator that produces System Under Test (SUT) implementations from Gherkin scenario files in `scenarios/`. Currently, the a2a-java SUT (a Quarkus application using the [a2a-java SDK](https://github.com/a2aproject/a2a-java)) is supported.
+
+```bash
+# Generate the a2a-java SUT from Gherkin scenarios
+make codegen-a2a-java-sut
+
+# Build and start the SUT
+cd sut/a2a-java && mvn package && mvn quarkus:dev
+
+# Run the TCK against it
+./run_tck.py --sut-host http://localhost:9999
+```
+
+The SDK version is controlled by the `A2A_JAVA_SDK_VERSION` environment variable (see `codegen/java_emitter.py` for the default).
+
 ## Development
 
 | Command | Description |
@@ -112,6 +129,7 @@ Reports are always generated in the `reports/` directory after every run:
 | `make unit-test` | Run unit tests (no SUT required) |
 | `make spec` | Update A2A specification files from [https://github.com/a2aproject/A2A](A2A GitHub repository) |
 | `make proto` | Regenerate gRPC stubs from `a2a.proto` |
+| `make codegen-a2a-java-sut` | Generate the a2a-java SUT from Gherkin scenarios |
 
 See [AGENTS.md](AGENTS.md) for architecture details and contribution guidelines.
 

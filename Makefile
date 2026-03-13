@@ -1,7 +1,7 @@
-.PHONY: help proto jsonschema test lint spec
+.PHONY: help proto jsonschema test lint spec codegen-a2a-java-sut
 
 help: ## Show available targets
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  make %-10s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  make %-25s %s\n", $$1, $$2}'
 
 proto: ## Generate Python gRPC stubs from a2a.proto
 	./scripts/generate_grpc_stubs.sh
@@ -17,3 +17,6 @@ unit-test: ## Run unit tests only
 
 lint: ## Run linter
 	uv run ruff check .
+
+codegen-a2a-java-sut: ## Generate the a2a-java SUT from Gherkin scenarios
+	uv run python -m codegen.generator --output sut/a2a-java

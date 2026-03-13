@@ -41,6 +41,16 @@ class TransportResponse(ABC):
     def error_code(self) -> int | str | None:
         """Transport-specific error code, derived from ``raw_response``."""
 
+    @property
+    @abstractmethod
+    def task_id(self) -> str | None:
+        """Task ID extracted from ``raw_response``, or ``None``."""
+
+    @property
+    @abstractmethod
+    def context_id(self) -> str | None:
+        """Context ID extracted from ``raw_response``, or ``None``."""
+
 
 @dataclass
 class StreamingResponse(TransportResponse):

@@ -29,6 +29,8 @@ dependencies = [
     "googleapis-common-protos>=1.62",
     "jsonschema>=4.21",
     "pytest-html>=4.1",
+    "gherkin-official>=29.0",
+    "Jinja2>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -41,7 +43,7 @@ dev = [
 run-tck = "run_tck:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["tck", "specification"]
+packages = ["tck", "specification", "codegen"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"

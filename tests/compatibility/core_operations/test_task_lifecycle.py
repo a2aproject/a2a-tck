@@ -26,7 +26,7 @@ import pytest
 from specification.generated import a2a_pb2
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._task_helpers import create_task, extract_task_id
+from tests.compatibility._task_helpers import create_completed_task, create_working_task
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import must, streaming
 
@@ -179,7 +179,7 @@ class TestGetTask:
         """CORE-GET-001: GetTask returns the current state of an existing task."""
         req = CORE_GET_001
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         response = client.get_task(id=info.task_id)
 
@@ -188,7 +188,7 @@ class TestGetTask:
             errors.append(f"GetTask failed: {response.error}")
         else:
             # Verify a task ID is present in the response
-            returned_id = extract_task_id(response)
+            returned_id = response.task_id
             if returned_id != info.task_id:
                 errors.append(
                     f"GetTask returned task ID {returned_id!r}, "
@@ -219,7 +219,7 @@ class TestCancelTask:
         """CORE-CANCEL-001: CancelTask returns the task with updated state."""
         req = CORE_CANCEL_001
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_working_task(client)
 
         response = client.cancel_task(id=info.task_id)
 
@@ -229,7 +229,7 @@ class TestCancelTask:
             # or cancellation is not supported — still valid behavior
             errors.append(f"CancelTask returned error: {response.error}")
         else:
-            returned_id = extract_task_id(response)
+            returned_id = response.task_id
             if returned_id != info.task_id:
                 errors.append(
                     f"CancelTask returned task ID {returned_id!r}, "
@@ -249,7 +249,7 @@ class TestCancelTask:
         """CORE-CANCEL-002: CancelTask on a terminal task returns TaskNotCancelableError."""
         req = CORE_CANCEL_002
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         # Verify the task reached a terminal state
         get_response = client.get_task(id=info.task_id)
@@ -291,7 +291,7 @@ class TestMultiTurn:
         """CORE-SEND-002: SendMessage to a terminal task returns UnsupportedOperationError."""
         req = CORE_SEND_002
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         # Verify the task reached a terminal state
         get_response = client.get_task(id=info.task_id)
@@ -329,7 +329,7 @@ class TestMultiTurn:
         """CORE-MULTI-005: SendMessage with only taskId infers contextId from the task."""
         req = CORE_MULTI_005
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         if not info.context_id:
             pytest.skip("Original task did not include a contextId")
@@ -362,7 +362,7 @@ class TestMultiTurn:
         """CORE-MULTI-006: SendMessage with taskId + wrong contextId returns error."""
         req = CORE_MULTI_006
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         # Send with a deliberately wrong contextId
         msg = {
@@ -412,7 +412,7 @@ class TestSubscribeLifecycle:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         sub_response = client.subscribe_to_task(id=info.task_id)
         if not sub_response.success:
@@ -456,7 +456,7 @@ class TestSubscribeLifecycle:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         # Verify the task reached a terminal state
         get_response = client.get_task(id=info.task_id)
