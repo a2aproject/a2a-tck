@@ -41,7 +41,7 @@ dev = [
 run-tck = "run_tck:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["tck", "specification"]
+packages = ["tck", "specification", "codegen"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
