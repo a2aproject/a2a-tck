@@ -21,8 +21,8 @@ from tck.transport.base import BaseTransportClient, StreamingResponse, Transport
 TRANSPORT = "jsonrpc"
 
 
-class _JsonRpcErrorMixin:
-    """Mixin that derives ``error`` and ``error_code`` from a JSON-RPC raw_response."""
+class _JsonRpcResponseMixin:
+    """Mixin that derives properties from a JSON-RPC raw_response."""
 
     raw_response: Any
 
@@ -40,14 +40,35 @@ class _JsonRpcErrorMixin:
             return self.raw_response["error"].get("code")
         return None
 
+    @property
+    def task_id(self) -> str | None:
+        return _extract_jsonrpc_task_field(self.raw_response, "id")
+
+    @property
+    def context_id(self) -> str | None:
+        return _extract_jsonrpc_task_field(self.raw_response, "contextId")
+
+
+def _extract_jsonrpc_task_field(raw: Any, field: str) -> str | None:
+    """Extract a task field from a JSON-RPC 2.0 response dict."""
+    if not isinstance(raw, dict):
+        return None
+    result = raw.get("result", {})
+    if not isinstance(result, dict):
+        return None
+    task = result.get("task", result)
+    if isinstance(task, dict):
+        return task.get(field)
+    return None
+
 
 @dataclass
-class JsonRpcResponse(_JsonRpcErrorMixin, TransportResponse):
+class JsonRpcResponse(_JsonRpcResponseMixin, TransportResponse):
     """JSON-RPC transport response."""
 
 
 @dataclass
-class JsonRpcStreamingResponse(_JsonRpcErrorMixin, StreamingResponse):
+class JsonRpcStreamingResponse(_JsonRpcResponseMixin, StreamingResponse):
     """JSON-RPC streaming transport response."""
 
 

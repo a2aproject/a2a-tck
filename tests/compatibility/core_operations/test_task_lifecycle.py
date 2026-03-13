@@ -26,7 +26,7 @@ import pytest
 from specification.generated import a2a_pb2
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._task_helpers import create_completed_task, create_working_task, extract_task_id
+from tests.compatibility._task_helpers import create_completed_task, create_working_task
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import must, streaming
 
@@ -188,7 +188,7 @@ class TestGetTask:
             errors.append(f"GetTask failed: {response.error}")
         else:
             # Verify a task ID is present in the response
-            returned_id = extract_task_id(response)
+            returned_id = response.task_id
             if returned_id != info.task_id:
                 errors.append(
                     f"GetTask returned task ID {returned_id!r}, "
@@ -229,7 +229,7 @@ class TestCancelTask:
             # or cancellation is not supported — still valid behavior
             errors.append(f"CancelTask returned error: {response.error}")
         else:
-            returned_id = extract_task_id(response)
+            returned_id = response.task_id
             if returned_id != info.task_id:
                 errors.append(
                     f"CancelTask returned task ID {returned_id!r}, "

@@ -52,8 +52,8 @@ def _extract_error(response: httpx.Response) -> str:
     return f"[{response.status_code}] {response.text}"
 
 
-class _HttpJsonErrorMixin:
-    """Mixin that derives ``error`` and ``error_code`` from an HTTP raw_response.
+class _HttpJsonResponseMixin:
+    """Mixin that derives properties from an HTTP raw_response.
 
     On error, ``raw_response`` is an ``httpx.Response`` object.
     On connection failure, ``raw_response`` is an ``Exception``.
@@ -76,14 +76,32 @@ class _HttpJsonErrorMixin:
             return self.raw_response.status_code
         return None
 
+    @property
+    def task_id(self) -> str | None:
+        return _extract_http_json_task_field(self.raw_response, "id")
+
+    @property
+    def context_id(self) -> str | None:
+        return _extract_http_json_task_field(self.raw_response, "contextId")
+
+
+def _extract_http_json_task_field(raw: Any, field: str) -> str | None:
+    """Extract a task field from an HTTP+JSON response dict."""
+    if not isinstance(raw, dict):
+        return None
+    task = raw.get("task", raw)
+    if isinstance(task, dict):
+        return task.get(field)
+    return None
+
 
 @dataclass
-class HttpJsonResponse(_HttpJsonErrorMixin, TransportResponse):
+class HttpJsonResponse(_HttpJsonResponseMixin, TransportResponse):
     """HTTP+JSON transport response."""
 
 
 @dataclass
-class HttpJsonStreamingResponse(_HttpJsonErrorMixin, StreamingResponse):
+class HttpJsonStreamingResponse(_HttpJsonResponseMixin, StreamingResponse):
     """HTTP+JSON streaming transport response."""
 
 
