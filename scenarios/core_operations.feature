@@ -90,10 +90,10 @@ Feature: Core Operations
   # Generic Setup (for multi-operation tests)
   # ---------------------------------------------------------------------------
 
-  # Used by create_task() helper for: GetTask (CORE-GET-001),
-  # CancelTask (CORE-CANCEL-001, CORE-CANCEL-002), multi-turn
-  # (CORE-MULTI-005, CORE-MULTI-006, CORE-SEND-002),
-  # and SubscribeToTask lifecycle (STREAM-SUB-002, STREAM-SUB-003).
+  # Used by create_completed_task() helper for: GetTask (CORE-GET-001),
+  # CancelTask (CORE-CANCEL-002), multi-turn (CORE-MULTI-005,
+  # CORE-MULTI-006, CORE-SEND-002), and SubscribeToTask lifecycle
+  # (STREAM-SUB-002, STREAM-SUB-003).
   Scenario: Generic task creation for multi-operation setup
     When a message is received with prefix "tck-task-helper"
     Then complete the task with the message "Task helper response"

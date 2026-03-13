@@ -2,8 +2,8 @@
 
 Many conformance tests need a real task to exist before they can exercise
 an operation (GetTask, CancelTask, multi-turn, push notifications, …).
-This module provides a transport-agnostic ``create_task`` function that
-calls ``send_message`` and returns the resulting task/context IDs.
+This module provides transport-agnostic factory functions that call
+``send_message`` and return the resulting task/context IDs.
 """
 
 from __future__ import annotations
@@ -18,19 +18,6 @@ import pytest
 
 if TYPE_CHECKING:
     from tck.transport.base import BaseTransportClient, TransportResponse
-
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-def _sample_message() -> dict[str, Any]:
-    """Build a sample message with a unique messageId."""
-    return {
-        "role": "ROLE_USER",
-        "parts": [{"text": "TCK prerequisite task creation"}],
-        "messageId": f"tck-task-helper-{uuid.uuid4().hex[:8]}",
-    }
 
 
 # ---------------------------------------------------------------------------
@@ -80,13 +67,44 @@ def extract_context_id(response: TransportResponse) -> str | None:
     return None
 
 
-def create_task(client: BaseTransportClient) -> TaskInfo:
-    """Create a task via ``send_message`` and return its identifiers.
+def create_completed_task(client: BaseTransportClient) -> TaskInfo:
+    """Create a task that reaches a terminal (completed) state.
 
-    Calls ``pytest.skip`` if the task cannot be created (server error,
-    missing task ID, etc.).
+    Uses the ``tck-task-helper`` prefix which maps to a SUT scenario that
+    immediately completes the task.
+
+    Calls ``pytest.skip`` if the task cannot be created.
     """
-    response = client.send_message(message=_sample_message())
+    message = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK prerequisite task creation"}],
+        "messageId": f"tck-task-helper-{uuid.uuid4().hex[:8]}",
+    }
+    return _create_task(client, message)
+
+
+def create_working_task(client: BaseTransportClient) -> TaskInfo:
+    """Create a task that stays in a non-terminal (input_required) state.
+
+    Uses the ``tck-input-required`` prefix which maps to a SUT scenario that
+    sets the task status to ``input_required`` instead of completing it.
+
+    Calls ``pytest.skip`` if the task cannot be created.
+    """
+    message = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK working task creation"}],
+        "messageId": f"tck-input-required-{uuid.uuid4().hex[:8]}",
+    }
+    return _create_task(client, message)
+
+
+def _create_task(client: BaseTransportClient, message: dict[str, Any]) -> TaskInfo:
+    """Send a message and return the resulting task identifiers.
+
+    Calls ``pytest.skip`` if the task cannot be created.
+    """
+    response = client.send_message(message=message)
     if not response.success:
         pytest.skip(f"send_message failed: {response.error}")
 

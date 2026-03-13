@@ -23,7 +23,7 @@ import pytest
 
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._task_helpers import create_task
+from tests.compatibility._task_helpers import create_completed_task
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import must
 
@@ -82,7 +82,7 @@ class TestPushNotificationCrud:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
         config = _unique_push_config()
 
         response = client.create_push_notification_config(
@@ -112,7 +112,7 @@ class TestPushNotificationCrud:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
         config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
@@ -151,7 +151,7 @@ class TestPushNotificationCrud:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
         config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
@@ -188,7 +188,7 @@ class TestPushNotificationCrud:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         response = client.get_push_notification_config(
             task_id=info.task_id,
@@ -220,7 +220,7 @@ class TestPushNotificationCrud:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
         config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
@@ -254,7 +254,7 @@ class TestPushNotificationCrud:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
         config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
@@ -303,7 +303,7 @@ class TestPushNotificationCrud:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
         config = _unique_push_config()
 
         create_resp = client.create_push_notification_config(
