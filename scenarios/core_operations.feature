@@ -67,6 +67,14 @@ Feature: Core Operations
     Then reject with error "rejected"
 
   # ---------------------------------------------------------------------------
+  # CancelTask (Section 3.1.4)
+  # ---------------------------------------------------------------------------
+
+  Scenario: Cancelable task in non-terminal state (CORE-CANCEL-001)
+    When a message is received with prefix "tck-cancel-001"
+    Then update the task status to "input_required"
+
+  # ---------------------------------------------------------------------------
   # Execution Mode (Section 3.2.2)
   # ---------------------------------------------------------------------------
 
