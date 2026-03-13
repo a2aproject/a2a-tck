@@ -12,12 +12,12 @@ from typing import TYPE_CHECKING
 
 from codegen.model import (
     AddArtifact,
+    CompleteTask,
     DataPartDef,
     FilePartDef,
     MessageTrigger,
     RejectWithError,
     ReturnMessage,
-    ReturnTask,
     StreamArtifact,
     StreamStatusUpdate,
     StreamingMessageTrigger,
@@ -53,12 +53,16 @@ _WHEN_STEPS: list[tuple[re.Pattern[str], callable]] = [
 _THEN_STEPS: list[tuple[re.Pattern[str], callable]] = [
     # --- Task completion ---
     (
+        re.compile(r'^complete the task with the message "(.+)"$'),
+        lambda m, _ds: CompleteTask(message=m.group(1)),
+    ),
+    (
         re.compile(r'^complete the task with a text part "(.+)"$'),
-        lambda m, _ds: ReturnTask(parts=[TextPartDef(text=m.group(1))]),
+        lambda m, _ds: CompleteTask(parts=[TextPartDef(text=m.group(1))]),
     ),
     (
         re.compile(r'^complete the task$'),
-        lambda _m, _ds: ReturnTask(),
+        lambda _m, _ds: CompleteTask(),
     ),
     # --- Artifacts ---
     (

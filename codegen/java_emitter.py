@@ -15,13 +15,13 @@ from jinja2 import Environment, FileSystemLoader
 
 from codegen.model import (
     AddArtifact,
+    CompleteTask,
     DataPartDef,
     FilePartDef,
     MessageTrigger,
     PartDef,
     RejectWithError,
     ReturnMessage,
-    ReturnTask,
     Scenario,
     StreamArtifact,
     StreamStatusUpdate,
@@ -119,7 +119,7 @@ def _build_handlers(scenarios: list[Scenario]) -> list[_Handler]:
 def _render_actions(scenario: Scenario) -> tuple[str, bool]:
     """Render a scenario's actions as Java statements.
 
-    Terminal actions (ReturnTask, RejectWithError) are deferred to the end
+    Terminal actions (CompleteTask, RejectWithError) are deferred to the end
     so that artifacts and messages are emitted first.
 
     Returns ``(java_code, throws)`` where *throws* is True when the handler
@@ -131,7 +131,7 @@ def _render_actions(scenario: Scenario) -> tuple[str, bool]:
 
     for action in scenario.actions:
         java_lines = _action_to_java(action)
-        if isinstance(action, (ReturnTask, RejectWithError)):
+        if isinstance(action, (CompleteTask, RejectWithError)):
             deferred.extend(java_lines)
             if isinstance(action, RejectWithError):
                 has_throw = True
@@ -143,12 +143,12 @@ def _render_actions(scenario: Scenario) -> tuple[str, bool]:
 
 def _action_to_java(action: object) -> list[str]:
     """Convert a single Action to Java statement lines."""
-    if isinstance(action, ReturnTask):
-        lines: list[str] = []
+    if isinstance(action, CompleteTask):
+        if action.message:
+            return [f"emitter.complete(A2A.toAgentMessage({_java_string(action.message)}));"]
         if action.parts:
-            lines.append(f"emitter.sendMessage({_parts_to_java(action.parts)});")
-        lines.append("emitter.complete();")
-        return lines
+            return [f"emitter.complete(A2A.toAgentMessage({_parts_to_java(action.parts)}));"]
+        return ["emitter.complete();"]
 
     if isinstance(action, AddArtifact):
         args = [_parts_to_java(action.parts)]

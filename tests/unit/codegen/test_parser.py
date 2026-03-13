@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from codegen.model import (
     AddArtifact,
+    CompleteTask,
     DataPartDef,
     MessageTrigger,
-    ReturnTask,
     TextPartDef,
 )
 from codegen.parser import parse_feature_file
@@ -29,18 +29,18 @@ class TestParseFeatureFile:
         assert s.name == "Basic task completion (CORE-SEND-001)"
         assert s.trigger == MessageTrigger(prefix="tck-send-001")
         assert s.actions == [
-            ReturnTask(parts=[TextPartDef(text="Hello from TCK")]),
+            CompleteTask(message="Hello from TCK"),
         ]
 
     def test_parse_scenario_with_artifact(self) -> None:
-        """Text artifact scenario has two actions: ReturnTask + AddArtifact."""
+        """Text artifact scenario has two actions: CompleteTask + AddArtifact."""
         feature = _SCENARIOS_DIR / "core_operations.feature"
         scenarios = parse_feature_file(feature)
 
         text_artifact = next(s for s in scenarios if s.name == "Task with text artifact")
         assert text_artifact.trigger == MessageTrigger(prefix="tck-artifact-text")
         assert len(text_artifact.actions) == 2  # noqa: PLR2004
-        assert text_artifact.actions[0] == ReturnTask()
+        assert text_artifact.actions[0] == CompleteTask()
         assert text_artifact.actions[1] == AddArtifact(
             parts=[TextPartDef(text="Generated text content")]
         )

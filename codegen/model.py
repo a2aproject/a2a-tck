@@ -67,9 +67,10 @@ Trigger = MessageTrigger | StreamingMessageTrigger
 
 
 @dataclass(frozen=True)
-class ReturnTask:
-    """Complete the task, optionally with inline parts."""
+class CompleteTask:
+    """Complete the task, optionally with a message string or parts."""
 
+    message: str | None = None
     parts: list[PartDef] = field(default_factory=list)
 
 
@@ -127,7 +128,7 @@ class WaitForTimeout:
 
 
 Action = (
-    ReturnTask
+    CompleteTask
     | AddArtifact
     | ReturnMessage
     | RejectWithError
