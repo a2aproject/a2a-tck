@@ -22,7 +22,7 @@ import pytest
 
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._task_helpers import create_task
+from tests.compatibility._task_helpers import create_completed_task
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import must, streaming
 
@@ -175,7 +175,7 @@ class TestMultiStreamOrdering:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         event_lists = _subscribe_parallel(client, info.task_id, n=2)
 
@@ -203,7 +203,7 @@ class TestMultiStreamOrdering:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         event_lists = _subscribe_parallel(client, info.task_id, n=2)
 
@@ -245,7 +245,7 @@ class TestMultiStreamOrdering:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = create_completed_task(client)
 
         event_lists = _subscribe_parallel(
             client, info.task_id, n=2, stop_first_early=True,
