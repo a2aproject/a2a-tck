@@ -1,0 +1,635 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A2A Protocol Schemas",
+  "description": "Non-normative JSON Schema bundle extracted from proto definitions.",
+  "version": "v1",
+  "definitions": {
+    "Struct": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Struct",
+      "type": "object"
+    },
+    "Timestamp": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "format": "date-time",
+      "title": "Timestamp",
+      "type": "string"
+    },
+    "Value": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Value"
+    },
+    "API Key Security Scheme": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Defines a security scheme using an API key.",
+      "properties": {
+        "description": {
+          "default": "",
+          "description": "An optional description for the security scheme.",
+          "type": "string"
+        },
+        "location": {
+          "default": "",
+          "description": "The location of the API key. Valid values are \"query\", \"header\", or \"cookie\".",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "description": "The name of the header, query, or cookie parameter to be used.",
+          "type": "string"
+        }
+      },
+      "title": "API Key Security Scheme",
+      "type": "object"
+    },
+    "Agent Capabilities": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Defines optional capabilities supported by an agent.",
+      "properties": {
+        "extendedAgentCard": {
+          "description": "Indicates if the agent supports providing an extended agent card when authenticated.",
+          "type": "boolean"
+        },
+        "extensions": {
+          "description": "A list of protocol extensions supported by the agent.",
+          "items": {
+            "$ref": "#/definitions/Agent Extension"
+          },
+          "type": "array"
+        },
+        "pushNotifications": {
+          "description": "Indicates if the agent supports sending push notifications for asynchronous task updates.",
+          "type": "boolean"
+        },
+        "streaming": {
+          "description": "Indicates if the agent supports streaming responses.",
+          "type": "boolean"
+        }
+      },
+      "title": "Agent Capabilities",
+      "type": "object"
+    },
+    "Agent Card": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "A self-describing manifest for an agent.",
+      "properties": {
+        "capabilities": {
+          "$ref": "#/definitions/Agent Capabilities",
+          "description": "A2A Capability set supported by the agent."
+        },
+        "defaultInputModes": {
+          "description": "The set of interaction modes that the agent supports across all skills.",
+          "items": { "type": "string" },
+          "type": "array"
+        },
+        "defaultOutputModes": {
+          "description": "The media types supported as outputs from this agent.",
+          "items": { "type": "string" },
+          "type": "array"
+        },
+        "description": {
+          "default": "",
+          "description": "A human-readable description of the agent.",
+          "type": "string"
+        },
+        "documentationUrl": {
+          "description": "A URL providing additional documentation about the agent.",
+          "type": "string"
+        },
+        "iconUrl": {
+          "description": "Optional. A URL to an icon for the agent.",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "description": "A human readable name for the agent.",
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/Agent Provider",
+          "description": "The service provider of the agent."
+        },
+        "securityRequirements": {
+          "description": "Security requirements for contacting the agent.",
+          "items": { "$ref": "#/definitions/Security Requirement" },
+          "type": "array"
+        },
+        "securitySchemes": {
+          "additionalProperties": { "$ref": "#/definitions/Security Scheme" },
+          "description": "The security scheme details used for authenticating with this agent.",
+          "type": "object"
+        },
+        "signatures": {
+          "description": "JSON Web Signatures computed for this AgentCard.",
+          "items": { "$ref": "#/definitions/Agent Card Signature" },
+          "type": "array"
+        },
+        "skills": {
+          "description": "Skills represent the abilities of an agent.",
+          "items": { "$ref": "#/definitions/Agent Skill" },
+          "type": "array"
+        },
+        "supportedInterfaces": {
+          "description": "Ordered list of supported interfaces. The first entry is preferred.",
+          "items": { "$ref": "#/definitions/Agent Interface" },
+          "type": "array"
+        },
+        "version": {
+          "default": "",
+          "description": "The version of the agent.",
+          "type": "string"
+        }
+      },
+      "title": "Agent Card",
+      "type": "object"
+    },
+    "Agent Card Signature": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "AgentCardSignature represents a JWS signature of an AgentCard (RFC 7515).",
+      "properties": {
+        "header": { "$ref": "#/definitions/Struct" },
+        "protected": { "default": "", "type": "string" },
+        "signature": { "default": "", "type": "string" }
+      },
+      "title": "Agent Card Signature",
+      "type": "object"
+    },
+    "Agent Extension": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "A declaration of a protocol extension supported by an Agent.",
+      "properties": {
+        "description": { "default": "", "type": "string" },
+        "params": { "$ref": "#/definitions/Struct" },
+        "required": { "default": false, "type": "boolean" },
+        "uri": { "default": "", "type": "string" }
+      },
+      "title": "Agent Extension",
+      "type": "object"
+    },
+    "Agent Interface": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Declares a combination of a target URL, transport and protocol version.",
+      "properties": {
+        "protocolBinding": {
+          "default": "",
+          "description": "The protocol binding: JSONRPC, GRPC, or HTTP+JSON.",
+          "type": "string"
+        },
+        "protocolVersion": {
+          "default": "",
+          "description": "The version of the A2A protocol.",
+          "type": "string"
+        },
+        "tenant": {
+          "default": "",
+          "description": "Tenant ID to be used in the request.",
+          "type": "string"
+        },
+        "url": {
+          "default": "",
+          "description": "The URL where this interface is available.",
+          "type": "string"
+        }
+      },
+      "title": "Agent Interface",
+      "type": "object"
+    },
+    "Agent Provider": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Represents the service provider of an agent.",
+      "properties": {
+        "organization": { "default": "", "type": "string" },
+        "url": { "default": "", "type": "string" }
+      },
+      "title": "Agent Provider",
+      "type": "object"
+    },
+    "Agent Skill": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Represents a distinct capability or function that an agent can perform.",
+      "properties": {
+        "description": { "default": "", "type": "string" },
+        "examples": { "items": { "type": "string" }, "type": "array" },
+        "id": { "default": "", "type": "string" },
+        "inputModes": { "items": { "type": "string" }, "type": "array" },
+        "name": { "default": "", "type": "string" },
+        "outputModes": { "items": { "type": "string" }, "type": "array" },
+        "securityRequirements": {
+          "items": { "$ref": "#/definitions/Security Requirement" },
+          "type": "array"
+        },
+        "tags": { "items": { "type": "string" }, "type": "array" }
+      },
+      "title": "Agent Skill",
+      "type": "object"
+    },
+    "Artifact": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Artifacts represent task outputs.",
+      "properties": {
+        "artifactId": { "default": "", "type": "string" },
+        "description": { "default": "", "type": "string" },
+        "extensions": { "items": { "type": "string" }, "type": "array" },
+        "metadata": { "$ref": "#/definitions/Struct" },
+        "name": { "default": "", "type": "string" },
+        "parts": {
+          "items": { "$ref": "#/definitions/Part" },
+          "type": "array"
+        }
+      },
+      "title": "Artifact",
+      "type": "object"
+    },
+    "Authentication Info": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Defines authentication details, used for push notifications.",
+      "properties": {
+        "credentials": { "default": "", "type": "string" },
+        "scheme": { "default": "", "type": "string" }
+      },
+      "title": "Authentication Info",
+      "type": "object"
+    },
+    "Cancel Task Request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "default": "", "type": "string" },
+        "metadata": { "$ref": "#/definitions/Struct" },
+        "tenant": { "default": "", "type": "string" }
+      },
+      "title": "Cancel Task Request",
+      "type": "object"
+    },
+    "Get Task Request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "historyLength": { "type": "integer" },
+        "id": { "default": "", "type": "string" },
+        "tenant": { "default": "", "type": "string" }
+      },
+      "title": "Get Task Request",
+      "type": "object"
+    },
+    "List Tasks Request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "contextId": { "default": "", "type": "string" },
+        "historyLength": { "type": "integer" },
+        "includeArtifacts": { "type": "boolean" },
+        "pageSize": { "type": "integer" },
+        "pageToken": { "default": "", "type": "string" },
+        "status": {
+          "enum": [
+            "TASK_STATE_SUBMITTED",
+            "TASK_STATE_WORKING",
+            "TASK_STATE_COMPLETED",
+            "TASK_STATE_FAILED",
+            "TASK_STATE_CANCELED",
+            "TASK_STATE_INPUT_REQUIRED",
+            "TASK_STATE_REJECTED",
+            "TASK_STATE_AUTH_REQUIRED"
+          ],
+          "type": "string"
+        },
+        "statusTimestampAfter": { "$ref": "#/definitions/Timestamp" },
+        "tenant": { "default": "", "type": "string" }
+      },
+      "title": "List Tasks Request",
+      "type": "object"
+    },
+    "List Tasks Response": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "nextPageToken": { "default": "", "type": "string" },
+        "pageSize": { "type": "integer" },
+        "tasks": {
+          "items": { "$ref": "#/definitions/Task" },
+          "type": "array"
+        },
+        "totalSize": { "type": "integer" }
+      },
+      "title": "List Tasks Response",
+      "type": "object"
+    },
+    "Message": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "One unit of communication between client and server.",
+      "properties": {
+        "contextId": { "default": "", "type": "string" },
+        "extensions": { "items": { "type": "string" }, "type": "array" },
+        "messageId": { "default": "", "type": "string" },
+        "metadata": { "$ref": "#/definitions/Struct" },
+        "parts": {
+          "items": { "$ref": "#/definitions/Part" },
+          "type": "array"
+        },
+        "referenceTaskIds": { "items": { "type": "string" }, "type": "array" },
+        "role": {
+          "enum": ["ROLE_USER", "ROLE_AGENT"],
+          "type": "string"
+        },
+        "taskId": { "default": "", "type": "string" }
+      },
+      "title": "Message",
+      "type": "object"
+    },
+    "Part": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "A container for a section of communication content.",
+      "properties": {
+        "data": { "$ref": "#/definitions/Value" },
+        "filename": { "default": "", "type": "string" },
+        "mediaType": { "default": "", "type": "string" },
+        "metadata": { "$ref": "#/definitions/Struct" },
+        "raw": { "type": "string", "description": "Base64-encoded binary content" },
+        "text": { "type": "string" },
+        "url": { "type": "string" }
+      },
+      "title": "Part",
+      "type": "object"
+    },
+    "Security Requirement": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "schemes": {
+          "additionalProperties": { "$ref": "#/definitions/String List" },
+          "type": "object"
+        }
+      },
+      "title": "Security Requirement",
+      "type": "object"
+    },
+    "Security Scheme": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Discriminated union for security schemes.",
+      "properties": {
+        "apiKeySecurityScheme": { "$ref": "#/definitions/API Key Security Scheme" },
+        "httpAuthSecurityScheme": { "$ref": "#/definitions/HTTP Auth Security Scheme" },
+        "mtlsSecurityScheme": { "$ref": "#/definitions/Mutual Tls Security Scheme" },
+        "oauth2SecurityScheme": { "$ref": "#/definitions/O Auth2 Security Scheme" },
+        "openIdConnectSecurityScheme": { "$ref": "#/definitions/Open Id Connect Security Scheme" }
+      },
+      "title": "Security Scheme",
+      "type": "object"
+    },
+    "Send Message Configuration": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "acceptedOutputModes": {
+          "items": { "type": "string" },
+          "type": "array"
+        },
+        "historyLength": { "type": "integer" },
+        "returnImmediately": { "default": false, "type": "boolean" },
+        "taskPushNotificationConfig": { "$ref": "#/definitions/Task Push Notification Config" }
+      },
+      "title": "Send Message Configuration",
+      "type": "object"
+    },
+    "Send Message Request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "configuration": { "$ref": "#/definitions/Send Message Configuration" },
+        "message": { "$ref": "#/definitions/Message" },
+        "metadata": { "$ref": "#/definitions/Struct" },
+        "tenant": { "default": "", "type": "string" }
+      },
+      "title": "Send Message Request",
+      "type": "object"
+    },
+    "Send Message Response": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "message": { "$ref": "#/definitions/Message" },
+        "task": { "$ref": "#/definitions/Task" }
+      },
+      "title": "Send Message Response",
+      "type": "object"
+    },
+    "Stream Response": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Wrapper for streaming operations.",
+      "properties": {
+        "artifactUpdate": { "$ref": "#/definitions/Task Artifact Update Event" },
+        "message": { "$ref": "#/definitions/Message" },
+        "statusUpdate": { "$ref": "#/definitions/Task Status Update Event" },
+        "task": { "$ref": "#/definitions/Task" }
+      },
+      "title": "Stream Response",
+      "type": "object"
+    },
+    "String List": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "list": { "items": { "type": "string" }, "type": "array" }
+      },
+      "title": "String List",
+      "type": "object"
+    },
+    "Subscribe To Task Request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "default": "", "type": "string" },
+        "tenant": { "default": "", "type": "string" }
+      },
+      "title": "Subscribe To Task Request",
+      "type": "object"
+    },
+    "Task": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "The core unit of action for A2A.",
+      "properties": {
+        "artifacts": {
+          "items": { "$ref": "#/definitions/Artifact" },
+          "type": "array"
+        },
+        "contextId": { "default": "", "type": "string" },
+        "history": {
+          "items": { "$ref": "#/definitions/Message" },
+          "type": "array"
+        },
+        "id": { "default": "", "type": "string" },
+        "metadata": { "$ref": "#/definitions/Struct" },
+        "status": { "$ref": "#/definitions/Task Status" }
+      },
+      "title": "Task",
+      "type": "object"
+    },
+    "Task Artifact Update Event": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "append": { "default": false, "type": "boolean" },
+        "artifact": { "$ref": "#/definitions/Artifact" },
+        "contextId": { "default": "", "type": "string" },
+        "lastChunk": { "default": false, "type": "boolean" },
+        "metadata": { "$ref": "#/definitions/Struct" },
+        "taskId": { "default": "", "type": "string" }
+      },
+      "title": "Task Artifact Update Event",
+      "type": "object"
+    },
+    "Task Push Notification Config": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "authentication": { "$ref": "#/definitions/Authentication Info" },
+        "id": { "default": "", "type": "string" },
+        "taskId": { "default": "", "type": "string" },
+        "tenant": { "default": "", "type": "string" },
+        "token": { "default": "", "type": "string" },
+        "url": { "default": "", "type": "string" }
+      },
+      "title": "Task Push Notification Config",
+      "type": "object"
+    },
+    "Task Status": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "message": { "$ref": "#/definitions/Message" },
+        "state": {
+          "enum": [
+            "TASK_STATE_SUBMITTED",
+            "TASK_STATE_WORKING",
+            "TASK_STATE_COMPLETED",
+            "TASK_STATE_FAILED",
+            "TASK_STATE_CANCELED",
+            "TASK_STATE_INPUT_REQUIRED",
+            "TASK_STATE_REJECTED",
+            "TASK_STATE_AUTH_REQUIRED"
+          ],
+          "type": "string"
+        },
+        "timestamp": { "$ref": "#/definitions/Timestamp" }
+      },
+      "title": "Task Status",
+      "type": "object"
+    },
+    "Task Status Update Event": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "contextId": { "default": "", "type": "string" },
+        "metadata": { "$ref": "#/definitions/Struct" },
+        "status": { "$ref": "#/definitions/Task Status" },
+        "taskId": { "default": "", "type": "string" }
+      },
+      "title": "Task Status Update Event",
+      "type": "object"
+    },
+    "HTTP Auth Security Scheme": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "bearerFormat": { "default": "", "type": "string" },
+        "description": { "default": "", "type": "string" },
+        "scheme": { "default": "", "type": "string" }
+      },
+      "title": "HTTP Auth Security Scheme",
+      "type": "object"
+    },
+    "Mutual Tls Security Scheme": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "default": "", "type": "string" }
+      },
+      "title": "Mutual Tls Security Scheme",
+      "type": "object"
+    },
+    "O Auth2 Security Scheme": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "default": "", "type": "string" },
+        "flows": { "$ref": "#/definitions/O Auth Flows" },
+        "oauth2MetadataUrl": { "default": "", "type": "string" }
+      },
+      "title": "O Auth2 Security Scheme",
+      "type": "object"
+    },
+    "O Auth Flows": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "authorizationCode": { "$ref": "#/definitions/Authorization CodeO Auth Flow" },
+        "clientCredentials": { "$ref": "#/definitions/Client CredentialsO Auth Flow" },
+        "deviceCode": { "$ref": "#/definitions/Device CodeO Auth Flow" }
+      },
+      "title": "O Auth Flows",
+      "type": "object"
+    },
+    "Authorization CodeO Auth Flow": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "authorizationUrl": { "default": "", "type": "string" },
+        "pkceRequired": { "default": false, "type": "boolean" },
+        "refreshUrl": { "default": "", "type": "string" },
+        "scopes": { "additionalProperties": { "type": "string" }, "type": "object" },
+        "tokenUrl": { "default": "", "type": "string" }
+      },
+      "title": "Authorization Code OAuth Flow",
+      "type": "object"
+    },
+    "Client CredentialsO Auth Flow": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "refreshUrl": { "default": "", "type": "string" },
+        "scopes": { "additionalProperties": { "type": "string" }, "type": "object" },
+        "tokenUrl": { "default": "", "type": "string" }
+      },
+      "title": "Client Credentials OAuth Flow",
+      "type": "object"
+    },
+    "Device CodeO Auth Flow": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "deviceAuthorizationUrl": { "default": "", "type": "string" },
+        "refreshUrl": { "default": "", "type": "string" },
+        "scopes": { "additionalProperties": { "type": "string" }, "type": "object" },
+        "tokenUrl": { "default": "", "type": "string" }
+      },
+      "title": "Device Code OAuth Flow",
+      "type": "object"
+    },
+    "Open Id Connect Security Scheme": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "default": "", "type": "string" },
+        "openIdConnectUrl": { "default": "", "type": "string" }
+      },
+      "title": "Open Id Connect Security Scheme",
+      "type": "object"
+    }
+  }
+}
