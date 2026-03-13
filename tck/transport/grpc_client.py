@@ -26,10 +26,11 @@ def _dict_to_proto(data: dict, proto_class: type) -> Any:
 TRANSPORT = "grpc"
 
 
-class _GrpcErrorMixin:
-    """Mixin that derives ``error`` and ``error_code`` from a gRPC raw_response.
+class _GrpcResponseMixin:
+    """Mixin that derives properties from a gRPC raw_response.
 
     On error, ``raw_response`` is a ``grpc.RpcError`` exception.
+    On success, it is a protobuf message (``SendMessageResponse``, ``Task``, etc.).
     """
 
     raw_response: Any
@@ -46,14 +47,42 @@ class _GrpcErrorMixin:
             return self.raw_response.code().name
         return None
 
+    @property
+    def task_id(self) -> str | None:
+        return _extract_grpc_task_field(self.raw_response, "id")
+
+    @property
+    def context_id(self) -> str | None:
+        return _extract_grpc_task_field(self.raw_response, "context_id")
+
+
+def _extract_grpc_task_field(raw: Any, field: str) -> str | None:
+    """Extract a task field from a gRPC protobuf response.
+
+    Handles both ``SendMessageResponse`` (oneof with ``task`` field) and
+    ``Task`` (returned directly by GetTask / CancelTask).
+    """
+    try:
+        payload = raw.WhichOneof("payload")
+        if payload == "task":
+            value = getattr(raw.task, field, None)
+            if value:
+                return value
+    except (ValueError, AttributeError):
+        pass
+    value = getattr(raw, field, None)
+    if value:
+        return value
+    return None
+
 
 @dataclass
-class GrpcResponse(_GrpcErrorMixin, TransportResponse):
+class GrpcResponse(_GrpcResponseMixin, TransportResponse):
     """gRPC transport response."""
 
 
 @dataclass
-class GrpcStreamingResponse(_GrpcErrorMixin, StreamingResponse):
+class GrpcStreamingResponse(_GrpcResponseMixin, StreamingResponse):
     """gRPC streaming transport response."""
 
 
