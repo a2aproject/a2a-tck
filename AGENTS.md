@@ -14,6 +14,7 @@ tck/                        # Main package
   reporting/                # Compatibility reporting
 tests/
   unit/                     # Unit tests (no SUT needed)
+    codegen/                # Tests for the code generator
   compatibility/            # Conformance tests (require running SUT)
     conftest.py             # Fixtures: transport_clients, agent_card, compatibility_collector
     markers.py              # Pytest marker aliases: grpc, jsonrpc, http_json, must, should, may
@@ -21,6 +22,15 @@ tests/
     grpc/                   # gRPC-specific tests
     jsonrpc/                # JSON-RPC-specific tests
     http_json/              # HTTP+JSON-specific tests
+scenarios/                  # Gherkin .feature files defining SUT behaviors
+codegen/                    # Code generator: parses scenarios and emits SUT projects
+  parser.py                 # Gherkin parser
+  steps.py                  # Step text → Trigger/Action resolution
+  model.py                  # Data model (Scenario, Trigger, Action)
+  java_emitter.py           # Jinja2-based Java/Quarkus emitter
+  a2a-java/                 # Jinja2 templates for the a2a-java SUT
+sut/
+  a2a-java/                 # Generated Quarkus project (a2a-java SDK)
 specification/              # A2A spec files and derived resources (JSON schema, proto stubs)
   generated/                # Stubs Generated from a2a.proto
 .agents/skills/             # Agent skills (see Skills section below)
@@ -70,6 +80,8 @@ All A2A bindings (for transport methods, error codes, etc.) are defined centrall
 - **run-tck** (`.agents/skills/run-tck/SKILL.md`): Guide an SDK implementor through running the TCK against their System Under Test (SUT), diagnosing failures, and achieving compatibility.
 - **learn-requirement** (`.agents/skills/learn-requirement/SKILL.md`): Learn about a specific TCK requirement — its definition, spec context, related tests, and what an SUT needs to do to satisfy it.
 - **diagnose-failure** (`.agents/skills/diagnose-failure/SKILL.md`): Diagnose a TCK requirement failure and draft a GitHub issue with requirement context, failure details, and a curl reproducer.
+- **a2a-client** (`.agents/skills/a2a-client/SKILL.md`): Interact with remote A2A agents via curl — discover agent cards, send messages, manage tasks, and stream responses.
+- **a2a-java-sut** (`.agents/skills/a2a-java-sut/SKILL.md`): Work with the a2a-java SUT — regenerate from Gherkin scenarios, build, start, and test with the TCK.
 
 ## Commands
 
@@ -77,6 +89,7 @@ All A2A bindings (for transport methods, error codes, etc.) are defined centrall
 - `make unit-test` — run unit tests (no SUT required)
 - `make spec` — update A2A specification files
 - `make proto` — regenerate gRPC stubs from a2a.proto
+- `make codegen-a2a-java-sut` — generate the a2a-java SUT from Gherkin scenarios in `scenarios/`
 - `uv run ./run_tck.py --sut-host http://localhost:9999` — run full conformance suite against the SUT that exposes its agent card on `localhost:9999`
 - `uv run ./run_tck.py --sut-host http://localhost:9999 --transport grpc` — run single transport
 - `uv run ./run_tck.py --sut-host http://localhost:9999 --level must` — run only MUST requirements
