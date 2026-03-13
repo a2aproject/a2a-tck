@@ -45,10 +45,18 @@ The TCK tests use `tck_id("send-001")` which generates `tck-send-001-<session_he
 
 ## Step 0: Inform the user of the version of a2a-java
 
-**Always** Read the `<a2a-java-sdk.version>` property in `codegen/a2a-java/pom.xml.j2` and
-report to the user that this is the version of the a2a-java SDK that will be used.
+The a2a-java SDK version is controlled by the `A2A_JAVA_SDK_VERSION` environment variable.
+The default value is defined in `codegen/java_emitter.py` (`_DEFAULT_A2A_JAVA_SDK_VERSION`).
 
-Propose to the user to change this value if they want to test a newer version of the a2a-java SDK.
+Report to the user which version will be used and propose setting the env var if they want a different version:
+
+```bash
+# Use default version
+make codegen-a2a-java-sut
+
+# Use a specific version
+A2A_JAVA_SDK_VERSION=1.0.0.Final make codegen-a2a-java-sut
+```
 
 ## Step 1: Regenerate the SUT
 
