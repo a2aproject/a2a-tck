@@ -112,6 +112,36 @@ curl -s http://localhost:9999/.well-known/agent-card.json | python3 -m json.tool
 
 The agent card should list all three `supportedInterfaces` (JSONRPC, GRPC, HTTP+JSON).
 
+### Manual curl commands
+
+When sending manual requests to the SUT, use `tck/requirements/base.py` as the source of truth for method names and `sample_input` fields in requirement specs (e.g., `tck/requirements/core_operations.py`) for request payload format.
+
+The A2A protocol uses **protobuf enum naming conventions**:
+- Roles: `ROLE_USER`, `ROLE_AGENT` (not `user`/`USER`)
+- Task states: `TASK_STATE_COMPLETED`, `TASK_STATE_WORKING`, etc.
+- Parts: `{"text": "..."}` (not `{"kind": "text", "text": "..."}` — the protobuf `oneof` uses the field name to indicate part type)
+
+**SendMessage (JSON-RPC):**
+```bash
+curl -s -X POST http://localhost:9999/ \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":"1","method":"SendMessage","params":{"message":{"messageId":"tck-send-001-1234","role":"ROLE_USER","parts":[{"text":"Hello from TCK"}]}}}'
+```
+
+**ListTasks (JSON-RPC):**
+```bash
+curl -s -X POST http://localhost:9999/ \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":"1","method":"ListTasks","params":{"contextId":"<contextId>"}}'
+```
+
+**GetTask (JSON-RPC):**
+```bash
+curl -s -X POST http://localhost:9999/ \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":"1","method":"GetTask","params":{"id":"<taskId>"}}'
+```
+
 ### Port conflicts
 
 If port 9999 is already in use:
