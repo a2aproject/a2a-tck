@@ -246,7 +246,7 @@ def test_unsupported_operation_error_32004(sut_client, agent_card_data):
 
     # Add configuration that might not be supported
     configuration = {
-        "blocking": True,
+        "returnImmediately": False,
         "acceptedOutputModes": ["application/unsupported-format"],
         "historyLength": 999999,  # Very large number that might be unsupported
     }

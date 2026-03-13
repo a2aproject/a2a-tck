@@ -96,7 +96,7 @@ class BaseTransportClient(ABC):
         Args:
             message: The message object conforming to A2A Message schema
             configuration: Optional SendMessageConfiguration object with fields like
-                          acceptedOutputModes, pushNotificationConfig, historyLength, blocking
+                          acceptedOutputModes, pushNotificationConfig, historyLength, returnImmediately
             extra_headers: Optional transport-specific headers
 
         Returns:
@@ -128,7 +128,7 @@ class BaseTransportClient(ABC):
                 - pushNotificationConfig: Push notification settings
                 - acceptedOutputModes: Accepted output formats
                 - historyLength: Number of history messages to include
-                - blocking: Whether to block until completion
+                - returnImmediately: Whether to return immediately without waiting for completion
             extra_headers: Optional transport-specific headers
 
         Returns:

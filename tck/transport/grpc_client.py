@@ -428,7 +428,7 @@ class GRPCClient(BaseTransportClient):
             logger.debug(f"Sending message via gRPC: {msg_id}")
 
             # Build protobuf request using helper method
-            request = self._json_to_send_message_request(message, configuration, default_blocking=True)
+            request = self._json_to_send_message_request(message, configuration, default_return_immediately=False)
             metadata = self._prepare_metadata(extra_headers)
 
             # Real gRPC call
@@ -498,7 +498,7 @@ class GRPCClient(BaseTransportClient):
             logger.info(f"Starting gRPC streaming for message: {msg_id}")
 
             # Build protobuf request using helper method
-            request = self._json_to_send_message_request(message, configuration, default_blocking=False)
+            request = self._json_to_send_message_request(message, configuration, default_return_immediately=True)
             metadata = self._prepare_metadata(extra_headers)
 
             # Make real gRPC streaming call to live SUT
@@ -1181,7 +1181,7 @@ class GRPCClient(BaseTransportClient):
         self,
         message: Dict[str, Any],
         configuration: Optional[Dict[str, Any]] = None,
-        default_blocking: bool = False
+        default_return_immediately: bool = True
     ):
         """
         Convert JSON message to SendMessageRequest protobuf.
@@ -1189,7 +1189,7 @@ class GRPCClient(BaseTransportClient):
         Args:
             message: A2A message in JSON format
             configuration: Optional SendMessageConfiguration dict
-            default_blocking: Default value for blocking if not specified in configuration
+            default_return_immediately: Default value for return_immediately if not specified in configuration
 
         Returns:
             SendMessageRequest protobuf object
@@ -1249,8 +1249,8 @@ class GRPCClient(BaseTransportClient):
                 config_kwargs["accepted_output_modes"] = configuration["acceptedOutputModes"]
             if "historyLength" in configuration:
                 config_kwargs["history_length"] = configuration["historyLength"]
-            if "blocking" in configuration:
-                config_kwargs["blocking"] = configuration["blocking"]
+            if "returnImmediately" in configuration:
+                config_kwargs["return_immediately"] = configuration["returnImmediately"]
             if "taskPushNotificationConfig" in configuration:
                 # Build TaskPushNotificationConfig protobuf (fields are now flattened)
                 pnc = configuration["taskPushNotificationConfig"]
@@ -1263,7 +1263,7 @@ class GRPCClient(BaseTransportClient):
                 config_kwargs["task_push_notification_config"] = push_config
             config = pb.SendMessageConfiguration(**config_kwargs) if config_kwargs else pb.SendMessageConfiguration()
         else:
-            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=default_blocking)
+            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, return_immediately=default_return_immediately)
 
         request = pb.SendMessageRequest(message=pb_msg, configuration=config)
 

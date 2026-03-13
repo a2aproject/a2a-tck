@@ -273,14 +273,14 @@ class TestRESTClientSendMessage:
 
             message = {"message_id": "test-msg-1", "content": [{"text": "Test"}]}
 
-            client.send_message(message, accepted_output_modes=["text", "json"], history_length=5, blocking=True)
+            client.send_message(message, accepted_output_modes=["text", "json"], history_length=5, return_immediately=False)
 
             # Verify payload includes config options
             expected_payload = {
                 "message": message,
                 "accepted_output_modes": ["text", "json"],
                 "history_length": 5,
-                "blocking": True,
+                "returnImmediately": False,
             }
 
             mock_post.assert_called_once_with(
