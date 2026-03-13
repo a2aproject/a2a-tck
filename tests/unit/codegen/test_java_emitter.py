@@ -145,5 +145,5 @@ class TestEmitJavaProject:
         emit_java_project(_basic_scenarios(), tmp_path)
         pom = tmp_path / "pom.xml"
         content = pom.read_text()
-        assert "a2a-java-sdk-server-common" in content
+        assert "a2a-java-sdk-reference-jsonrpc" in content
         assert "io.github.a2asdk" in content

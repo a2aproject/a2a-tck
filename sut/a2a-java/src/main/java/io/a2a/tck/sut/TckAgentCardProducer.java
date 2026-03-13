@@ -1,4 +1,4 @@
-package {{ package }};
+package io.a2a.tck.sut;
 
 import java.util.List;
 
@@ -38,7 +38,7 @@ public class TckAgentCardProducer {
                         new AgentInterface(TransportProtocol.GRPC.asString(), sutGrpcUrl),
                         new AgentInterface(TransportProtocol.HTTP_JSON.asString(), sutRestUrl)))
                 .capabilities(AgentCapabilities.builder()
-                        .streaming({{ has_streaming | lower }})
+                        .streaming(false)
                         .build())
                 .defaultInputModes(List.of("text"))
                 .defaultOutputModes(List.of("text"))
