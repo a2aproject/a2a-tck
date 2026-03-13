@@ -26,7 +26,7 @@ import pytest
 from specification.generated import a2a_pb2
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._task_helpers import create_task, extract_task_id
+from tests.compatibility._task_helpers import TaskInfo, create_task, extract_context_id, extract_task_id
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import must, streaming
 
@@ -100,6 +100,33 @@ def _is_terminal_status(response: Any, transport: str) -> bool:
         state = status.get("state", "") if isinstance(status, dict) else ""
         return state.lower() in _JSON_TERMINAL_STATES
     return False
+
+
+def _create_cancelable_task(client: BaseTransportClient) -> TaskInfo:
+    """Create a task that stays in a non-terminal state (input_required).
+
+    Uses the ``tck-cancel-001`` prefix which maps to a SUT scenario that
+    sets the task status to ``input_required`` instead of completing it.
+    """
+    message = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK cancelable task creation"}],
+        "messageId": f"tck-cancel-001-{uuid.uuid4().hex[:8]}",
+    }
+    response = client.send_message(message=message)
+    if not response.success:
+        pytest.skip(f"send_message failed: {response.error}")
+
+    task_id = extract_task_id(response)
+    if not task_id:
+        pytest.skip("Could not extract task ID from send_message response")
+
+    context_id = extract_context_id(response)
+    return TaskInfo(
+        task_id=task_id,
+        context_id=context_id,
+        transport=response.transport,
+    )
 
 
 def _event_has_terminal_state(event: Any, transport: str) -> bool:
@@ -219,7 +246,7 @@ class TestCancelTask:
         """CORE-CANCEL-001: CancelTask returns the task with updated state."""
         req = CORE_CANCEL_001
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_task(client)
+        info = _create_cancelable_task(client)
 
         response = client.cancel_task(id=info.task_id)
 

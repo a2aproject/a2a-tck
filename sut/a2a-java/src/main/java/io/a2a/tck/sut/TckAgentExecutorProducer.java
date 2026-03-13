@@ -74,6 +74,11 @@ public class TckAgentExecutorProducer {
                     throw new A2AError(-1, "rejected", null);
                 }
 
+                if (messageId.startsWith("tck-cancel-001")) {
+                    emitter.requiresInput();
+                    return;
+                }
+
                 if (messageId.startsWith("tck-block-001")) {
                     emitter.complete(A2A.toAgentMessage("Blocking response"));
                     return;
