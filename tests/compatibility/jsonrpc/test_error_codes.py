@@ -36,16 +36,17 @@ JSONRPC_SSE_002 = get_requirement_by_id("JSONRPC-SSE-002")
 # Constants
 # ---------------------------------------------------------------------------
 
+_HTTP_ERROR_STATUS = 400
+
 # JSON-RPC error code ranges
 _A2A_ERROR_CODE_MIN = -32099
 _A2A_ERROR_CODE_MAX = -32001
 _JSONRPC_ERROR_CODE_MIN = -32700
 _JSONRPC_ERROR_CODE_MAX = -32600
-_HTTP_ERROR_STATUS = 400
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Helpers — raw calls for tests needing custom headers or wrong content type
 # ---------------------------------------------------------------------------
 
 
@@ -163,8 +164,8 @@ class TestJsonRpcErrorCodeMappings:
             config={"url": "https://example.com"},
         )
         body = response.raw_response
-        if "error" not in body:
-            pytest.skip("Server did not return an error for unsupported push")
+        if not isinstance(body, dict) or "error" not in body:
+            pytest.skip("Server did not return a JSON-RPC error for unsupported push")
 
         result = validate_jsonrpc_error(body, "PushNotificationNotSupportedError")
         errors = [] if result.valid else [result.message]
@@ -192,8 +193,8 @@ class TestJsonRpcErrorCodeMappings:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent supports streaming; cannot trigger -32004")
 
-        # Use raw call because the streaming client does not detect
-        # JSON-RPC errors in the response body.
+        # Raw call needed: streaming client can't detect a JSON-RPC error
+        # in the response body (it expects SSE).
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         msg = {
             "role": "ROLE_USER",
@@ -226,7 +227,7 @@ class TestJsonRpcErrorCodeMappings:
         """ContentTypeNotSupportedError (-32005): wrong Content-Type header."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        # Raw call required: need to send a deliberately wrong Content-Type.
+        # Raw call needed: deliberately wrong Content-Type header.
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         payload = {
@@ -282,7 +283,7 @@ class TestJsonRpcErrorCodeMappings:
         """VersionNotSupportedError (-32009): unsupported A2A-Version header."""
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
-        # Raw call required: need to inject a custom A2A-Version header.
+        # Raw call needed: custom A2A-Version header.
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         msg = {

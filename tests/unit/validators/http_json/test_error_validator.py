@@ -9,8 +9,8 @@ import pytest
 from tck.validators.http_json.error_validator import (
     HTTP_JSON_ERROR_STATUS,
     STATUS_TO_ERRORS,
+    AIP193Error,
     ErrorValidationResult,
-    ProblemDetails,
     get_expected_status,
     get_possible_errors,
     validate_http_json_error,
@@ -24,79 +24,80 @@ HTTP_UNSUPPORTED_MEDIA_TYPE = HTTPStatus.UNSUPPORTED_MEDIA_TYPE
 HTTP_INTERNAL_SERVER_ERROR = HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-class TestProblemDetails:
-    """Tests for the ProblemDetails dataclass."""
+class TestAIP193Error:
+    """Tests for the AIP193Error dataclass."""
 
     def test_create_with_required_fields(self) -> None:
-        """Test creating ProblemDetails with required fields."""
-        pd = ProblemDetails(
-            type="https://example.com/errors/not-found",
-            title="Not Found",
-            status=HTTP_NOT_FOUND,
-        )
-        assert pd.type == "https://example.com/errors/not-found"
-        assert pd.title == "Not Found"
-        assert pd.status == HTTP_NOT_FOUND
-        assert pd.detail == ""
-        assert pd.instance == ""
+        """Test creating AIP193Error with required fields."""
+        err = AIP193Error(code=HTTP_NOT_FOUND)
+        assert err.code == HTTP_NOT_FOUND
+        assert err.status == ""
+        assert err.message == ""
+        assert err.details == []
 
     def test_create_with_all_fields(self) -> None:
-        """Test creating ProblemDetails with all fields."""
-        pd = ProblemDetails(
-            type="https://example.com/errors/not-found",
-            title="Not Found",
-            status=HTTP_NOT_FOUND,
-            detail="Task with ID 'xyz' was not found",
-            instance="/tasks/xyz",
+        """Test creating AIP193Error with all fields."""
+        err = AIP193Error(
+            code=HTTP_NOT_FOUND,
+            status="NOT_FOUND",
+            message="Task with ID 'xyz' was not found",
+            details=[{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "TASK_NOT_FOUND", "domain": "a2a-protocol.org"}],
         )
-        assert pd.detail == "Task with ID 'xyz' was not found"
-        assert pd.instance == "/tasks/xyz"
+        assert err.status == "NOT_FOUND"
+        assert err.message == "Task with ID 'xyz' was not found"
+        assert len(err.details) == 1
 
-    def test_from_dict_required_fields(self) -> None:
-        """Test creating from dict with required fields."""
+    def test_from_dict_valid(self) -> None:
+        """Test creating from dict with valid AIP-193 structure."""
         data = {
-            "type": "https://example.com/errors/not-found",
-            "title": "Not Found",
-            "status": HTTP_NOT_FOUND,
+            "error": {
+                "code": HTTP_NOT_FOUND,
+                "status": "NOT_FOUND",
+                "message": "Not found",
+            },
         }
-        pd = ProblemDetails.from_dict(data)
-        assert pd.type == "https://example.com/errors/not-found"
-        assert pd.title == "Not Found"
-        assert pd.status == HTTP_NOT_FOUND
+        err = AIP193Error.from_dict(data)
+        assert err.code == HTTP_NOT_FOUND
+        assert err.status == "NOT_FOUND"
+        assert err.message == "Not found"
 
-    def test_from_dict_all_fields(self) -> None:
-        """Test creating from dict with all fields."""
+    def test_from_dict_with_details(self) -> None:
+        """Test creating from dict with details array."""
         data = {
-            "type": "https://example.com/errors/not-found",
-            "title": "Not Found",
-            "status": HTTP_NOT_FOUND,
-            "detail": "Task not found",
-            "instance": "/tasks/123",
+            "error": {
+                "code": HTTP_NOT_FOUND,
+                "status": "NOT_FOUND",
+                "message": "Task not found",
+                "details": [
+                    {
+                        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                        "reason": "TASK_NOT_FOUND",
+                        "domain": "a2a-protocol.org",
+                    },
+                ],
+            },
         }
-        pd = ProblemDetails.from_dict(data)
-        assert pd.detail == "Task not found"
-        assert pd.instance == "/tasks/123"
+        err = AIP193Error.from_dict(data)
+        assert len(err.details) == 1
+        assert err.details[0]["reason"] == "TASK_NOT_FOUND"
 
-    def test_from_dict_missing_type(self) -> None:
-        """Test that missing type raises ValueError."""
-        data = {"title": "Not Found", "status": HTTP_NOT_FOUND}
-        with pytest.raises(ValueError, match="type"):
-            ProblemDetails.from_dict(data)
+    def test_from_dict_missing_error(self) -> None:
+        """Test that missing error field raises ValueError."""
+        data = {"code": HTTP_NOT_FOUND}
+        with pytest.raises(ValueError, match="error"):
+            AIP193Error.from_dict(data)
 
-    def test_from_dict_missing_title(self) -> None:
-        """Test that missing title raises ValueError."""
-        data = {"type": "https://example.com/errors/not-found", "status": HTTP_NOT_FOUND}
-        with pytest.raises(ValueError, match="title"):
-            ProblemDetails.from_dict(data)
+    def test_from_dict_missing_code(self) -> None:
+        """Test that missing code raises ValueError."""
+        data = {"error": {"status": "NOT_FOUND"}}
+        with pytest.raises(ValueError, match="code"):
+            AIP193Error.from_dict(data)
 
-    def test_from_dict_missing_status(self) -> None:
-        """Test that missing status raises ValueError."""
-        data = {
-            "type": "https://example.com/errors/not-found",
-            "title": "Not Found",
-        }
-        with pytest.raises(ValueError, match="status"):
-            ProblemDetails.from_dict(data)
+    def test_from_dict_error_not_object(self) -> None:
+        """Test that non-object error field raises ValueError."""
+        data = {"error": "not an object"}
+        with pytest.raises(ValueError, match="object"):
+            AIP193Error.from_dict(data)
 
 
 class TestErrorValidationResult:
@@ -108,29 +109,25 @@ class TestErrorValidationResult:
             valid=True,
             expected_status=HTTP_NOT_FOUND,
             actual_status=HTTP_NOT_FOUND,
-            problem_details=None,
+            aip193_error=None,
             message="Status code matches",
         )
         assert result.valid is True
         assert result.expected_status == HTTP_NOT_FOUND
         assert result.actual_status == HTTP_NOT_FOUND
 
-    def test_result_with_problem_details(self) -> None:
-        """Test result with problem details."""
-        pd = ProblemDetails(
-            type="https://example.com/errors/not-found",
-            title="Not Found",
-            status=HTTP_NOT_FOUND,
-        )
+    def test_result_with_aip193_error(self) -> None:
+        """Test result with AIP-193 error."""
+        err = AIP193Error(code=HTTP_NOT_FOUND, status="NOT_FOUND")
         result = ErrorValidationResult(
             valid=True,
             expected_status=HTTP_NOT_FOUND,
             actual_status=HTTP_NOT_FOUND,
-            problem_details=pd,
+            aip193_error=err,
             message="Status code matches",
         )
-        assert result.problem_details is not None
-        assert result.problem_details.status == HTTP_NOT_FOUND
+        assert result.aip193_error is not None
+        assert result.aip193_error.code == HTTP_NOT_FOUND
 
     def test_result_with_missing_status(self) -> None:
         """Test result with missing actual status."""
@@ -138,7 +135,7 @@ class TestErrorValidationResult:
             valid=False,
             expected_status=HTTP_NOT_FOUND,
             actual_status=None,
-            problem_details=None,
+            aip193_error=None,
             message="No status code",
         )
         assert result.actual_status is None
@@ -238,68 +235,60 @@ class TestValidateHTTPJSONError:
         assert result.valid is False
         assert "Unknown error type" in result.message
 
-    def test_problem_details_parsed(self) -> None:
-        """Test that Problem Details are parsed when content type matches."""
-        response = {
-            "status_code": HTTP_NOT_FOUND,
-            "headers": {"Content-Type": "application/problem+json"},
-            "body": {
-                "type": "https://example.com/errors/task-not-found",
-                "title": "Task Not Found",
-                "status": HTTP_NOT_FOUND,
-                "detail": "Task 'xyz' does not exist",
-            },
-        }
-        result = validate_http_json_error(response, "TaskNotFoundError")
-        assert result.valid is True
-        assert result.problem_details is not None
-        assert result.problem_details.type == "https://example.com/errors/task-not-found"
-        assert result.problem_details.title == "Task Not Found"
-        assert result.problem_details.status == HTTP_NOT_FOUND
-        assert result.problem_details.detail == "Task 'xyz' does not exist"
-
-    def test_problem_details_case_insensitive_header(self) -> None:
-        """Test that Content-Type header is case-insensitive."""
-        response = {
-            "status_code": HTTP_NOT_FOUND,
-            "headers": {"content-type": "application/problem+json"},
-            "body": {
-                "type": "https://example.com/errors/not-found",
-                "title": "Not Found",
-                "status": HTTP_NOT_FOUND,
-            },
-        }
-        result = validate_http_json_error(response, "TaskNotFoundError")
-        assert result.problem_details is not None
-
-    def test_problem_details_not_parsed_for_json(self) -> None:
-        """Test that Problem Details are not parsed for regular JSON."""
+    def test_aip193_error_parsed(self) -> None:
+        """Test that AIP-193 error is parsed from response body."""
         response = {
             "status_code": HTTP_NOT_FOUND,
             "headers": {"Content-Type": "application/json"},
             "body": {
-                "type": "https://example.com/errors/not-found",
-                "title": "Not Found",
-                "status": HTTP_NOT_FOUND,
+                "error": {
+                    "code": HTTP_NOT_FOUND,
+                    "status": "NOT_FOUND",
+                    "message": "Task 'xyz' does not exist",
+                    "details": [
+                        {
+                            "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                            "reason": "TASK_NOT_FOUND",
+                            "domain": "a2a-protocol.org",
+                        },
+                    ],
+                },
             },
         }
         result = validate_http_json_error(response, "TaskNotFoundError")
         assert result.valid is True
-        assert result.problem_details is None
+        assert result.aip193_error is not None
+        assert result.aip193_error.code == HTTP_NOT_FOUND
+        assert result.aip193_error.status == "NOT_FOUND"
+        assert result.aip193_error.message == "Task 'xyz' does not exist"
+        assert len(result.aip193_error.details) == 1
 
-    def test_invalid_problem_details(self) -> None:
-        """Test handling of invalid Problem Details."""
+    def test_aip193_error_not_parsed_without_error_key(self) -> None:
+        """Test that AIP-193 error is not parsed when body has no 'error' key."""
         response = {
             "status_code": HTTP_NOT_FOUND,
-            "headers": {"Content-Type": "application/problem+json"},
+            "headers": {"Content-Type": "application/json"},
             "body": {
-                "title": "Not Found",
-                # Missing required 'type' field
+                "code": HTTP_NOT_FOUND,
+                "message": "Not found",
+            },
+        }
+        result = validate_http_json_error(response, "TaskNotFoundError")
+        assert result.valid is True
+        assert result.aip193_error is None
+
+    def test_invalid_aip193_error(self) -> None:
+        """Test handling of invalid AIP-193 error structure."""
+        response = {
+            "status_code": HTTP_NOT_FOUND,
+            "headers": {"Content-Type": "application/json"},
+            "body": {
+                "error": "not an object",
             },
         }
         result = validate_http_json_error(response, "TaskNotFoundError")
         assert result.valid is False
-        assert "Invalid Problem Details" in result.message
+        assert "Invalid AIP-193 error" in result.message
 
     def test_all_error_types(self) -> None:
         """Test that all defined error types can be validated."""
