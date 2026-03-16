@@ -131,7 +131,7 @@ class HttpJsonClient(BaseTransportClient):
                 path,
                 json=json_body,
                 params=params,
-                headers={"Content-Type": "application/json"} if json_body else None,
+                headers={"Content-Type": "application/json"} if method.upper() == "POST" else None,
             )
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
