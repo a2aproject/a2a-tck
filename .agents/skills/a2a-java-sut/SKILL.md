@@ -66,7 +66,7 @@ When Gherkin scenarios change, regenerate the Java project:
 make codegen-a2a-java-sut
 ```
 
-This runs `uv run python -m codegen.generator --output sut/a2a-java` which:
+This runs `uv run python -m codegen.generator --target a2a-java --output sut/a2a-java` which:
 1. Parses all `scenarios/*.feature` files
 2. Resolves step text to Trigger/Action objects via `codegen/steps.py`
 3. Emits Java sources using Jinja2 templates from `codegen/a2a-java/`

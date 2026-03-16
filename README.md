@@ -106,7 +106,7 @@ Reports are always generated in the `reports/` directory after every run:
 
 ## SUT Code Generation
 
-The TCK includes a code generator that produces System Under Test (SUT) implementations from Gherkin scenario files in `scenarios/`. Currently, the a2a-java SUT (a Quarkus application using the [a2a-java SDK](https://github.com/a2aproject/a2a-java)) is supported.
+The TCK includes a code generator that produces System Under Test (SUT) implementations from Gherkin scenario files in `scenarios/`. The generator supports a `--target` flag to select the SUT type. Currently, the `a2a-java` target (a Quarkus application using the [a2a-java SDK](https://github.com/a2aproject/a2a-java)) is supported.
 
 ```bash
 # Generate the a2a-java SUT from Gherkin scenarios
