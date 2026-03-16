@@ -241,27 +241,25 @@ def _error_to_java(error_type: str) -> str:
 
 def _parts_to_java(parts: list[PartDef]) -> str:
     """Render a list of part definitions as a Java List.of(...) expression."""
-    if len(parts) == 1:
-        return _single_part_to_java(parts[0])
     fragments = [_single_part_to_java(p) for p in parts]
     return f"List.of({', '.join(fragments)})"
 
 
 def _single_part_to_java(part: PartDef) -> str:
-    """Render a single part definition as a Java expression."""
+    """Render a single part definition as a Java constructor expression."""
     if isinstance(part, TextPartDef):
-        return f'List.of(new TextPart({_java_string(part.text)}))'
+        return f'new TextPart({_java_string(part.text)})'
 
     if isinstance(part, FilePartDef):
         return (
-            f"List.of(new FilePart(new FileWithBytes("
+            f"new FilePart(new FileWithBytes("
             f"{_java_string(part.media_type)}, "
             f"{_java_string(part.name)}, "
-            f'"dGNr")))'  # base64 "tck"
+            f'"dGNr"))'  # base64 "tck"
         )
 
     if isinstance(part, DataPartDef):
-        return f"List.of(new DataPart({_java_string(part.json_content)}))"
+        return f"new DataPart({_java_string(part.json_content)})"
 
     msg = f"Unknown part type: {type(part).__name__}"
     raise ValueError(msg)
