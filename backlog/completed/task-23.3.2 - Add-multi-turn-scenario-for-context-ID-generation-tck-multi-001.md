@@ -1,9 +1,10 @@
 ---
 id: TASK-23.3.2
 title: Add multi-turn scenario for context ID generation (tck-multi-001)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-13 13:23'
+updated_date: '2026-03-16 10:32'
 labels:
   - scenario
   - multi-turn
@@ -24,7 +25,13 @@ Add a Gherkin scenario for `tck-multi-001` prefix to `scenarios/core_operations.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Scenario with prefix tck-multi-001 added to core_operations.feature
-- [ ] #2 Generated SUT handles tck-multi-001 prefix
-- [ ] #3 CORE-MULTI-001 and CORE-MULTI-001a tests pass
+- [x] #1 Scenario with prefix tck-multi-001 added to core_operations.feature
+- [x] #2 Generated SUT handles tck-multi-001 prefix
+- [x] #3 CORE-MULTI-001 and CORE-MULTI-001a tests pass
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added scenario for `tck-multi-001` prefix to `core_operations.feature`. The executor completes the task with a message; contextId generation is handled by the SDK. CORE-MULTI-001 (MAY) and CORE-MULTI-001a (MUST) pass on all three transports.
+<!-- SECTION:FINAL_SUMMARY:END -->
