@@ -40,6 +40,8 @@ _DEFAULT_A2A_JAVA_SDK_VERSION = "1.0.0.Alpha4-SNAPSHOT"
 _JAVA_PACKAGE = "io.a2a.tck.sut"
 _JAVA_PACKAGE_DIR = _JAVA_PACKAGE.replace(".", "/")
 
+_STREAMING_WAIT_TIMEOUT_MS = 2000
+
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -188,7 +190,7 @@ def _action_to_java(action: object) -> list[str]:
         return [f"emitter.addArtifact({', '.join(args)});"]
 
     if isinstance(action, WaitForTimeout):
-        ms = action.multiplier * 2000
+        ms = action.multiplier * _STREAMING_WAIT_TIMEOUT_MS
         return [
             f"try {{ Thread.sleep({ms}); }}"
             " catch (InterruptedException e) { Thread.currentThread().interrupt(); }",
