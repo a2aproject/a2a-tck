@@ -19,6 +19,11 @@ Read `reports/compatibility.json` to find the failing requirement, its status pe
 transport, recorded errors, and `test_ids`. This file is always generated after
 every TCK run.
 
+**Multi-requirement grouping:** When scanning the report, look for related
+requirements that likely share the same root cause (e.g., same test module,
+similar error messages, same spec section). Group them early so all context
+is gathered together rather than diagnosed separately.
+
 Use the SUT URL from the current session or from `reports/compatibility.json`
 (`summary.sut_url`) rather than asking the user again.
 
@@ -61,6 +66,11 @@ Example: `specification/specification.md#343-multi-turn-conversation-patterns` b
 ## Step 3: Find the specification text
 
 Search `specification/specification.md` for the section referenced by the requirement. Extract the normative language (MUST/SHOULD/MAY sentences) that defines the expected behavior.
+
+**Fallback:** If the `spec_url` anchor doesn't match a markdown heading exactly,
+warn the user that the local specification may be out of date (suggest running
+`make spec` to re-fetch). Fall back to the requirement's `description` field
+for the normative text and search the spec for nearby keywords instead.
 
 ## Step 4: Understand the failure
 
@@ -174,6 +184,14 @@ Compose the issue using this template:
 
 ## Step 7: Present and refine
 
-Show the drafted issue to the user. Ask if they want to:
+Show the drafted issue to the user. Present the title separately so it can be
+copied independently.
+
+Ask if they want to:
 - Adjust the title or description
-- Copy the issue to the pasteboard (using `pbcopy` on macOS) so they can paste it into a GitHub issue
+- Copy the issue to the pasteboard (using `pbcopy` on macOS) so they can paste
+  it into a GitHub issue
+
+When copying to the pasteboard, include the title as the first line (prefixed
+with `# `) followed by a blank line and the issue body, so everything is in a
+single pasteboard operation.
