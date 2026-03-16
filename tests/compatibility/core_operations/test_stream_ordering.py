@@ -16,7 +16,7 @@ import pytest
 from specification.generated import a2a_pb2
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import must, streaming
 
 
@@ -212,9 +212,4 @@ class TestStreamEventOrdering:
 
         errors = _check_ordering_grpc(events) if transport == "grpc" else _check_ordering_json(events)
 
-        passed = not errors
-        record(
-            collector=compatibility_collector, req=req,
-            transport=transport, passed=passed, errors=errors,
-        )
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)

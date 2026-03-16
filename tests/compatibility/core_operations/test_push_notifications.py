@@ -23,7 +23,7 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_completed_task
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import must
 
 
@@ -93,9 +93,7 @@ class TestPushNotificationCrud:
         if not response.success:
             errors.append(f"CreatePushNotificationConfig failed: {response.error}")
 
-        passed = not errors
-        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_config_persists(
         self,
@@ -132,9 +130,7 @@ class TestPushNotificationCrud:
                 f"GetPushNotificationConfig failed after creation: {get_resp.error}"
             )
 
-        passed = not errors
-        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_get_push_config(
         self,
@@ -169,9 +165,7 @@ class TestPushNotificationCrud:
         if not response.success:
             errors.append(f"GetPushNotificationConfig failed: {response.error}")
 
-        passed = not errors
-        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_get_nonexistent_config_returns_error(
         self,
@@ -201,9 +195,7 @@ class TestPushNotificationCrud:
                 "return an error, but succeeded"
             )
 
-        passed = not errors
-        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_list_push_configs(
         self,
@@ -235,9 +227,7 @@ class TestPushNotificationCrud:
         if not response.success:
             errors.append(f"ListPushNotificationConfigs failed: {response.error}")
 
-        passed = not errors
-        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_delete_push_config(
         self,
@@ -284,9 +274,7 @@ class TestPushNotificationCrud:
                     "GetPushNotificationConfig should return an error"
                 )
 
-        passed = not errors
-        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_delete_is_idempotent(
         self,
@@ -329,6 +317,4 @@ class TestPushNotificationCrud:
                 f"but returned: {second_del.error}"
             )
 
-        passed = not errors
-        record(collector=compatibility_collector, req=req, transport=transport, passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
