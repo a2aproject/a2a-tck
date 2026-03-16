@@ -19,4 +19,4 @@ lint: ## Run linter
 	uv run ruff check .
 
 codegen-a2a-java-sut: ## Generate the a2a-java SUT from Gherkin scenarios
-	uv run python -m codegen.generator --output sut/a2a-java
+	uv run python -m codegen.generator --target a2a-java --output sut/a2a-java

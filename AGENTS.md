@@ -89,7 +89,7 @@ All A2A bindings (for transport methods, error codes, etc.) are defined centrall
 - `make unit-test` — run unit tests (no SUT required)
 - `make spec` — update A2A specification files
 - `make proto` — regenerate gRPC stubs from a2a.proto
-- `make codegen-a2a-java-sut` — generate the a2a-java SUT from Gherkin scenarios in `scenarios/`
+- `make codegen-a2a-java-sut` — generate the a2a-java SUT from Gherkin scenarios in `scenarios/` (uses `--target a2a-java`)
 - `uv run ./run_tck.py --sut-host http://localhost:9999` — run full conformance suite against the SUT that exposes its agent card on `localhost:9999`
 - `uv run ./run_tck.py --sut-host http://localhost:9999 --transport grpc` — run single transport
 - `uv run ./run_tck.py --sut-host http://localhost:9999 --level must` — run only MUST requirements

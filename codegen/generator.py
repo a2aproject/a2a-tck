@@ -2,10 +2,10 @@
 
 Usage::
 
-    python -m codegen.generator --output sut/a2a-java/
+    python -m codegen.generator --target a2a-java --output sut/a2a-java/
 
 Reads all ``scenarios/*.feature`` files, parses them into Scenario
-objects, and invokes the Java emitter to generate a complete Quarkus
+objects, and invokes the target emitter to generate a complete SUT
 project.
 """
 
@@ -15,18 +15,35 @@ import argparse
 import sys
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from codegen.java_emitter import emit_java_project
 from codegen.parser import parse_feature_files
 
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from codegen.model import Scenario
+
 _SCENARIOS_DIR = Path(__file__).resolve().parent.parent / "scenarios"
+
+# Registry of target emitters: name → emitter function
+_EMITTERS: dict[str, Callable[[list[Scenario], Path], list[Path]]] = {
+    "a2a-java": emit_java_project,
+}
 
 
 def main(argv: list[str] | None = None) -> int:
     """Run the code generator CLI."""
     parser = argparse.ArgumentParser(
-        description="Generate a Java SUT project from Gherkin scenarios.",
+        description="Generate a SUT project from Gherkin scenarios.",
+    )
+    parser.add_argument(
+        "--target",
+        choices=sorted(_EMITTERS),
+        default="a2a-java",
+        help="Target SUT to generate (default: a2a-java)",
     )
     parser.add_argument(
         "--output",
@@ -56,8 +73,9 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"Found {len(scenarios)} scenario(s)")
 
-    print(f"Generating Java project in {args.output}/...")
-    generated = emit_java_project(scenarios, args.output)
+    emitter = _EMITTERS[args.target]
+    print(f"Generating {args.target} project in {args.output}/...")
+    generated = emitter(scenarios, args.output)
 
     for path in generated:
         print(f"  {path}")
