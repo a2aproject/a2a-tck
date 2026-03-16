@@ -24,7 +24,7 @@ class TestGeneratorCLI:
         assert (tmp_path / "pom.xml").exists()
         assert (
             tmp_path / "src" / "main" / "java"
-            / "io" / "a2a" / "tck" / "sut"
+            / "org" / "a2aproject" / "sdk"
             / "TckAgentExecutorProducer.java"
         ).exists()
 

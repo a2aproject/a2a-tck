@@ -1,4 +1,4 @@
-package io.a2a.tck.sut;
+package org.a2aproject.sdk;
 
 import java.util.List;
 import java.util.Map;

@@ -94,7 +94,7 @@ class TestEmitJavaProject:
         emit_java_project(_basic_scenarios(), tmp_path)
         executor = (
             tmp_path / "src" / "main" / "java"
-            / "io" / "a2a" / "tck" / "sut"
+            / "org" / "a2aproject" / "sdk"
             / "TckAgentExecutorProducer.java"
         )
         content = executor.read_text()
@@ -108,7 +108,7 @@ class TestEmitJavaProject:
         emit_java_project(_basic_scenarios(), tmp_path)
         executor = (
             tmp_path / "src" / "main" / "java"
-            / "io" / "a2a" / "tck" / "sut"
+            / "org" / "a2aproject" / "sdk"
             / "TckAgentExecutorProducer.java"
         )
         content = executor.read_text()
@@ -122,7 +122,7 @@ class TestEmitJavaProject:
         emit_java_project(_basic_scenarios(), tmp_path)
         card = (
             tmp_path / "src" / "main" / "java"
-            / "io" / "a2a" / "tck" / "sut"
+            / "org" / "a2aproject" / "sdk"
             / "TckAgentCardProducer.java"
         )
         content = card.read_text()
@@ -134,7 +134,7 @@ class TestEmitJavaProject:
         emit_java_project(all_scenarios, tmp_path)
         card = (
             tmp_path / "src" / "main" / "java"
-            / "io" / "a2a" / "tck" / "sut"
+            / "org" / "a2aproject" / "sdk"
             / "TckAgentCardProducer.java"
         )
         content = card.read_text()
@@ -146,4 +146,4 @@ class TestEmitJavaProject:
         pom = tmp_path / "pom.xml"
         content = pom.read_text()
         assert "a2a-java-sdk-reference-jsonrpc" in content
-        assert "io.github.a2asdk" in content
+        assert "org.a2aproject.sdk" in content
