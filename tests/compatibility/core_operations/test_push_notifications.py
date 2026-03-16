@@ -15,12 +15,11 @@ Requirements tested:
 
 from __future__ import annotations
 
-import uuid
-
 from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_completed_task
@@ -53,7 +52,7 @@ PUSH_DEL_002 = get_requirement_by_id("PUSH-DEL-002")
 def _unique_push_config() -> dict:
     """Generate a push notification config with a unique ID."""
     return {
-        "id": f"tck-push-{uuid.uuid4().hex[:8]}",
+        "id": tck_id("push"),
         "url": "https://example.com/tck-push-webhook",
     }
 
@@ -192,7 +191,7 @@ class TestPushNotificationCrud:
 
         response = client.get_push_notification_config(
             task_id=info.task_id,
-            id=f"nonexistent-{uuid.uuid4().hex[:8]}",
+            id=tck_id("nonexistent"),
         )
 
         errors: list[str] = []
