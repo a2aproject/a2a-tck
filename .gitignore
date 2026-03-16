@@ -201,6 +201,11 @@ spec_tracker/cache
 reports/
 
 .DS_Store
+<<<<<<< HEAD
 .serena/
 .claude/
 .bob/
+=======
+.serena
+.claude/settings.local.json
+>>>>>>> 7355020 (chore: add .claude/settings.local.json to .gitignore)
