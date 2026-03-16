@@ -17,13 +17,13 @@ Requirements tested:
 from __future__ import annotations
 
 import threading
-import uuid
 
 from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from specification.generated import a2a_pb2
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_completed_task, create_working_task
@@ -304,7 +304,7 @@ class TestMultiTurn:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Follow-up to terminal task"}],
-            "messageId": f"tck-terminal-{uuid.uuid4().hex[:8]}",
+            "messageId": tck_id("terminal"),
             "taskId": info.task_id,
         }
         response = client.send_message(message=msg)
@@ -338,7 +338,7 @@ class TestMultiTurn:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Follow-up message"}],
-            "messageId": f"tck-infer-ctx-{uuid.uuid4().hex[:8]}",
+            "messageId": tck_id("infer-ctx"),
             "taskId": info.task_id,
         }
         response = client.send_message(message=msg)
@@ -368,9 +368,9 @@ class TestMultiTurn:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Mismatched context test"}],
-            "messageId": f"tck-mismatch-{uuid.uuid4().hex[:8]}",
+            "messageId": tck_id("mismatch"),
             "taskId": info.task_id,
-            "contextId": f"wrong-context-{uuid.uuid4().hex[:8]}",
+            "contextId": tck_id("wrong-context"),
         }
         response = client.send_message(message=msg)
 

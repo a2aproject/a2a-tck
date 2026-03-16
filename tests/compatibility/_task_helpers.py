@@ -8,12 +8,12 @@ This module provides transport-agnostic factory functions that call
 
 from __future__ import annotations
 
-import uuid
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import pytest
+
+from tck.requirements.base import tck_id
 
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ def create_completed_task(client: BaseTransportClient) -> TaskInfo:
     message = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK prerequisite task creation"}],
-        "messageId": f"tck-task-helper-{uuid.uuid4().hex[:8]}",
+        "messageId": tck_id("task-helper"),
     }
     return _create_task(client, message)
 
@@ -61,7 +61,7 @@ def create_working_task(client: BaseTransportClient) -> TaskInfo:
     message = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK working task creation"}],
-        "messageId": f"tck-input-required-{uuid.uuid4().hex[:8]}",
+        "messageId": tck_id("input-required"),
     }
     return _create_task(client, message)
 
