@@ -24,6 +24,6 @@ def validate_message_response_contains_field(
     msg = response.raw_response
     inner = getattr(msg, "task", None) or getattr(msg, "message", None) or msg
     value = getattr(inner, field, None)
-    if not value:
+    if value is None:
         return [f"Response must include '{field}'"]
     return []

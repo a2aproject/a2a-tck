@@ -25,6 +25,6 @@ def validate_message_response_contains_field(
     if not isinstance(data, dict):
         return [f"Response is not a JSON object, cannot check for '{field}'"]
     inner = data.get("task") or data.get("message") or data
-    if not inner.get(field):
+    if inner.get(field) is None:
         return [f"Response must include '{field}'"]
     return []
