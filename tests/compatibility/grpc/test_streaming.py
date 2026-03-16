@@ -22,7 +22,7 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
 from tck.validators.grpc.error_validator import validate_grpc_error
 from tck.validators.streaming import drain_stream
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import grpc as grpc_marker
 from tests.compatibility.markers import must, streaming
 
@@ -141,15 +141,7 @@ class TestGrpcStreaming:
             errors.append("Stream yielded no events")
         drain_stream(response)
 
-        passed = not errors
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_streaming_message_structure(
         self,
@@ -175,15 +167,7 @@ class TestGrpcStreaming:
                     f"Event {i}: unexpected payload field {payload!r}"
                 )
 
-        passed = not errors
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_streaming_cancellation(
         self,
@@ -218,15 +202,7 @@ class TestGrpcStreaming:
                     f"got {e.code().name}"
                 )
 
-        passed = not errors
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_streaming_error_propagation(
         self,
@@ -258,7 +234,6 @@ class TestGrpcStreaming:
                     )
                 result = validate_grpc_error(e, "TaskNotFoundError")
                 errors = [] if result.valid else [result.message]
-                passed = result.valid
         else:
             rpc_error = response.raw_response
             if not isinstance(rpc_error, grpc.RpcError):
@@ -272,16 +247,8 @@ class TestGrpcStreaming:
                 )
             result = validate_grpc_error(rpc_error, "TaskNotFoundError")
             errors = [] if result.valid else [result.message]
-            passed = result.valid
 
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_subscribe_first_event_is_task(
         self,
@@ -323,20 +290,12 @@ class TestGrpcStreaming:
         drain_stream(sub_response)
 
         payload = first.WhichOneof("payload")
-        passed = payload == "task"
         errors = (
             []
-            if passed
+            if payload == "task"
             else [
                 f"First event payload should be 'task', got {payload!r}"
             ]
         )
 
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, TRANSPORT, errors[0])
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)

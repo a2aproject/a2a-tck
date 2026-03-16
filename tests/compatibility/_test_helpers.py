@@ -55,6 +55,18 @@ def skip_recording(
     pytest.skip(reason)
 
 
+def assert_and_record(
+    collector: Any,
+    req: RequirementSpec,
+    transport: str,
+    errors: list[str],
+) -> None:
+    """Record the result and assert no errors."""
+    passed = not errors
+    record(collector, req, transport, passed=passed, errors=errors)
+    assert passed, fail_msg(req, transport, "; ".join(errors))
+
+
 def get_client(
     transport_clients: dict[str, BaseTransportClient],
     transport: str,

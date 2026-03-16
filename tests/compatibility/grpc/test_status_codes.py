@@ -20,7 +20,7 @@ from tck.validators.grpc.error_validator import (
     extract_error_info,
     validate_grpc_error,
 )
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
 from tests.compatibility.markers import grpc as grpc_marker
 from tests.compatibility.markers import must
 
@@ -309,12 +309,4 @@ class TestGrpcErrorInfo:
                     f"got '{error_info['domain']}'"
                 )
 
-        passed = not errors
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, TRANSPORT, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
