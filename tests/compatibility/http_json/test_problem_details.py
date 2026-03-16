@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import TASK_NOT_FOUND_ERROR
+from tck.requirements.base import TASK_NOT_FOUND_ERROR, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
 from tck.validators.error_info import find_error_info, validate_error_info
@@ -47,7 +47,7 @@ def _get_error_response(
     Returns the raw transport response, or calls pytest.skip if the server
     does not return an error.
     """
-    response = client.get_task(id="tck-nonexistent-pd-001")
+    response = client.get_task(id=tck_id("nonexistent-pd-001"))
     if response.success:
         pytest.skip("Server did not return an error for non-existent task")
     return response

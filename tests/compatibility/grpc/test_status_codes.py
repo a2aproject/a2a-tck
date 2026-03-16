@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 import grpc
 import pytest
 
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
 from tck.validators.grpc.error_validator import (
@@ -85,7 +86,7 @@ class TestGrpcStatusCodes:
         req = GRPC_ERR_002
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
-        response = client.get_task(id="tck-nonexistent-grpc-status-001")
+        response = client.get_task(id=tck_id("nonexistent-grpc-status-001"))
         if response.success:
             pytest.skip("Server did not return an error for non-existent task")
 
@@ -110,7 +111,7 @@ class TestGrpcStatusCodes:
         req = GRPC_ERR_002
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
-        response = client.cancel_task(id="tck-nonexistent-grpc-status-002")
+        response = client.cancel_task(id=tck_id("nonexistent-grpc-status-002"))
         if response.success:
             pytest.skip("Server did not return an error for CancelTask")
 
@@ -155,7 +156,7 @@ class TestGrpcStatusCodes:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "grpc status code test"}],
-            "messageId": "tck-grpc-status-unsupported-003",
+            "messageId": tck_id("grpc-status-unsupported-003"),
         }
         response = client.send_streaming_message(message=msg)
         if response.success:
@@ -189,7 +190,7 @@ class TestGrpcStatusCodes:
 
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = client.create_push_notification_config(
-            task_id="tck-grpc-status-push-004",
+            task_id=tck_id("grpc-status-push-004"),
             config={"url": "https://example.com"},
         )
         if response.success:
@@ -225,7 +226,7 @@ class TestGrpcStatusCodes:
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "grpc version status test"}],
-                "messageId": "tck-grpc-status-ver-005",
+                "messageId": tck_id("grpc-status-ver-005"),
             }
         }
         proto_request = ParseDict(msg, a2a_pb2.SendMessageRequest())
@@ -284,7 +285,7 @@ class TestGrpcErrorInfo:
         req = GRPC_ERR_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
-        response = client.get_task(id="tck-nonexistent-grpc-errinfo-001")
+        response = client.get_task(id=tck_id("nonexistent-grpc-errinfo-001"))
         if response.success:
             pytest.skip("Server did not return an error for non-existent task")
 

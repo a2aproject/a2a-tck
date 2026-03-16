@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 import pytest
 
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
@@ -90,7 +91,7 @@ class TestJsonRpcErrorCodeMappings:
         transport = "jsonrpc"
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
-        response = client.get_task(id="tck-nonexistent-error-code-001")
+        response = client.get_task(id=tck_id("nonexistent-error-code-001"))
         body = response.raw_response
         if "error" not in body:
             pytest.skip("Server did not return an error for non-existent task")
@@ -116,7 +117,7 @@ class TestJsonRpcErrorCodeMappings:
         transport = "jsonrpc"
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
-        response = client.cancel_task(id="tck-nonexistent-error-code-002")
+        response = client.cancel_task(id=tck_id("nonexistent-error-code-002"))
         body = response.raw_response
         if "error" not in body:
             pytest.skip("Server did not return an error for CancelTask")
@@ -160,7 +161,7 @@ class TestJsonRpcErrorCodeMappings:
 
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = client.create_push_notification_config(
-            task_id="tck-error-code-003",
+            task_id=tck_id("error-code-003"),
             config={"url": "https://example.com"},
         )
         body = response.raw_response
@@ -199,7 +200,7 @@ class TestJsonRpcErrorCodeMappings:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "error code test"}],
-            "messageId": "tck-error-code-004",
+            "messageId": tck_id("error-code-004"),
         }
         response = _jsonrpc_call(
             client.base_url, "SendStreamingMessage", {"message": msg}
@@ -238,7 +239,7 @@ class TestJsonRpcErrorCodeMappings:
                 "message": {
                     "role": "ROLE_USER",
                     "parts": [{"text": "content type test"}],
-                    "messageId": "tck-error-code-005",
+                    "messageId": tck_id("error-code-005"),
                 }
             },
         }
@@ -289,7 +290,7 @@ class TestJsonRpcErrorCodeMappings:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version error code test"}],
-            "messageId": "tck-error-code-009",
+            "messageId": tck_id("error-code-009"),
         }
         response = _jsonrpc_call(
             client.base_url,
@@ -357,17 +358,17 @@ class TestJsonRpcErrorCodeRange:
 
         # Trigger the error condition.
         if trigger_id == "get_task":
-            resp = client.get_task(id="tck-range-check-001")
+            resp = client.get_task(id=tck_id("range-check-001"))
             body = resp.raw_response
         elif trigger_id == "cancel_task":
-            resp = client.cancel_task(id="tck-range-check-002")
+            resp = client.cancel_task(id=tck_id("range-check-002"))
             body = resp.raw_response
         else:
             # version_error — requires custom header, so use raw call.
             msg = {
                 "role": "ROLE_USER",
                 "parts": [{"text": "range test"}],
-                "messageId": "tck-range-check-003",
+                "messageId": tck_id("range-check-003"),
             }
             raw = _jsonrpc_call(
                 client.base_url,

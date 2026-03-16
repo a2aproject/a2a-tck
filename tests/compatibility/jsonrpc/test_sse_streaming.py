@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tests.compatibility._test_helpers import fail_msg, get_client, record
@@ -47,7 +48,7 @@ _STREAM_RESPONSE_KEYS = {"task", "message", "statusUpdate", "artifactUpdate"}
 _SAMPLE_MESSAGE = {
     "role": "ROLE_USER",
     "parts": [{"text": "TCK streaming test"}],
-    "messageId": "tck-sse-streaming-001",
+    "messageId": tck_id("sse-streaming-001"),
 }
 
 
@@ -199,7 +200,7 @@ class TestSseSubscribeToTask:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        response = client.subscribe_to_task(id="tck-nonexistent-subscribe-001")
+        response = client.subscribe_to_task(id=tck_id("nonexistent-subscribe-001"))
 
         # The server may return a normal JSON-RPC error (not SSE) for
         # non-existent tasks. Check the raw httpx response.
