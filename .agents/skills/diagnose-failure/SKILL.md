@@ -75,9 +75,10 @@ Determine:
 
 Create a minimal curl command sequence that reproduces the failure. The reproducer should:
 
-1. **Set up prerequisites** — if the failing operation needs an existing task (e.g., GetTask, CancelTask, push notification CRUD), first create one via SendMessage or the appropriate endpoint.
-2. **Execute the failing operation** — use the transport binding from Step 2 to construct the correct curl command.
-3. **Show the actual vs expected result** — add comments explaining what the SUT returns vs what the spec requires.
+1. **Verify preconditions** — include commands that show relevant context, such as checking agent card capabilities (e.g., `curl ... | jq .capabilities.pushNotifications`) so the reader understands the setup.
+2. **Set up prerequisites** — if the failing operation needs an existing task (e.g., GetTask, CancelTask, push notification CRUD), first create one via SendMessage or the appropriate endpoint.
+3. **Execute the failing operation** — use the transport binding from Step 2 to construct the correct curl command.
+4. **Show the actual vs expected result** — add comments explaining what the SUT returns vs what the spec requires.
 
 ### Transport-specific curl patterns
 
@@ -124,6 +125,14 @@ timing-dependent or requires prior state from a full TCK run), note this in
 the issue and provide the full TCK run command as the reliable reproducer instead.
 
 ## Step 6: Draft the GitHub issue
+
+**Title:** Draft a concise issue title summarizing the failure (e.g., "HTTP+JSON
+transport returns 501 instead of 400 for PushNotificationNotSupportedError").
+Present the title separately so the user can copy it.
+
+**Multi-requirement root cause:** If multiple requirements fail from the same
+root cause, group them into a single issue. List all affected requirement IDs
+in the Requirement section.
 
 Use the `test_ids` array from the requirement's entry in `reports/compatibility.json`
 for the "TCK test" section — no need to search for test node IDs manually.
