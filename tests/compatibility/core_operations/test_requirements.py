@@ -23,6 +23,16 @@ from tck.validators.streaming import validate_streaming_events
 from tests.compatibility.markers import may, must, should
 
 
+# Maps requirement tags to agent card capability keys.
+# Only these tags should cause MAY-level tests to be skipped
+# when the corresponding capability is not declared.
+_CAPABILITY_TAG_TO_CARD_KEY = {
+    "streaming": "streaming",
+    "push-notification": "pushNotifications",
+    "agent-card": "extendedAgentCard",
+}
+
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -220,12 +230,14 @@ def test_may_requirement(
     agent_card: dict[str, Any],
 ) -> None:
     """Verify a MAY-level requirement — skip if capability not declared."""
-    # Skip if the agent card doesn't declare relevant capabilities
+    # Only skip when a requirement's tags include a capability that maps
+    # to an agent card capability field and that capability is not enabled.
+    # Tags like "core", "multi-turn", "context" are categorization labels,
+    # not agent card capabilities, so they must not trigger a skip.
     if requirement.tags:
-        card_capabilities = set(agent_card.get("capabilities", {}).keys())
-        card_tags = set(agent_card.get("tags", []))
-        available = card_capabilities | card_tags
-        if not any(tag in available for tag in requirement.tags):
+        card_caps = agent_card.get("capabilities", {})
+        capability_tags = [t for t in requirement.tags if t in _CAPABILITY_TAG_TO_CARD_KEY]
+        if capability_tags and not any(card_caps.get(_CAPABILITY_TAG_TO_CARD_KEY[t]) for t in capability_tags):
             compatibility_collector.record(
                 requirement_id=requirement.id,
                 transport=transport,
@@ -234,7 +246,7 @@ def test_may_requirement(
                 skipped=True,
             )
             pytest.skip(
-                f"Agent card does not declare capabilities for tags: {requirement.tags}"
+                f"Agent card does not declare capabilities for: {capability_tags}"
             )
 
     client = transport_clients.get(transport)
