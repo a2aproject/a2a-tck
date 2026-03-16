@@ -44,17 +44,6 @@ def record(
     )
 
 
-def skip_recording(
-    collector: Any,
-    req: RequirementSpec,
-    transport: str,
-    reason: str,
-) -> None:
-    """Record a skipped result in the compatibility collector and skip the test."""
-    record(collector, req, transport, passed=False, skipped=True)
-    pytest.skip(reason)
-
-
 def assert_and_record(
     collector: Any,
     req: RequirementSpec,
