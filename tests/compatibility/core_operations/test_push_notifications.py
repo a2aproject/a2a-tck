@@ -49,8 +49,8 @@ PUSH_DEL_002 = get_requirement_by_id("PUSH-DEL-002")
 # ---------------------------------------------------------------------------
 
 
-def _unique_push_config() -> dict:
-    """Generate a push notification config with a unique ID."""
+def _push_config() -> dict:
+    """Generate a push notification config with a session-stable ID."""
     return {
         "id": tck_id("push"),
         "url": "https://example.com/tck-push-webhook",
@@ -82,7 +82,7 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_completed_task(client)
-        config = _unique_push_config()
+        config = _push_config()
 
         response = client.create_push_notification_config(
             task_id=info.task_id,
@@ -110,7 +110,7 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_completed_task(client)
-        config = _unique_push_config()
+        config = _push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
@@ -147,7 +147,7 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_completed_task(client)
-        config = _unique_push_config()
+        config = _push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
@@ -212,7 +212,7 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_completed_task(client)
-        config = _unique_push_config()
+        config = _push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
@@ -244,7 +244,7 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_completed_task(client)
-        config = _unique_push_config()
+        config = _push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
@@ -291,7 +291,7 @@ class TestPushNotificationCrud:
             pytest.skip("Agent does not support push notifications")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_completed_task(client)
-        config = _unique_push_config()
+        config = _push_config()
 
         create_resp = client.create_push_notification_config(
             task_id=info.task_id,
