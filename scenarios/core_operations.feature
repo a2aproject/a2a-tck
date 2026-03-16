@@ -87,6 +87,16 @@ Feature: Core Operations
     Then complete the task with the message "Non-blocking response"
 
   # ---------------------------------------------------------------------------
+  # Multi-Turn Interactions (Section 3.4)
+  # ---------------------------------------------------------------------------
+
+  # CORE-MULTI-001 (MAY) and CORE-MULTI-001a (MUST): contextId generation
+  # is handled by the SDK framework. The executor just completes the task.
+  Scenario: Context ID generation (CORE-MULTI-001)
+    When a message is received with prefix "tck-multi-001"
+    Then complete the task with the message "Context ID test response"
+
+  # ---------------------------------------------------------------------------
   # Generic Setup (for multi-operation tests)
   # ---------------------------------------------------------------------------
 
