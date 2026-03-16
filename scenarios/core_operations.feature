@@ -67,7 +67,7 @@ Feature: Core Operations
     Then reject with error "rejected"
 
   # ---------------------------------------------------------------------------
-  # CancelTask (Section 3.1.4)
+  # CancelTask (Section 3.1.5)
   # ---------------------------------------------------------------------------
 
   Scenario: Cancelable task in non-terminal state (CORE-CANCEL-001)
