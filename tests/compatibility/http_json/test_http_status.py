@@ -9,12 +9,14 @@ Requirements tested:
 
 from __future__ import annotations
 
+import json
+
 from typing import TYPE_CHECKING, Any
 
 import httpx
 import pytest
 
-from tck.requirements.base import SEND_MESSAGE_BINDING
+from tck.requirements.base import SEND_MESSAGE_BINDING, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
 from tck.validators.http_json.error_validator import validate_http_json_error
@@ -61,7 +63,7 @@ class TestHttpJsonStatusCodes:
         req = HTTP_JSON_STATUS_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
-        response = client.get_task(id="tck-nonexistent-status-001")
+        response = client.get_task(id=tck_id("nonexistent-status-001"))
         if response.success:
             pytest.skip("Server did not return an error for non-existent task")
 
@@ -88,7 +90,7 @@ class TestHttpJsonStatusCodes:
         req = HTTP_JSON_STATUS_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
-        response = client.cancel_task(id="tck-nonexistent-status-002")
+        response = client.cancel_task(id=tck_id("nonexistent-status-002"))
         if response.success:
             pytest.skip("Server did not return an error for CancelTask")
 
@@ -132,7 +134,7 @@ class TestHttpJsonStatusCodes:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "status code test"}],
-            "messageId": "tck-status-unsupported-003",
+            "messageId": tck_id("status-unsupported-003"),
         }
         response = client.send_streaming_message(message=msg)
         if response.success:
@@ -164,7 +166,7 @@ class TestHttpJsonStatusCodes:
         # Send a request with a deliberately wrong Content-Type.
         response = httpx.post(
             f"{client.base_url}{SEND_MESSAGE_BINDING.http_json_path}",
-            content=b'{"message": {"role": "ROLE_USER", "parts": [{"text": "ct test"}], "messageId": "tck-status-ct-004"}}',
+            content=json.dumps({"message": {"role": "ROLE_USER", "parts": [{"text": "ct test"}], "messageId": tck_id("status-ct-004")}}).encode(),
             headers={"Content-Type": "text/plain"},
         )
 
@@ -198,7 +200,7 @@ class TestHttpJsonStatusCodes:
 
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = client.create_push_notification_config(
-            task_id="tck-status-push-005",
+            task_id=tck_id("status-push-005"),
             config={"url": "https://example.com"},
         )
         if response.success:
@@ -231,7 +233,7 @@ class TestHttpJsonStatusCodes:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version status test"}],
-            "messageId": "tck-status-ver-006",
+            "messageId": tck_id("status-ver-006"),
         }
         response = httpx.post(
             f"{client.base_url}{SEND_MESSAGE_BINDING.http_json_path}",
@@ -279,7 +281,7 @@ class TestHttpJsonStatusCodes:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "status code success test"}],
-            "messageId": "tck-status-success-007",
+            "messageId": tck_id("status-success-007"),
         }
         response = client.send_message(message=msg)
         if not response.success:

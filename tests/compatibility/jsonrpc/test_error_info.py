@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import TASK_NOT_FOUND_ERROR
+from tck.requirements.base import TASK_NOT_FOUND_ERROR, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators.error_info import find_error_info, validate_error_info
@@ -45,7 +45,7 @@ def _get_error_response(
 
     Returns the raw JSON-RPC response dict, or skips if no error.
     """
-    response = client.get_task(id="tck-nonexistent-errinfo-001")
+    response = client.get_task(id=tck_id("nonexistent-errinfo-001"))
     body = response.raw_response
     if not isinstance(body, dict) or "error" not in body:
         pytest.skip("Server did not return a JSON-RPC error for non-existent task")

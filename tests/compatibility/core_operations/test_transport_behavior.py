@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tests.compatibility._test_helpers import fail_msg, record
 from tests.compatibility.markers import grpc, http_json, jsonrpc, must, streaming
@@ -50,7 +51,7 @@ GRPC_ERR_003 = get_requirement_by_id("GRPC-ERR-003")
 _SAMPLE_MESSAGE = {
     "role": "ROLE_USER",
     "parts": [{"text": "Hello from TCK transport test"}],
-    "messageId": "tck-transport-test-001",
+    "messageId": tck_id("transport-test-001"),
 }
 
 

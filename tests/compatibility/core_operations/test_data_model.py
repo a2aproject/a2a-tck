@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tests.compatibility._test_helpers import fail_msg, record
 from tests.compatibility.markers import core, must
@@ -54,7 +55,7 @@ _ISO_8601_Z_PATTERN = re.compile(
 _SAMPLE_MESSAGE = {
     "role": "ROLE_USER",
     "parts": [{"text": "Hello from TCK data model test"}],
-    "messageId": "tck-dm-test-001",
+    "messageId": tck_id("dm-test-001"),
 }
 
 

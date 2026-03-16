@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from specification.generated import a2a_pb2
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
@@ -38,7 +39,7 @@ STREAM_ORDER_001 = get_requirement_by_id("STREAM-ORDER-001")
 _SAMPLE_MESSAGE = {
     "role": "ROLE_USER",
     "parts": [{"text": "TCK stream ordering test"}],
-    "messageId": "tck-stream-ordering-001",
+    "messageId": tck_id("stream-ordering-001"),
 }
 
 # gRPC proto state ordering (numeric enum values)

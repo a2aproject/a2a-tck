@@ -18,6 +18,7 @@ import grpc
 import pytest
 
 from specification.generated import a2a_pb2
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
 from tck.validators.grpc.error_validator import validate_grpc_error
@@ -56,7 +57,7 @@ _TERMINAL_STATES = frozenset({
 _SAMPLE_MESSAGE = {
     "role": "ROLE_USER",
     "parts": [{"text": "TCK gRPC streaming test"}],
-    "messageId": "tck-grpc-streaming-001",
+    "messageId": tck_id("grpc-streaming-001"),
 }
 
 _CONNECTIVITY_CODES = frozenset({
@@ -218,7 +219,7 @@ class TestGrpcStreaming:
             record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
-        response = client.subscribe_to_task(id="tck-nonexistent-grpc-stream-001")
+        response = client.subscribe_to_task(id=tck_id("nonexistent-grpc-stream-001"))
 
         if response.success:
             # Try consuming events — error may arrive as a gRPC status on iteration

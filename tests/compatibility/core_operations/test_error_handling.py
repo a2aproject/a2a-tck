@@ -20,6 +20,7 @@ import httpx
 import jsonschema
 import pytest
 
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.validators.error_info import validate_error_info
 from tests.compatibility._test_helpers import fail_msg, get_client, record
@@ -153,7 +154,7 @@ class TestCoreErrorStructure:
         req = CORE_ERR_001
         transport = "http_json"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = client.get_task(id="tck-nonexistent-error-test")
+        response = client.get_task(id=tck_id("nonexistent-error-test"))
         passed = not response.success
         errors = [] if passed else ["Expected error for non-existent task"]
         record(collector=compatibility_collector, req=req, transport=transport,
@@ -285,7 +286,7 @@ class TestCapabilityStreaming:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "stream test"}],
-            "messageId": "tck-cap-stream",
+            "messageId": tck_id("cap-stream"),
         }
         response = _jsonrpc_call(
             client.base_url, "SendStreamingMessage", {"message": msg}
@@ -348,7 +349,7 @@ class TestVersionErrors:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version test"}],
-            "messageId": "tck-ver-002",
+            "messageId": tck_id("ver-002"),
         }
         response = _jsonrpc_call(
             client.base_url,
@@ -376,7 +377,7 @@ class TestVersionErrors:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version test"}],
-            "messageId": "tck-ver-002-rest",
+            "messageId": tck_id("ver-002-rest"),
         }
         response = _rest_call(
             client.base_url,
@@ -404,7 +405,7 @@ class TestVersionErrors:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "empty version test"}],
-            "messageId": "tck-ver-003",
+            "messageId": tck_id("ver-003"),
         }
         response = _jsonrpc_call(
             client.base_url,
@@ -452,7 +453,7 @@ class TestJsonRpcErrorStructure:
         req = JSONRPC_ERR_001
         transport = "jsonrpc"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = client.get_task(id="tck-nonexistent-err-test")
+        response = client.get_task(id=tck_id("nonexistent-err-test"))
         body = response.raw_response
         if not isinstance(body, dict) or "error" not in body:
             pytest.skip("Server did not return a JSON-RPC error for non-existent task")
@@ -475,7 +476,7 @@ class TestJsonRpcErrorStructure:
         req = JSONRPC_ERR_002
         transport = "jsonrpc"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = client.get_task(id="tck-nonexistent-err-range")
+        response = client.get_task(id=tck_id("nonexistent-err-range"))
         body = response.raw_response
         if not isinstance(body, dict) or "error" not in body:
             pytest.skip("Server did not return a JSON-RPC error for non-existent task")
@@ -508,7 +509,7 @@ class TestJsonRpcErrorStructure:
         req = JSONRPC_SSE_002
         transport = "jsonrpc"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = client.get_task(id="tck-nonexistent-mapping-test")
+        response = client.get_task(id=tck_id("nonexistent-mapping-test"))
         body = response.raw_response
         if not isinstance(body, dict) or "error" not in body:
             pytest.skip("Server did not return a JSON-RPC error for non-existent task")
@@ -531,7 +532,7 @@ class TestJsonRpcErrorStructure:
         req = JSONRPC_ERR_003
         transport = "jsonrpc"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = client.get_task(id="tck-nonexistent-errinfo-test")
+        response = client.get_task(id=tck_id("nonexistent-errinfo-test"))
         body = response.raw_response
         if not isinstance(body, dict) or "error" not in body:
             pytest.skip("Server did not return a JSON-RPC error for non-existent task")
@@ -569,7 +570,7 @@ class TestRestErrorStructure:
         req = HTTP_JSON_ERR_001
         transport = "http_json"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = client.get_task(id="tck-nonexistent-pd-test")
+        response = client.get_task(id=tck_id("nonexistent-pd-test"))
         if response.success:
             pytest.skip("Server did not return an error for non-existent task")
         raw = response.raw_response
@@ -604,7 +605,7 @@ class TestRestErrorStructure:
         req = HTTP_JSON_ERR_002
         transport = "http_json"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = client.get_task(id="tck-nonexistent-uri-test")
+        response = client.get_task(id=tck_id("nonexistent-uri-test"))
         if response.success:
             pytest.skip("Server did not return an error for non-existent task")
         raw = response.raw_response
@@ -640,7 +641,7 @@ class TestGrpcErrorStructure:
         req = GRPC_ERR_001
         transport = "grpc"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = client.get_task(id="tck-nonexistent-grpc-err")
+        response = client.get_task(id=tck_id("nonexistent-grpc-err"))
         errors = []
         if response.success:
             errors.append("Expected error for nonexistent task")
