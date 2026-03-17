@@ -39,6 +39,11 @@ Feature: Core Operations
     Then complete the task
     And add an artifact with a file part named "output.txt" with media type "text/plain"
 
+  Scenario: Task with file URL artifact
+    When a message is received with prefix "tck-artifact-file-url"
+    Then complete the task
+    And add an artifact with a file url "https://example.com/output.txt" named "output.txt" with media type "text/plain"
+
   Scenario: Task with data artifact
     When a message is received with prefix "tck-artifact-data"
     Then complete the task

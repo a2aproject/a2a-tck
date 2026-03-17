@@ -30,13 +30,22 @@ class FilePartDef:
 
 
 @dataclass(frozen=True)
+class FileUrlPartDef:
+    """A file content part (URL reference)."""
+
+    url: str
+    name: str
+    media_type: str
+
+
+@dataclass(frozen=True)
 class DataPartDef:
     """A structured data content part (JSON)."""
 
     json_content: str
 
 
-PartDef = TextPartDef | FilePartDef | DataPartDef
+PartDef = TextPartDef | FilePartDef | FileUrlPartDef | DataPartDef
 
 
 # ---------------------------------------------------------------------------

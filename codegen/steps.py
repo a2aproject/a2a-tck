@@ -15,6 +15,7 @@ from codegen.model import (
     CompleteTask,
     DataPartDef,
     FilePartDef,
+    FileUrlPartDef,
     MessageTrigger,
     RejectWithError,
     ReturnMessage,
@@ -74,6 +75,12 @@ _THEN_STEPS: list[tuple[re.Pattern[str], callable]] = [
             r'^add an artifact with a file part named "(.+)" with media type "(.+)"$'
         ),
         lambda m, _ds: AddArtifact(parts=[FilePartDef(name=m.group(1), media_type=m.group(2))]),
+    ),
+    (
+        re.compile(
+            r'^add an artifact with a file url "(.+)" named "(.+)" with media type "(.+)"$'
+        ),
+        lambda m, _ds: AddArtifact(parts=[FileUrlPartDef(url=m.group(1), name=m.group(2), media_type=m.group(3))]),
     ),
     (
         re.compile(r'^add an artifact with a data part:$'),

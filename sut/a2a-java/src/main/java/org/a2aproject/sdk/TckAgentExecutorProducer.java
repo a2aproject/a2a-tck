@@ -13,6 +13,7 @@ import io.a2a.server.tasks.AgentEmitter;
 import io.a2a.spec.A2AError;
 import io.a2a.spec.DataPart;
 import io.a2a.spec.FileWithBytes;
+import io.a2a.spec.FileWithUri;
 import io.a2a.spec.FilePart;
 import io.a2a.spec.TaskNotCancelableError;
 import io.a2a.spec.TextPart;
@@ -45,6 +46,12 @@ public class TckAgentExecutorProducer {
 
                 if (messageId.startsWith("tck-artifact-file")) {
                     emitter.addArtifact(List.of(new FilePart(new FileWithBytes("text/plain", "output.txt", "dGNr"))), null, null, null);
+                    emitter.complete();
+                    return;
+                }
+
+                if (messageId.startsWith("tck-artifact-file-url")) {
+                    emitter.addArtifact(List.of(new FilePart(new FileWithUri("text/plain", "output.txt", "https://example.com/output.txt"))), null, null, null);
                     emitter.complete();
                     return;
                 }

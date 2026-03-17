@@ -19,6 +19,7 @@ from codegen.model import (
     CompleteTask,
     DataPartDef,
     FilePartDef,
+    FileUrlPartDef,
     MessageTrigger,
     PartDef,
     RejectWithError,
@@ -258,6 +259,14 @@ def _single_part_to_java(part: PartDef) -> str:
             f"{_java_string(part.media_type)}, "
             f"{_java_string(part.name)}, "
             f'"dGNr"))'  # base64 "tck"
+        )
+
+    if isinstance(part, FileUrlPartDef):
+        return (
+            f"new FilePart(new FileWithUri("
+            f"{_java_string(part.media_type)}, "
+            f"{_java_string(part.name)}, "
+            f"{_java_string(part.url)}))"
         )
 
     if isinstance(part, DataPartDef):

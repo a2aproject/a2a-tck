@@ -1,4 +1,4 @@
-"""gRPC payload validators for A2A protocol responses."""
+"""gRPC payload validators and extractors for A2A protocol responses."""
 
 from __future__ import annotations
 
@@ -9,6 +9,77 @@ from specification.generated import a2a_pb2
 
 if TYPE_CHECKING:
     from tck.requirements.base import TaskStateBinding
+
+
+# ---------------------------------------------------------------------------
+# Extraction helpers
+# ---------------------------------------------------------------------------
+
+
+def extract_artifacts(response: Any) -> list[Any]:
+    """Extract artifacts from a gRPC SendMessageResponse."""
+    msg = response.raw_response
+    if hasattr(msg, "WhichOneof"):
+        payload = msg.WhichOneof("payload")
+        if payload == "task":
+            return list(msg.task.artifacts)
+    return []
+
+
+def extract_message(response: Any) -> Any | None:
+    """Extract a Message payload from a gRPC SendMessageResponse."""
+    msg = response.raw_response
+    if hasattr(msg, "WhichOneof"):
+        payload = msg.WhichOneof("payload")
+        if payload == "message":
+            return msg.message
+    return None
+
+
+def get_part_type(part: Any) -> str | None:
+    """Determine which oneof content variant is set on a Part."""
+    if hasattr(part, "WhichOneof"):
+        return part.WhichOneof("content")
+    return None
+
+
+def get_part_text(part: Any) -> str | None:
+    """Extract text content from a Part."""
+    return part.text if part.WhichOneof("content") == "text" else None
+
+
+def get_part_filename(part: Any) -> str | None:
+    """Extract filename from a Part."""
+    return part.filename or None
+
+
+def get_part_media_type(part: Any) -> str | None:
+    """Extract media type from a Part."""
+    return part.media_type or None
+
+
+def get_part_data(part: Any) -> Any | None:
+    """Extract data content from a Part."""
+    if part.WhichOneof("content") == "data":
+        from google.protobuf.json_format import MessageToDict
+
+        return MessageToDict(part.data)
+    return None
+
+
+def get_artifact_id(artifact: Any) -> str | None:
+    """Extract artifactId from an Artifact."""
+    return artifact.artifact_id or None
+
+
+def get_artifact_parts(artifact: Any) -> list[Any]:
+    """Extract parts from an Artifact."""
+    return list(artifact.parts)
+
+
+# ---------------------------------------------------------------------------
+# Validators
+# ---------------------------------------------------------------------------
 
 
 def validate_task_state(response: Any, expected: TaskStateBinding) -> list[str]:
