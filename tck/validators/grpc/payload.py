@@ -45,6 +45,8 @@ def get_part_type(part: Any) -> str | None:
 
 def get_part_text(part: Any) -> str | None:
     """Extract text content from a Part."""
+    if not hasattr(part, "WhichOneof"):
+        return None
     return part.text if part.WhichOneof("content") == "text" else None
 
 
@@ -60,6 +62,8 @@ def get_part_media_type(part: Any) -> str | None:
 
 def get_part_data(part: Any) -> Any | None:
     """Extract data content from a Part."""
+    if not hasattr(part, "WhichOneof"):
+        return None
     if part.WhichOneof("content") == "data":
         from google.protobuf.json_format import MessageToDict
 

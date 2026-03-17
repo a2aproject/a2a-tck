@@ -54,8 +54,8 @@ get_artifact_parts = _json.get_artifact_parts
 
 def validate_task_state(response: Any, expected: TaskStateBinding) -> list[str]:
     """Validate that the task has the expected state."""
-    data = response.raw_response
-    if not isinstance(data, dict):
+    data = _unwrap(response)
+    if not data:
         return [f"Response is not a JSON object, cannot check state '{expected.json_value}'"]
     return _json.validate_task_state(data, expected)
 
@@ -64,7 +64,7 @@ def validate_message_response_contains_field(
     response: Any, field: str,
 ) -> list[str]:
     """Validate that a field is present in the SendMessageResponse body."""
-    data = response.raw_response
-    if not isinstance(data, dict):
+    data = _unwrap(response)
+    if not data:
         return [f"Response is not a JSON object, cannot check for '{field}'"]
     return _json.validate_message_response_contains_field(data, field)
