@@ -20,6 +20,7 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
+from tests.compatibility._task_helpers import create_working_task
 from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import jsonrpc, must, streaming
 
@@ -261,23 +262,12 @@ class TestSseSubscribeToTask:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("Agent does not support streaming")
 
-        # First, create a task via send_message
-        msg_response = client.send_message(message=_SAMPLE_MESSAGE)
-        if not msg_response.success:
-            pytest.skip(f"send_message failed: {msg_response.error}")
-
-        body = msg_response.raw_response
-        task_id = None
-        result = body.get("result") if isinstance(body, dict) else None
-        if isinstance(result, dict):
-            # Task may be at result.id or nested under result.task.id
-            task = result.get("task")
-            task_id = task.get("id") if isinstance(task, dict) else result.get("id")
-        if not task_id:
-            pytest.skip("Could not extract task ID from send_message response")
+        # Create a non-terminal task so SubscribeToTask is valid
+        # (subscribing to a terminal task should be rejected per STREAM-SUB-003)
+        info = create_working_task(client)
 
         # Subscribe to the task
-        sub_response = client.subscribe_to_task(id=task_id)
+        sub_response = client.subscribe_to_task(id=info.task_id)
 
         # Check for error response (non-SSE)
         sub_body: dict | None = None
@@ -289,11 +279,9 @@ class TestSseSubscribeToTask:
                 f"{sub_body['error'].get('message', sub_body['error'])}"
             )
 
-        events = list(sub_response.events)
-        if not events:
+        first_event = next(iter(sub_response.events), None)
+        if first_event is None:
             pytest.skip("SubscribeToTask returned no events")
-
-        first_event = events[0]
         first_result = first_event.get("result", {})
         passed = "task" in first_result
         errors = (

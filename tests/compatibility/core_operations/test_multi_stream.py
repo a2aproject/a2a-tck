@@ -22,7 +22,7 @@ import pytest
 
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._task_helpers import create_completed_task
+from tests.compatibility._task_helpers import create_working_task
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import must, streaming
 
@@ -85,11 +85,16 @@ def _normalize_event(event: Any) -> str:
 
     gRPC protos are serialized deterministically; JSON dicts are dumped with
     sorted keys so that comparison is independent of key insertion order.
+
+    For JSON-RPC events the ``id`` and ``jsonrpc`` envelope fields are
+    stripped because they are per-request metadata, not event content.
     """
     if hasattr(event, "SerializeToString"):
         return event.SerializeToString().hex()
     if isinstance(event, dict):
-        return json.dumps(event, sort_keys=True)
+        # Strip JSON-RPC envelope fields that differ per subscription
+        payload = {k: v for k, v in event.items() if k not in ("id", "jsonrpc")}
+        return json.dumps(payload, sort_keys=True)
     return str(event)
 
 
@@ -175,7 +180,9 @@ class TestMultiStreamOrdering:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_completed_task(client)
+        # Use a non-terminal task so SubscribeToTask is valid
+        # (subscribing to a terminal task should be rejected per STREAM-SUB-003)
+        info = create_working_task(client)
 
         event_lists = _subscribe_parallel(client, info.task_id, n=2)
 
@@ -201,7 +208,7 @@ class TestMultiStreamOrdering:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_completed_task(client)
+        info = create_working_task(client)
 
         event_lists = _subscribe_parallel(client, info.task_id, n=2)
 
@@ -241,7 +248,7 @@ class TestMultiStreamOrdering:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_completed_task(client)
+        info = create_working_task(client)
 
         event_lists = _subscribe_parallel(
             client, info.task_id, n=2, stop_first_early=True,
