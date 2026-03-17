@@ -35,7 +35,7 @@ from codegen.model import (
 
 _TEMPLATES_DIR = Path(__file__).parent / "a2a-java"
 
-_DEFAULT_A2A_JAVA_SDK_VERSION = "1.0.0.Alpha4-SNAPSHOT"
+_DEFAULT_A2A_JAVA_SDK_VERSION = "1.0.0.Beta1-SNAPSHOT"
 
 _JAVA_PACKAGE = "org.a2aproject.sdk"
 _JAVA_PACKAGE_DIR = _JAVA_PACKAGE.replace(".", "/")
