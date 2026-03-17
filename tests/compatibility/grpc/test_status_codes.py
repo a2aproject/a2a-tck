@@ -93,14 +93,7 @@ class TestGrpcStatusCodes:
         rpc_error = _get_rpc_error(response)
         result = validate_grpc_error(rpc_error, "TaskNotFoundError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_task_not_cancelable_returns_failed_precondition(
         self,
@@ -129,14 +122,7 @@ class TestGrpcStatusCodes:
                 f"(TaskNotCancelableError), got {actual_status}"
             ]
         )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, TRANSPORT, errors[0])
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_unsupported_operation_returns_unimplemented(
         self,
@@ -165,14 +151,7 @@ class TestGrpcStatusCodes:
         rpc_error = _get_rpc_error(response)
         result = validate_grpc_error(rpc_error, "UnsupportedOperationError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_push_not_supported_returns_unimplemented(
         self,
@@ -199,14 +178,7 @@ class TestGrpcStatusCodes:
         rpc_error = _get_rpc_error(response)
         result = validate_grpc_error(rpc_error, "PushNotificationNotSupportedError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_version_not_supported_returns_unimplemented(
         self,

@@ -20,7 +20,7 @@ from tck.requirements.base import SEND_MESSAGE_BINDING, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
 from tck.validators.http_json.error_validator import validate_http_json_error
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
 from tests.compatibility.markers import http_json, must
 
 
@@ -72,14 +72,7 @@ class TestHttpJsonStatusCodes:
             "TaskNotFoundError",
         )
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_task_not_cancelable_returns_409(
         self,
@@ -107,14 +100,7 @@ class TestHttpJsonStatusCodes:
                 f"got {status}"
             ]
         )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, TRANSPORT, errors[0])
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_unsupported_operation_returns_400(
         self,
@@ -145,14 +131,7 @@ class TestHttpJsonStatusCodes:
             "UnsupportedOperationError",
         )
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_content_type_not_supported_returns_415(
         self,
@@ -175,14 +154,7 @@ class TestHttpJsonStatusCodes:
 
         result = validate_http_json_error(response, "ContentTypeNotSupportedError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_push_not_supported_returns_400(
         self,
@@ -211,14 +183,7 @@ class TestHttpJsonStatusCodes:
             "PushNotificationNotSupportedError",
         )
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_version_not_supported_returns_400(
         self,
@@ -260,14 +225,7 @@ class TestHttpJsonStatusCodes:
 
         result = validate_http_json_error(response, "VersionNotSupportedError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_success_returns_2xx(
         self,
@@ -294,11 +252,4 @@ class TestHttpJsonStatusCodes:
             if valid
             else [f"Successful SendMessage should return 2xx, got {status}"]
         )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, TRANSPORT, errors[0])
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)

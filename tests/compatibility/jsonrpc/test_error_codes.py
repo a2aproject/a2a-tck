@@ -18,7 +18,7 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
 from tests.compatibility.markers import jsonrpc, must
 
 
@@ -98,14 +98,7 @@ class TestJsonRpcErrorCodeMappings:
 
         result = validate_jsonrpc_error(body, "TaskNotFoundError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, transport, result.message)
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_task_not_cancelable_error(
         self,
@@ -135,14 +128,7 @@ class TestJsonRpcErrorCodeMappings:
                 f"got {code}"
             ]
         )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_push_notification_not_supported_error(
         self,
@@ -170,14 +156,7 @@ class TestJsonRpcErrorCodeMappings:
 
         result = validate_jsonrpc_error(body, "PushNotificationNotSupportedError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, transport, result.message)
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_unsupported_operation_error(
         self,
@@ -211,14 +190,7 @@ class TestJsonRpcErrorCodeMappings:
 
         result = validate_jsonrpc_error(body, "UnsupportedOperationError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, transport, result.message)
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_content_type_not_supported_error(
         self,
@@ -267,14 +239,7 @@ class TestJsonRpcErrorCodeMappings:
 
         result = validate_jsonrpc_error(body, "ContentTypeNotSupportedError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, transport, result.message)
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_version_not_supported_error(
         self,
@@ -317,14 +282,7 @@ class TestJsonRpcErrorCodeMappings:
 
         result = validate_jsonrpc_error(body, "VersionNotSupportedError")
         errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, transport, result.message)
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 # ---------------------------------------------------------------------------
@@ -399,11 +357,4 @@ class TestJsonRpcErrorCodeRange:
                 f"({_JSONRPC_ERROR_CODE_MAX} to {_JSONRPC_ERROR_CODE_MIN})"
             ]
         )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)

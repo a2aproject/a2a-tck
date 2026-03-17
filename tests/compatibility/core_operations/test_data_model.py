@@ -19,7 +19,7 @@ import pytest
 
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
-from tests.compatibility._test_helpers import fail_msg, record
+from tests.compatibility._test_helpers import assert_and_record, fail_msg, record
 from tests.compatibility.markers import core, must
 
 
@@ -211,9 +211,7 @@ class TestCamelCaseFieldNames:
             errors = []
             if snake_case_keys:
                 errors.append(f"Found snake_case field names: {snake_case_keys}")
-            record(collector=compatibility_collector, req=req, transport=transport,
-                    passed=not errors, errors=errors)
-            assert not errors, fail_msg(req, transport, "; ".join(errors))
+            assert_and_record(compatibility_collector, req, transport, errors)
 
 
 @must
@@ -241,9 +239,7 @@ class TestEnumSerialization:
                             f"Enum '{key}' must be a string, got "
                             f"{type(val).__name__}: {val!r}"
                         )
-            record(collector=compatibility_collector, req=req, transport=transport,
-                    passed=not errors, errors=errors)
-            assert not errors, fail_msg(req, transport, "; ".join(errors))
+            assert_and_record(compatibility_collector, req, transport, errors)
 
 
 @must
@@ -279,8 +275,6 @@ class TestTimestampFormat:
                             f"Timestamp '{key}' must be ISO 8601 with Z suffix, "
                             f"got: {ts!r}"
                         )
-            record(collector=compatibility_collector, req=req, transport=transport,
-                    passed=not errors, errors=errors)
-            assert not errors, fail_msg(req, transport, "; ".join(errors))
+            assert_and_record(compatibility_collector, req, transport, errors)
         if not found_timestamp:
             pytest.skip("No timestamps found in responses to validate")
