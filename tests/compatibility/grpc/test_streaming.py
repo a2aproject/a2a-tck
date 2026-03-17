@@ -23,6 +23,7 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
 from tck.validators.grpc.error_validator import validate_grpc_error
 from tck.validators.streaming import drain_stream
+from tests.compatibility._task_helpers import create_working_task
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import grpc as grpc_marker
 from tests.compatibility.markers import must, streaming
@@ -265,23 +266,12 @@ class TestGrpcStreaming:
             record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
-        # Create a task first via send_message
-        msg_response = client.send_message(message=_SAMPLE_MESSAGE)
-        if not msg_response.success:
-            pytest.skip(f"send_message failed: {msg_response.error}")
-
-        raw = msg_response.raw_response
-        # Extract task ID from the SendMessageResponse protobuf
-        task_id = None
-        if hasattr(raw, "WhichOneof"):
-            payload = raw.WhichOneof("payload")
-            if payload == "task" and raw.task.id:
-                task_id = raw.task.id
-        if not task_id:
-            pytest.skip("Could not extract task ID from send_message response")
+        # Create a non-terminal task so SubscribeToTask is valid
+        # (subscribing to a terminal task should be rejected per STREAM-SUB-003)
+        info = create_working_task(client)
 
         # Subscribe to the task
-        sub_response = client.subscribe_to_task(id=task_id)
+        sub_response = client.subscribe_to_task(id=info.task_id)
         if not sub_response.success:
             pytest.skip(f"subscribe_to_task failed: {sub_response.error}")
 

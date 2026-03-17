@@ -17,6 +17,7 @@ Requirements tested:
 from __future__ import annotations
 
 import threading
+import time
 
 from typing import TYPE_CHECKING, Any
 
@@ -394,14 +395,31 @@ class TestSubscribeLifecycle:
             pytest.skip("Agent does not support streaming")
 
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_completed_task(client)
+        # Use a non-terminal task so SubscribeToTask is valid, then
+        # transition it to terminal to verify the stream closes.
+        info = create_working_task(client)
 
         sub_response = client.subscribe_to_task(id=info.task_id)
         if not sub_response.success:
             pytest.skip(f"subscribe_to_task failed: {sub_response.error}")
 
+        # Complete the task in a background thread so the subscribe
+        # stream can observe the terminal-state transition.
+        def _complete_task() -> None:
+            time.sleep(0.5)
+            client.send_message(message={
+                "role": "ROLE_USER",
+                "parts": [{"text": "Complete"}],
+                "messageId": tck_id("complete-task"),
+                "taskId": info.task_id,
+            })
+
+        complete_thread = threading.Thread(target=_complete_task, daemon=True)
+        complete_thread.start()
+
         # Consume events with a timeout to avoid blocking indefinitely
         events, timed_out = _collect_events_with_timeout(sub_response.events)
+        complete_thread.join(timeout=_SUBSCRIBE_TIMEOUT_S)
 
         if timed_out:
             pytest.skip("SubscribeToTask timed out waiting for stream to close")
