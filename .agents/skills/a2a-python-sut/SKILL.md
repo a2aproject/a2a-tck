@@ -118,7 +118,9 @@ This installs the a2a-sdk from the local path and all other dependencies into a 
 cd sut/a2a-python && uv run python sut_agent.py
 ```
 
-Or to run in the background:
+Or to run in the background. **Note:** When using Claude Code's `run_in_background`,
+`cd` does not work — use `uv run python sut_agent.py` from the TCK project root
+instead (which uses the project-level venv, not the SUT's):
 
 ```bash
 cd sut/a2a-python && uv run python sut_agent.py &
