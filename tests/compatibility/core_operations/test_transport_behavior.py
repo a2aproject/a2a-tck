@@ -15,11 +15,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import httpx
 import pytest
 
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
-from tests.compatibility._test_helpers import fail_msg, record
+from tests.compatibility._test_helpers import fail_msg, get_client, record
 from tests.compatibility.markers import grpc, http_json, jsonrpc, must, streaming
 
 
@@ -36,6 +37,7 @@ JSONRPC_FMT_002 = get_requirement_by_id("JSONRPC-FMT-002")
 JSONRPC_SVC_001 = get_requirement_by_id("JSONRPC-SVC-001")
 JSONRPC_SSE_001 = get_requirement_by_id("JSONRPC-SSE-001")
 HTTP_JSON_SVC_001 = get_requirement_by_id("HTTP_JSON-SVC-001")
+HTTP_JSON_SVC_002 = get_requirement_by_id("HTTP_JSON-SVC-002")
 HTTP_JSON_URL_001 = get_requirement_by_id("HTTP_JSON-URL-001")
 HTTP_JSON_URL_002 = get_requirement_by_id("HTTP_JSON-URL-002")
 HTTP_JSON_QP_001 = get_requirement_by_id("HTTP_JSON-QP-001")
@@ -234,6 +236,50 @@ class TestRestFormat:
         record(collector=compatibility_collector, req=req, transport=transport,
                 passed=result.valid, errors=result.errors)
         assert result.valid, fail_msg(req, transport, "; ".join(result.errors))
+
+
+@must
+@http_json
+class TestRestServiceParams:
+    """HTTP_JSON-SVC-002: Service parameters transmitted as HTTP headers."""
+
+    def test_extensions_header_accepted(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """SUT accepts A2A-Extensions header without error."""
+        req = HTTP_JSON_SVC_002
+        transport = "http_json"
+        client = get_client(
+            transport_clients, transport,
+            compatibility_collector=compatibility_collector, req=req,
+        )
+        msg = {
+            "role": "ROLE_USER",
+            "parts": [{"text": "Extensions header test"}],
+            "messageId": tck_id("svc-002-ext"),
+        }
+        response = httpx.post(
+            f"{client.base_url}/message:send",
+            json={"message": msg},
+            headers={
+                "Content-Type": "application/json",
+                "A2A-Extensions": "https://example.com/ext/v1,https://example.com/ext/v2",
+            },
+        )
+        errors = []
+        _http_server_error = 500
+        if response.status_code >= _http_server_error:
+            errors.append(
+                f"SUT returned server error {response.status_code} when "
+                f"A2A-Extensions header is present"
+            )
+        record(
+            collector=compatibility_collector, req=req, transport=transport,
+            passed=not errors, errors=errors,
+        )
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
 @must
