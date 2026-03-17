@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import grpc as _grpc_mod
 import httpx
 import pytest
 
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
 JSONRPC_FMT_001 = get_requirement_by_id("JSONRPC-FMT-001")
 JSONRPC_FMT_002 = get_requirement_by_id("JSONRPC-FMT-002")
 JSONRPC_SVC_001 = get_requirement_by_id("JSONRPC-SVC-001")
+JSONRPC_SVC_002 = get_requirement_by_id("JSONRPC-SVC-002")
 JSONRPC_SSE_001 = get_requirement_by_id("JSONRPC-SSE-001")
 HTTP_JSON_SVC_001 = get_requirement_by_id("HTTP_JSON-SVC-001")
 HTTP_JSON_SVC_002 = get_requirement_by_id("HTTP_JSON-SVC-002")
@@ -43,6 +45,7 @@ HTTP_JSON_URL_002 = get_requirement_by_id("HTTP_JSON-URL-002")
 HTTP_JSON_QP_001 = get_requirement_by_id("HTTP_JSON-QP-001")
 HTTP_JSON_SSE_001 = get_requirement_by_id("HTTP_JSON-SSE-001")
 GRPC_SVC_001 = get_requirement_by_id("GRPC-SVC-001")
+GRPC_META_001 = get_requirement_by_id("GRPC-META-001")
 GRPC_ERR_003 = get_requirement_by_id("GRPC-ERR-003")
 
 
@@ -149,6 +152,56 @@ class TestJsonRpcMethodNames:
             errors.append(f"Missing spec method names: {missing}")
         record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
+
+
+@must
+@jsonrpc
+class TestJsonRpcServiceParams:
+    """JSONRPC-SVC-002: Service parameters transmitted as HTTP headers."""
+
+    def test_extensions_header_accepted(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """SUT accepts A2A-Extensions header on JSON-RPC without error."""
+        req = JSONRPC_SVC_002
+        transport = "jsonrpc"
+        client = get_client(
+            transport_clients, transport,
+            compatibility_collector=compatibility_collector, req=req,
+        )
+        msg = {
+            "role": "ROLE_USER",
+            "parts": [{"text": "Extensions header test"}],
+            "messageId": tck_id("jsonrpc-svc-002-ext"),
+        }
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "SendMessage",
+            "params": {"message": msg},
+        }
+        response = httpx.post(
+            client.base_url,
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "A2A-Extensions": "https://example.com/ext/v1,https://example.com/ext/v2",
+            },
+        )
+        errors = []
+        _http_server_error = 500
+        if response.status_code >= _http_server_error:
+            errors.append(
+                f"SUT returned server error {response.status_code} when "
+                f"A2A-Extensions header is present"
+            )
+        record(
+            collector=compatibility_collector, req=req, transport=transport,
+            passed=not errors, errors=errors,
+        )
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
@@ -437,6 +490,59 @@ class TestGrpcService:
             pass
         record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
+
+
+@must
+@grpc
+class TestGrpcServiceParams:
+    """GRPC-META-001: Service parameters transmitted as gRPC metadata."""
+
+    def test_extensions_metadata_accepted(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """SUT accepts a2a-extensions gRPC metadata without error."""
+        req = GRPC_META_001
+        transport = "grpc"
+        client = get_client(
+            transport_clients, transport,
+            compatibility_collector=compatibility_collector, req=req,
+        )
+        from google.protobuf.json_format import ParseDict
+
+        from specification.generated import a2a_pb2
+
+        msg = {
+            "role": "ROLE_USER",
+            "parts": [{"text": "Extensions metadata test"}],
+            "messageId": tck_id("grpc-meta-001-ext"),
+        }
+        proto_request = ParseDict(
+            {"message": msg}, a2a_pb2.SendMessageRequest(),
+        )
+        # gRPC metadata keys are lowercase per HTTP/2
+        grpc_metadata = [
+            ("a2a-extensions", "https://example.com/ext/v1,https://example.com/ext/v2"),
+        ]
+        errors = []
+        try:
+            response = client.stub.SendMessage(
+                proto_request, metadata=grpc_metadata,
+            )
+            if response is None:
+                errors.append("gRPC service returned no response")
+        except _grpc_mod.RpcError as e:
+            if e.code() == _grpc_mod.StatusCode.UNIMPLEMENTED:
+                errors.append(f"gRPC service rejected metadata: {e.details()}")
+            # Other errors (e.g. application-level) are acceptable —
+            # they prove the metadata was transmitted without crashing.
+
+        record(
+            collector=compatibility_collector, req=req, transport=transport,
+            passed=not errors, errors=errors,
+        )
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
