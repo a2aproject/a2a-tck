@@ -13,3 +13,9 @@ dependencies = [
 
 [tool.uv.sources]
 a2a-sdk = { path = "../../../a2a-python" }
+
+[tool.ruff]
+line-length = 130
+
+[tool.ruff.lint.per-file-ignores]
+"*.py" = ["I001", "F401", "PLR0912", "PLR0915"]

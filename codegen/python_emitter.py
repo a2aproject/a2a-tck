@@ -61,7 +61,6 @@ def emit_python_project(scenarios: list[Scenario], output_dir: Path) -> list[Pat
     has_streaming = any(
         isinstance(s.trigger, StreamingMessageTrigger) for s in scenarios
     )
-
     a2a_python_sdk_version = os.environ.get(
         "A2A_PYTHON_SDK_VERSION", _DEFAULT_A2A_PYTHON_SDK_VERSION,
     )
@@ -244,7 +243,7 @@ def _single_part_to_python(part: PartDef) -> str:
         )
 
     if isinstance(part, DataPartDef):
-        return f"Part(data=json_format.ParseDict({part.json_content}, Value()))"
+        return f"Part(data=json_format.Parse({_py_string(part.json_content)}, Value()))"
 
     msg = f"Unknown part type: {type(part).__name__}"
     raise ValueError(msg)

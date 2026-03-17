@@ -133,7 +133,7 @@ class TckAgentExecutor(AgentExecutor):
             return
 
         if message_id.startswith('tck-artifact-data'):
-            await updater.add_artifact(parts=[Part(data=json_format.ParseDict({"key": "value", "count": 42}, Value()))])
+            await updater.add_artifact(parts=[Part(data=json_format.Parse("{\"key\": \"value\", \"count\": 42}", Value()))])
             await updater.complete()
             return
 
