@@ -11,6 +11,7 @@
 #   cancel-task.sh --binding jsonrpc http://localhost:8080 task-abc-123
 
 set -euo pipefail
+source "$(dirname "$0")/_helpers.sh"
 
 BINDING="http"
 
@@ -41,7 +42,7 @@ if [ "$BINDING" = "jsonrpc" ]; then
       -H "Content-Type: application/json" \
       -d @- | jq .
 else
-  curl -sf -X POST "${ENDPOINT_URL}/tasks/${TASK_ID}:cancel" \
+  curl -sf -X POST "${ENDPOINT_URL}/tasks/$(uri_encode "$TASK_ID"):cancel" \
     -H "Content-Type: application/json" \
     -d '{}' | jq .
 fi

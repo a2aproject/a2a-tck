@@ -11,6 +11,7 @@
 #   get-task.sh --binding jsonrpc http://localhost:8080 task-abc-123
 
 set -euo pipefail
+source "$(dirname "$0")/_helpers.sh"
 
 BINDING="http"
 
@@ -41,5 +42,5 @@ if [ "$BINDING" = "jsonrpc" ]; then
       -H "Content-Type: application/json" \
       -d @- | jq .
 else
-  curl -sf "${ENDPOINT_URL}/tasks/${TASK_ID}" | jq .
+  curl -sf "${ENDPOINT_URL}/tasks/$(uri_encode "$TASK_ID")" | jq .
 fi
