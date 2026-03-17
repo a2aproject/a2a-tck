@@ -45,6 +45,7 @@ HTTP_JSON_URL_002 = get_requirement_by_id("HTTP_JSON-URL-002")
 HTTP_JSON_QP_001 = get_requirement_by_id("HTTP_JSON-QP-001")
 HTTP_JSON_SSE_001 = get_requirement_by_id("HTTP_JSON-SSE-001")
 GRPC_SVC_001 = get_requirement_by_id("GRPC-SVC-001")
+GRPC_SVC_002 = get_requirement_by_id("GRPC-SVC-002")
 GRPC_META_001 = get_requirement_by_id("GRPC-META-001")
 GRPC_ERR_003 = get_requirement_by_id("GRPC-ERR-003")
 
@@ -490,6 +491,51 @@ class TestGrpcService:
             pass
         record(collector=compatibility_collector, req=req, transport=transport,
                 passed=not errors, errors=errors)
+        assert not errors, fail_msg(req, transport, "; ".join(errors))
+
+
+@must
+@grpc
+class TestGrpcProto3:
+    """GRPC-SVC-002: gRPC binding uses Protocol Buffers version 3."""
+
+    def test_response_uses_proto3(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """Verify gRPC response deserializes as a proto3 SendMessageResponse."""
+        req = GRPC_SVC_002
+        transport = "grpc"
+        client = get_client(
+            transport_clients, transport,
+            compatibility_collector=compatibility_collector, req=req,
+        )
+        response = client.send_message(message=_SAMPLE_MESSAGE)
+        errors = []
+        if not response.success:
+            errors.append(f"SendMessage failed: {response.error}")
+        else:
+            from specification.generated import a2a_pb2
+
+            raw = response.raw_response
+            # Verify the response is an instance of the proto3 message type
+            if not isinstance(raw, a2a_pb2.SendMessageResponse):
+                errors.append(
+                    f"Expected SendMessageResponse, got {type(raw).__name__}"
+                )
+            # Verify the response round-trips through proto serialization
+            serialized = raw.SerializeToString()
+            roundtrip = a2a_pb2.SendMessageResponse()
+            roundtrip.ParseFromString(serialized)
+            if roundtrip.WhichOneof("payload") != raw.WhichOneof("payload"):
+                errors.append(
+                    "Proto3 round-trip failed: payload oneof mismatch"
+                )
+        record(
+            collector=compatibility_collector, req=req, transport=transport,
+            passed=not errors, errors=errors,
+        )
         assert not errors, fail_msg(req, transport, "; ".join(errors))
 
 
