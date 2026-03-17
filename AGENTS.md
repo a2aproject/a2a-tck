@@ -85,6 +85,7 @@ All A2A bindings (transport methods, error codes, task states, etc.) are defined
 - **diagnose-failure** (`.agents/skills/diagnose-failure/SKILL.md`): Diagnose a TCK requirement failure and draft a GitHub issue with requirement context, failure details, and a curl reproducer.
 - **a2a-client** (`.agents/skills/a2a-client/SKILL.md`): Interact with remote A2A agents via curl — discover agent cards, send messages, manage tasks, and stream responses.
 - **a2a-java-sut** (`.agents/skills/a2a-java-sut/SKILL.md`): Work with the a2a-java SUT — regenerate from Gherkin scenarios, build, start, and test with the TCK.
+- **a2a-python-sut** (`.agents/skills/a2a-python-sut/SKILL.md`): Work with the a2a-python SUT — regenerate from Gherkin scenarios, install deps, start, and test with the TCK.
 
 ## Commands
 
