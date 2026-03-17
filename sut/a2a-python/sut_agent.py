@@ -180,7 +180,7 @@ def _get_env(name: str, default: str) -> str:
     return value if value else default
 
 
-def main() -> None:
+async def main() -> None:
     """Start the TCK SUT agent with all three transports."""
     host = _get_env('SUT_HOST', 'localhost:9999')
     http_port = int(host.rsplit(':', 1)[-1]) if ':' in host else 9999
@@ -267,14 +267,14 @@ def main() -> None:
         grpc_port,
     )
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(grpc_server.start())
-    loop.run_until_complete(
-        asyncio.gather(
+    await grpc_server.start()
+    try:
+        await asyncio.gather(
             uvicorn_server.serve(), grpc_server.wait_for_termination()
         )
-    )
+    finally:
+        await grpc_server.stop(0)
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
