@@ -121,23 +121,42 @@ class GrpcClient(BaseTransportClient):
         if self._channel is not None:
             self._channel.close()
 
-    def _unary_call(self, rpc_name: str, request: Any) -> TransportResponse:
-        """Execute a unary gRPC call with one retry on connection errors."""
+    def _call_with_retry(
+        self,
+        rpc_name: str,
+        request: Any,
+        make_ok: callable,
+        make_err: callable,
+    ) -> TransportResponse | StreamingResponse:
+        """Execute a gRPC call with one retry on connection errors.
+
+        *make_ok* and *make_err* are called with the raw response/error to
+        build the transport-specific result object.
+        """
         rpc = getattr(self._stub, rpc_name)
         try:
-            response = rpc(request)
-            return GrpcResponse(transport=self.transport, success=True, raw_response=response)
+            return make_ok(rpc(request))
         except grpc.RpcError as e:
             if e.code() not in self._RETRIABLE_CODES:
-                return GrpcResponse(transport=self.transport, success=False, raw_response=e)
-            # Reconnect and retry once
+                return make_err(e)
             self._connect()
             try:
                 rpc = getattr(self._stub, rpc_name)
-                response = rpc(request)
-                return GrpcResponse(transport=self.transport, success=True, raw_response=response)
+                return make_ok(rpc(request))
             except grpc.RpcError as e2:
-                return GrpcResponse(transport=self.transport, success=False, raw_response=e2)
+                return make_err(e2)
+
+    def _unary_call(self, rpc_name: str, request: Any) -> TransportResponse:
+        """Execute a unary gRPC call with one retry on connection errors."""
+        return self._call_with_retry(
+            rpc_name, request,
+            make_ok=lambda r: GrpcResponse(
+                transport=self.transport, success=True, raw_response=r,
+            ),
+            make_err=lambda e: GrpcResponse(
+                transport=self.transport, success=False, raw_response=e,
+            ),
+        )
 
     def send_message(
         self,
@@ -153,20 +172,15 @@ class GrpcClient(BaseTransportClient):
 
     def _streaming_call(self, rpc_name: str, request: Any) -> StreamingResponse:
         """Execute a streaming gRPC call with one retry on connection errors."""
-        rpc = getattr(self._stub, rpc_name)
-        try:
-            stream = rpc(request)
-            return GrpcStreamingResponse(transport=self.transport, success=True, raw_response=stream, events=stream)
-        except grpc.RpcError as e:
-            if e.code() not in self._RETRIABLE_CODES:
-                return GrpcStreamingResponse(transport=self.transport, success=False, raw_response=e, events=iter([]))
-            self._connect()
-            try:
-                rpc = getattr(self._stub, rpc_name)
-                stream = rpc(request)
-                return GrpcStreamingResponse(transport=self.transport, success=True, raw_response=stream, events=stream)
-            except grpc.RpcError as e2:
-                return GrpcStreamingResponse(transport=self.transport, success=False, raw_response=e2, events=iter([]))
+        return self._call_with_retry(
+            rpc_name, request,
+            make_ok=lambda s: GrpcStreamingResponse(
+                transport=self.transport, success=True, raw_response=s, events=s,
+            ),
+            make_err=lambda e: GrpcStreamingResponse(
+                transport=self.transport, success=False, raw_response=e, events=iter([]),
+            ),
+        )
 
     def send_streaming_message(
         self,

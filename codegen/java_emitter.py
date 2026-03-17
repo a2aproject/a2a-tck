@@ -25,8 +25,6 @@ from codegen.model import (
     RejectWithError,
     ReturnMessage,
     Scenario,
-    StreamArtifact,
-    StreamStatusUpdate,
     StreamingMessageTrigger,
     TextPartDef,
     UpdateTaskStatus,
@@ -185,17 +183,6 @@ def _action_to_java(action: object) -> list[str]:
 
     if isinstance(action, UpdateTaskStatus):
         return [_status_to_java(action.state)]
-
-    if isinstance(action, StreamStatusUpdate):
-        return [_status_to_java(action.state)]
-
-    if isinstance(action, StreamArtifact):
-        args = [_parts_to_java(action.parts)]
-        args.extend(["null", "null", "null"])
-        if action.append or action.last_chunk:
-            args.append(str(action.append).lower())
-            args.append(str(action.last_chunk).lower())
-        return [f"emitter.addArtifact({', '.join(args)});"]
 
     if isinstance(action, WaitForTimeout):
         ms = action.multiplier * _STREAMING_WAIT_TIMEOUT_MS

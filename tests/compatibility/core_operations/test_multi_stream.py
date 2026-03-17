@@ -23,7 +23,12 @@ import pytest
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_working_task
-from tests.compatibility._test_helpers import assert_and_record, get_client, record
+from tests.compatibility._test_helpers import (
+    assert_and_record,
+    collect_events_with_timeout,
+    get_client,
+    record,
+)
 from tests.compatibility.markers import must, streaming
 
 
@@ -40,44 +45,12 @@ STREAM_ORDER_003 = get_requirement_by_id("STREAM-ORDER-003")
 STREAM_ORDER_004 = get_requirement_by_id("STREAM-ORDER-004")
 
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 _SUBSCRIBE_TIMEOUT_S = 10
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _collect_events_with_timeout(
-    events_iter: Any,
-    timeout: float = _SUBSCRIBE_TIMEOUT_S,
-    *,
-    stop_after_first: bool = False,
-) -> tuple[list[Any], bool]:
-    """Collect streaming events with a hard wall-clock timeout.
-
-    When *stop_after_first* is ``True`` the iterator is abandoned after the
-    first event — used to simulate a client closing a stream early.
-
-    Returns a tuple of (events, timed_out).
-    """
-    collected: list[Any] = []
-
-    def _drain() -> None:
-        for event in events_iter:
-            collected.append(event)
-            if stop_after_first:
-                break
-
-    thread = threading.Thread(target=_drain, daemon=True)
-    thread.start()
-    thread.join(timeout=timeout)
-    timed_out = thread.is_alive()
-    return collected, timed_out
 
 
 def _normalize_event(event: Any) -> str:
@@ -131,7 +104,7 @@ def _subscribe_parallel(
         with contextlib.suppress(threading.BrokenBarrierError):
             barrier.wait(timeout=5)
         early = stop_first_early and index == 0
-        results[index], _ = _collect_events_with_timeout(
+        results[index], _ = collect_events_with_timeout(
             sub.events,
             stop_after_first=early,
         )

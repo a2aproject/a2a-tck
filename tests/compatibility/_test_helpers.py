@@ -1,10 +1,13 @@
 """Shared test helper functions for compatibility tests.
 
-Provides ``fail_msg``, ``record``, and ``get_client`` — utilities used
-across all conformance test modules.
+Provides ``fail_msg``, ``record``, ``get_client``, and
+``collect_events_with_timeout`` — utilities used across all conformance
+test modules.
 """
 
 from __future__ import annotations
+
+import threading
 
 from typing import TYPE_CHECKING, Any
 
@@ -70,3 +73,38 @@ def get_client(
             record(compatibility_collector, req, transport, passed=False, skipped=True)
         pytest.skip(f"Transport {transport!r} not configured")
     return client
+
+
+_DEFAULT_STREAM_TIMEOUT_S = 10
+
+
+def collect_events_with_timeout(
+    events_iter: Any,
+    timeout: float = _DEFAULT_STREAM_TIMEOUT_S,
+    *,
+    stop_after_first: bool = False,
+) -> tuple[list[Any], bool]:
+    """Collect streaming events with a hard wall-clock timeout.
+
+    Runs event consumption in a daemon thread so that we can enforce
+    the deadline even when ``next(events_iter)`` itself blocks
+    (e.g. an SSE connection waiting for data that never arrives).
+
+    When *stop_after_first* is ``True`` the iterator is abandoned after the
+    first event — used to simulate a client closing a stream early.
+
+    Returns a tuple of (events, timed_out).
+    """
+    collected: list[Any] = []
+
+    def _drain() -> None:
+        for event in events_iter:
+            collected.append(event)
+            if stop_after_first:
+                break
+
+    thread = threading.Thread(target=_drain, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout)
+    timed_out = thread.is_alive()
+    return collected, timed_out
