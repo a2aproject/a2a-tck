@@ -28,9 +28,12 @@ codegen/                    # Code generator: parses scenarios and emits SUT pro
   steps.py                  # Step text → Trigger/Action resolution
   model.py                  # Data model (Scenario, Trigger, Action)
   java_emitter.py           # Jinja2-based Java/Quarkus emitter
+  python_emitter.py         # Jinja2-based Python emitter
   a2a-java/                 # Jinja2 templates for the a2a-java SUT
+  a2a-python/               # Jinja2 templates for the a2a-python SUT
 sut/
   a2a-java/                 # Generated Quarkus project (a2a-java SDK)
+  a2a-python/               # Generated Python project (a2a-python SDK)
 specification/              # A2A spec files and derived resources (JSON schema, proto stubs)
   generated/                # Stubs Generated from a2a.proto
 .agents/skills/             # Agent skills (see Skills section below)
@@ -90,6 +93,7 @@ All A2A bindings (transport methods, error codes, task states, etc.) are defined
 - `make spec` — update A2A specification files
 - `make proto` — regenerate gRPC stubs from a2a.proto
 - `make codegen-a2a-java-sut` — generate the a2a-java SUT from Gherkin scenarios in `scenarios/` (uses `--target a2a-java`)
+- `make codegen-a2a-python-sut` — generate the a2a-python SUT from Gherkin scenarios in `scenarios/` (uses `--target a2a-python`)
 - `uv run ./run_tck.py --sut-host http://localhost:9999` — run full conformance suite against the SUT that exposes its agent card on `localhost:9999`
 - `uv run ./run_tck.py --sut-host http://localhost:9999 --transport grpc` — run single transport
 - `uv run ./run_tck.py --sut-host http://localhost:9999 --level must` — run only MUST requirements

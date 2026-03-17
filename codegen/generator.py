@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 from codegen.java_emitter import emit_java_project
 from codegen.parser import parse_feature_files
+from codegen.python_emitter import emit_python_project
 
 
 if TYPE_CHECKING:
@@ -31,6 +32,7 @@ _SCENARIOS_DIR = Path(__file__).resolve().parent.parent / "scenarios"
 # Registry of target emitters: name → emitter function
 _EMITTERS: dict[str, Callable[[list[Scenario], Path], list[Path]]] = {
     "a2a-java": emit_java_project,
+    "a2a-python": emit_python_project,
 }
 
 
