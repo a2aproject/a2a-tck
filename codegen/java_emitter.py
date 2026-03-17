@@ -117,13 +117,20 @@ class _Handler:
 
 
 def _build_handlers(scenarios: list[Scenario]) -> list[_Handler]:
-    """Convert scenarios to pre-rendered Java code handlers."""
+    """Convert scenarios to pre-rendered Java code handlers.
+
+    Handlers are sorted by prefix length (longest first) so that more
+    specific prefixes match before less specific ones in the generated
+    ``startsWith`` chain (e.g. ``tck-artifact-file-url`` before
+    ``tck-artifact-file``).
+    """
     handlers: list[_Handler] = []
     for scenario in scenarios:
         trigger = scenario.trigger
         if isinstance(trigger, (MessageTrigger, StreamingMessageTrigger)):
             code, throws = _render_actions(scenario)
             handlers.append(_Handler(prefix=trigger.prefix, java_code=code, throws=throws))
+    handlers.sort(key=lambda h: len(h.prefix), reverse=True)
     return handlers
 
 

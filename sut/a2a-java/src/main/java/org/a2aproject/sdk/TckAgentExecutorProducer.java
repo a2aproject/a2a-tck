@@ -33,6 +33,58 @@ public class TckAgentExecutorProducer {
             public void execute(RequestContext context, AgentEmitter emitter) throws A2AError {
                 String messageId = context.getMessage().messageId();
 
+                if (messageId.startsWith("tck-stream-artifact-chunked")) {
+                    emitter.startWork();
+                    emitter.addArtifact(List.of(new TextPart("chunk-1 ")), null, null, null, true, false);
+                    emitter.addArtifact(List.of(new TextPart("chunk-2")), null, null, null, true, true);
+                    emitter.complete();
+                    return;
+                }
+
+                if (messageId.startsWith("test-resubscribe-message-id")) {
+                    emitter.startWork();
+                    try { Thread.sleep(4000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                    emitter.complete();
+                    return;
+                }
+
+                if (messageId.startsWith("tck-stream-artifact-text")) {
+                    emitter.startWork();
+                    emitter.addArtifact(List.of(new TextPart("Streamed text content")), null, null, null);
+                    emitter.complete();
+                    return;
+                }
+
+                if (messageId.startsWith("tck-stream-artifact-file")) {
+                    emitter.startWork();
+                    emitter.addArtifact(List.of(new FilePart(new FileWithBytes("text/plain", "output.txt", "dGNr"))), null, null, null);
+                    emitter.complete();
+                    return;
+                }
+
+                if (messageId.startsWith("tck-stream-ordering-001")) {
+                    emitter.startWork();
+                    emitter.addArtifact(List.of(new TextPart("Ordered output")), null, null, null);
+                    emitter.complete();
+                    return;
+                }
+
+                if (messageId.startsWith("tck-artifact-file-url")) {
+                    emitter.addArtifact(List.of(new FilePart(new FileWithUri("text/plain", "output.txt", "https://example.com/output.txt"))), null, null, null);
+                    emitter.complete();
+                    return;
+                }
+
+                if (messageId.startsWith("tck-message-response")) {
+                    emitter.sendMessage(List.of(new TextPart("Direct message response")));
+                    return;
+                }
+
+                if (messageId.startsWith("tck-input-required")) {
+                    emitter.requiresInput();
+                    return;
+                }
+
                 if (messageId.startsWith("tck-complete-task")) {
                     emitter.complete(A2A.toAgentMessage("Hello from TCK"));
                     return;
@@ -50,25 +102,9 @@ public class TckAgentExecutorProducer {
                     return;
                 }
 
-                if (messageId.startsWith("tck-artifact-file-url")) {
-                    emitter.addArtifact(List.of(new FilePart(new FileWithUri("text/plain", "output.txt", "https://example.com/output.txt"))), null, null, null);
-                    emitter.complete();
-                    return;
-                }
-
                 if (messageId.startsWith("tck-artifact-data")) {
                     emitter.addArtifact(List.of(new DataPart("{\"key\": \"value\", \"count\": 42}")), null, null, null);
                     emitter.complete();
-                    return;
-                }
-
-                if (messageId.startsWith("tck-message-response")) {
-                    emitter.sendMessage(List.of(new TextPart("Direct message response")));
-                    return;
-                }
-
-                if (messageId.startsWith("tck-input-required")) {
-                    emitter.requiresInput();
                     return;
                 }
 
@@ -91,42 +127,6 @@ public class TckAgentExecutorProducer {
                 if (messageId.startsWith("tck-stream-003")) {
                     emitter.startWork();
                     emitter.addArtifact(List.of(new TextPart("Stream task lifecycle")), null, null, null);
-                    emitter.complete();
-                    return;
-                }
-
-                if (messageId.startsWith("tck-stream-ordering-001")) {
-                    emitter.startWork();
-                    emitter.addArtifact(List.of(new TextPart("Ordered output")), null, null, null);
-                    emitter.complete();
-                    return;
-                }
-
-                if (messageId.startsWith("tck-stream-artifact-text")) {
-                    emitter.startWork();
-                    emitter.addArtifact(List.of(new TextPart("Streamed text content")), null, null, null);
-                    emitter.complete();
-                    return;
-                }
-
-                if (messageId.startsWith("tck-stream-artifact-file")) {
-                    emitter.startWork();
-                    emitter.addArtifact(List.of(new FilePart(new FileWithBytes("text/plain", "output.txt", "dGNr"))), null, null, null);
-                    emitter.complete();
-                    return;
-                }
-
-                if (messageId.startsWith("tck-stream-artifact-chunked")) {
-                    emitter.startWork();
-                    emitter.addArtifact(List.of(new TextPart("chunk-1 ")), null, null, null, true, false);
-                    emitter.addArtifact(List.of(new TextPart("chunk-2")), null, null, null, true, true);
-                    emitter.complete();
-                    return;
-                }
-
-                if (messageId.startsWith("test-resubscribe-message-id")) {
-                    emitter.startWork();
-                    try { Thread.sleep(4000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
                     emitter.complete();
                     return;
                 }
