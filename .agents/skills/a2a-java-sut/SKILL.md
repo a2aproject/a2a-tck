@@ -41,7 +41,7 @@ if (messageId.startsWith("tck-send-001")) {
 }
 ```
 
-The TCK tests use `tck_id("send-001")` which generates `tck-send-001-<session_hex>`, matching the prefix.
+The TCK tests use `tck_id("complete-task")` which generates `tck-complete-task-<session_hex>`, matching the prefix.
 
 ## Step 0: Inform the user of the version of a2a-java
 

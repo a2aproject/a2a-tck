@@ -2,7 +2,33 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+
+if TYPE_CHECKING:
+    from tck.requirements.base import TaskStateBinding
+
+
+def validate_task_state(response: Any, expected: TaskStateBinding) -> list[str]:
+    """Validate that the task in a SendMessageResponse has the expected state.
+
+    Args:
+        response: The transport response object with a ``raw_response`` dict.
+        expected: The expected ``TaskStateBinding``.
+
+    Returns:
+        A list of error strings (empty if the state matches).
+    """
+    data = response.raw_response
+    if not isinstance(data, dict):
+        return [f"Response is not a JSON object, cannot check state '{expected.json_value}'"]
+    task = data.get("task")
+    if not isinstance(task, dict):
+        return [f"Response does not contain a task, cannot check state '{expected.json_value}'"]
+    actual = task.get("status", {}).get("state", "")
+    if actual != expected.json_value:
+        return [f"Expected task state '{expected.json_value}' but got '{actual}'"]
+    return []
 
 
 def validate_message_response_contains_field(

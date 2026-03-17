@@ -22,8 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from specification.generated import a2a_pb2
-from tck.requirements.base import tck_id
+from tck.requirements.base import TERMINAL_STATES, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_completed_task, create_working_task
@@ -55,14 +54,9 @@ STREAM_SUB_003 = get_requirement_by_id("STREAM-SUB-003")
 
 _SUBSCRIBE_TIMEOUT_S = 10
 
-_GRPC_TERMINAL_STATES = frozenset({
-    a2a_pb2.TASK_STATE_COMPLETED,
-    a2a_pb2.TASK_STATE_FAILED,
-    a2a_pb2.TASK_STATE_CANCELED,
-    a2a_pb2.TASK_STATE_REJECTED,
-})
+_GRPC_TERMINAL_STATES = frozenset(s.grpc_value for s in TERMINAL_STATES)
 
-_JSON_TERMINAL_STATES = frozenset({"completed", "failed", "canceled", "rejected"})
+_JSON_TERMINAL_STATES = frozenset(s.json_value for s in TERMINAL_STATES)
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +92,7 @@ def _is_terminal_status(response: Any, transport: str) -> bool:
     if isinstance(task, dict):
         status = task.get("status", {})
         state = status.get("state", "") if isinstance(status, dict) else ""
-        return state.lower() in _JSON_TERMINAL_STATES
+        return state in _JSON_TERMINAL_STATES
     return False
 
 
@@ -123,14 +117,14 @@ def _event_has_terminal_state(event: Any, transport: str) -> bool:
         task = result.get("task", result)
         status = task.get("status", {}) if isinstance(task, dict) else {}
         state = status.get("state", "") if isinstance(status, dict) else ""
-        if state.lower() in _JSON_TERMINAL_STATES:
+        if state in _JSON_TERMINAL_STATES:
             return True
         # Check status_update path
         status_update = result.get("statusUpdate", result.get("status_update", {}))
         if isinstance(status_update, dict):
             su_status = status_update.get("status", {})
             su_state = su_status.get("state", "") if isinstance(su_status, dict) else ""
-            if su_state.lower() in _JSON_TERMINAL_STATES:
+            if su_state in _JSON_TERMINAL_STATES:
                 return True
     return False
 
