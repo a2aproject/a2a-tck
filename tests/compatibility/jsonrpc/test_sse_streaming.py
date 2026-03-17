@@ -21,7 +21,7 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tests.compatibility._task_helpers import create_working_task
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import jsonrpc, must, streaming
 
 
@@ -122,15 +122,7 @@ class TestSseStreamingFormat:
             if "result" not in event and "error" not in event:
                 errors.append(f"Event {i}: missing both 'result' and 'error' fields")
 
-        passed = len(errors) == 0
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_streaming_events_contain_stream_response(
         self,
@@ -162,15 +154,7 @@ class TestSseStreamingFormat:
                     f"got keys {sorted(result.keys())}"
                 )
 
-        passed = len(errors) == 0
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 
@@ -237,14 +221,7 @@ class TestSseSubscribeToTask:
                     "Server did not return an error for non-existent task subscribe"
                 )
 
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_subscribe_first_event_is_task(
         self,
@@ -293,11 +270,4 @@ class TestSseSubscribeToTask:
             ]
         )
 
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=transport,
-            passed=passed,
-            errors=errors,
-        )
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)

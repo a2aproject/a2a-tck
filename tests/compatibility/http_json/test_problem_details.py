@@ -18,7 +18,7 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
 from tck.validators.error_info import find_error_info, validate_error_info
 from tck.validators.http_json.error_validator import AIP193Error
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
 from tests.compatibility.markers import http_json, must
 
 
@@ -132,14 +132,7 @@ class TestAIP193ErrorFormat:
         except ValueError as exc:
             errors.append(str(exc))
 
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=not errors,
-            errors=errors,
-        )
-        assert not errors, fail_msg(req, TRANSPORT, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_code_field_matches_http_status(
         self,
@@ -193,14 +186,7 @@ class TestAIP193ErrorFormat:
                 f"'message' field must be a string, got {type(error_obj['message']).__name__}"
             )
 
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=not errors,
-            errors=errors,
-        )
-        assert not errors, fail_msg(req, TRANSPORT, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
 
 # ---------------------------------------------------------------------------

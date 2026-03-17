@@ -23,7 +23,7 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.validators.error_info import validate_error_info
-from tests.compatibility._test_helpers import fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must
 
 
@@ -141,9 +141,7 @@ class TestCoreErrorStructure:
             errors.append("JSON-RPC error must have 'code'")
         if "message" not in error:
             errors.append("JSON-RPC error must have 'message'")
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=not errors, errors=errors)
-        assert not errors, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_error_has_code_and_message_rest(
         self,
@@ -157,9 +155,7 @@ class TestCoreErrorStructure:
         response = client.get_task(id=tck_id("nonexistent-error-test"))
         passed = not response.success
         errors = [] if passed else ["Expected error for non-existent task"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 @must
@@ -181,9 +177,7 @@ class TestCoreInputValidation:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Malformed request must return an error"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_malformed_request_rejected_rest(
         self,
@@ -198,9 +192,7 @@ class TestCoreInputValidation:
         response = _rest_call(client.base_url, "POST", "/message:send", json_body={})
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error status, got {response.status_code}"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 # ---------------------------------------------------------------------------
@@ -233,9 +225,7 @@ class TestCapabilityPushNotifications:
         )
         passed = not response.success
         errors = [] if passed else ["Expected error for unsupported push notifications"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_push_not_supported_rest(
         self,
@@ -257,9 +247,7 @@ class TestCapabilityPushNotifications:
         )
         passed = not response.success
         errors = [] if passed else ["Expected error for unsupported push notifications"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 @must
@@ -294,9 +282,7 @@ class TestCapabilityStreaming:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected error for unsupported streaming"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 @must
@@ -321,9 +307,7 @@ class TestCapabilityExtendedCard:
         response = client.get_extended_agent_card()
         passed = not response.success
         errors = [] if passed else ["Expected error for unsupported extended card"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 # ---------------------------------------------------------------------------
@@ -360,9 +344,7 @@ class TestVersionErrors:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected VersionNotSupportedError for A2A-Version: 99.0"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_unsupported_version_returns_error_rest(
         self,
@@ -388,9 +370,7 @@ class TestVersionErrors:
         )
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported version, got {response.status_code}"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_empty_version_treated_as_default_jsonrpc(
         self,
@@ -418,9 +398,7 @@ class TestVersionErrors:
         # a valid result or a well-formed error — never crash.
         passed = "result" in body or "error" in body
         errors = [] if passed else ["Server must return result or error for empty A2A-Version"]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=passed, errors=errors)
-        assert passed, fail_msg(req, transport, errors[0])
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 # ---------------------------------------------------------------------------
@@ -463,9 +441,7 @@ class TestJsonRpcErrorStructure:
             jsonschema.validate(error, _JSONRPC_ERROR_SCHEMA)
         except jsonschema.ValidationError as exc:
             errors.append(exc.message)
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=not errors, errors=errors)
-        assert not errors, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_a2a_error_codes_in_range(
         self,
@@ -496,9 +472,7 @@ class TestJsonRpcErrorStructure:
                 f"or standard JSON-RPC range "
                 f"({_JSONRPC_ERROR_CODE_MAX} to {_JSONRPC_ERROR_CODE_MIN})"
             )
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=not errors, errors=errors)
-        assert not errors, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_a2a_error_type_mappings(
         self,
@@ -519,9 +493,7 @@ class TestJsonRpcErrorStructure:
             errors.append(
                 f"TaskNotFoundError should map to -32001, got {code}"
             )
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=not errors, errors=errors)
-        assert not errors, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_error_data_contains_error_info(
         self,
@@ -546,9 +518,7 @@ class TestJsonRpcErrorStructure:
             result = validate_error_info(data)
             if not result.valid:
                 errors.append(result.message)
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=not errors, errors=errors)
-        assert not errors, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 # ---------------------------------------------------------------------------
@@ -592,9 +562,7 @@ class TestRestErrorStructure:
                 errors.append(
                     "AIP-193 error.code field is required"
                 )
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=not errors, errors=errors)
-        assert not errors, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_a2a_error_info_in_details(
         self,
@@ -617,9 +585,7 @@ class TestRestErrorStructure:
         details = body.get("error", {}).get("details", [])
         result = validate_error_info(details)
         errors = [] if result.valid else [result.message]
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=not errors, errors=errors)
-        assert not errors, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
 
 
 # ---------------------------------------------------------------------------
@@ -647,6 +613,4 @@ class TestGrpcErrorStructure:
             errors.append("Expected error for nonexistent task")
         elif response.error is None:
             errors.append("Error message must be present")
-        record(collector=compatibility_collector, req=req, transport=transport,
-                passed=not errors, errors=errors)
-        assert not errors, fail_msg(req, transport, "; ".join(errors))
+        assert_and_record(compatibility_collector, req, transport, errors)
