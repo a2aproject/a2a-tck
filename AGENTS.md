@@ -40,7 +40,7 @@ specification/              # A2A spec files and derived resources (JSON schema,
 
 ### Transport Bindings
 
-All A2A bindings (for transport methods, error codes, etc.) are defined centrally in `tck/requirements/base.py`.
+All A2A bindings (transport methods, error codes, task states, etc.) are defined centrally in `tck/requirements/base.py`.
 
 ### Requirement IDs
 
