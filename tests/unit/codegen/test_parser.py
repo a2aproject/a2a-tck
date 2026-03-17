@@ -26,8 +26,8 @@ class TestParseFeatureFile:
         assert len(scenarios) > 0
 
         s = scenarios[0]
-        assert s.name == "Basic task completion (CORE-SEND-001)"
-        assert s.trigger == MessageTrigger(prefix="tck-send-001")
+        assert s.name == "Complete the task"
+        assert s.trigger == MessageTrigger(prefix="tck-complete-task")
         assert s.actions == [
             CompleteTask(message="Hello from TCK"),
         ]

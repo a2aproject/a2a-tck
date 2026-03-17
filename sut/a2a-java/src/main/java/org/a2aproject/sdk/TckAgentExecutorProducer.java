@@ -32,12 +32,7 @@ public class TckAgentExecutorProducer {
             public void execute(RequestContext context, AgentEmitter emitter) throws A2AError {
                 String messageId = context.getMessage().messageId();
 
-                if (messageId.startsWith("tck-send-001")) {
-                    emitter.complete(A2A.toAgentMessage("Hello from TCK"));
-                    return;
-                }
-
-                if (messageId.startsWith("tck-terminal-send-002")) {
+                if (messageId.startsWith("tck-complete-task")) {
                     emitter.complete(A2A.toAgentMessage("Hello from TCK"));
                     return;
                 }
@@ -72,31 +67,6 @@ public class TckAgentExecutorProducer {
 
                 if (messageId.startsWith("tck-reject-task")) {
                     throw new A2AError(-1, "rejected", null);
-                }
-
-                if (messageId.startsWith("tck-cancel-001")) {
-                    emitter.requiresInput();
-                    return;
-                }
-
-                if (messageId.startsWith("tck-block-001")) {
-                    emitter.complete(A2A.toAgentMessage("Blocking response"));
-                    return;
-                }
-
-                if (messageId.startsWith("tck-block-002")) {
-                    emitter.complete(A2A.toAgentMessage("Non-blocking response"));
-                    return;
-                }
-
-                if (messageId.startsWith("tck-multi-001")) {
-                    emitter.complete(A2A.toAgentMessage("Context ID test response"));
-                    return;
-                }
-
-                if (messageId.startsWith("tck-task-helper")) {
-                    emitter.complete(A2A.toAgentMessage("Task helper response"));
-                    return;
                 }
 
                 if (messageId.startsWith("tck-stream-001")) {

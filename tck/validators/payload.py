@@ -13,21 +13,38 @@ from typing import TYPE_CHECKING, Any
 from tck.validators.grpc.payload import (
     validate_message_response_contains_field as _grpc_validate,
 )
+from tck.validators.grpc.payload import (
+    validate_task_state as _grpc_validate_state,
+)
 from tck.validators.http_json.payload import (
     validate_message_response_contains_field as _http_json_validate,
 )
+from tck.validators.http_json.payload import (
+    validate_task_state as _http_json_validate_state,
+)
 from tck.validators.jsonrpc.payload import (
     validate_message_response_contains_field as _jsonrpc_validate,
+)
+from tck.validators.jsonrpc.payload import (
+    validate_task_state as _jsonrpc_validate_state,
 )
 
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from tck.requirements.base import TaskStateBinding
+
 _TRANSPORT_VALIDATORS = {
     "grpc": _grpc_validate,
     "jsonrpc": _jsonrpc_validate,
     "http_json": _http_json_validate,
+}
+
+_STATE_VALIDATORS = {
+    "grpc": _grpc_validate_state,
+    "jsonrpc": _jsonrpc_validate_state,
+    "http_json": _http_json_validate_state,
 }
 
 
@@ -69,3 +86,24 @@ def validate_message_response_contains_field(
         return validate(response, f)
 
     return _validate
+
+
+def validate_task_state(
+    response: Any,
+    transport: str,
+    expected: TaskStateBinding,
+) -> list[str]:
+    """Validate that the task in a SendMessageResponse has the expected state.
+
+    Args:
+        response: The transport response object.
+        transport: Transport name (``"grpc"``, ``"jsonrpc"``, ``"http_json"``).
+        expected: The expected ``TaskStateBinding``.
+
+    Returns:
+        A list of error strings (empty if the state matches).
+    """
+    validate = _STATE_VALIDATORS.get(transport)
+    if validate is None:
+        return []
+    return validate(response, expected)

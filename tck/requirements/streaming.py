@@ -111,6 +111,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Stream closes at terminal state",
         spec_url=f"{SPEC_BASE}316-subscribe-to-task",
         tags=[STREAMING, SUBSCRIBE, MULTI_OPERATION],
+
     ),
     RequirementSpec(
         id="STREAM-SUB-003",
@@ -127,6 +128,7 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="UnsupportedOperationError returned for terminal task",
         spec_url=f"{SPEC_BASE}316-subscribe-to-task",
         tags=[STREAMING, SUBSCRIBE, ERROR, MULTI_OPERATION],
+
     ),
     RequirementSpec(
         id="STREAM-SUB-004",

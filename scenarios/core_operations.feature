@@ -10,15 +10,16 @@ Feature: Core Operations
   behavior -- no side-channel API is needed.
 
   # ---------------------------------------------------------------------------
-  # SendMessage (Section 3.1.1)
+  # Task completion
   # ---------------------------------------------------------------------------
 
-  Scenario: Basic task completion (CORE-SEND-001)
-    When a message is received with prefix "tck-send-001"
-    Then complete the task with the message "Hello from TCK"
-
-  Scenario: Setup terminal task for rejection test (CORE-SEND-002)
-    When a message is received with prefix "tck-terminal-send-002"
+  # Default behavior: complete the task with a message.
+  # Used by: CORE-SEND-001, CORE-SEND-002 (setup), CORE-EXECUTION-MODE-001,
+  # CORE-EXECUTION-MODE-002, CORE-MULTI-001/001a/002/002a/003,
+  # CORE-GET-001 (setup), CORE-CANCEL-002 (setup), CORE-MULTI-005/006 (setup),
+  # STREAM-SUB-002/003 (setup).
+  Scenario: Complete the task
+    When a message is received with prefix "tck-complete-task"
     Then complete the task with the message "Hello from TCK"
 
   # CORE-SEND-003: ContentTypeNotSupportedError is detected by the SDK framework
@@ -58,6 +59,7 @@ Feature: Core Operations
   # Task States
   # ---------------------------------------------------------------------------
 
+  # Used by: CORE-CANCEL-001 (setup — non-terminal task for cancel test).
   Scenario: Task requiring user input
     When a message is received with prefix "tck-input-required"
     Then update the task status to "input_required"
@@ -65,45 +67,3 @@ Feature: Core Operations
   Scenario: Task rejected by executor
     When a message is received with prefix "tck-reject-task"
     Then reject with error "rejected"
-
-  # ---------------------------------------------------------------------------
-  # CancelTask (Section 3.1.5)
-  # ---------------------------------------------------------------------------
-
-  Scenario: Cancelable task in non-terminal state (CORE-CANCEL-001)
-    When a message is received with prefix "tck-cancel-001"
-    Then update the task status to "input_required"
-
-  # ---------------------------------------------------------------------------
-  # Execution Mode (Section 3.2.2)
-  # ---------------------------------------------------------------------------
-
-  Scenario: Blocking mode task (CORE-EXECUTION-MODE-001)
-    When a message is received with prefix "tck-block-001"
-    Then complete the task with the message "Blocking response"
-
-  Scenario: Non-blocking mode task (CORE-EXECUTION-MODE-002)
-    When a message is received with prefix "tck-block-002"
-    Then complete the task with the message "Non-blocking response"
-
-  # ---------------------------------------------------------------------------
-  # Multi-Turn Interactions (Section 3.4)
-  # ---------------------------------------------------------------------------
-
-  # CORE-MULTI-001 (MAY) and CORE-MULTI-001a (MUST): contextId generation
-  # is handled by the SDK framework. The executor just completes the task.
-  Scenario: Context ID generation (CORE-MULTI-001)
-    When a message is received with prefix "tck-multi-001"
-    Then complete the task with the message "Context ID test response"
-
-  # ---------------------------------------------------------------------------
-  # Generic Setup (for multi-operation tests)
-  # ---------------------------------------------------------------------------
-
-  # Used by create_completed_task() helper for: GetTask (CORE-GET-001),
-  # CancelTask (CORE-CANCEL-002), multi-turn (CORE-MULTI-005,
-  # CORE-MULTI-006, CORE-SEND-002), and SubscribeToTask lifecycle
-  # (STREAM-SUB-002, STREAM-SUB-003).
-  Scenario: Generic task creation for multi-operation setup
-    When a message is received with prefix "tck-task-helper"
-    Then complete the task with the message "Task helper response"

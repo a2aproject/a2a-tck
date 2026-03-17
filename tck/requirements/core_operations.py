@@ -68,7 +68,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Hello from TCK"}],
-                "messageId": tck_id("send-001"),
+                "messageId": tck_id("complete-task"),
             },
         },
     ),
@@ -92,9 +92,10 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
                 "role": "ROLE_USER",
                 "parts": [{"text": "Message to terminal task"}],
                 "messageId": tck_id("send-002"),
-                "taskId": tck_id("terminal-send-002"),
+                "taskId": tck_id("complete-task"),
             },
         },
+
     ),
     RequirementSpec(
         id="CORE-SEND-003",
@@ -217,6 +218,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Current task state returned with status and artifacts",
         spec_url=f"{SPEC_BASE}313-get-task",
         tags=[CORE, GET_TASK, MULTI_OPERATION],
+
     ),
     RequirementSpec(
         id="CORE-GET-002",
@@ -344,6 +346,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Updated Task with cancellation status returned",
         spec_url=f"{SPEC_BASE}315-cancel-task",
         tags=[CORE, CANCEL_TASK, MULTI_OPERATION],
+
     ),
     RequirementSpec(
         id="CORE-CANCEL-002",
@@ -360,6 +363,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="TaskNotCancelableError returned",
         spec_url=f"{SPEC_BASE}315-cancel-task",
         tags=[CORE, CANCEL_TASK, ERROR, MULTI_OPERATION],
+
     ),
     RequirementSpec(
         id="CORE-CANCEL-003",
@@ -402,7 +406,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Blocking request"}],
-                "messageId": tck_id("block-001"),
+                "messageId": tck_id("complete-task"),
             },
             "configuration": {"returnImmediately": False},
         },
@@ -427,7 +431,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Non-blocking request"}],
-                "messageId": tck_id("block-002"),
+                "messageId": tck_id("complete-task"),
             },
             "configuration": {"returnImmediately": True},
         },
@@ -533,7 +537,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Message without contextId"}],
-                "messageId": tck_id("multi-001"),
+                "messageId": tck_id("complete-task"),
             },
         },
     ),
@@ -555,7 +559,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Message without contextId"}],
-                "messageId": tck_id("multi-001a"),
+                "messageId": tck_id("complete-task"),
             },
         },
         validators=[validate_message_response_contains_field("contextId")],
@@ -577,7 +581,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Message with contextId"}],
-                "messageId": tck_id("multi-002"),
+                "messageId": tck_id("complete-task"),
                 "contextId": tck_id("client-context-001"),
             },
         },
@@ -601,7 +605,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Message with client contextId"}],
-                "messageId": tck_id("multi-002a"),
+                "messageId": tck_id("complete-task"),
                 "contextId": tck_id("client-context-rejected"),
             },
         },
@@ -624,7 +628,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "New task request"}],
-                "messageId": tck_id("multi-003"),
+                "messageId": tck_id("complete-task"),
             },
         },
     ),
@@ -664,6 +668,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="contextId inferred from referenced task",
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
         tags=[CORE, MULTI_TURN, MULTI_OPERATION],
+
     ),
     RequirementSpec(
         id="CORE-MULTI-006",
@@ -680,5 +685,6 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="Error returned for mismatching contextId/taskId",
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
         tags=[CORE, MULTI_TURN, ERROR, MULTI_OPERATION],
+
     ),
 ]

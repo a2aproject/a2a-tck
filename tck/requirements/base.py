@@ -188,6 +188,42 @@ GET_EXTENDED_AGENT_CARD_BINDING = TransportBinding(
 
 
 # ---------------------------------------------------------------------------
+# Task state bindings
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class TaskStateBinding:
+    """Transport-specific binding for a task state.
+
+    ``json_value`` is the ProtoJSON enum name (SCREAMING_SNAKE_CASE) used
+    in JSON-RPC and HTTP+JSON responses per spec Section 5.5.
+    ``grpc_value`` is the integer enum value from the ``TaskState``
+    protobuf enum.
+    """
+
+    json_value: str
+    grpc_value: int
+
+
+TASK_STATE_SUBMITTED = TaskStateBinding(json_value="TASK_STATE_SUBMITTED", grpc_value=1)
+TASK_STATE_WORKING = TaskStateBinding(json_value="TASK_STATE_WORKING", grpc_value=2)
+TASK_STATE_COMPLETED = TaskStateBinding(json_value="TASK_STATE_COMPLETED", grpc_value=3)
+TASK_STATE_FAILED = TaskStateBinding(json_value="TASK_STATE_FAILED", grpc_value=4)
+TASK_STATE_CANCELED = TaskStateBinding(json_value="TASK_STATE_CANCELED", grpc_value=5)
+TASK_STATE_INPUT_REQUIRED = TaskStateBinding(json_value="TASK_STATE_INPUT_REQUIRED", grpc_value=6)
+TASK_STATE_REJECTED = TaskStateBinding(json_value="TASK_STATE_REJECTED", grpc_value=7)
+TASK_STATE_AUTH_REQUIRED = TaskStateBinding(json_value="TASK_STATE_AUTH_REQUIRED", grpc_value=8)
+
+TERMINAL_STATES = frozenset({
+    TASK_STATE_COMPLETED,
+    TASK_STATE_FAILED,
+    TASK_STATE_CANCELED,
+    TASK_STATE_REJECTED,
+})
+
+
+# ---------------------------------------------------------------------------
 # Error bindings (spec Section 5.4)
 # ---------------------------------------------------------------------------
 

@@ -14,7 +14,17 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from specification.generated import a2a_pb2
-from tck.requirements.base import tck_id
+from tck.requirements.base import (
+    TASK_STATE_AUTH_REQUIRED,
+    TASK_STATE_CANCELED,
+    TASK_STATE_COMPLETED,
+    TASK_STATE_FAILED,
+    TASK_STATE_INPUT_REQUIRED,
+    TASK_STATE_REJECTED,
+    TASK_STATE_SUBMITTED,
+    TASK_STATE_WORKING,
+    tck_id,
+)
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
@@ -42,29 +52,20 @@ _SAMPLE_MESSAGE = {
     "messageId": tck_id("stream-ordering-001"),
 }
 
-# gRPC proto state ordering (numeric enum values)
-_GRPC_STATE_ORDER = {
-    a2a_pb2.TASK_STATE_SUBMITTED: 0,
-    a2a_pb2.TASK_STATE_WORKING: 1,
-    a2a_pb2.TASK_STATE_INPUT_REQUIRED: 1,
-    a2a_pb2.TASK_STATE_AUTH_REQUIRED: 1,
-    a2a_pb2.TASK_STATE_COMPLETED: 2,
-    a2a_pb2.TASK_STATE_FAILED: 2,
-    a2a_pb2.TASK_STATE_CANCELED: 2,
-    a2a_pb2.TASK_STATE_REJECTED: 2,
-}
+# State ordering: 0 = initial, 1 = active, 2 = terminal.
+_ALL_STATES = [
+    (TASK_STATE_SUBMITTED, 0),
+    (TASK_STATE_WORKING, 1),
+    (TASK_STATE_INPUT_REQUIRED, 1),
+    (TASK_STATE_AUTH_REQUIRED, 1),
+    (TASK_STATE_COMPLETED, 2),
+    (TASK_STATE_FAILED, 2),
+    (TASK_STATE_CANCELED, 2),
+    (TASK_STATE_REJECTED, 2),
+]
 
-# JSON state ordering (lowercase string comparison)
-_JSON_STATE_ORDER = {
-    "submitted": 0,
-    "working": 1,
-    "input_required": 1,
-    "auth_required": 1,
-    "completed": 2,
-    "failed": 2,
-    "canceled": 2,
-    "rejected": 2,
-}
+_GRPC_STATE_ORDER = {s.grpc_value: order for s, order in _ALL_STATES}
+_JSON_STATE_ORDER = {s.json_value: order for s, order in _ALL_STATES}
 
 
 # ---------------------------------------------------------------------------
@@ -108,17 +109,6 @@ def _get_event_state_grpc(event: Any) -> int | None:
     return None
 
 
-def _normalize_json_state(state: str) -> str:
-    """Normalize a JSON state string for ordering comparison.
-
-    Handles both ``TASK_STATE_COMPLETED`` and ``completed`` formats.
-    """
-    lower = state.lower()
-    if lower.startswith("task_state_"):
-        return lower[len("task_state_"):]
-    return lower
-
-
 def _get_event_state_json(event: dict) -> str | None:
     """Extract task state string from a JSON streaming event."""
     result = event.get("result", event)
@@ -129,12 +119,12 @@ def _get_event_state_json(event: dict) -> str | None:
     if isinstance(status_update, dict):
         status = status_update.get("status", {})
         if isinstance(status, dict) and "state" in status:
-            return _normalize_json_state(status["state"])
+            return status["state"]
     task = result.get("task")
     if isinstance(task, dict):
         status = task.get("status", {})
         if isinstance(status, dict) and "state" in status:
-            return _normalize_json_state(status["state"])
+            return status["state"]
     return None
 
 

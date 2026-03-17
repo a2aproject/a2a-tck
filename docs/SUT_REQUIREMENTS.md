@@ -62,14 +62,28 @@ TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url http://your-sut:9999 --categor
 - **Increase (`5.0+`)**: Slow networks, debugging, resource-constrained environments
 - **Debug (`10.0+`)**: Detailed troubleshooting, step-through debugging
 
+## SUT Behavior: Gherkin Scenarios
+
+The **source of truth** for all SUT executor behavior is the Gherkin feature files
+in [`scenarios/*.feature`](../scenarios/). Each scenario defines what the SUT
+executor does when it receives a message whose `messageId` starts with a specific
+prefix (e.g. `tck-send-001`, `tck-stream-001`).
+
+- [`scenarios/core_operations.feature`](../scenarios/core_operations.feature) — unary operations
+- [`scenarios/streaming.feature`](../scenarios/streaming.feature) — streaming operations
+
+The `messageId` prefix is the **in-band signal** linking TCK tests to SUT
+behavior — no side-channel API is needed.
+
 ## Message ID Patterns
 
-The TCK uses specific message ID patterns for testing. **Only implement special behavior for the patterns listed**:
+The TCK uses specific message ID patterns for testing. **Only implement special behavior for the patterns listed in the Gherkin scenarios.**
 
 | Pattern | Required Behavior |
 |---------|-------------------|
+| `tck-*` prefixes | Behavior defined in `scenarios/*.feature` |
 | `test-resubscribe-message-id-*` | Task must run ≥ 2×`TCK_STREAMING_TIMEOUT` seconds |
-| All other `test-*` patterns | Normal task processing (no special behavior) |
+| All other patterns | Normal task processing (no special behavior) |
 
 ## Testing Your Implementation
 
@@ -79,4 +93,4 @@ echo "TCK_STREAMING_TIMEOUT=1.0" > .env
 ./run_tck.py --sut-url http://your-sut:9999 --category all
 ```
 
-That's it! Everything else follows the standard A2A specification. 
+That's it! Everything else follows the standard A2A specification.
