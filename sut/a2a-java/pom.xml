@@ -12,7 +12,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.platform.version>3.30.6</quarkus.platform.version>
-        <a2a-java-sdk.version>1.0.0.Alpha4-SNAPSHOT</a2a-java-sdk.version>
+        <a2a-java-sdk.version>1.0.0.Beta1-SNAPSHOT</a2a-java-sdk.version>
         <protobuf-java.version>4.33.1</protobuf-java.version>
     </properties>
 
