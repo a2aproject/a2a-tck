@@ -15,7 +15,7 @@ The a2a-java SUT is a Quarkus application generated from Gherkin `.feature` file
 scenarios/*.feature → codegen (parser + steps + java_emitter) → sut/a2a-java/
 ```
 
-- **Gherkin scenarios** (`scenarios/core_operations.feature`) define SUT behavior via messageId prefix matching
+- **Gherkin scenarios** (`scenarios/*.feature`) define SUT behavior via messageId prefix matching
 - **Code generator** (`codegen/`) parses `.feature` files and emits a Quarkus project
 - **Jinja2 templates** (`codegen/a2a-java/*.j2`) produce the Java sources, `pom.xml`, and `application.properties`
 - **Generated output** (`sut/a2a-java/`) is a complete Maven project
@@ -34,9 +34,8 @@ scenarios/*.feature → codegen (parser + steps + java_emitter) → sut/a2a-java
 The generated `AgentExecutor` matches on the **messageId prefix** from incoming messages:
 
 ```java
-if (messageId.startsWith("tck-send-001")) {
-    emitter.sendMessage(List.of(new TextPart("Hello from TCK")));
-    emitter.complete();
+if (messageId.startsWith("tck-complete-task")) {
+    emitter.complete(A2A.toAgentMessage("Hello from TCK"));
     return;
 }
 ```
@@ -135,7 +134,7 @@ The A2A protocol uses **protobuf enum naming conventions**:
 ```bash
 curl -s -X POST http://localhost:9999/ \
   -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":"1","method":"SendMessage","params":{"message":{"messageId":"tck-send-001-1234","role":"ROLE_USER","parts":[{"text":"Hello from TCK"}]}}}'
+  -d '{"jsonrpc":"2.0","id":"1","method":"SendMessage","params":{"message":{"messageId":"tck-complete-task-1234","role":"ROLE_USER","parts":[{"text":"Hello from TCK"}]}}}'
 ```
 
 **ListTasks (JSON-RPC):**
