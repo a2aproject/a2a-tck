@@ -113,20 +113,10 @@ class UpdateTaskStatus:
     state: str
 
 
-@dataclass(frozen=True)
-class StreamStatusUpdate:
-    """Stream a task status update event."""
-
-    state: str
-
-
-@dataclass(frozen=True)
-class StreamArtifact:
-    """Stream an artifact update event."""
-
-    parts: list[PartDef]
-    append: bool = False
-    last_chunk: bool = False
+# Backward-compatible aliases — streaming variants are identical to their
+# unary counterparts; the distinction is purely semantic in Gherkin steps.
+StreamStatusUpdate = UpdateTaskStatus
+StreamArtifact = AddArtifact
 
 
 @dataclass(frozen=True)
@@ -142,8 +132,6 @@ Action = (
     | ReturnMessage
     | RejectWithError
     | UpdateTaskStatus
-    | StreamStatusUpdate
-    | StreamArtifact
     | WaitForTimeout
 )
 

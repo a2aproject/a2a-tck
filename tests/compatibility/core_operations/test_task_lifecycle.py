@@ -27,7 +27,12 @@ from tck.requirements.base import TERMINAL_STATES, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_completed_task, create_working_task
-from tests.compatibility._test_helpers import assert_and_record, get_client, record
+from tests.compatibility._test_helpers import (
+    assert_and_record,
+    collect_events_with_timeout,
+    get_client,
+    record,
+)
 from tests.compatibility.markers import must, streaming
 
 
@@ -128,31 +133,6 @@ def _event_has_terminal_state(event: Any, transport: str) -> bool:
             if su_state in _JSON_TERMINAL_STATES:
                 return True
     return False
-
-
-def _collect_events_with_timeout(
-    events_iter: Any,
-    timeout: float = _SUBSCRIBE_TIMEOUT_S,
-) -> tuple[list[Any], bool]:
-    """Collect streaming events with a hard wall-clock timeout.
-
-    Runs event consumption in a daemon thread so that we can enforce
-    the deadline even when ``next(events_iter)`` itself blocks
-    (e.g. an SSE connection waiting for data that never arrives).
-
-    Returns a tuple of (events, timed_out).
-    """
-    collected: list[Any] = []
-
-    def _drain() -> None:
-        for event in events_iter:
-            collected.append(event)
-
-    thread = threading.Thread(target=_drain, daemon=True)
-    thread.start()
-    thread.join(timeout=timeout)
-    timed_out = thread.is_alive()
-    return collected, timed_out
 
 
 # ---------------------------------------------------------------------------
@@ -418,7 +398,7 @@ class TestSubscribeLifecycle:
         complete_thread.start()
 
         # Consume events with a timeout to avoid blocking indefinitely
-        events, timed_out = _collect_events_with_timeout(sub_response.events)
+        events, timed_out = collect_events_with_timeout(sub_response.events)
         complete_thread.join(timeout=_SUBSCRIBE_TIMEOUT_S)
 
         if timed_out:
@@ -469,7 +449,7 @@ class TestSubscribeLifecycle:
         if sub_response.success:
             # Some servers may return success but deliver an error on iteration
             try:
-                _collect_events_with_timeout(sub_response.events)[0]
+                collect_events_with_timeout(sub_response.events)[0]
                 errors.append(
                     "SubscribeToTask on a terminal task should return an error, "
                     "but succeeded"
