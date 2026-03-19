@@ -109,11 +109,10 @@ def test_push_notification_not_supported_error_32003_enhanced(sut_client, agent_
         task_id = create_test_task(sut_client) or f"test-task-{message_utils.generate_request_id()}"
         config_id = str(uuid.uuid4())
         # Try to set push notification config on agent that doesn't support it
-        name= f"tasks/{task_id}/pushNotificationConfigs/{config_id}"
-        config = {"name": name, "pushNotificationConfig":{"url": "https://test.example.com/webhook", "token": "test-token"}}
+        task_push_config = {"taskId": task_id, "id": config_id, "url": "https://test.example.com/webhook", "token": "test-token"}
 
         try:
-            response = transport_helpers.transport_create_task_push_notification_config(sut_client, task_id, config_id, config)
+            response = transport_helpers.transport_create_task_push_notification_config(sut_client, task_push_config)
 
             if "error" in response:
                 error_code = response["error"]["code"]
