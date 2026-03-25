@@ -78,7 +78,10 @@ class JsonRpcClient(BaseTransportClient):
     def __init__(self, base_url: str) -> None:
         super().__init__(base_url, TRANSPORT)
         self._id_counter = itertools.count(1)
-        self._client = httpx.Client(base_url=base_url)
+        self._client = httpx.Client(
+            base_url=base_url,
+            timeout=httpx.Timeout(5.0, read=30.0),
+        )
 
     def close(self) -> None:
         """Close the HTTP client."""
@@ -138,11 +141,7 @@ class JsonRpcClient(BaseTransportClient):
                     "Accept": "text/event-stream",
                 },
             )
-            response = self._client.send(
-                request,
-                stream=True,
-                timeout=httpx.Timeout(5.0, read=30.0),
-            )
+            response = self._client.send(request, stream=True)
             return JsonRpcStreamingResponse(
                 transport=self.transport,
                 success=True,
