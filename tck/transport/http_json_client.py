@@ -27,7 +27,7 @@ from tck.requirements.base import (
     SEND_MESSAGE_BINDING,
     SUBSCRIBE_TO_TASK_BINDING,
 )
-from tck.transport._helpers import _build_params, _parse_sse
+from tck.transport._helpers import _build_params, _stream_sse
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
@@ -162,9 +162,13 @@ class HttpJsonClient(BaseTransportClient):
         *,
         json_body: dict | None = None,
     ) -> StreamingResponse:
-        """Make an HTTP request expecting an SSE streaming response."""
+        """Make an HTTP request expecting an SSE streaming response.
+
+        Uses httpx streaming so that SSE events are yielded incrementally
+        as they arrive, rather than blocking until the full body is read.
+        """
         try:
-            response = self._client.request(
+            request = self._client.build_request(
                 method,
                 path,
                 json=json_body,
@@ -172,10 +176,15 @@ class HttpJsonClient(BaseTransportClient):
                     "Content-Type": "application/json",
                     "Accept": "text/event-stream",
                 },
-                timeout=httpx.Timeout(5.0, read=10.0),
+            )
+            response = self._client.send(
+                request,
+                stream=True,
+                timeout=httpx.Timeout(5.0, read=30.0),
             )
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
+                response.close()
                 return HttpJsonStreamingResponse(
                     transport=self.transport,
                     success=False,
@@ -188,7 +197,7 @@ class HttpJsonClient(BaseTransportClient):
                 transport=self.transport,
                 success=True,
                 raw_response=response,
-                events=_parse_sse(response.text),
+                events=_stream_sse(response),
                 headers=resp_headers,
                 status_code=response.status_code,
             )
