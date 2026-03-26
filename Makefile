@@ -1,4 +1,4 @@
-.PHONY: help proto jsonschema test lint spec codegen-a2a-java-sut
+.PHONY: help proto jsonschema test lint spec codegen-a2a-java-sut codegen-a2a-python-sut
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  make %-25s %s\n", $$1, $$2}'
@@ -20,3 +20,6 @@ lint: ## Run linter
 
 codegen-a2a-java-sut: ## Generate the a2a-java SUT from Gherkin scenarios
 	uv run python -m codegen.generator --target a2a-java --output sut/a2a-java
+
+codegen-a2a-python-sut: ## Generate the a2a-python SUT from Gherkin scenarios
+	uv run python -m codegen.generator --target a2a-python --output sut/a2a-python
