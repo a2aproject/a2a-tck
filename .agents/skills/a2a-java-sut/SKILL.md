@@ -173,6 +173,10 @@ Read `reports/compatibility.json` for structured results. For detailed diagnosis
 2. **Agent card 404** — Wrong URL; the a2a-java SDK serves at `/.well-known/agent-card.json`
 3. **Unmatched messageId prefix** — The scenario prefix doesn't match what the TCK test sends; check `tck_id()` usage in tests vs prefix in `.feature` file
 4. **Missing action** — Scenario doesn't handle the expected behavior; add the appropriate Then/And step
+5. **gRPC SubscribeToTask hangs** — The gRPC `test_subscribe_first_event_is_task` test hangs indefinitely because the SUT's gRPC SubscribeToTask stream never sends the first Task event. Deselect it when running the TCK:
+   ```bash
+   uv run ./run_tck.py --sut-host http://localhost:9999 -v -- --deselect "tests/compatibility/grpc/test_streaming.py::TestGrpcStreaming::test_subscribe_first_event_is_task"
+   ```
 
 ## Step 6: Iterate
 
