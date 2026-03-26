@@ -14,7 +14,7 @@ from typing import Any
 import httpx
 
 from tck.requirements.base import OperationType
-from tck.transport._helpers import _build_params, _parse_sse
+from tck.transport._helpers import _build_params, _stream_sse
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
@@ -78,7 +78,10 @@ class JsonRpcClient(BaseTransportClient):
     def __init__(self, base_url: str) -> None:
         super().__init__(base_url, TRANSPORT)
         self._id_counter = itertools.count(1)
-        self._client = httpx.Client(base_url=base_url)
+        self._client = httpx.Client(
+            base_url=base_url,
+            timeout=httpx.Timeout(5.0, read=30.0),
+        )
 
     def close(self) -> None:
         """Close the HTTP client."""
@@ -117,7 +120,11 @@ class JsonRpcClient(BaseTransportClient):
             )
 
     def _call_streaming(self, method: str, params: dict) -> StreamingResponse:
-        """Make a JSON-RPC 2.0 streaming call and return a StreamingResponse."""
+        """Make a JSON-RPC 2.0 streaming call and return a StreamingResponse.
+
+        Uses httpx streaming so that SSE events are yielded incrementally
+        as they arrive, rather than blocking until the full body is read.
+        """
         payload = {
             "jsonrpc": "2.0",
             "id": self._next_id(),
@@ -125,20 +132,21 @@ class JsonRpcClient(BaseTransportClient):
             "params": params,
         }
         try:
-            response = self._client.post(
+            request = self._client.build_request(
+                "POST",
                 "/",
                 json=payload,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "text/event-stream",
                 },
-                timeout=httpx.Timeout(5.0, read=10.0),
             )
+            response = self._client.send(request, stream=True)
             return JsonRpcStreamingResponse(
                 transport=self.transport,
                 success=True,
                 raw_response=response,
-                events=_parse_sse(response.text),
+                events=_stream_sse(response),
                 headers=dict(response.headers),
                 status_code=response.status_code,
             )

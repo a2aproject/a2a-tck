@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import json
 
-from typing import Any, Iterator
+from typing import TYPE_CHECKING, Any, Iterator
+
+
+if TYPE_CHECKING:
+    import httpx
 
 
 def _build_params(**kwargs: Any) -> dict:
@@ -12,9 +16,13 @@ def _build_params(**kwargs: Any) -> dict:
     return {k: v for k, v in kwargs.items() if v is not None}
 
 
-def _parse_sse(text: str) -> Iterator[dict]:
-    """Parse SSE-formatted text into JSON dicts."""
-    for raw_line in text.splitlines():
+def _stream_sse(response: httpx.Response) -> Iterator[dict]:
+    """Yield parsed SSE events from a streaming httpx response.
+
+    Reads the response body incrementally so that events are available
+    as soon as they arrive rather than waiting for the stream to close.
+    """
+    for raw_line in response.iter_lines():
         line = raw_line.strip()
         if line.startswith("data:"):
             data = line[len("data:"):].strip()

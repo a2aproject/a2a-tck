@@ -81,6 +81,22 @@ Determine:
 - What response was expected
 - What response was actually received (from `reports/compatibility.json` errors or by re-running the test)
 
+**Getting actual errors:** The `errors` field in `compatibility.json` is often
+empty or contains only skip messages. When this happens, re-run the specific
+failing test with verbose output to get the real error:
+
+```bash
+uv run ./run_tck.py --sut-host <sut-host> --verbose-log -- -k "test_name" --tb=long
+```
+
+**TCK bug vs SUT bug:** Before drafting an issue, determine whether the failure
+is a TCK bug or a SUT bug. Check:
+- Does the test logic match the spec requirement?
+- Is the transport client sending the right request?
+- Is the test expecting the right response format for this transport?
+
+If it's a TCK bug, fix the TCK instead of filing an issue against the SUT.
+
 ## Step 5: Build a curl reproducer
 
 Create a minimal curl command sequence that reproduces the failure. The reproducer should:

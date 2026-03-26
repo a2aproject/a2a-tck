@@ -296,7 +296,7 @@ class TestMultiTurn:
         """CORE-MULTI-005: SendMessage with only taskId infers contextId from the task."""
         req = CORE_MULTI_005
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_completed_task(client)
+        info = create_working_task(client)
 
         if not info.context_id:
             pytest.skip("Original task did not include a contextId")

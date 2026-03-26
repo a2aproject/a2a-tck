@@ -15,6 +15,7 @@ from tck.requirements.base import (
     SEND_STREAMING_MESSAGE_BINDING,
     SPEC_BASE,
     TASK_NOT_FOUND_ERROR,
+    UNSUPPORTED_OPERATION_ERROR,
     OperationType,
     RequirementLevel,
     RequirementSpec,
@@ -85,6 +86,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         binding=SEND_MESSAGE_BINDING,
         proto_request_type="SendMessageRequest",
         expected_behavior="UnsupportedOperationError returned for terminal task",
+        expected_error=UNSUPPORTED_OPERATION_ERROR,
         spec_url=f"{SPEC_BASE}311-send-message",
         tags=[CORE, SEND_MESSAGE, ERROR],
         sample_input={
@@ -644,6 +646,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         operation=OperationType.SEND_MESSAGE,
         binding=SEND_MESSAGE_BINDING,
         expected_behavior="TaskNotFoundError returned",
+        expected_error=TASK_NOT_FOUND_ERROR,
         spec_url=f"{SPEC_BASE}342-task-identifier-semantics",
         tags=[CORE, MULTI_TURN, TASK_ID, ERROR],
         sample_input={

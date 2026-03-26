@@ -114,6 +114,18 @@ Or use verbose log output for maximum detail:
 uv run ./run_tck.py --sut-host <sut-host> --verbose-log -- -k "test_name"
 ```
 
+### Deselecting stuck tests
+
+Some tests (e.g., gRPC streaming subscribe) may hang indefinitely due to SUT
+bugs. Use pytest's `--deselect` flag to skip them:
+
+```bash
+uv run ./run_tck.py --sut-host <sut-host> -v -- --deselect "tests/path/to/stuck_test"
+```
+
+Multiple `--deselect` flags can be combined. This lets the rest of the suite
+run to completion while the stuck test is investigated separately.
+
 ### Common failure patterns
 
 1. **Connection refused** — SUT is not running or is on a different port
@@ -122,6 +134,16 @@ uv run ./run_tck.py --sut-host <sut-host> --verbose-log -- -k "test_name"
 4. **Schema validation failures** — Response payloads don't match the A2A JSON Schema or protobuf definitions
 5. **Missing required fields** — Response is missing MUST-level fields per the spec
 6. **Wrong error codes** — SUT returns incorrect error codes for error scenarios
+7. **Test hangs indefinitely** — Usually a streaming test where the SUT never closes the stream or never sends the first event. Deselect the test and file an issue against the SUT
+
+### Tips
+
+- **Empty errors in `compatibility.json`:** The `errors` field is often empty
+  for failing requirements. Re-run the specific test with `--verbose-log` and
+  `-- --tb=long` to get the actual error message and stack trace.
+- **Background tasks with pipes:** Do not pipe TCK output through `tail` or
+  other commands when running in the background — the pipe buffers all output
+  and produces nothing until the process finishes. Run without pipes instead.
 
 ## Step 5: Interpret compatibility results
 
