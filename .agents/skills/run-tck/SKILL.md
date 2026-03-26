@@ -64,6 +64,9 @@ other dependencies.
 Reports are always generated in `reports/` after every run. Point the user to
 `reports/compatibility.html` and `reports/tck_report.html` after the run completes.
 
+**Important:** Always run TCK commands from the TCK project root directory
+(`a2a-tck/`), not from a subdirectory like `sut/a2a-python/`.
+
 Start with MUST-level tests to catch blocking issues first:
 
 ```bash

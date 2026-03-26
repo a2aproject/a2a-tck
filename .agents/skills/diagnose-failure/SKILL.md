@@ -17,7 +17,8 @@ Ask the user for one of:
 
 Read `reports/compatibility.json` to find the failing requirement, its status per
 transport, recorded errors, and `test_ids`. This file is always generated after
-every TCK run.
+every TCK run. The structure uses `per_requirement` (a dict keyed by requirement
+ID), not a list. Example: `data["per_requirement"]["VER-SERVER-002"]`.
 
 **Multi-requirement grouping:** When scanning the report, look for related
 requirements that likely share the same root cause (e.g., same test module,
