@@ -103,7 +103,7 @@ public class TckAgentExecutorProducer {
                 }
 
                 if (messageId.startsWith("tck-artifact-data")) {
-                    emitter.addArtifact(List.of(new DataPart("{\"key\": \"value\", \"count\": 42}")), null, null, null);
+                    emitter.addArtifact(List.of(DataPart.fromJson("{\"key\": \"value\", \"count\": 42}")), null, null, null);
                     emitter.complete();
                     return;
                 }
