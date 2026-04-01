@@ -24,13 +24,40 @@ from tests.compatibility.markers import may, must, should
 
 
 # Maps requirement tags to agent card capability keys.
-# Only these tags should cause MAY-level tests to be skipped
-# when the corresponding capability is not declared.
+# When a requirement's tags include one of these keys and the corresponding
+# capability is not declared in the agent card, the test is skipped.
 _CAPABILITY_TAG_TO_CARD_KEY = {
     "streaming": "streaming",
     "push-notification": "pushNotifications",
     "agent-card": "extendedAgentCard",
 }
+
+
+def _skip_if_capability_not_declared(
+    requirement: Any,
+    transport: str,
+    agent_card: dict[str, Any],
+    compatibility_collector: Any,
+) -> None:
+    """Skip the test if the requirement needs a capability not declared in the agent card."""
+    if not requirement.tags:
+        return
+    card_caps = agent_card.get("capabilities") or {}
+    missing = [
+        t for t in requirement.tags
+        if t in _CAPABILITY_TAG_TO_CARD_KEY and not card_caps.get(_CAPABILITY_TAG_TO_CARD_KEY[t])
+    ]
+    if missing:
+        compatibility_collector.record(
+            requirement_id=requirement.id,
+            transport=transport,
+            level=requirement.level.value,
+            passed=False,
+            skipped=True,
+        )
+        pytest.skip(
+            f"Agent card does not declare capabilities for: {missing}"
+        )
 
 
 if TYPE_CHECKING:
@@ -134,8 +161,10 @@ def test_must_requirement(
     transport_clients: dict[str, Any],
     validators: dict[str, Any],
     compatibility_collector: Any,
+    agent_card: dict[str, Any],
 ) -> None:
     """Verify a MUST-level requirement — hard failure on validation error."""
+    _skip_if_capability_not_declared(requirement, transport, agent_card, compatibility_collector)
     client = transport_clients.get(transport)
     if client is None:
         compatibility_collector.record(
@@ -180,8 +209,10 @@ def test_should_requirement(
     transport_clients: dict[str, Any],
     validators: dict[str, Any],
     compatibility_collector: Any,
+    agent_card: dict[str, Any],
 ) -> None:
     """Verify a SHOULD-level requirement — xfail on validation error."""
+    _skip_if_capability_not_declared(requirement, transport, agent_card, compatibility_collector)
     client = transport_clients.get(transport)
     if client is None:
         compatibility_collector.record(
@@ -230,25 +261,7 @@ def test_may_requirement(
     agent_card: dict[str, Any],
 ) -> None:
     """Verify a MAY-level requirement — skip if capability not declared."""
-    # Only skip when a requirement's tags include a capability that maps
-    # to an agent card capability field and that capability is not enabled.
-    # Tags like "core", "multi-turn", "context" are categorization labels,
-    # not agent card capabilities, so they must not trigger a skip.
-    if requirement.tags:
-        card_caps = agent_card.get("capabilities", {})
-        capability_tags = [t for t in requirement.tags if t in _CAPABILITY_TAG_TO_CARD_KEY]
-        if capability_tags and not any(card_caps.get(_CAPABILITY_TAG_TO_CARD_KEY[t]) for t in capability_tags):
-            compatibility_collector.record(
-                requirement_id=requirement.id,
-                transport=transport,
-                level=requirement.level.value,
-                passed=False,
-                skipped=True,
-            )
-            pytest.skip(
-                f"Agent card does not declare capabilities for: {capability_tags}"
-            )
-
+    _skip_if_capability_not_declared(requirement, transport, agent_card, compatibility_collector)
     client = transport_clients.get(transport)
     if client is None:
         compatibility_collector.record(
