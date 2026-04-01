@@ -121,12 +121,19 @@ class GrpcClient(BaseTransportClient):
         if self._channel is not None:
             self._channel.close()
 
+    # Default timeout (seconds) for streaming RPCs.  Without a deadline the
+    # gRPC Python iterator can block indefinitely in certain environments
+    # (e.g. pytest) even when the server has already sent data.
+    _STREAMING_TIMEOUT_S = 30
+
     def _call_with_retry(
         self,
         rpc_name: str,
         request: Any,
         make_ok: callable,
         make_err: callable,
+        *,
+        timeout: float | None = None,
     ) -> TransportResponse | StreamingResponse:
         """Execute a gRPC call with one retry on connection errors.
 
@@ -135,14 +142,14 @@ class GrpcClient(BaseTransportClient):
         """
         rpc = getattr(self._stub, rpc_name)
         try:
-            return make_ok(rpc(request))
+            return make_ok(rpc(request, timeout=timeout))
         except grpc.RpcError as e:
             if e.code() not in self._RETRIABLE_CODES:
                 return make_err(e)
             self._connect()
             try:
                 rpc = getattr(self._stub, rpc_name)
-                return make_ok(rpc(request))
+                return make_ok(rpc(request, timeout=timeout))
             except grpc.RpcError as e2:
                 return make_err(e2)
 
@@ -180,6 +187,7 @@ class GrpcClient(BaseTransportClient):
             make_err=lambda e: GrpcStreamingResponse(
                 transport=self.transport, success=False, raw_response=e, events=iter([]),
             ),
+            timeout=self._STREAMING_TIMEOUT_S,
         )
 
     def send_streaming_message(
