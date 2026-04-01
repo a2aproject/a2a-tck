@@ -137,7 +137,7 @@ run to completion while the stuck test is investigated separately.
 4. **Schema validation failures** — Response payloads don't match the A2A JSON Schema or protobuf definitions
 5. **Missing required fields** — Response is missing MUST-level fields per the spec
 6. **Wrong error codes** — SUT returns incorrect error codes for error scenarios
-7. **Test hangs indefinitely** — Usually a streaming test where the SUT never closes the stream or never sends the first event. Deselect the test and file an issue against the SUT
+7. **Test hangs indefinitely** — Usually a streaming test where the SUT never closes the stream. The TCK's gRPC client uses a 30s timeout on streaming RPCs to prevent indefinite hangs, but if a test still hangs, deselect it and investigate
 
 ### Tips
 
