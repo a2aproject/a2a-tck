@@ -264,7 +264,7 @@ def _single_part_to_java(part: PartDef) -> str:
         )
 
     if isinstance(part, DataPartDef):
-        return f"new DataPart({_java_string(part.json_content)})"
+        return f"DataPart.fromJson({_java_string(part.json_content)})"
 
     msg = f"Unknown part type: {type(part).__name__}"
     raise ValueError(msg)
