@@ -32,11 +32,11 @@ def _is_repeated_field(field_desc: FieldDescriptor) -> bool:
     Returns:
         True if the field is repeated.
     """
-    # Try the new API first (is_repeated method)
-    if hasattr(field_desc, "is_repeated") and callable(
-        getattr(field_desc, "is_repeated", None)
-    ):
-        return field_desc.is_repeated()
+    # Try the new API first — is_repeated is a property (not callable) on
+    # newer UPB-based descriptors, or a method on older descriptors.
+    if hasattr(field_desc, "is_repeated"):
+        attr = field_desc.is_repeated
+        return attr() if callable(attr) else attr
 
     # Fall back to the deprecated label property, suppressing the warning
     with warnings.catch_warnings():
