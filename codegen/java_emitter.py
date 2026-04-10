@@ -36,7 +36,7 @@ _TEMPLATES_DIR = Path(__file__).parent / "a2a-java"
 
 _DEFAULT_A2A_JAVA_SDK_VERSION = "1.0.0.Beta1-SNAPSHOT"
 
-_JAVA_PACKAGE = "org.a2aproject.sdk"
+_JAVA_PACKAGE = "org.a2aproject.sdk.sut"
 _JAVA_PACKAGE_DIR = _JAVA_PACKAGE.replace(".", "/")
 
 _STREAMING_WAIT_TIMEOUT_MS = 2000
@@ -213,7 +213,7 @@ _STATE_MAP = {
 
 _ERROR_MAP = {
     "rejected": 'throw new A2AError(-1, "rejected", null);',
-    "unsupported_operation": "throw new io.a2a.spec.UnsupportedOperationError();",
+    "unsupported_operation": "throw new org.a2aproject.sdk.spec.UnsupportedOperationError();",
     "task_not_cancelable": "throw new TaskNotCancelableError();",
 }
 

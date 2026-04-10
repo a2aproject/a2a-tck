@@ -94,7 +94,7 @@ class TestEmitJavaProject:
         emit_java_project(_basic_scenarios(), tmp_path)
         executor = (
             tmp_path / "src" / "main" / "java"
-            / "org" / "a2aproject" / "sdk"
+            / "org" / "a2aproject" / "sdk" / "sut"
             / "TckAgentExecutorProducer.java"
         )
         content = executor.read_text()
@@ -108,7 +108,7 @@ class TestEmitJavaProject:
         emit_java_project(_basic_scenarios(), tmp_path)
         executor = (
             tmp_path / "src" / "main" / "java"
-            / "org" / "a2aproject" / "sdk"
+            / "org" / "a2aproject" / "sdk" / "sut"
             / "TckAgentExecutorProducer.java"
         )
         content = executor.read_text()
@@ -122,7 +122,7 @@ class TestEmitJavaProject:
         emit_java_project(_basic_scenarios(), tmp_path)
         card = (
             tmp_path / "src" / "main" / "java"
-            / "org" / "a2aproject" / "sdk"
+            / "org" / "a2aproject" / "sdk" / "sut"
             / "TckAgentCardProducer.java"
         )
         content = card.read_text()
@@ -134,7 +134,7 @@ class TestEmitJavaProject:
         emit_java_project(all_scenarios, tmp_path)
         card = (
             tmp_path / "src" / "main" / "java"
-            / "org" / "a2aproject" / "sdk"
+            / "org" / "a2aproject" / "sdk" / "sut"
             / "TckAgentCardProducer.java"
         )
         content = card.read_text()
