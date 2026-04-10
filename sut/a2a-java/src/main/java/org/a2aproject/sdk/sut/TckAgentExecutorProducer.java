@@ -1,4 +1,4 @@
-package org.a2aproject.sdk;
+package org.a2aproject.sdk.sut;
 
 import java.util.List;
 import java.util.Map;
@@ -6,17 +6,17 @@ import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 
-import io.a2a.A2A;
-import io.a2a.server.agentexecution.AgentExecutor;
-import io.a2a.server.agentexecution.RequestContext;
-import io.a2a.server.tasks.AgentEmitter;
-import io.a2a.spec.A2AError;
-import io.a2a.spec.DataPart;
-import io.a2a.spec.FileWithBytes;
-import io.a2a.spec.FileWithUri;
-import io.a2a.spec.FilePart;
-import io.a2a.spec.TaskNotCancelableError;
-import io.a2a.spec.TextPart;
+import org.a2aproject.sdk.A2A;
+import org.a2aproject.sdk.server.agentexecution.AgentExecutor;
+import org.a2aproject.sdk.server.agentexecution.RequestContext;
+import org.a2aproject.sdk.server.tasks.AgentEmitter;
+import org.a2aproject.sdk.spec.A2AError;
+import org.a2aproject.sdk.spec.DataPart;
+import org.a2aproject.sdk.spec.FileWithBytes;
+import org.a2aproject.sdk.spec.FileWithUri;
+import org.a2aproject.sdk.spec.FilePart;
+import org.a2aproject.sdk.spec.TaskNotCancelableError;
+import org.a2aproject.sdk.spec.TextPart;
 
 /**
  * CDI producer for the TCK agent executor.
