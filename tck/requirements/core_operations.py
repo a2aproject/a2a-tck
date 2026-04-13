@@ -88,15 +88,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         expected_behavior="UnsupportedOperationError returned for terminal task",
         expected_error=UNSUPPORTED_OPERATION_ERROR,
         spec_url=f"{SPEC_BASE}311-send-message",
-        tags=[CORE, SEND_MESSAGE, ERROR],
-        sample_input={
-            "message": {
-                "role": "ROLE_USER",
-                "parts": [{"text": "Message to terminal task"}],
-                "messageId": tck_id("send-002"),
-                "taskId": tck_id("complete-task"),
-            },
-        },
+        tags=[CORE, SEND_MESSAGE, ERROR, MULTI_OPERATION],
 
     ),
     RequirementSpec(
