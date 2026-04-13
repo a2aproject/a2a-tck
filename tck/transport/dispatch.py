@@ -10,6 +10,8 @@ to the client, and skips if the required input is missing.
 
 from __future__ import annotations
 
+import copy
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -25,6 +27,11 @@ if TYPE_CHECKING:
         StreamingResponse,
         TransportResponse,
     )
+
+
+# Keys in the ``message`` dict whose values should be made transport-unique
+# to prevent cross-transport state contamination on the SUT.
+_TRANSPORT_UNIQUE_KEYS = ("messageId", "taskId")
 
 
 @dataclass(frozen=True)
@@ -147,7 +154,17 @@ def execute_operation(
             f"{requirement.operation.value}"
         )
 
-    sample = requirement.sample_input
+    sample = copy.deepcopy(requirement.sample_input)
+
+    # Append the transport name to message IDs so that each transport gets
+    # its own task/message on the SUT, preventing cross-transport state
+    # contamination (e.g. a task created by gRPC affecting jsonrpc results).
+    transport = client.transport
+    msg = sample.get("message")
+    if isinstance(msg, dict):
+        for key in _TRANSPORT_UNIQUE_KEYS:
+            if key in msg:
+                msg[key] = f"{msg[key]}-{transport}"
 
     # Check that all required keys are present
     missing = [k for k in descriptor.required_keys if k not in sample]
