@@ -85,7 +85,8 @@ def emit_jakarta_project(scenarios: list[Scenario], output_dir: Path) -> list[Pa
         generated.append(_render(env, template_name, context, java_src / filename))
 
     # WEB-INF resources
-    web_inf = output_dir / "src" / "main" / "resources" / "META-INF"
+    # WEB-INF resources
+    web_inf = output_dir / "src" / "main" / "webapp" / "WEB-INF"
     web_inf.mkdir(parents=True, exist_ok=True)
     generated.append(
         _render(env, "beans.xml.j2", context, web_inf / "beans.xml"),
