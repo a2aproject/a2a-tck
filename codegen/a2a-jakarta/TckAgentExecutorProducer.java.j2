@@ -1,0 +1,55 @@
+package {{ package }};
+
+import java.util.List;
+import java.util.Map;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+
+import org.a2aproject.sdk.A2A;
+import org.a2aproject.sdk.server.agentexecution.AgentExecutor;
+import org.a2aproject.sdk.server.agentexecution.RequestContext;
+import org.a2aproject.sdk.server.tasks.AgentEmitter;
+import org.a2aproject.sdk.spec.A2AError;
+import org.a2aproject.sdk.spec.DataPart;
+import org.a2aproject.sdk.spec.FileWithBytes;
+import org.a2aproject.sdk.spec.FileWithUri;
+import org.a2aproject.sdk.spec.FilePart;
+import org.a2aproject.sdk.spec.TaskNotCancelableError;
+import org.a2aproject.sdk.spec.TextPart;
+
+/**
+ * CDI producer for the TCK agent executor.
+ *
+ * <p>Generated from Gherkin scenarios — do not edit by hand.
+ */
+@ApplicationScoped
+public class TckAgentExecutorProducer {
+
+    @Produces
+    public AgentExecutor agentExecutor() {
+        return new AgentExecutor() {
+            @Override
+            public void execute(RequestContext context, AgentEmitter emitter) throws A2AError {
+                String messageId = context.getMessage().messageId();
+                {% for handler in handlers %}
+
+                if (messageId.startsWith("{{ handler.prefix }}")) {
+                    {{ handler.java_code | indent(20) }}
+                    {% if not handler.throws %}
+                    return;
+                    {% endif %}
+                }
+                {% endfor %}
+
+                // Default: complete the task with an echo response
+                emitter.complete(A2A.toAgentMessage("Unhandled messageId prefix: " + messageId));
+            }
+
+            @Override
+            public void cancel(RequestContext context, AgentEmitter emitter) throws A2AError {
+                emitter.cancel();
+            }
+        };
+    }
+}
