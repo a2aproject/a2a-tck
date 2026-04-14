@@ -31,7 +31,7 @@ public class TckAgentCardProducer {
         String sutGrpcUrl = grpcHost;
 
         return AgentCard.builder()
-                .name("A2A Jakarta SDK System Under Test (SUT) for TCK")
+                .name("A2A Jakarta SDK System Under Test (SUT)")
                 .description("Auto-generated System Under Test for A2A TCK conformance")
                 .version("1.0.0")
                 .supportedInterfaces(List.of(

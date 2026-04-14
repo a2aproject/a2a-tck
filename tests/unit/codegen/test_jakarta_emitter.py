@@ -179,7 +179,7 @@ class TestEmitJakartaProject:
         """beans.xml is generated with gRPC exclusion."""
         emit_jakarta_project(_basic_scenarios(), tmp_path)
         beans = (
-            tmp_path / "src" / "main" / "resources" / "META-INF"
+            tmp_path / "src" / "main" / "resources" / "WEB-INF"
             / "beans.xml"
         )
         content = beans.read_text()
