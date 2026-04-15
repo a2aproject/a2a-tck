@@ -11,8 +11,6 @@ Requirements tested:
 
 from __future__ import annotations
 
-import contextlib
-
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -187,21 +185,15 @@ class TestSseSubscribeToTask:
 
         response = client.subscribe_to_task(id=tck_id("nonexistent-subscribe-001"))
 
-        # The server may return a normal JSON-RPC error (not SSE) for
-        # non-existent tasks. Check the raw httpx response.
-        body: dict | None = None
-        with contextlib.suppress(Exception):
-            body = response.raw_response.json()
-
-        if body and "error" in body:
-            code = body["error"].get("code")
+        # The server may return a plain JSON-RPC error (not SSE) for
+        # non-existent tasks — detected via success=False on the client.
+        if not response.success and response.error_code is not None:
+            code = response.error_code
             passed = code == _TASK_NOT_FOUND_CODE
             errors = (
                 []
                 if passed
-                else [
-                    f"Expected TaskNotFoundError (-32001), got code {code}"
-                ]
+                else [f"Expected TaskNotFoundError (-32001), got code {code}"]
             )
         else:
             # Try consuming events — some servers may send error as SSE event
@@ -246,15 +238,9 @@ class TestSseSubscribeToTask:
         # Subscribe to the task
         sub_response = client.subscribe_to_task(id=info.task_id)
 
-        # Check for error response (non-SSE)
-        sub_body: dict | None = None
-        with contextlib.suppress(Exception):
-            sub_body = sub_response.raw_response.json()
-        if isinstance(sub_body, dict) and "error" in sub_body:
-            pytest.skip(
-                f"SubscribeToTask returned error: "
-                f"{sub_body['error'].get('message', sub_body['error'])}"
-            )
+        # Check for error response (non-SSE) — detected via success=False on the client.
+        if not sub_response.success:
+            pytest.skip(f"SubscribeToTask returned error: {sub_response.error}")
 
         first_event = next(iter(sub_response.events), None)
         if first_event is None:
