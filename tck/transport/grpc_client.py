@@ -7,6 +7,7 @@ from the A2A specification.
 from __future__ import annotations
 
 import contextlib
+import itertools
 
 from dataclasses import dataclass
 from typing import Any
@@ -178,17 +179,35 @@ class GrpcClient(BaseTransportClient):
         return self._unary_call("SendMessage", proto_request)
 
     def _streaming_call(self, rpc_name: str, request: Any) -> StreamingResponse:
-        """Execute a streaming gRPC call with one retry on connection errors."""
-        return self._call_with_retry(
-            rpc_name, request,
-            make_ok=lambda s: GrpcStreamingResponse(
-                transport=self.transport, success=True, raw_response=s, events=s,
-            ),
-            make_err=lambda e: GrpcStreamingResponse(
-                transport=self.transport, success=False, raw_response=e, events=iter([]),
-            ),
-            timeout=self._STREAMING_TIMEOUT_S,
-        )
+        """Execute a streaming gRPC call with one retry on connection errors.
+
+        Peeks at the first event to detect an empty stream early.  Any
+        ``grpc.RpcError`` raised during iteration (including on the first
+        ``next()`` call, where gRPC often defers the network request) bubbles
+        up to the outer handler so that retriable errors trigger a reconnect
+        and a second attempt.
+        """
+        for attempt in range(2):
+            rpc = getattr(self._stub, rpc_name)
+            try:
+                stream = rpc(request, timeout=self._STREAMING_TIMEOUT_S)
+                try:
+                    first = next(stream)
+                except StopIteration:
+                    return GrpcStreamingResponse(
+                        transport=self.transport, success=True, raw_response=stream, events=iter([]),
+                    )
+                return GrpcStreamingResponse(
+                    transport=self.transport, success=True, raw_response=stream,
+                    events=itertools.chain([first], stream),
+                )
+            except grpc.RpcError as e:
+                if e.code() not in self._RETRIABLE_CODES or attempt == 1:
+                    return GrpcStreamingResponse(
+                        transport=self.transport, success=False, raw_response=e, events=iter([]),
+                    )
+                self._connect()
+        raise AssertionError("unreachable: retry loop always returns on the final attempt")
 
     def send_streaming_message(
         self,

@@ -73,15 +73,14 @@ class TestJsonRpcErrorInfo:
         body = _get_error_response(client)
 
         data = body["error"].get("data")
-        if data is None:
-            pytest.skip("error.data is absent")
-
         valid = isinstance(data, list)
         errors = (
             []
             if valid
             else [
-                f"error.data must be an array, got {type(data).__name__}"
+                "error.data is absent — A2A errors MUST include ErrorInfo in data array"
+                if data is None
+                else f"error.data must be an array, got {type(data).__name__}"
             ]
         )
         record(
@@ -105,6 +104,7 @@ class TestJsonRpcErrorInfo:
 
         data = body["error"].get("data")
         if not isinstance(data, list):
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
             pytest.skip("error.data is not an array")
 
         valid = find_error_info(data) is not None
@@ -136,6 +136,7 @@ class TestJsonRpcErrorInfo:
 
         data = body["error"].get("data")
         if not isinstance(data, list):
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
             pytest.skip("error.data is not an array")
 
         result = validate_error_info(data)
@@ -161,6 +162,7 @@ class TestJsonRpcErrorInfo:
 
         data = body["error"].get("data")
         if not isinstance(data, list):
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
             pytest.skip("error.data is not an array")
 
         result = validate_error_info(data, expected_reason=TASK_NOT_FOUND_ERROR.reason)

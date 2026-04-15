@@ -122,8 +122,10 @@ class JsonRpcClient(BaseTransportClient):
     def _call_streaming(self, method: str, params: dict) -> StreamingResponse:
         """Make a JSON-RPC 2.0 streaming call and return a StreamingResponse.
 
-        Uses httpx streaming so that SSE events are yielded incrementally
-        as they arrive, rather than blocking until the full body is read.
+        If the server responds with ``text/event-stream``, events are yielded
+        incrementally via SSE.  If the server responds with a plain JSON body
+        (e.g. an immediate error before opening a stream), the body is parsed
+        as a JSON-RPC response and ``success`` is set accordingly.
         """
         payload = {
             "jsonrpc": "2.0",
@@ -142,6 +144,22 @@ class JsonRpcClient(BaseTransportClient):
                 },
             )
             response = self._client.send(request, stream=True)
+            content_type = response.headers.get("content-type", "")
+            if "text/event-stream" not in content_type:
+                # Server returned a plain JSON-RPC response (e.g. an immediate error)
+                response.read()
+                try:
+                    body = response.json()
+                except Exception:
+                    body = response.text
+                return JsonRpcStreamingResponse(
+                    transport=self.transport,
+                    success=isinstance(body, dict) and "error" not in body,
+                    raw_response=body,
+                    events=iter([]),
+                    headers=dict(response.headers),
+                    status_code=response.status_code,
+                )
             return JsonRpcStreamingResponse(
                 transport=self.transport,
                 success=True,
