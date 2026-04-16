@@ -142,6 +142,21 @@ class JsonRpcClient(BaseTransportClient):
                 },
             )
             response = self._client.send(request, stream=True)
+            # If the server responded with JSON instead of SSE (e.g. an immediate
+            # JSON-RPC error before any stream is opened), treat it as a regular
+            # non-streaming response so validators can inspect the error code.
+            content_type = response.headers.get("content-type", "")
+            if "text/event-stream" not in content_type:
+                response.read()
+                body = response.json()
+                return JsonRpcStreamingResponse(
+                    transport=self.transport,
+                    success="error" not in body,
+                    raw_response=body,
+                    events=iter([]),
+                    headers=dict(response.headers),
+                    status_code=response.status_code,
+                )
             return JsonRpcStreamingResponse(
                 transport=self.transport,
                 success=True,

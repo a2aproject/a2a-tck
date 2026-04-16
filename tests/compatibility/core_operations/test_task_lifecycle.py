@@ -449,7 +449,8 @@ class TestSubscribeLifecycle:
         if sub_response.success:
             # Some servers may return success but deliver an error on iteration
             try:
-                collect_events_with_timeout(sub_response.events)[0]
+                events, _ = collect_events_with_timeout(sub_response.events)
+                _ = events[0]  # raises IndexError if no events were received
                 errors.append(
                     "SubscribeToTask on a terminal task should return an error, "
                     "but succeeded"

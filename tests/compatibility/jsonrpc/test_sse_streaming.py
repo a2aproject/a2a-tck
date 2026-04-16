@@ -188,10 +188,12 @@ class TestSseSubscribeToTask:
         response = client.subscribe_to_task(id=tck_id("nonexistent-subscribe-001"))
 
         # The server may return a normal JSON-RPC error (not SSE) for
-        # non-existent tasks. Check the raw httpx response.
+        # non-existent tasks. Check the raw response — may be an httpx.Response
+        # or an already-parsed dict (when the client detected a non-SSE reply).
         body: dict | None = None
         with contextlib.suppress(Exception):
-            body = response.raw_response.json()
+            raw = response.raw_response
+            body = raw if isinstance(raw, dict) else raw.json()
 
         if body and "error" in body:
             code = body["error"].get("code")
