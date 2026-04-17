@@ -7,6 +7,8 @@ Requirements tested:
     CORE-HIST-002 — History length does not exceed requested historyLength
     CORE-HIST-003 — historyLength=0 on SendMessage omits history
     CORE-HIST-004 — Agents may persist messages in task history
+    CORE-HIST-005 — History messages are in chronological order
+    CORE-HIST-006 — History content matches exchanged messages
 """
 
 from __future__ import annotations
@@ -19,7 +21,12 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tck.validators.payload import extract_history
-from tests.compatibility._task_helpers import create_multiturn_task, create_working_task
+from tests.compatibility._task_helpers import (
+    HISTORY_MESSAGES,
+    create_multiturn_task,
+    create_multiturn_task_with_history,
+    create_working_task,
+)
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
 from tests.compatibility.markers import may, must, should
 
@@ -36,6 +43,8 @@ CORE_HIST_001 = get_requirement_by_id("CORE-HIST-001")
 CORE_HIST_002 = get_requirement_by_id("CORE-HIST-002")
 CORE_HIST_003 = get_requirement_by_id("CORE-HIST-003")
 CORE_HIST_004 = get_requirement_by_id("CORE-HIST-004")
+CORE_HIST_005 = get_requirement_by_id("CORE-HIST-005")
+CORE_HIST_006 = get_requirement_by_id("CORE-HIST-006")
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +204,123 @@ class TestHistoryPersistence:
                     "GetTask with historyLength=10 returned no history; "
                     "agent does not persist messages in task history"
                 )
+
+        passed = not errors
+        record(compatibility_collector, req, transport, passed=passed, errors=errors)
+        if errors:
+            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+
+
+# ---------------------------------------------------------------------------
+# History ordering and content tests
+# ---------------------------------------------------------------------------
+
+
+_MIN_HISTORY_FOR_ORDERING = 2
+
+
+def _extract_history_texts(history: list, transport: str) -> list[str]:
+    """Extract text content from history messages across transports."""
+    from tck.validators.payload import get_part_text
+
+    texts: list[str] = []
+    for msg in history:
+        if transport == "grpc":
+            for part in msg.parts:
+                text = get_part_text(part, transport)
+                if text:
+                    texts.append(text)
+        else:
+            for part in msg.get("parts", []):
+                text = get_part_text(part, transport)
+                if text:
+                    texts.append(text)
+    return texts
+
+
+@should
+@pytest.mark.parametrize("transport", ALL_TRANSPORTS)
+class TestHistoryOrdering:
+    """Tests for history message ordering."""
+
+    def test_history_messages_in_chronological_order(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """CORE-HIST-005: History messages should be in chronological order."""
+        req = CORE_HIST_005
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+        info = create_multiturn_task_with_history(client)
+
+        response = client.get_task(id=info.task_id, history_length=10)
+
+        errors: list[str] = []
+        if not response.success:
+            errors.append(f"GetTask failed: {response.error}")
+        else:
+            history = extract_history(response, transport)
+            if len(history) < _MIN_HISTORY_FOR_ORDERING:
+                errors.append(
+                    f"Need at least 2 history messages to verify ordering, "
+                    f"got {len(history)}"
+                )
+            else:
+                texts = _extract_history_texts(history, transport)
+                found = [t for t in texts if t in HISTORY_MESSAGES]
+                if len(found) < _MIN_HISTORY_FOR_ORDERING:
+                    errors.append(
+                        f"Could not find enough known messages in history "
+                        f"to verify ordering; found texts: {texts}"
+                    )
+                elif found != HISTORY_MESSAGES:
+                    errors.append(
+                        f"History messages not in chronological order: "
+                        f"expected {HISTORY_MESSAGES}, got {found}"
+                    )
+
+        passed = not errors
+        record(compatibility_collector, req, transport, passed=passed, errors=errors)
+        if errors:
+            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+
+
+@should
+@pytest.mark.parametrize("transport", ALL_TRANSPORTS)
+class TestHistoryContent:
+    """Tests for history message content fidelity."""
+
+    def test_history_content_matches_sent_messages(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """CORE-HIST-006: History content should match exchanged messages."""
+        req = CORE_HIST_006
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+        info = create_multiturn_task_with_history(client)
+
+        response = client.get_task(id=info.task_id, history_length=10)
+
+        errors: list[str] = []
+        if not response.success:
+            errors.append(f"GetTask failed: {response.error}")
+        else:
+            history = extract_history(response, transport)
+            if not history:
+                errors.append(
+                    "GetTask returned no history; cannot verify content"
+                )
+            else:
+                texts = _extract_history_texts(history, transport)
+                for expected_text in HISTORY_MESSAGES:
+                    if expected_text not in texts:
+                        errors.append(
+                            f"Expected message {expected_text!r} not found "
+                            f"in history; got: {texts}"
+                        )
 
         passed = not errors
         record(compatibility_collector, req, transport, passed=passed, errors=errors)

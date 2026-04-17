@@ -753,4 +753,39 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         spec_url=f"{SPEC_BASE}324-history-length-semantics",
         tags=[CORE, GET_TASK, HISTORY, MULTI_OPERATION],
     ),
+    RequirementSpec(
+        id="CORE-HIST-005",
+        section="3.2.4",
+        title="History messages are in chronological order",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "Task history SHOULD contain Messages in the order they were "
+            "exchanged during task execution (chronological order)."
+        ),
+        operation=OperationType.GET_TASK,
+        binding=GET_TASK_BINDING,
+        proto_request_type="GetTaskRequest",
+        proto_response_type="Task",
+        expected_behavior="History messages ordered chronologically",
+        spec_url=f"{SPEC_BASE}324-history-length-semantics",
+        tags=[CORE, GET_TASK, HISTORY, MULTI_OPERATION],
+    ),
+    RequirementSpec(
+        id="CORE-HIST-006",
+        section="3.2.4",
+        title="History content matches exchanged messages",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "When messages are persisted in task history, the content "
+            "of each history entry SHOULD match the message that was "
+            "originally exchanged."
+        ),
+        operation=OperationType.GET_TASK,
+        binding=GET_TASK_BINDING,
+        proto_request_type="GetTaskRequest",
+        proto_response_type="Task",
+        expected_behavior="History message content matches original messages",
+        spec_url=f"{SPEC_BASE}324-history-length-semantics",
+        tags=[CORE, GET_TASK, HISTORY, MULTI_OPERATION],
+    ),
 ]
