@@ -17,7 +17,8 @@ Feature: Core Operations
   # Used by: CORE-SEND-001, CORE-SEND-002 (setup), CORE-EXECUTION-MODE-001,
   # CORE-EXECUTION-MODE-002, CORE-MULTI-001/001a/002/002a/003,
   # CORE-GET-001 (setup), CORE-CANCEL-002 (setup), CORE-MULTI-005/006 (setup),
-  # STREAM-SUB-002/003 (setup).
+  # STREAM-SUB-002/003 (setup),
+  # CORE-HIST-001/002/003/004 (setup — history tests use completed task).
   Scenario: Complete the task
     When a message is received with prefix "tck-complete-task"
     Then complete the task with the message "Hello from TCK"

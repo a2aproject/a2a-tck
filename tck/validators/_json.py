@@ -35,6 +35,26 @@ def extract_message(result: dict[str, Any]) -> Any | None:
     return result.get("message")
 
 
+def extract_history(result: dict[str, Any]) -> list[Any]:
+    """Extract history messages from an unwrapped response dict."""
+    task = result.get("task", result)
+    if isinstance(task, dict):
+        return task.get("history", [])
+    return []
+
+
+# ---------------------------------------------------------------------------
+# Message-level extractors
+# ---------------------------------------------------------------------------
+
+
+def get_message_parts(message: Any) -> list[Any]:
+    """Extract parts from a JSON message dict."""
+    if isinstance(message, dict):
+        return message.get("parts", [])
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Part-level extractors
 # ---------------------------------------------------------------------------

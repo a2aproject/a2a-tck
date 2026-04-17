@@ -32,6 +32,7 @@ from tck.requirements.tags import (
     EXECUTION_MODE,
     EXTENSION,
     GET_TASK,
+    HISTORY,
     LIST_TASKS,
     MULTI_OPERATION,
     MULTI_TURN,
@@ -681,5 +682,110 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         spec_url=f"{SPEC_BASE}343-multi-turn-conversation-patterns",
         tags=[CORE, MULTI_TURN, ERROR, MULTI_OPERATION],
 
+    ),
+    # --- Task History (Section 3.2.4) ---
+    RequirementSpec(
+        id="CORE-HIST-001",
+        section="3.2.4",
+        title="historyLength=0 omits history from response",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "When historyLength is set to 0, no history should be returned; "
+            "the history field SHOULD be omitted."
+        ),
+        operation=OperationType.GET_TASK,
+        binding=GET_TASK_BINDING,
+        proto_request_type="GetTaskRequest",
+        proto_response_type="Task",
+        expected_behavior="Task returned with no history field or empty history",
+        spec_url=f"{SPEC_BASE}324-history-length-semantics",
+        tags=[CORE, GET_TASK, HISTORY, MULTI_OPERATION],
+    ),
+    RequirementSpec(
+        id="CORE-HIST-002",
+        section="3.2.4",
+        title="History length does not exceed requested historyLength",
+        level=RequirementLevel.MUST,
+        description=(
+            "The server MUST NOT return more messages than the provided "
+            "historyLength value."
+        ),
+        operation=OperationType.GET_TASK,
+        binding=GET_TASK_BINDING,
+        proto_request_type="GetTaskRequest",
+        proto_response_type="Task",
+        expected_behavior="History message count is at most historyLength",
+        spec_url=f"{SPEC_BASE}324-history-length-semantics",
+        tags=[CORE, GET_TASK, HISTORY, MULTI_OPERATION],
+    ),
+    RequirementSpec(
+        id="CORE-HIST-003",
+        section="3.2.4",
+        title="historyLength=0 on SendMessage omits history from response",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "When historyLength is set to 0 in SendMessageConfiguration, "
+            "no history should be returned; the history field SHOULD be omitted."
+        ),
+        operation=OperationType.SEND_MESSAGE,
+        binding=SEND_MESSAGE_BINDING,
+        proto_request_type="SendMessageRequest",
+        proto_response_type="SendMessageResponse",
+        expected_behavior="Task returned with no history field or empty history",
+        spec_url=f"{SPEC_BASE}324-history-length-semantics",
+        tags=[CORE, SEND_MESSAGE, HISTORY, MULTI_OPERATION],
+    ),
+    RequirementSpec(
+        id="CORE-HIST-004",
+        section="3.2.4",
+        title="Agents may persist messages in task history",
+        level=RequirementLevel.MAY,
+        description=(
+            "Agents MAY choose to persist all Messages that contain important "
+            "information in the Task history to ensure clients can retrieve "
+            "it later."
+        ),
+        operation=OperationType.GET_TASK,
+        binding=GET_TASK_BINDING,
+        proto_request_type="GetTaskRequest",
+        proto_response_type="Task",
+        expected_behavior="Task history contains persisted messages",
+        spec_url=f"{SPEC_BASE}324-history-length-semantics",
+        tags=[CORE, GET_TASK, HISTORY, MULTI_OPERATION],
+    ),
+    RequirementSpec(
+        id="CORE-HIST-005",
+        section="3.2.4",
+        title="History messages are in chronological order",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "Task history SHOULD contain Messages in the order they were "
+            "exchanged during task execution (chronological order)."
+        ),
+        operation=OperationType.GET_TASK,
+        binding=GET_TASK_BINDING,
+        proto_request_type="GetTaskRequest",
+        proto_response_type="Task",
+        expected_behavior="History messages ordered chronologically",
+        spec_url=f"{SPEC_BASE}324-history-length-semantics",
+        tags=[CORE, GET_TASK, HISTORY, MULTI_OPERATION],
+    ),
+    RequirementSpec(
+        id="CORE-HIST-006",
+        section="3.2.4",
+        title="History content matches exchanged messages",
+        level=RequirementLevel.SHOULD,
+        description=(
+            "When messages are persisted in task history, the content "
+            "of each history entry SHOULD match the message that was "
+            "originally exchanged."
+        ),
+        operation=OperationType.GET_TASK,
+        binding=GET_TASK_BINDING,
+        proto_request_type="GetTaskRequest",
+        proto_response_type="Task",
+        expected_behavior="History message content matches original messages",
+        spec_url=f"{SPEC_BASE}324-history-length-semantics",
+        tags=[CORE, GET_TASK, HISTORY, MULTI_OPERATION],
     ),
 ]

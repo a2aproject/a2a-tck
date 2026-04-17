@@ -102,3 +102,86 @@ def _send_and_validate(
         context_id=response.context_id,
         transport=response.transport,
     )
+
+
+def create_multiturn_task(client: BaseTransportClient) -> TaskInfo:
+    """Create a task with multiple message exchanges to populate history.
+
+    First sends a message that puts the task in ``input_required`` state,
+    then sends a follow-up that completes the task.  The resulting task
+    should have at least one message in its history.
+
+    Calls ``pytest.skip`` if any step fails or the task does not reach
+    the expected state.
+    """
+    info = create_working_task(client)
+
+    followup: dict[str, Any] = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK follow-up for history"}],
+        "messageId": tck_id("complete-task"),
+        "taskId": info.task_id,
+    }
+    response = client.send_message(message=followup)
+    if not response.success:
+        pytest.skip(f"Follow-up send_message failed: {response.error}")
+
+    errors = validate_task_state(response, response.transport, TASK_STATE_COMPLETED)
+    if errors:
+        pytest.skip(errors[0])
+
+    return TaskInfo(
+        task_id=info.task_id,
+        context_id=info.context_id,
+        transport=response.transport,
+    )
+
+
+HISTORY_MESSAGES = ["TCK history message 1", "TCK history message 2"]
+
+
+def create_multiturn_task_with_history(
+    client: BaseTransportClient,
+) -> TaskInfo:
+    """Create a task with multiple follow-up messages for history verification.
+
+    Sends an initial message (``input_required``), then two follow-up
+    messages with known text (see :data:`HISTORY_MESSAGES`), then a
+    final message that completes the task.  The resulting task should
+    have at least two user messages in its history whose text and
+    ordering can be verified.
+
+    Calls ``pytest.skip`` if any step fails.
+    """
+    info = create_working_task(client)
+
+    for text in HISTORY_MESSAGES:
+        msg: dict[str, Any] = {
+            "role": "ROLE_USER",
+            "parts": [{"text": text}],
+            "messageId": tck_id("input-required"),
+            "taskId": info.task_id,
+        }
+        response = client.send_message(message=msg)
+        if not response.success:
+            pytest.skip(f"Follow-up send_message failed: {response.error}")
+
+    complete_msg: dict[str, Any] = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK complete after history"}],
+        "messageId": tck_id("complete-task"),
+        "taskId": info.task_id,
+    }
+    response = client.send_message(message=complete_msg)
+    if not response.success:
+        pytest.skip(f"Completion send_message failed: {response.error}")
+
+    errors = validate_task_state(response, response.transport, TASK_STATE_COMPLETED)
+    if errors:
+        pytest.skip(errors[0])
+
+    return TaskInfo(
+        task_id=info.task_id,
+        context_id=info.context_id,
+        transport=response.transport,
+    )
