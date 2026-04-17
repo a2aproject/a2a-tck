@@ -38,6 +38,10 @@ def extract_message(response: Any) -> Any | None:
     """Extract a Message payload from an HTTP+JSON SendMessageResponse."""
     return _json.extract_message(_unwrap(response))
 
+def extract_history(response: Any) -> list[Any]:
+    """Extract history messages from an HTTP+JSON response."""
+    return _json.extract_history(_unwrap(response))
+
 get_part_type = _json.get_part_type
 get_part_text = _json.get_part_text
 get_part_filename = _json.get_part_filename

@@ -41,6 +41,10 @@ def extract_message(response: Any) -> Any | None:
     """Extract a Message payload from a JSON-RPC SendMessageResponse."""
     return _json.extract_message(_unwrap_result(response))
 
+def extract_history(response: Any) -> list[Any]:
+    """Extract history messages from a JSON-RPC response."""
+    return _json.extract_history(_unwrap_result(response))
+
 get_part_type = _json.get_part_type
 get_part_text = _json.get_part_text
 get_part_filename = _json.get_part_filename

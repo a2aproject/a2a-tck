@@ -125,6 +125,12 @@ def extract_message(response: Any, transport: str) -> Any | None:
     return mod.extract_message(response) if mod else None
 
 
+def extract_history(response: Any, transport: str) -> list[Any]:
+    """Extract history messages from a response."""
+    mod = _TRANSPORT_MODULES.get(transport)
+    return mod.extract_history(response) if mod else []
+
+
 def get_part_type(part: Any, transport: str) -> str | None:
     """Determine which oneof content variant is set on a Part."""
     mod = _TRANSPORT_MODULES.get(transport)

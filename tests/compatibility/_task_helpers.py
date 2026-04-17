@@ -102,3 +102,36 @@ def _send_and_validate(
         context_id=response.context_id,
         transport=response.transport,
     )
+
+
+def create_multiturn_task(client: BaseTransportClient) -> TaskInfo:
+    """Create a task with multiple message exchanges to populate history.
+
+    First sends a message that puts the task in ``input_required`` state,
+    then sends a follow-up that completes the task.  The resulting task
+    should have at least one message in its history.
+
+    Calls ``pytest.skip`` if any step fails or the task does not reach
+    the expected state.
+    """
+    info = create_working_task(client)
+
+    followup: dict[str, Any] = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK follow-up for history"}],
+        "messageId": tck_id("complete-task"),
+        "taskId": info.task_id,
+    }
+    response = client.send_message(message=followup)
+    if not response.success:
+        pytest.skip(f"Follow-up send_message failed: {response.error}")
+
+    errors = validate_task_state(response, response.transport, TASK_STATE_COMPLETED)
+    if errors:
+        pytest.skip(errors[0])
+
+    return TaskInfo(
+        task_id=info.task_id,
+        context_id=info.context_id,
+        transport=response.transport,
+    )
