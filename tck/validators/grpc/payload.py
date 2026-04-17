@@ -36,6 +36,27 @@ def extract_message(response: Any) -> Any | None:
     return None
 
 
+def extract_history(response: Any) -> list[Any]:
+    """Extract history messages from a gRPC response."""
+    msg = response.raw_response
+    # SendMessageResponse has a "payload" oneof wrapping the Task
+    try:
+        payload = msg.WhichOneof("payload")
+        if payload == "task":
+            return list(msg.task.history)
+    except (ValueError, AttributeError):
+        pass
+    # Task proto returned directly (GetTask, CancelTask)
+    if hasattr(msg, "history"):
+        return list(msg.history)
+    return []
+
+
+def get_message_parts(message: Any) -> list[Any]:
+    """Extract parts from a gRPC Message proto."""
+    return list(message.parts) if hasattr(message, "parts") else []
+
+
 def get_part_type(part: Any) -> str | None:
     """Determine which oneof content variant is set on a Part."""
     if hasattr(part, "WhichOneof"):
