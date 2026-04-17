@@ -44,6 +44,18 @@ def extract_history(result: dict[str, Any]) -> list[Any]:
 
 
 # ---------------------------------------------------------------------------
+# Message-level extractors
+# ---------------------------------------------------------------------------
+
+
+def get_message_parts(message: Any) -> list[Any]:
+    """Extract parts from a JSON message dict."""
+    if isinstance(message, dict):
+        return message.get("parts", [])
+    return []
+
+
+# ---------------------------------------------------------------------------
 # Part-level extractors
 # ---------------------------------------------------------------------------
 

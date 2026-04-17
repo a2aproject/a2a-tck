@@ -20,7 +20,7 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tck.validators.payload import extract_history
+from tck.validators.payload import extract_history, get_message_parts, get_part_text
 from tests.compatibility._task_helpers import (
     HISTORY_MESSAGES,
     create_multiturn_task,
@@ -221,20 +221,12 @@ _MIN_HISTORY_FOR_ORDERING = 2
 
 def _extract_history_texts(history: list, transport: str) -> list[str]:
     """Extract text content from history messages across transports."""
-    from tck.validators.payload import get_part_text
-
     texts: list[str] = []
     for msg in history:
-        if transport == "grpc":
-            for part in msg.parts:
-                text = get_part_text(part, transport)
-                if text:
-                    texts.append(text)
-        else:
-            for part in msg.get("parts", []):
-                text = get_part_text(part, transport)
-                if text:
-                    texts.append(text)
+        for part in get_message_parts(msg, transport):
+            text = get_part_text(part, transport)
+            if text:
+                texts.append(text)
     return texts
 
 
