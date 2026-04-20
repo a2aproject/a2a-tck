@@ -260,11 +260,23 @@ def sut_client(transport_manager, request):
         client = transport_manager.get_transport_client()
         if client is None:
             pytest.fail("No transport client available. Check SUT transport configuration.")
-
-        return client
-
     except Exception as e:
         pytest.fail(f"Failed to create transport client: {e}")
+
+    yield client
+
+    # Teardown: close the client and evict from cache so the next test gets a fresh one.
+    # This is critical for gRPC: channels accumulate state across tests and a stale channel
+    # left in TRANSIENT_FAILURE will cause subsequent tests to see UNAVAILABLE errors.
+    try:
+        if hasattr(client, "close"):
+            client.close()
+    except Exception as e:
+        logger.debug(f"Error closing transport client: {e}")
+    try:
+        transport_manager._client_cache.pop(client.transport_type, None)
+    except Exception as e:
+        logger.debug(f"Error removing client from cache: {e}")
 
 
 @pytest.fixture(scope="function")

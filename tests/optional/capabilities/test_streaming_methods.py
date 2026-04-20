@@ -114,6 +114,11 @@ async def test_message_stream_basic(sut_client, agent_card_data):
 
         except asyncio.TimeoutError:
             logger.warning("Timeout while processing streaming events")
+        finally:
+            try:
+                await stream.aclose()
+            except Exception:
+                pass
 
         # Validate the collected events
         assert len(events) > 0, "Streaming capability declared but no events received from stream"
@@ -172,10 +177,11 @@ async def test_message_stream_invalid_params(sut_client, agent_card_data):
     # Test with invalid params structure (missing required fields)
     invalid_message_params = {"invalid": "params"}  # Missing required message structure
 
+    stream = None
     try:
         # This should fail at the transport level or return an error stream
         stream = transport_send_streaming_message(sut_client, invalid_message_params)
-        
+
         # If we get a stream, check if it returns error events
         events = []
         try:
@@ -187,13 +193,13 @@ async def test_message_stream_invalid_params(sut_client, agent_card_data):
         except Exception:
             # Expected - invalid params should cause an error
             pass
-        
+
         # If we got events, they should indicate error
         if events:
             # Check if any event indicates an error
             has_error = any(
                 isinstance(event, dict) and (
-                    "error" in event or 
+                    "error" in event or
                     ("status" in event and event.get("status", {}).get("state") == "failed")
                 )
                 for event in events
@@ -205,6 +211,12 @@ async def test_message_stream_invalid_params(sut_client, agent_card_data):
     except Exception as e:
         # Other exceptions might indicate proper error handling
         logger.info(f"Invalid params properly rejected with: {e}")
+    finally:
+        if stream is not None:
+            try:
+                await stream.aclose()
+            except Exception:
+                pass
 
 
 @optional_capability
@@ -276,20 +288,28 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
                 stream_error = e
                 logger.error(f"Error in initial stream processing: {e}")
                 task_id_received.set()  # Signal completion even on error
+            finally:
+                # Ensure the gRPC stream is closed within this task's context so that
+                # channel.close() completes before the event loop tears down.
+                try:
+                    await stream.aclose()
+                except Exception:
+                    pass
 
         # Background task to handle resubscription once task ID is available
         async def process_resubscribe():
             nonlocal resubscribe_events, resubscribe_error
+            resubscribe_stream = None
             try:
                 # Wait for task ID to be available
                 await task_id_received.wait()
-                
+
                 if task_id is None:
                     logger.warning("No task ID available for resubscribe")
                     return
 
                 logger.info(f"Starting resubscribe for task ID: {task_id}")
-                
+
                 # Use transport-agnostic task resubscription
                 resubscribe_stream = transport_resubscribe_task(sut_client, task_id)
 
@@ -317,10 +337,16 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
                     # Collect a few events then break
                     if len(resubscribe_events) >= 3:
                         break
-                        
+
             except Exception as e:
                 resubscribe_error = e
                 logger.error(f"Error in resubscribe processing: {e}")
+            finally:
+                if resubscribe_stream is not None:
+                    try:
+                        await resubscribe_stream.aclose()
+                    except Exception:
+                        pass
 
         # Start both background tasks
         initial_stream_task = asyncio.create_task(process_initial_stream())
@@ -336,6 +362,12 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
             # Cancel tasks if they're still running
             initial_stream_task.cancel()
             resubscribe_task.cancel()
+            # Wait briefly for cancellation to propagate so the finally blocks above
+            # get a chance to close the gRPC streams before we continue.
+            try:
+                await asyncio.gather(initial_stream_task, resubscribe_task, return_exceptions=True)
+            except Exception:
+                pass
             
         # Check for errors from the background tasks
         if stream_error:
@@ -446,12 +478,12 @@ async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
                     if len(events) >= 5:
                         logger.info("Collected 5 events, ending stream processing.")
                         break
-                
+
                 return error_event_found
 
             # Add timeout to prevent hanging on bad streams
             error_found = await asyncio.wait_for(process_stream(), timeout=TIMEOUTS["async_wait_for"])
-                    
+
         except asyncio.TimeoutError:
             logger.warning("Timeout while processing resubscribe stream for nonexistent task - this may be expected")
         except RuntimeError as e:
@@ -461,6 +493,17 @@ async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
                 error_found = True
             else:
                 raise
+        finally:
+            # Explicitly close the async generator so the underlying gRPC channel is
+            # torn down within the current event loop. Without this, a timeout leaves
+            # the generator suspended; its cleanup is deferred to shutdown_asyncgens()
+            # which runs during event-loop teardown — at that point channel.close() is
+            # interrupted and the server connection is left half-open, causing the next
+            # test's gRPC call to receive UNAVAILABLE / "Socket closed".
+            try:
+                await resubscribe_stream.aclose()
+            except Exception:
+                pass
 
         # Should have received an error or failed status for non-existent task
         if events and not error_found:
@@ -581,9 +624,8 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
         }
     }
 
+    stream = transport_send_streaming_message(sut_client, message_params)
     try:
-        # Use transport-agnostic streaming message sending
-        stream = transport_send_streaming_message(sut_client, message_params)
         events_processed = 0
 
         async for event in stream:
@@ -601,7 +643,7 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
                 assert event["kind"] in valid_kinds, (
                     f"Event kind must be one of {valid_kinds}, got: {event.get('kind')}"
                 )
-                
+
                 if event["kind"] == "message":
                     assert "role" in event, "Message events must have role field"
                     assert "parts" in event, "Message events must have parts field"
@@ -623,7 +665,7 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
                 break
 
         assert events_processed > 0, "Streaming should produce at least one event"
-        
+
     except Exception as e:
         error_msg = str(e).lower()
         if "501" in error_msg or "not implemented" in error_msg:
@@ -633,6 +675,11 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
             )
         else:
             raise
+    finally:
+        try:
+            await stream.aclose()
+        except Exception:
+            pass
 
 
 #@optional_capability
