@@ -1,7 +1,7 @@
 ---
 id: TASK-23.3
 title: 'Phase 3: Generate and validate Java SUT'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-12 15:14'
 updated_date: '2026-03-12 15:19'
@@ -23,9 +23,9 @@ Run the generator to produce sut/java/, build the Quarkus project, and run the f
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 python codegen/generator.py --output sut/java/ produces a complete Quarkus project
-- [ ] #2 cd sut/java && mvn package builds successfully
-- [ ] #3 Generated SUT starts and serves agent card at /.well-known/agent-card.json
-- [ ] #4 uv run ./run_tck.py --sut-host http://localhost:9999 passes all applicable tests
-- [ ] #5 All three transports work (JSON-RPC, gRPC, HTTP+JSON)
+- [x] #1 python codegen/generator.py --output sut/java/ produces a complete Quarkus project
+- [x] #2 cd sut/java && mvn package builds successfully
+- [x] #3 Generated SUT starts and serves agent card at /.well-known/agent-card.json
+- [x] #4 uv run ./run_tck.py --sut-host http://localhost:9999 passes all applicable tests
+- [x] #5 All three transports work (JSON-RPC, gRPC, HTTP+JSON)
 <!-- AC:END -->
