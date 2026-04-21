@@ -381,12 +381,7 @@ class GRPCClient(BaseTransportClient):
 
     # A2A Protocol Method Implementations - Real Network Calls
 
-    def send_message(
-        self,
-        message: Dict[str, Any],
-        configuration: Optional[Dict[str, Any]] = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Send message via gRPC and wait for completion.
 
@@ -394,8 +389,7 @@ class GRPCClient(BaseTransportClient):
 
         Args:
             message: A2A message in JSON format
-            configuration: Optional SendMessageConfiguration object
-            extra_headers: Additional headers (not used in gRPC)
+            **kwargs: Additional configuration options
 
         Returns:
             Dict containing task or message response from SUT
@@ -404,11 +398,63 @@ class GRPCClient(BaseTransportClient):
             TransportError: If gRPC call fails or times out
         """
         try:
-            msg_id = message.get("messageId") or message.get("message_id") or "unknown"
+            # Accept both A2A and internal naming - don't provide defaults for required fields
+            msg_id = message.get("messageId") or message.get("message_id")
+            ctx_id = message.get("contextId") or message.get("context_id")
+
+            # Check if required fields are missing to allow SUT validation
+            if not msg_id:
+                msg_id = ""  # Let SUT handle missing messageId validation
+            if not ctx_id:
+                ctx_id = ""  # Let SUT handle missing contextId validation
             logger.debug(f"Sending message via gRPC: {msg_id}")
 
-            # Build protobuf request using helper method
-            request = self._json_to_send_message_request(message, configuration, default_blocking=True)
+            # Build protobuf request
+            self._load_static_stubs()
+            pb = self._pb
+            # Build parts - handle different part types appropriately
+            parts = []
+            for p in message.get("parts", []):
+                if p.get("kind") == "text":
+                    parts.append(pb.Part(text=p.get("text", "")))
+                elif p.get("kind") == "data" and "data" in p:
+                    # Handle DataPart - convert JSON data to protobuf Struct
+                    from google.protobuf.struct_pb2 import Struct
+
+                    struct_data = Struct()
+                    struct_data.update(p["data"])
+                    data_part = pb.DataPart(data=struct_data)
+                    parts.append(pb.Part(data=data_part))
+                elif p.get("kind") == "file" and ("file" in p or "fileUri" in p or "fileBytes" in p):
+                    # Handle FilePart
+                    file_part = pb.FilePart()
+                    if "fileUri" in p:
+                        file_part.file_with_uri = p["fileUri"]
+                    elif "fileBytes" in p:
+                        file_part.file_with_bytes = p["fileBytes"]
+                    if "mimeType" in p:
+                        file_part.mime_type = p["mimeType"]
+                    parts.append(pb.Part(file=file_part))
+                elif p.get("type") or p.get("kind"):
+                    # Unsupported part type - create empty Part to let SUT handle validation
+                    parts.append(pb.Part())
+                else:
+                    # Empty or unrecognized part structure
+                    parts.append(pb.Part())
+            role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
+            # Don't provide default role - let SUT validate required fields
+            user_role = message.get("role")
+            pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
+
+            pb_msg = pb.Message(
+                message_id=msg_id,
+                context_id=ctx_id,
+                task_id=message.get("taskId", ""),
+                role=pb_role,
+                parts=parts,
+            )
+            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=True)
+            request = pb.SendMessageRequest(request=pb_msg, configuration=config)
 
             # Real gRPC call
             response = self.stub.SendMessage(request, timeout=self.timeout)
@@ -448,10 +494,7 @@ class GRPCClient(BaseTransportClient):
             raise TransportError(error_msg, TransportType.GRPC)
 
     async def send_streaming_message(
-        self,
-        message: Dict[str, Any],
-        configuration: Optional[Dict[str, Any]] = None,
-        extra_headers: Optional[Dict[str, str]] = None
+        self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
     ) -> AsyncIterator[Dict[str, Any]]:
         """
         Send message via gRPC and stream responses.
@@ -460,8 +503,7 @@ class GRPCClient(BaseTransportClient):
 
         Args:
             message: A2A message in JSON format
-            configuration: Optional SendMessageConfiguration object
-            extra_headers: Optional transport-specific headers
+            **kwargs: Additional configuration options
 
         Yields:
             Dict containing streaming task updates from SUT
@@ -471,10 +513,11 @@ class GRPCClient(BaseTransportClient):
         """
         try:
             msg_id = message.get("messageId") or message.get("message_id") or "unknown"
+            ctx_id = message.get("contextId") or message.get("context_id") or "default-context"
             logger.info(f"Starting gRPC streaming for message: {msg_id}")
 
-            # Build protobuf request using helper method
-            request = self._json_to_send_message_request(message, configuration, default_blocking=False)
+            # Build protobuf request
+            request = self._json_to_send_message_request(message, blocking=False)
 
             # Make real gRPC streaming call to live SUT
             if self.use_tls:
@@ -1123,26 +1166,20 @@ class GRPCClient(BaseTransportClient):
 
         return agent_card
 
-    def _json_to_send_message_request(
-        self,
-        message: Dict[str, Any],
-        configuration: Optional[Dict[str, Any]] = None,
-        default_blocking: bool = True
-    ):
+    def _json_to_send_message_request(self, message: Dict[str, Any], **kwargs):
         """
         Convert JSON message to SendMessageRequest protobuf.
 
         Args:
             message: A2A message in JSON format
-            configuration: Optional SendMessageConfiguration dict
-            default_blocking: Default value for blocking if not specified in configuration
+            **kwargs: Configuration options for the request
 
         Returns:
             SendMessageRequest protobuf object
         """
         self._load_static_stubs()
         pb = self._pb
-
+        
         # Accept both A2A and internal naming - don't provide defaults for required fields
         msg_id = message.get("messageId") or message.get("message_id")
         ctx_id = message.get("contextId") or message.get("context_id")
@@ -1186,7 +1223,7 @@ class GRPCClient(BaseTransportClient):
             else:
                 # Empty or unrecognized part structure
                 parts.append(pb.Part())
-
+                
         role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
         # Don't provide default role - let SUT validate required fields
         user_role = message.get("role")
@@ -1199,32 +1236,16 @@ class GRPCClient(BaseTransportClient):
             role=pb_role,
             parts=parts,
         )
-
-        # Build configuration from provided dict or use defaults
-        if configuration:
-            config_kwargs = {}
-            if "acceptedOutputModes" in configuration:
-                config_kwargs["accepted_output_modes"] = configuration["acceptedOutputModes"]
-            if "historyLength" in configuration:
-                config_kwargs["history_length"] = configuration["historyLength"]
-            if "blocking" in configuration:
-                config_kwargs["blocking"] = configuration["blocking"]
-            if "pushNotificationConfig" in configuration:
-                # Build PushNotificationConfig protobuf
-                pnc = configuration["pushNotificationConfig"]
-                push_config = pb.PushNotificationConfig(
-                    id=pnc.get("id", ""),
-                    url=pnc.get("url", ""),
-                    token=pnc.get("token", ""),
-                )
-                # Use the renamed field name from PR #482
-                config_kwargs["push_notification_config"] = push_config
-            config = pb.SendMessageConfiguration(**config_kwargs) if config_kwargs else pb.SendMessageConfiguration()
-        else:
-            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=default_blocking)
-
+        
+        # Create configuration from kwargs
+        config = pb.SendMessageConfiguration(
+            accepted_output_modes=kwargs.get("accepted_output_modes", []),
+            history_length=kwargs.get("history_length", 0),
+            blocking=kwargs.get("blocking", True)
+        )
+        
         request = pb.SendMessageRequest(request=pb_msg, configuration=config)
-
+        
         logger.debug(f"Converted JSON message to protobuf: {msg_id}")
         return request
 
