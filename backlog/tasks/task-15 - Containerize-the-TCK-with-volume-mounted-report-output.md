@@ -73,14 +73,14 @@ When SUT runs on the host:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 Container builds successfully with `docker build -f Containerfile -t a2a-tck .`
-- [x] #2 TCK runs against a SUT: `docker run --rm -v ./reports:/app/reports a2a-tck http://host.docker.internal:9999`
-- [x] #3 Reports (compatibility.html, compatibility.json, tck_report.html, junitreport.xml) appear in the mounted ./reports/ directory
-- [x] #4 Container exits with TCK exit code (0 for pass, non-zero for failures)
-- [x] #5 run_containerized_tck.sh wrapper script works with positional SUT URL and optional flags
+- [ ] #1 Container builds successfully with `docker build -f Containerfile -t a2a-tck .`
+- [ ] #2 TCK runs against a SUT: `docker run --rm -v ./reports:/app/reports a2a-tck http://host.docker.internal:9999`
+- [ ] #3 Reports (compatibility.html, compatibility.json, tck_report.html, junitreport.xml) appear in the mounted ./reports/ directory
+- [ ] #4 Container exits with TCK exit code (0 for pass, non-zero for failures)
+- [ ] #5 run_containerized_tck.sh wrapper script works with positional SUT URL and optional flags
 - [ ] #6 Env vars (TCK_TRANSPORT, TCK_LEVEL, TCK_VERBOSE, A2A_AUTH_*) are forwarded correctly
-- [x] #7 Missing SUT URL argument produces a helpful error message
-- [x] #8 Image size is reasonable (under 500MB)
+- [ ] #7 Missing SUT URL argument produces a helpful error message
+- [ ] #8 Image size is reasonable (under 500MB)
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -89,4 +89,6 @@ When SUT runs on the host:
 Multi-arch (linux/amd64, linux/arm64) to be handled at CI/push time, not in local build targets. Colima already supports both architectures via QEMU emulation.
 
 Fixed bash 3.2 compatibility issue: negative array indices (`${ARGS[-1]}`) not supported on macOS default bash. Used `LAST_INDEX=$(( ${#ARGS[@]} - 1 ))` instead.
+
+Audit (2026-04-20): Reset all acceptance criteria to unchecked — no container files (Containerfile, docker-entrypoint.sh, run_containerized_tck.sh, .dockerignore) exist in the repo. Previous checks were erroneous.
 <!-- SECTION:NOTES:END -->

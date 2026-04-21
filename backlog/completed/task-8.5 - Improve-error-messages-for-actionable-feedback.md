@@ -1,7 +1,7 @@
 ---
 id: TASK-8.5
 title: Improve error messages for actionable feedback
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-28 09:14'
 updated_date: '2026-03-12 09:09'
@@ -55,12 +55,12 @@ Suggestion: Verify error code mapping in Section 9
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Test failures include requirement ID and title
-- [ ] #2 Test failures include spec URL
-- [ ] #3 Validation errors show JSON path
-- [ ] #4 Expected vs actual values are shown
-- [ ] #5 Error messages suggest possible fixes where applicable
-- [ ] #6 Connection errors are clear about which transport failed
+- [x] #1 Test failures include requirement ID and title
+- [x] #2 Test failures include spec URL
+- [x] #3 Validation errors show JSON path
+- [x] #4 Expected vs actual values are shown
+- [x] #5 Error messages suggest possible fixes where applicable
+- [x] #6 Connection errors are clear about which transport failed
 <!-- AC:END -->
 
 ## Implementation Notes
