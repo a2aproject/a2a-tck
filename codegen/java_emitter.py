@@ -71,6 +71,7 @@ def emit_java_project(scenarios: list[Scenario], output_dir: Path) -> list[Path]
     context = {
         "handlers": handlers,
         "has_streaming": has_streaming,
+        "has_push_notifications": True,
         "package": _JAVA_PACKAGE,
         "a2a_java_sdk_version": a2a_java_sdk_version,
     }
