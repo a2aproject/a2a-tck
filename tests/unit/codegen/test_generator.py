@@ -28,6 +28,23 @@ class TestGeneratorCLI:
             / "TckAgentExecutorProducer.java"
         ).exists()
 
+    def test_generates_a2a_jakarta_project(self, tmp_path: Path) -> None:
+        """Running the generator with --target a2a-jakarta produces a Jakarta project."""
+        rc = main(["--target", "a2a-jakarta", "--output", str(tmp_path), "--scenarios", str(_SCENARIOS_DIR)])
+        assert rc == 0
+
+        assert (tmp_path / "pom.xml").exists()
+        assert (
+            tmp_path / "src" / "main" / "java"
+            / "org" / "a2aproject" / "jakarta" / "sdk" / "sut"
+            / "TckAgentExecutorProducer.java"
+        ).exists()
+        assert (
+            tmp_path / "src" / "main" / "java"
+            / "org" / "a2aproject" / "jakarta" / "sdk" / "sut"
+            / "TckApplication.java"
+        ).exists()
+
     def test_default_target_is_a2a_java(self, tmp_path: Path) -> None:
         """Default target is a2a-java when --target is omitted."""
         rc = main(["--output", str(tmp_path), "--scenarios", str(_SCENARIOS_DIR)])

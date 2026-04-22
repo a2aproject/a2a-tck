@@ -187,7 +187,7 @@ async def main() -> None:
     grpc_port = int(_get_env('GRPC_PORT', str(http_port + 1)))
 
     agent_card = AgentCard(
-        name='A2A TCK SUT',
+        name='A2A Python SDK System Under Test (SUT)',
         description='Auto-generated System Under Test for A2A TCK conformance',
         version='1.0.0',
         provider=AgentProvider(
