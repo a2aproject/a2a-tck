@@ -274,7 +274,7 @@ def sut_client(transport_manager, request):
     except Exception as e:
         logger.debug(f"Error closing transport client: {e}")
     try:
-        transport_manager._client_cache.pop(client.transport_type, None)
+        transport_manager.evict_client(client.transport_type)
     except Exception as e:
         logger.debug(f"Error removing client from cache: {e}")
 

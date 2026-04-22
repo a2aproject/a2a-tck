@@ -468,6 +468,7 @@ class GRPCClient(BaseTransportClient):
         queue: asyncio.Queue = asyncio.Queue()
         _DONE = object()
         stop = threading.Event()
+        call_ref = [None]  # Mutable container to share call reference between threads
 
         def _run_sync() -> None:
             try:
@@ -478,10 +479,10 @@ class GRPCClient(BaseTransportClient):
                 with channel:
                     stub = self._pb_grpc.A2AServiceStub(channel)
                     call = stub.SendStreamingMessage(request, timeout=self.timeout)
+                    call_ref[0] = call  # Store reference so main thread can cancel
                     try:
                         for response in call:
                             if stop.is_set():
-                                call.cancel()
                                 break
                             loop.call_soon_threadsafe(queue.put_nowait, ("ok", response))
                     except grpc.RpcError as e:
@@ -535,6 +536,12 @@ class GRPCClient(BaseTransportClient):
                     }
         finally:
             stop.set()
+            # Cancel the call immediately to unblock the thread if it's waiting for a message
+            if call_ref[0] is not None:
+                try:
+                    call_ref[0].cancel()
+                except Exception as e:
+                    logger.debug(f"Error cancelling gRPC call: {e}")
             thread.join(timeout=2.0)
             logger.debug(f"Completed gRPC streaming for message {msg_id}")
 
@@ -1164,7 +1171,7 @@ class GRPCClient(BaseTransportClient):
 
         # Build parts - handle different part types appropriately
         parts = []
-        for p in message.get("parts", []) or message.get("content", []):
+        for p in (message.get("parts") if "parts" in message else message.get("content", [])):
             if p.get("kind") == "text":
                 parts.append(pb.Part(text=p.get("text", "")))
             elif p.get("kind") == "data" and "data" in p:
