@@ -184,17 +184,21 @@ class RESTClient(BaseTransportClient):
 
             # Convert A2A JSON message to protobuf-compatible format
             protobuf_message = convert_a2a_message_to_protobuf_json(message)
-            
+
             # Prepare payload according to A2A REST specification (using protobuf format)
             payload = {"message": protobuf_message}
 
             # Add configuration options if provided
+            config = {}
             if "accepted_output_modes" in kwargs:
-                payload["accepted_output_modes"] = kwargs["accepted_output_modes"]
+                config["accepted_output_modes"] = kwargs["accepted_output_modes"]
             if "history_length" in kwargs:
-                payload["history_length"] = kwargs["history_length"]
+                config["history_length"] = kwargs["history_length"]
             if "blocking" in kwargs:
-                payload["blocking"] = kwargs["blocking"]
+                config["blocking"] = kwargs["blocking"]
+
+            if config:
+                payload["configuration"] = config
 
             # Make real HTTP request to live SUT
             response = self.client.post(url, json=payload, headers=headers)
@@ -270,15 +274,19 @@ class RESTClient(BaseTransportClient):
 
             # Convert A2A JSON message to protobuf-compatible format
             protobuf_message = convert_a2a_message_to_protobuf_json(message)
-            
+
             # Prepare payload
             payload = {"message": protobuf_message}
 
             # Add configuration options if provided
+            config = {}
             if "accepted_output_modes" in kwargs:
-                payload["accepted_output_modes"] = kwargs["accepted_output_modes"]
+                config["accepted_output_modes"] = kwargs["accepted_output_modes"]
             if "history_length" in kwargs:
-                payload["history_length"] = kwargs["history_length"]
+                config["history_length"] = kwargs["history_length"]
+
+            if config:
+                payload["configuration"] = config
 
             # Make real HTTP streaming request to live SUT
             async with self.async_client.stream("POST", url, json=payload, headers=headers) as response:

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def transport_send_message(
-    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs
 ) -> Dict[str, Any]:
     """
     Send a message using any transport client, maintaining compatibility with existing tests.
@@ -30,6 +30,7 @@ def transport_send_message(
         client: Transport client (BaseTransportClient or legacy SUTClient)
         message_params: Message parameters in A2A format
         extra_headers: Optional transport-specific headers
+        **kwargs: Additional configuration options (accepted_output_modes, history_length, blocking)
 
     Returns:
         Response from the server in JSON-RPC format for compatibility
@@ -41,7 +42,7 @@ def transport_send_message(
         logger.debug(f"Using transport-aware send_message for {client.transport_type.value}")
         message = message_params.get("message", message_params)
         try:
-            result = client.send_message(message, extra_headers)
+            result = client.send_message(message, extra_headers, **kwargs)
             # Check if result is already an error response
             if isinstance(result, dict) and "error" in result:
                 return result  # Return error response as-is
@@ -581,7 +582,7 @@ def transport_delete_push_notification_config(
 
 
 def transport_send_streaming_message(
-    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs
 ) -> Any:
     """
     Send a message with streaming response using any transport client.
@@ -590,6 +591,7 @@ def transport_send_streaming_message(
         client: Transport client (BaseTransportClient)
         message_params: Message parameters in A2A format
         extra_headers: Optional transport-specific headers
+        **kwargs: Additional configuration options (accepted_output_modes, history_length)
 
     Returns:
         Stream object that yields task updates (transport-specific type)
@@ -604,7 +606,7 @@ def transport_send_streaming_message(
     if hasattr(client, "send_streaming_message") and hasattr(client, "transport_type"):
         logger.debug(f"Using transport-aware send_streaming_message for {client.transport_type.value}")
         message = message_params.get("message", message_params)
-        return client.send_streaming_message(message, extra_headers)
+        return client.send_streaming_message(message, extra_headers, **kwargs)
     else:
         raise ValueError(f"Client {type(client)} does not support streaming message sending")
 

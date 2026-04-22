@@ -255,7 +255,7 @@ class JSONRPCClient(BaseTransportClient):
             self._logger.error(error_msg)
             raise JSONRPCError(error_msg, original_error=e)
 
-    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         """
         Send a message to the A2A server using the message/send method.
 
@@ -264,6 +264,7 @@ class JSONRPCClient(BaseTransportClient):
         Args:
             message: The message object conforming to A2A Message schema
             extra_headers: Optional HTTP headers
+            **kwargs: Additional configuration options (accepted_output_modes, history_length, blocking)
 
         Returns:
             The response from the server containing task information
@@ -274,7 +275,11 @@ class JSONRPCClient(BaseTransportClient):
         Specification Reference: A2A Protocol v0.3.0 §7.1 - Core Message Protocol
         """
         try:
-            response = self._make_jsonrpc_request(method="message/send", params={"message": message}, extra_headers=extra_headers)
+            params = {"message": message}
+            config = {k: v for k, v in kwargs.items() if k in ["accepted_output_modes", "history_length", "blocking"]}
+            if config:
+                params["configuration"] = config
+            response = self._make_jsonrpc_request(method="message/send", params=params, extra_headers=extra_headers)
             return response.get("result", {})
 
         except Exception as e:
@@ -283,7 +288,7 @@ class JSONRPCClient(BaseTransportClient):
             raise JSONRPCError(f"Failed to send message: {e}", original_error=e)
 
     async def send_streaming_message(
-        self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs
     ) -> AsyncIterator[Dict[str, Any]]:
         """
         Send a message with streaming response using message/stream method.
@@ -295,6 +300,7 @@ class JSONRPCClient(BaseTransportClient):
         Args:
             message: The message object conforming to A2A Message schema
             extra_headers: Optional HTTP headers
+            **kwargs: Additional configuration options (accepted_output_modes, history_length)
 
         Returns:
             AsyncIterator that yields task updates from the real SUT SSE stream
@@ -307,8 +313,12 @@ class JSONRPCClient(BaseTransportClient):
         try:
             # Use the new streaming method that properly handles SSE
             event_count = 0
+            params = {"message": message}
+            config = {k: v for k, v in kwargs.items() if k in ["accepted_output_modes", "history_length"]}
+            if config:
+                params["configuration"] = config
             async for event in self._make_streaming_jsonrpc_request(
-                method="message/stream", params={"message": message}, extra_headers=extra_headers
+                method="message/stream", params=params, extra_headers=extra_headers
             ):
                 # Extract result from JSON-RPC response
                 result = event.get("result")

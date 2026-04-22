@@ -379,7 +379,7 @@ class GRPCClient(BaseTransportClient):
 
     # A2A Protocol Method Implementations - Real Network Calls
 
-    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         """
         Send message via gRPC and wait for completion.
 
@@ -387,7 +387,8 @@ class GRPCClient(BaseTransportClient):
 
         Args:
             message: A2A message in JSON format
-            **kwargs: Additional configuration options
+            extra_headers: Optional transport-specific headers
+            **kwargs: Additional configuration options (accepted_output_modes, history_length, blocking)
 
         Returns:
             Dict containing task or message response from SUT
@@ -396,63 +397,11 @@ class GRPCClient(BaseTransportClient):
             TransportError: If gRPC call fails or times out
         """
         try:
-            # Accept both A2A and internal naming - don't provide defaults for required fields
-            msg_id = message.get("messageId") or message.get("message_id")
-            ctx_id = message.get("contextId") or message.get("context_id")
-
-            # Check if required fields are missing to allow SUT validation
-            if not msg_id:
-                msg_id = ""  # Let SUT handle missing messageId validation
-            if not ctx_id:
-                ctx_id = ""  # Let SUT handle missing contextId validation
+            msg_id = message.get("messageId") or message.get("message_id") or "unknown"
             logger.debug(f"Sending message via gRPC: {msg_id}")
 
-            # Build protobuf request
-            self._load_static_stubs()
-            pb = self._pb
-            # Build parts - handle different part types appropriately
-            parts = []
-            for p in message.get("parts", []) or message.get("content", []):
-                if p.get("kind") == "text":
-                    parts.append(pb.Part(text=p.get("text", "")))
-                elif p.get("kind") == "data" and "data" in p:
-                    # Handle DataPart - convert JSON data to protobuf Struct
-                    from google.protobuf.struct_pb2 import Struct
-
-                    struct_data = Struct()
-                    struct_data.update(p["data"])
-                    data_part = pb.DataPart(data=struct_data)
-                    parts.append(pb.Part(data=data_part))
-                elif p.get("kind") == "file" and ("file" in p or "fileUri" in p or "fileBytes" in p):
-                    # Handle FilePart
-                    file_part = pb.FilePart()
-                    if "fileUri" in p:
-                        file_part.file_with_uri = p["fileUri"]
-                    elif "fileBytes" in p:
-                        file_part.file_with_bytes = p["fileBytes"]
-                    if "mimeType" in p:
-                        file_part.mime_type = p["mimeType"]
-                    parts.append(pb.Part(file=file_part))
-                elif p.get("type") or p.get("kind"):
-                    # Unsupported part type - create empty Part to let SUT handle validation
-                    parts.append(pb.Part())
-                else:
-                    # Empty or unrecognized part structure
-                    parts.append(pb.Part())
-            role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
-            # Don't provide default role - let SUT validate required fields
-            user_role = message.get("role")
-            pb_role = role_map.get(user_role) if user_role else pb.ROLE_UNSPECIFIED
-
-            pb_msg = pb.Message(
-                message_id=msg_id,
-                context_id=ctx_id,
-                task_id=message.get("taskId", ""),
-                role=pb_role,
-                content=parts,
-            )
-            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=True)
-            request = pb.SendMessageRequest(request=pb_msg, configuration=config)
+            # Build protobuf request using helper method
+            request = self._json_to_send_message_request(message, **kwargs)
 
             # Real gRPC call
             response = self.stub.SendMessage(request, timeout=self.timeout)
@@ -492,7 +441,7 @@ class GRPCClient(BaseTransportClient):
             raise TransportError(error_msg, TransportType.GRPC)
 
     async def send_streaming_message(
-        self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+        self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs
     ) -> AsyncIterator[Dict[str, Any]]:
         """
         Send message via gRPC and stream responses.
@@ -512,7 +461,8 @@ class GRPCClient(BaseTransportClient):
         self._load_static_stubs()
         msg_id = message.get("messageId") or message.get("message_id") or "unknown"
         logger.info(f"Starting gRPC streaming for message: {msg_id}")
-        request = self._json_to_send_message_request(message, blocking=False)
+        # Streaming doesn't use blocking mode
+        request = self._json_to_send_message_request(message, **{**kwargs, "blocking": False})
 
         loop = asyncio.get_running_loop()
         queue: asyncio.Queue = asyncio.Queue()

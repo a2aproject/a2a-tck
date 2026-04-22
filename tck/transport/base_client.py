@@ -78,7 +78,7 @@ class BaseTransportClient(ABC):
         self._logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
     @abstractmethod
-    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         """
         Send a message to the A2A server using the message/send method.
 
@@ -88,6 +88,7 @@ class BaseTransportClient(ABC):
         Args:
             message: The message object conforming to A2A Message schema
             extra_headers: Optional transport-specific headers
+            **kwargs: Additional configuration options (accepted_output_modes, history_length, blocking)
 
         Returns:
             The response from the server containing task information
@@ -100,7 +101,7 @@ class BaseTransportClient(ABC):
         pass
 
     @abstractmethod
-    def send_streaming_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None) -> Any:
+    def send_streaming_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Any:
         """
         Send a message with streaming response using message/stream method.
 
@@ -110,6 +111,7 @@ class BaseTransportClient(ABC):
         Args:
             message: The message object conforming to A2A Message schema
             extra_headers: Optional transport-specific headers
+            **kwargs: Additional configuration options (accepted_output_modes, history_length)
 
         Returns:
             A stream object that yields task updates (transport-specific type)
