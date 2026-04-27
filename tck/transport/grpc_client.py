@@ -7,22 +7,20 @@ This client makes actual network calls to live SUTs - NO MOCKING.
 Specification Reference: A2A Protocol v0.3.0 §4.2 - gRPC Transport
 """
 
-import json
 import logging
 import os
 import sys
-import tempfile
 import importlib
-from typing import Dict, List, Optional, Any, AsyncIterator, Union
-from urllib.parse import urlparse
 import asyncio
+import threading
+from typing import Dict, List, Optional, Any, AsyncIterator
+from urllib.parse import urlparse
 
 import grpc
 from google.protobuf.struct_pb2 import Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 
 from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
-from tests.optional.capabilities.test_streaming_methods import NON_EXISTENT_TASK_ID_PREFIX
 
 logger = logging.getLogger(__name__)
 
@@ -381,12 +379,7 @@ class GRPCClient(BaseTransportClient):
 
     # A2A Protocol Method Implementations - Real Network Calls
 
-    def send_message(
-        self,
-        message: Dict[str, Any],
-        configuration: Optional[Dict[str, Any]] = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         """
         Send message via gRPC and wait for completion.
 
@@ -394,8 +387,8 @@ class GRPCClient(BaseTransportClient):
 
         Args:
             message: A2A message in JSON format
-            configuration: Optional SendMessageConfiguration object
-            extra_headers: Additional headers (not used in gRPC)
+            extra_headers: Optional transport-specific headers
+            **kwargs: Additional configuration options (accepted_output_modes, history_length, blocking)
 
         Returns:
             Dict containing task or message response from SUT
@@ -408,7 +401,7 @@ class GRPCClient(BaseTransportClient):
             logger.debug(f"Sending message via gRPC: {msg_id}")
 
             # Build protobuf request using helper method
-            request = self._json_to_send_message_request(message, configuration, default_blocking=True)
+            request = self._json_to_send_message_request(message, **kwargs)
 
             # Real gRPC call
             response = self.stub.SendMessage(request, timeout=self.timeout)
@@ -431,7 +424,7 @@ class GRPCClient(BaseTransportClient):
                     "kind": "message",
                     "role": "agent",
                     "messageId": m.message_id,
-                    "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
+                    "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
                 }
                 # Note: Message validation would need to be implemented for message responses
                 return result
@@ -448,91 +441,109 @@ class GRPCClient(BaseTransportClient):
             raise TransportError(error_msg, TransportType.GRPC)
 
     async def send_streaming_message(
-        self,
-        message: Dict[str, Any],
-        configuration: Optional[Dict[str, Any]] = None,
-        extra_headers: Optional[Dict[str, str]] = None
+        self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs
     ) -> AsyncIterator[Dict[str, Any]]:
         """
         Send message via gRPC and stream responses.
 
         Maps to: A2AService.SendStreamingMessage() RPC call
 
-        Args:
-            message: A2A message in JSON format
-            configuration: Optional SendMessageConfiguration object
-            extra_headers: Optional transport-specific headers
+        Uses synchronous gRPC in a daemon thread to avoid grpc.aio event-loop
+        binding issues that cause UNAVAILABLE / "Socket closed" errors when
+        multiple pytest-asyncio tests run with per-test event loops.
 
         Yields:
-            Dict containing streaming task updates from SUT
+            Flat A2A event dicts (Task, status-update, or message objects)
 
         Raises:
             TransportError: If gRPC streaming call fails
         """
+        self._load_static_stubs()
+        msg_id = message.get("messageId") or message.get("message_id") or "unknown"
+        logger.info(f"Starting gRPC streaming for message: {msg_id}")
+        # Streaming doesn't use blocking mode
+        request = self._json_to_send_message_request(message, **{**kwargs, "blocking": False})
+
+        loop = asyncio.get_running_loop()
+        queue: asyncio.Queue = asyncio.Queue()
+        _DONE = object()
+        stop = threading.Event()
+        call_ref = [None]  # Mutable container to share call reference between threads
+
+        def _run_sync() -> None:
+            try:
+                if self.use_tls:
+                    channel = grpc.secure_channel(self.grpc_target, grpc.ssl_channel_credentials())
+                else:
+                    channel = grpc.insecure_channel(self.grpc_target)
+                with channel:
+                    stub = self._pb_grpc.A2AServiceStub(channel)
+                    call = stub.SendStreamingMessage(request, timeout=self.timeout)
+                    call_ref[0] = call  # Store reference so main thread can cancel
+                    try:
+                        for response in call:
+                            if stop.is_set():
+                                break
+                            loop.call_soon_threadsafe(queue.put_nowait, ("ok", response))
+                    except grpc.RpcError as e:
+                        a2a_error = self._map_grpc_error_to_a2a(e)
+                        exc = TransportError(
+                            f"[GRPC] gRPC transport error: gRPC streaming call failed: {e.code().name} - {e.details()}",
+                            TransportType.GRPC, a2a_error,
+                        )
+                        loop.call_soon_threadsafe(queue.put_nowait, ("error", exc))
+            except Exception as e:
+                exc = TransportError(f"gRPC streaming error: {e}", TransportType.GRPC)
+                loop.call_soon_threadsafe(queue.put_nowait, ("error", exc))
+            finally:
+                loop.call_soon_threadsafe(queue.put_nowait, ("done", _DONE))
+
+        thread = threading.Thread(target=_run_sync, daemon=True)
+        thread.start()
         try:
-            msg_id = message.get("messageId") or message.get("message_id") or "unknown"
-            logger.info(f"Starting gRPC streaming for message: {msg_id}")
-
-            # Build protobuf request using helper method
-            request = self._json_to_send_message_request(message, configuration, default_blocking=False)
-
-            # Make real gRPC streaming call to live SUT
-            if self.use_tls:
-                credentials = grpc.ssl_channel_credentials()
-                channel = grpc.aio.secure_channel(self.grpc_target, credentials)
-            else:
-                channel = grpc.aio.insecure_channel(self.grpc_target)
-                
-            async with channel:
-                # Use the generated protobuf stub for streaming
-                stub = self._pb_grpc.A2AServiceStub(channel)
-                stream = stub.SendStreamingMessage(request, timeout=self.timeout)
-                
-                async for response in stream:
-                    # Convert protobuf response to JSON format
-                    if response.WhichOneof("payload") == "task":
-                        t = response.task
-                        yield {
-                            "task": {
-                                "id": t.id,
-                                "contextId": t.context_id,
-                                "status": {"state": self._map_state_enum_to_json(t.status.state)},
-                                "kind": "task",
-                            }
-                        }
-                    elif response.WhichOneof("payload") == "status_update":
-                        su = response.status_update
-                        yield {
-                            "status_update": {
-                                "taskId": su.task_id,
-                                "contextId": su.context_id,
-                                "status": {"state": self._map_state_enum_to_json(su.status.state)},
-                                "final": getattr(su, "final", False),
-                            }
-                        }
-                    elif response.WhichOneof("payload") == "msg":
-                        m = response.msg
-                        yield {
-                            "message": {
-                                "kind": "message",
-                                "role": "agent",
-                                "messageId": m.message_id,
-                                "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
-                            }
-                        }
-
-            logger.debug(f"Completed gRPC streaming for message {message.get('message_id')}")
-
-        except Exception as e:
-            # Check if it's a gRPC error (either real or mock)
-            if hasattr(e, "code") and hasattr(e, "details"):
-                error_msg = f"gRPC streaming call failed: {e.code().name} - {e.details()}"
-                logger.error(error_msg)
-                raise TransportError(f"gRPC streaming error: {error_msg}", TransportType.GRPC)
-            else:
-                error_msg = f"Unexpected error in gRPC streaming: {str(e)}"
-                logger.error(error_msg)
-                raise TransportError(error_msg, TransportType.GRPC)
+            while True:
+                kind, data = await queue.get()
+                if kind == "done":
+                    break
+                if kind == "error":
+                    raise data
+                response = data
+                payload = response.WhichOneof("payload")
+                if payload == "task":
+                    t = response.task
+                    yield {
+                        "id": t.id,
+                        "contextId": t.context_id,
+                        "status": {"state": self._map_state_enum_to_json(t.status.state)},
+                        "kind": "task",
+                    }
+                elif payload == "status_update":
+                    su = response.status_update
+                    yield {
+                        "kind": "status-update",
+                        "taskId": su.task_id,
+                        "contextId": su.context_id,
+                        "status": {"state": self._map_state_enum_to_json(su.status.state)},
+                        "final": getattr(su, "final", False),
+                    }
+                elif payload == "msg":
+                    m = response.msg
+                    yield {
+                        "kind": "message",
+                        "role": "agent",
+                        "messageId": m.message_id,
+                        "parts": [{"kind": "text", "text": m.content[0].text}] if m.content else [],
+                    }
+        finally:
+            stop.set()
+            # Cancel the call immediately to unblock the thread if it's waiting for a message
+            if call_ref[0] is not None:
+                try:
+                    call_ref[0].cancel()
+                except Exception as e:
+                    logger.debug(f"Error cancelling gRPC call: {e}")
+            thread.join(timeout=2.0)
+            logger.debug(f"Completed gRPC streaming for message {msg_id}")
 
     def get_task(
         self, task_id: str, history_length: Optional[int] = None, extra_headers: Optional[Dict[str, str]] = None
@@ -578,7 +589,7 @@ class GRPCClient(BaseTransportClient):
                 result["history"] = [
                     {
                         "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
-                        "parts": ([{"kind": "text", "text": m.parts[0].text}] if m.parts else []),
+                        "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
                         "messageId": m.message_id,
                         "taskId": resp.id,
                         "contextId": resp.context_id,
@@ -672,82 +683,93 @@ class GRPCClient(BaseTransportClient):
 
         Maps to: A2AService.TaskSubscription() RPC call
 
-        Args:
-            task_id: ID of the task to subscribe to
-            **kwargs: Additional configuration options
+        Uses synchronous gRPC in a daemon thread to avoid grpc.aio event-loop
+        binding issues that cause UNAVAILABLE / "Socket closed" errors across tests.
 
         Yields:
-            Dict containing task update events from SUT
+            Flat A2A event dicts (task, status-update, or error objects)
 
         Raises:
             TransportError: If gRPC streaming call fails
         """
+        logger.info(f"Subscribing to task via gRPC: {task_id}")
+        self._load_static_stubs()
+        pb = self._pb
+        request = pb.TaskSubscriptionRequest(name=f"tasks/{task_id}")
+
+        loop = asyncio.get_running_loop()
+        queue: asyncio.Queue = asyncio.Queue()
+        _DONE = object()
+        stop = threading.Event()
+
+        def _run_sync() -> None:
+            try:
+                if self.use_tls:
+                    channel = grpc.secure_channel(self.grpc_target, grpc.ssl_channel_credentials())
+                else:
+                    channel = grpc.insecure_channel(self.grpc_target)
+                with channel:
+                    stub = self._pb_grpc.A2AServiceStub(channel)
+                    call = stub.TaskSubscription(request, timeout=self.timeout)
+                    try:
+                        for response in call:
+                            if stop.is_set():
+                                call.cancel()
+                                break
+                            loop.call_soon_threadsafe(queue.put_nowait, ("ok", response))
+                    except grpc.RpcError as e:
+                        a2a_error = self._map_grpc_error_to_a2a(e)
+                        exc = TransportError(
+                            f"[GRPC] gRPC transport error: gRPC TaskSubscription failed: {e.code().name} - {e.details()}",
+                            TransportType.GRPC, a2a_error,
+                        )
+                        loop.call_soon_threadsafe(queue.put_nowait, ("error", exc))
+            except Exception as e:
+                exc = TransportError(f"gRPC subscription error: {e}", TransportType.GRPC)
+                loop.call_soon_threadsafe(queue.put_nowait, ("error", exc))
+            finally:
+                loop.call_soon_threadsafe(queue.put_nowait, ("done", _DONE))
+
+        thread = threading.Thread(target=_run_sync, daemon=True)
+        thread.start()
         try:
-            logger.info(f"Subscribing to task via gRPC: {task_id}")
-
-            # Make real gRPC streaming call to live SUT
-            self._load_static_stubs()
-            pb = self._pb
-            
-            # Build TaskSubscriptionRequest
-            request = pb.TaskSubscriptionRequest(name=f"tasks/{task_id}")
-            
-            # Create appropriate channel based on TLS setting
-            if self.use_tls:
-                credentials = grpc.ssl_channel_credentials()
-                channel = grpc.aio.secure_channel(self.grpc_target, credentials)
-            else:
-                channel = grpc.aio.insecure_channel(self.grpc_target)
-                
-            async with channel:
-                # Use the generated protobuf stub for task subscription
-                stub = self._pb_grpc.A2AServiceStub(channel)
-                stream = stub.TaskSubscription(request, timeout=self.timeout)
-                
-                async for response in stream:
-                    # Convert protobuf response to JSON format
-                    if response.WhichOneof("payload") == "task":
-                        t = response.task
-                        yield {
-                            "task": {
-                                "id": t.id,
-                                "contextId": t.context_id,
-                                "status": {"state": self._map_state_enum_to_json(t.status.state)},
-                                "kind": "task",
-                            }
+            while True:
+                kind, data = await queue.get()
+                if kind == "done":
+                    break
+                if kind == "error":
+                    raise data
+                response = data
+                payload = response.WhichOneof("payload")
+                if payload == "task":
+                    t = response.task
+                    yield {
+                        "id": t.id,
+                        "contextId": t.context_id,
+                        "status": {"state": self._map_state_enum_to_json(t.status.state)},
+                        "kind": "task",
+                    }
+                elif payload == "status_update":
+                    su = response.status_update
+                    yield {
+                        "kind": "status-update",
+                        "taskId": su.task_id,
+                        "contextId": su.context_id,
+                        "status": {"state": self._map_state_enum_to_json(su.status.state)},
+                        "final": getattr(su, "final", False),
+                    }
+                elif payload == "error":
+                    error = response.error
+                    yield {
+                        "error": {
+                            "code": error.code,
+                            "message": error.message,
                         }
-                    elif response.WhichOneof("payload") == "status_update":
-                        su = response.status_update
-                        yield {
-                            "status_update": {
-                                "taskId": su.task_id,
-                                "contextId": su.context_id,
-                                "status": {"state": self._map_state_enum_to_json(su.status.state)},
-                                "final": getattr(su, "final", False),
-                            }
-                        }
-                    elif response.WhichOneof("payload") == "error":
-                        # Handle error responses from the server
-                        error = response.error
-                        yield {
-                            "error": {
-                                "code": error.code,
-                                "message": error.message,
-                            }
-                        }
-
+                    }
+        finally:
+            stop.set()
+            thread.join(timeout=2.0)
             logger.debug(f"Completed gRPC subscription for task: {task_id}")
-
-        except grpc.RpcError as e:
-            error_msg = f"gRPC TaskSubscription failed: {e.code().name} - {e.details()}"
-            logger.error(error_msg)
-            # Map gRPC status to A2A error code per specification
-            a2a_error = self._map_grpc_error_to_a2a(e)
-            raise TransportError(f"[GRPC] gRPC transport error: {error_msg}", TransportType.GRPC, a2a_error)
-        except Exception as e:
-            error_msg = f"Unexpected error in gRPC subscription: {str(e)}"
-            logger.error(error_msg)
-            raise TransportError(error_msg, TransportType.GRPC)
 
     def get_agent_card(self, **kwargs) -> Dict[str, Any]:
         """
@@ -1123,26 +1145,20 @@ class GRPCClient(BaseTransportClient):
 
         return agent_card
 
-    def _json_to_send_message_request(
-        self,
-        message: Dict[str, Any],
-        configuration: Optional[Dict[str, Any]] = None,
-        default_blocking: bool = True
-    ):
+    def _json_to_send_message_request(self, message: Dict[str, Any], **kwargs):
         """
         Convert JSON message to SendMessageRequest protobuf.
 
         Args:
             message: A2A message in JSON format
-            configuration: Optional SendMessageConfiguration dict
-            default_blocking: Default value for blocking if not specified in configuration
+            **kwargs: Configuration options for the request
 
         Returns:
             SendMessageRequest protobuf object
         """
         self._load_static_stubs()
         pb = self._pb
-
+        
         # Accept both A2A and internal naming - don't provide defaults for required fields
         msg_id = message.get("messageId") or message.get("message_id")
         ctx_id = message.get("contextId") or message.get("context_id")
@@ -1155,7 +1171,7 @@ class GRPCClient(BaseTransportClient):
 
         # Build parts - handle different part types appropriately
         parts = []
-        for p in message.get("parts", []):
+        for p in (message.get("parts") if "parts" in message else message.get("content", [])):
             if p.get("kind") == "text":
                 parts.append(pb.Part(text=p.get("text", "")))
             elif p.get("kind") == "data" and "data" in p:
@@ -1186,7 +1202,7 @@ class GRPCClient(BaseTransportClient):
             else:
                 # Empty or unrecognized part structure
                 parts.append(pb.Part())
-
+                
         role_map = {"user": pb.ROLE_USER, "agent": pb.ROLE_AGENT}
         # Don't provide default role - let SUT validate required fields
         user_role = message.get("role")
@@ -1197,34 +1213,18 @@ class GRPCClient(BaseTransportClient):
             context_id=ctx_id,
             task_id=message.get("taskId", ""),
             role=pb_role,
-            parts=parts,
+            content=parts,
         )
-
-        # Build configuration from provided dict or use defaults
-        if configuration:
-            config_kwargs = {}
-            if "acceptedOutputModes" in configuration:
-                config_kwargs["accepted_output_modes"] = configuration["acceptedOutputModes"]
-            if "historyLength" in configuration:
-                config_kwargs["history_length"] = configuration["historyLength"]
-            if "blocking" in configuration:
-                config_kwargs["blocking"] = configuration["blocking"]
-            if "pushNotificationConfig" in configuration:
-                # Build PushNotificationConfig protobuf
-                pnc = configuration["pushNotificationConfig"]
-                push_config = pb.PushNotificationConfig(
-                    id=pnc.get("id", ""),
-                    url=pnc.get("url", ""),
-                    token=pnc.get("token", ""),
-                )
-                # Use the renamed field name from PR #482
-                config_kwargs["push_notification_config"] = push_config
-            config = pb.SendMessageConfiguration(**config_kwargs) if config_kwargs else pb.SendMessageConfiguration()
-        else:
-            config = pb.SendMessageConfiguration(accepted_output_modes=[], history_length=0, blocking=default_blocking)
-
+        
+        # Create configuration from kwargs
+        config = pb.SendMessageConfiguration(
+            accepted_output_modes=kwargs.get("accepted_output_modes", []),
+            history_length=kwargs.get("history_length", 0),
+            blocking=kwargs.get("blocking", True)
+        )
+        
         request = pb.SendMessageRequest(request=pb_msg, configuration=config)
-
+        
         logger.debug(f"Converted JSON message to protobuf: {msg_id}")
         return request
 

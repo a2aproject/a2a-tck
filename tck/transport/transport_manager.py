@@ -383,6 +383,17 @@ class TransportManager:
         except Exception as e:
             raise TransportManagerError(f"Failed to create {transport_type.value} client: {e}") from e
 
+    def evict_client(self, transport_type: TransportType):
+        """
+        Remove a specific client from the cache.
+
+        Args:
+            transport_type: The transport type to evict from cache
+        """
+        if transport_type in self._client_cache:
+            self._client_cache.pop(transport_type)
+            logger.debug(f"Evicted {transport_type.value} client from cache")
+
     def clear_client_cache(self):
         """
         Clear the client cache, forcing recreation of clients on next access.

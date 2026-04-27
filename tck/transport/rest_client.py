@@ -155,12 +155,7 @@ class RESTClient(BaseTransportClient):
 
 
 
-    def send_message(
-        self,
-        message: Dict[str, Any],
-        configuration: Optional[Dict[str, Any]] = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+    def send_message(self, message: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         """
         Send message via HTTP POST and wait for completion.
 
@@ -168,8 +163,7 @@ class RESTClient(BaseTransportClient):
 
         Args:
             message: A2A message in JSON format
-            configuration: Optional SendMessageConfiguration object
-            extra_headers: Additional HTTP headers
+            **kwargs: Additional configuration options (extra_headers, etc.)
 
         Returns:
             Dict containing task or message response from SUT
@@ -194,9 +188,17 @@ class RESTClient(BaseTransportClient):
             # Prepare payload according to A2A REST specification (using protobuf format)
             payload = {"message": protobuf_message}
 
-            # Add configuration if provided
-            if configuration:
-                payload["configuration"] = configuration
+            # Add configuration options if provided
+            config = {}
+            if "accepted_output_modes" in kwargs:
+                config["accepted_output_modes"] = kwargs["accepted_output_modes"]
+            if "history_length" in kwargs:
+                config["history_length"] = kwargs["history_length"]
+            if "blocking" in kwargs:
+                config["blocking"] = kwargs["blocking"]
+
+            if config:
+                payload["configuration"] = config
 
             # Make real HTTP request to live SUT
             response = self.client.post(url, json=payload, headers=headers)
@@ -243,12 +245,7 @@ class RESTClient(BaseTransportClient):
     def __repr__(self) -> str:
         return super().__repr__()
 
-    async def send_streaming_message(
-        self,
-        message: Dict[str, Any],
-        configuration: Optional[Dict[str, Any]] = None,
-        extra_headers: Optional[Dict[str, str]] = None
-    ) -> AsyncIterator[Dict[str, Any]]:
+    async def send_streaming_message(self, message: Dict[str, Any],  extra_headers: Optional[Dict[str, str]] = None, **kwargs) -> AsyncIterator[Dict[str, Any]]:
         """
         Send message via HTTP POST and stream responses using Server-Sent Events.
 
@@ -256,8 +253,7 @@ class RESTClient(BaseTransportClient):
 
         Args:
             message: A2A message in JSON format
-            configuration: Optional SendMessageConfiguration object
-            extra_headers: Optional transport-specific headers
+            **kwargs: Additional configuration options
 
         Yields:
             Dict containing streaming task updates from SUT
@@ -282,9 +278,15 @@ class RESTClient(BaseTransportClient):
             # Prepare payload
             payload = {"message": protobuf_message}
 
-            # Add configuration if provided
-            if configuration:
-                payload["configuration"] = configuration
+            # Add configuration options if provided
+            config = {}
+            if "accepted_output_modes" in kwargs:
+                config["accepted_output_modes"] = kwargs["accepted_output_modes"]
+            if "history_length" in kwargs:
+                config["history_length"] = kwargs["history_length"]
+
+            if config:
+                payload["configuration"] = config
 
             # Make real HTTP streaming request to live SUT
             async with self.async_client.stream("POST", url, json=payload, headers=headers) as response:
