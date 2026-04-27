@@ -52,6 +52,7 @@ class WebhookReceiver:
     _thread: threading.Thread | None = field(default=None, init=False, repr=False)
     _requests: list[WebhookRequest] = field(default_factory=list, init=False, repr=False)
     _request_event: threading.Event = field(default_factory=threading.Event, init=False, repr=False)
+    _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
 
     @property
     def port(self) -> int:
