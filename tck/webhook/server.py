@@ -78,7 +78,7 @@ class WebhookReceiver:
                 """Handle POST requests from the SUT."""
                 length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(length) if length else b""
-                headers = dict(self.headers.items())
+                headers = {k.lower(): v for k, v in self.headers.items()}
                 req = WebhookRequest(
                     method="POST",
                     path=self.path,
