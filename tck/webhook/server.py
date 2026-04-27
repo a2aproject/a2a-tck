@@ -65,7 +65,7 @@ class WebhookReceiver:
         """Return the full webhook URL using the given host."""
         return f"http://{webhook_host}:{self.port}/webhook"
 
-    def record_request(self, req: WebhookRequest) -> None: 
+    def record_request(self, req: WebhookRequest) -> None:
         """Append a captured request and signal any waiters."""
         with self._lock:
             self._requests.append(req)
