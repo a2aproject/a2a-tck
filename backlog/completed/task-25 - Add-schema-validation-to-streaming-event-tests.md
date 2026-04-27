@@ -1,9 +1,10 @@
 ---
 id: TASK-25
 title: Add schema validation to streaming event tests
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-27 13:06'
+updated_date: '2026-04-27 15:29'
 labels:
   - streaming
   - schema-validation
@@ -33,7 +34,13 @@ Adding schema validation to streaming tests would catch schema violations across
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Streaming tests validate each StreamResponse event payload against the appropriate schema (JSON schema for jsonrpc/http_json, proto schema for gRPC)
-- [ ] #2 Schema violations in statusUpdate, artifactUpdate, task, and message payloads are reported as test failures
-- [ ] #3 Invalid fields like 'final' on TaskStatusUpdateEvent are caught by streaming tests
+- [x] #1 Streaming tests validate each StreamResponse event payload against the appropriate schema (JSON schema for jsonrpc/http_json, proto schema for gRPC)
+- [x] #2 Schema violations in statusUpdate, artifactUpdate, task, and message payloads are reported as test failures
+- [x] #3 Invalid fields like 'final' on TaskStatusUpdateEvent are caught by streaming tests
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added schema validation to all streaming event tests. Defined schema ref constants in `tck/validators/__init__.py` as a shared vocabulary across validators. Updated `ProtoSchemaValidator` to accept string schema refs, matching the JSON validator interface. Streaming tests now call `validators[transport].validate(event, STREAM_RESPONSE)` with no transport branching. Also unified the two ordering-check functions into one with a single state-order map.
+<!-- SECTION:FINAL_SUMMARY:END -->
