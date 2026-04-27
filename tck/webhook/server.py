@@ -113,8 +113,9 @@ class WebhookReceiver:
 
     def clear(self) -> None:
         """Discard all captured requests."""
-        self._requests.clear()
-        self._request_event.clear()
+        with self._lock:
+            self._requests.clear()
+            self._request_event.clear()
 
     def wait_for_request(self, timeout: float = 10) -> WebhookRequest | None:
         """Block until a request arrives or *timeout* seconds elapse."""
