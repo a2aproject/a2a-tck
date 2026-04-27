@@ -128,4 +128,5 @@ class WebhookReceiver:
 
     def get_requests(self) -> list[WebhookRequest]:
         """Return a copy of all captured requests."""
-        return list(self._requests)
+        with self._lock:
+            return list(self._requests)
