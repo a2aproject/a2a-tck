@@ -80,7 +80,7 @@ class TestWebhookReceiver:
             assert req is not None
             assert req.method == "POST"
             assert req.json_body == payload
-            assert req.headers.get("Authorization") == "Bearer test-token"
+            assert req.headers.get("authorization") == "Bearer test-token"
         finally:
             receiver.stop()
 
