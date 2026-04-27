@@ -145,7 +145,7 @@ class HttpJsonClient(BaseTransportClient):
                     headers=resp_headers,
                     status_code=response.status_code,
                 )
-            body = response.json()
+            body = response.json() if response.content else {}
             return HttpJsonResponse(
                 transport=self.transport,
                 success=True,

@@ -1,16 +1,19 @@
-"""Cross-transport push notification CRUD tests.
+"""Cross-transport push notification tests.
 
 Validates push notification configuration lifecycle operations
-that require a real task to exist first.
+and webhook delivery behavior.
 
 Requirements tested:
-    PUSH-CREATE-001 — CreatePushNotificationConfig returns config
-    PUSH-CREATE-002 — Config persists after creation
-    PUSH-GET-001    — GetPushNotificationConfig returns config details
-    PUSH-GET-002    — GetPushNotificationConfig for nonexistent returns error
-    PUSH-LIST-001   — ListPushNotificationConfigs includes created config
-    PUSH-DEL-001    — DeletePushNotificationConfig removes config
-    PUSH-DEL-002    — Delete is idempotent
+    PUSH-CREATE-001  — CreatePushNotificationConfig returns config
+    PUSH-CREATE-002  — Config persists after creation
+    PUSH-GET-001     — GetPushNotificationConfig returns config details
+    PUSH-GET-002     — GetPushNotificationConfig for nonexistent returns error
+    PUSH-LIST-001    — ListPushNotificationConfigs includes created config
+    PUSH-DEL-001     — DeletePushNotificationConfig removes config
+    PUSH-DEL-002     — Delete is idempotent
+    PUSH-DELIVER-001 — Agent includes auth in webhook requests
+    PUSH-DELIVER-002 — Agent attempts delivery at least once
+    PUSH-DELIVER-003 — Webhook payload uses StreamResponse format
 """
 
 from __future__ import annotations
@@ -22,13 +25,15 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._task_helpers import create_completed_task
+from tests.compatibility._task_helpers import create_completed_task, create_working_task
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import must
 
 
 if TYPE_CHECKING:
     from tck.transport.base import BaseTransportClient
+    from tck.validators.json_schema import JSONSchemaValidator
+    from tck.webhook.server import WebhookReceiver
 
 
 # ---------------------------------------------------------------------------
@@ -42,6 +47,17 @@ PUSH_GET_002 = get_requirement_by_id("PUSH-GET-002")
 PUSH_LIST_001 = get_requirement_by_id("PUSH-LIST-001")
 PUSH_DEL_001 = get_requirement_by_id("PUSH-DEL-001")
 PUSH_DEL_002 = get_requirement_by_id("PUSH-DEL-002")
+PUSH_DELIVER_001 = get_requirement_by_id("PUSH-DELIVER-001")
+PUSH_DELIVER_002 = get_requirement_by_id("PUSH-DELIVER-002")
+PUSH_DELIVER_003 = get_requirement_by_id("PUSH-DELIVER-003")
+
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_AUTH_SCHEME = "Bearer"
+_AUTH_CREDENTIALS = f"tck-test-token-{tck_id('auth')}"
 
 
 # ---------------------------------------------------------------------------
@@ -55,6 +71,29 @@ def _push_config() -> dict:
         "id": tck_id("push"),
         "url": "https://example.com/tck-push-webhook",
     }
+
+
+def _push_config_with_webhook(webhook_url: str) -> dict:
+    """Generate a push notification config pointing at the TCK webhook receiver."""
+    return {
+        "id": tck_id("push"),
+        "url": webhook_url,
+        "authentication": {
+            "scheme": _AUTH_SCHEME,
+            "credentials": _AUTH_CREDENTIALS,
+        },
+    }
+
+
+def _trigger_state_change(client: Any) -> tuple[str, str | None]:
+    """Create a task in input_required state, then complete it.
+
+    Returns (task_id, context_id) so the caller can register a push
+    config between creation and completion.  This helper only does the
+    first step (creating the working task).
+    """
+    info = create_working_task(client)
+    return info.task_id, info.context_id
 
 
 # ---------------------------------------------------------------------------
@@ -316,5 +355,161 @@ class TestPushNotificationCrud:
                 f"Second delete should be idempotent (no error), "
                 f"but returned: {second_del.error}"
             )
+
+        assert_and_record(compatibility_collector, req, transport, errors)
+
+
+# ---------------------------------------------------------------------------
+# Push notification delivery tests
+# ---------------------------------------------------------------------------
+
+_DELIVERY_TIMEOUT_S = 15
+
+
+def _setup_push_and_trigger(
+    client: Any,
+    webhook_url: str,
+) -> tuple[dict, str]:
+    """Create a task with inline push config, then trigger a state change.
+
+    Sends the push notification config alongside the initial SendMessage
+    via the ``configuration.taskPushNotificationConfig`` field, then sends a
+    follow-up message to complete the task and trigger webhook delivery.
+
+    Returns (push_config, task_id).
+    """
+    config = _push_config_with_webhook(webhook_url)
+
+    message: dict[str, Any] = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK prerequisite task creation"}],
+        "messageId": tck_id("input-required"),
+    }
+    configuration = {"taskPushNotificationConfig": config}
+    response = client.send_message(message=message, configuration=configuration)
+    if not response.success:
+        pytest.skip(f"send_message failed: {response.error}")
+
+    task_id = response.task_id
+    if not task_id:
+        pytest.skip("Could not extract task ID from send_message response")
+
+    followup: dict[str, Any] = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK trigger push notification delivery"}],
+        "messageId": tck_id("complete-task"),
+        "taskId": task_id,
+    }
+    response = client.send_message(message=followup)
+    if not response.success:
+        pytest.skip(f"Follow-up send_message failed: {response.error}")
+
+    return config, task_id
+
+
+@must
+@pytest.mark.parametrize("transport", ALL_TRANSPORTS)
+class TestPushNotificationDelivery:
+    """Tests for push notification webhook delivery."""
+
+    def test_delivery_includes_auth(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+        webhook_receiver: WebhookReceiver,
+        webhook_host: str,
+    ) -> None:
+        """PUSH-DELIVER-001: Agent includes auth credentials in webhook requests."""
+        req = PUSH_DELIVER_001
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+
+        webhook_receiver.clear()
+        _setup_push_and_trigger(client, webhook_receiver.url(webhook_host))
+        webhook_req = webhook_receiver.wait_for_request(timeout=_DELIVERY_TIMEOUT_S)
+
+        errors: list[str] = []
+        if webhook_req is None:
+            errors.append("No webhook request received within timeout")
+        else:
+            auth_header = webhook_req.headers.get("authorization", "")
+            expected = f"{_AUTH_SCHEME} {_AUTH_CREDENTIALS}"
+            if auth_header != expected:
+                errors.append(
+                    f"Expected Authorization header '{expected}', "
+                    f"got '{auth_header}'"
+                )
+
+        assert_and_record(compatibility_collector, req, transport, errors)
+
+    def test_delivery_at_least_once(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+        webhook_receiver: WebhookReceiver,
+        webhook_host: str,
+    ) -> None:
+        """PUSH-DELIVER-002: Agent attempts delivery at least once per webhook."""
+        req = PUSH_DELIVER_002
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+
+        webhook_receiver.clear()
+        _setup_push_and_trigger(client, webhook_receiver.url(webhook_host))
+        webhook_req = webhook_receiver.wait_for_request(timeout=_DELIVERY_TIMEOUT_S)
+
+        errors: list[str] = []
+        if webhook_req is None:
+            errors.append(
+                "No webhook delivery received — agent MUST attempt "
+                "at least one delivery per configured webhook"
+            )
+
+        assert_and_record(compatibility_collector, req, transport, errors)
+
+    def test_delivery_payload_format(
+        self,
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+        webhook_receiver: WebhookReceiver,
+        webhook_host: str,
+        validators: dict[str, Any],
+    ) -> None:
+        """PUSH-DELIVER-003: Webhook payload uses StreamResponse format."""
+        req = PUSH_DELIVER_003
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("pushNotifications"):
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not support push notifications")
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+
+        webhook_receiver.clear()
+        _setup_push_and_trigger(client, webhook_receiver.url(webhook_host))
+        webhook_req = webhook_receiver.wait_for_request(timeout=_DELIVERY_TIMEOUT_S)
+
+        errors: list[str] = []
+        if webhook_req is None:
+            errors.append("No webhook request received within timeout")
+        elif webhook_req.json_body is None:
+            errors.append(
+                f"Webhook body is not valid JSON: {webhook_req.body!r}"
+            )
+        else:
+            json_validator: JSONSchemaValidator = validators["http_json"]
+            result = json_validator.validate(webhook_req.json_body, "Stream Response")
+            if not result.valid:
+                errors.extend(result.errors)
 
         assert_and_record(compatibility_collector, req, transport, errors)

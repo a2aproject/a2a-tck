@@ -39,6 +39,7 @@ public class TckAgentCardProducer {
                         new AgentInterface(TransportProtocol.HTTP_JSON.asString(), sutRestUrl)))
                 .capabilities(AgentCapabilities.builder()
                         .streaming(true)
+                        .pushNotifications(true)
                         .build())
                 .defaultInputModes(List.of("text"))
                 .defaultOutputModes(List.of("text"))

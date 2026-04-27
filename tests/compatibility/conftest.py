@@ -17,6 +17,7 @@ from tck.transport.jsonrpc_client import JsonRpcClient
 from tck.validators.json_schema import JSONSchemaValidator
 from tck.validators.jsonrpc.response_validator import JsonRpcResponseValidator
 from tck.validators.proto_schema import ProtoSchemaValidator
+from tck.webhook.server import WebhookReceiver
 
 
 if TYPE_CHECKING:
@@ -65,6 +66,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         dest="compatibility_report",
         default=None,
         help="Output path for the compatibility report.",
+    )
+    group.addoption(
+        "--webhook-host",
+        dest="webhook_host",
+        default="localhost",
+        help=(
+            "Hostname the SUT uses to reach the TCK webhook receiver "
+            "(default: localhost)."
+        ),
     )
 
 
@@ -166,6 +176,21 @@ def validators() -> dict[str, Any]:
         "jsonrpc": JsonRpcResponseValidator(json_schema_validator),
         "http_json": json_schema_validator,
     }
+
+
+@pytest.fixture(scope="session")
+def webhook_host(request: pytest.FixtureRequest) -> str:
+    """Return the hostname the SUT should use to reach the webhook receiver."""
+    return request.config.getoption("--webhook-host")
+
+
+@pytest.fixture(scope="session")
+def webhook_receiver() -> WebhookReceiver:
+    """Start a webhook receiver for the duration of the test session."""
+    receiver = WebhookReceiver()
+    receiver.start()
+    yield receiver
+    receiver.stop()
 
 
 @pytest.fixture(scope="session")
