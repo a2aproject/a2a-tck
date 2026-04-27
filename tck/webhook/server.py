@@ -76,9 +76,12 @@ class WebhookReceiver:
         class _Handler(BaseHTTPRequestHandler):
             def do_POST(self) -> None:
                 """Handle POST requests from the SUT."""
-                length = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(length) if length else b""
                 headers = {k.lower(): v for k, v in self.headers.items()}
+                try:
+                    length = int(headers.get("content-length", "0"))
+                except (ValueError, TypeError):
+                    length = 0
+                body = self.rfile.read(length) if length else b""
                 req = WebhookRequest(
                     method="POST",
                     path=self.path,
