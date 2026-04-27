@@ -135,7 +135,10 @@ class TestWebhookReceiver:
                     headers={"Content-Type": "application/json"},
                 )
             import time
-            time.sleep(0.2)
+            for _ in range(20):
+                if len(receiver.get_requests()) == num_requests:
+                    break
+                time.sleep(0.1)
             requests = receiver.get_requests()
             assert len(requests) == num_requests
             for i, req in enumerate(requests):
