@@ -119,10 +119,12 @@ class WebhookReceiver:
 
     def wait_for_request(self, timeout: float = 10) -> WebhookRequest | None:
         """Block until a request arrives or *timeout* seconds elapse."""
-        if self._requests:
-            return self._requests[0]
+        with self._lock:
+            if self._requests:
+                return self._requests[0]
         self._request_event.wait(timeout=timeout)
-        return self._requests[0] if self._requests else None
+        with self._lock:
+            return self._requests[0] if self._requests else None
 
     def get_requests(self) -> list[WebhookRequest]:
         """Return a copy of all captured requests."""
