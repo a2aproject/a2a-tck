@@ -118,13 +118,22 @@ class WebhookReceiver:
             self._request_event.clear()
 
     def wait_for_request(self, timeout: float = 10) -> WebhookRequest | None:
-        """Block until a request arrives or *timeout* seconds elapse."""
+        """Block until a request arrives or *timeout* seconds elapse.
+
+        Each call consumes the oldest queued request so that sequential
+        calls return successive webhook deliveries.
+        """
         with self._lock:
             if self._requests:
-                return self._requests[0]
+                return self._requests.pop(0)
         self._request_event.wait(timeout=timeout)
         with self._lock:
-            return self._requests[0] if self._requests else None
+            if not self._requests:
+                return None
+            req = self._requests.pop(0)
+            if not self._requests:
+                self._request_event.clear()
+            return req
 
     def get_requests(self) -> list[WebhookRequest]:
         """Return a copy of all captured requests."""

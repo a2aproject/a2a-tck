@@ -112,13 +112,32 @@ class TestWebhookReceiver:
         """get_requests() returns a snapshot, not a live reference."""
         receiver = WebhookReceiver()
         receiver.start()
+        num_requests = 2
         try:
-            httpx.post(receiver.url(), json={"task": {}})
-            receiver.wait_for_request(timeout=5)
+            for _ in range(num_requests):
+                httpx.post(receiver.url(), json={"task": {}})
+            import time
+            time.sleep(0.5)
             requests = receiver.get_requests()
-            assert len(requests) == 1
+            assert len(requests) == num_requests
             receiver.clear()
-            assert len(requests) == 1
+            assert len(requests) == num_requests
+        finally:
+            receiver.stop()
+
+    def test_wait_for_request_consumes(self) -> None:
+        """wait_for_request() returns successive requests on each call."""
+        receiver = WebhookReceiver()
+        receiver.start()
+        try:
+            httpx.post(receiver.url(), json={"first": True})
+            httpx.post(receiver.url(), json={"second": True})
+            import time
+            time.sleep(0.5)
+            r1 = receiver.wait_for_request(timeout=5)
+            r2 = receiver.wait_for_request(timeout=5)
+            assert r1 is not None and r1.json_body == {"first": True}
+            assert r2 is not None and r2.json_body == {"second": True}
         finally:
             receiver.stop()
 

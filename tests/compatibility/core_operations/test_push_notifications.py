@@ -373,7 +373,7 @@ def _setup_push_and_trigger(
     """Create a task with inline push config, then trigger a state change.
 
     Sends the push notification config alongside the initial SendMessage
-    via the ``configuration.pushNotificationConfig`` field, then sends a
+    via the ``configuration.taskPushNotificationConfig`` field, then sends a
     follow-up message to complete the task and trigger webhook delivery.
 
     Returns (push_config, task_id).
