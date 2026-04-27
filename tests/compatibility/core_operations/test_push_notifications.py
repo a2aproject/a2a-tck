@@ -370,19 +370,29 @@ def _setup_push_and_trigger(
     client: Any,
     webhook_url: str,
 ) -> tuple[dict, str]:
-    """Create a working task, register a push config, and trigger a state change.
+    """Create a task with inline push config, then trigger a state change.
+
+    Sends the push notification config alongside the initial SendMessage
+    via the ``configuration.pushNotificationConfig`` field, then sends a
+    follow-up message to complete the task and trigger webhook delivery.
 
     Returns (push_config, task_id).
     """
-    task_id, _ = _trigger_state_change(client)
-
     config = _push_config_with_webhook(webhook_url)
-    create_resp = client.create_push_notification_config(
-        task_id=task_id,
-        config=config,
-    )
-    if not create_resp.success:
-        pytest.skip(f"CreatePushNotificationConfig failed: {create_resp.error}")
+
+    message: dict[str, Any] = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK prerequisite task creation"}],
+        "messageId": tck_id("input-required"),
+    }
+    configuration = {"taskPushNotificationConfig": config}
+    response = client.send_message(message=message, configuration=configuration)
+    if not response.success:
+        pytest.skip(f"send_message failed: {response.error}")
+
+    task_id = response.task_id
+    if not task_id:
+        pytest.skip("Could not extract task ID from send_message response")
 
     followup: dict[str, Any] = {
         "role": "ROLE_USER",
