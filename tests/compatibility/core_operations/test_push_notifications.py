@@ -427,7 +427,7 @@ class TestPushNotificationDelivery:
         if webhook_req is None:
             errors.append("No webhook request received within timeout")
         else:
-            auth_header = webhook_req.headers.get("Authorization", "")
+            auth_header = webhook_req.headers.get("authorization", "")
             expected = f"{_AUTH_SCHEME} {_AUTH_CREDENTIALS}"
             if auth_header != expected:
                 errors.append(
