@@ -100,6 +100,7 @@ class WebhookReceiver:
         """Shut down the server and join the background thread."""
         if self._server is not None:
             self._server.shutdown()
+            self._server.server_close()
             self._server = None
         if self._thread is not None:
             self._thread.join(timeout=5)
