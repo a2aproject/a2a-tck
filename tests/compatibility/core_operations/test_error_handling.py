@@ -68,6 +68,7 @@ _JSONRPC_ERROR_CODE_MAX = -32600
 
 # Specific A2A error codes
 _TASK_NOT_FOUND_ERROR_CODE = -32001
+_EXTENSION_SUPPORT_REQUIRED_ERROR_CODE = -32008
 
 # ---------------------------------------------------------------------------
 # Helpers — raw calls for tests that need custom headers or invalid payloads
@@ -322,11 +323,19 @@ class TestCapabilityExtensionRequired:
         }
         response = _jsonrpc_call(client.base_url, "SendMessage", {"message": msg})
         body = response.json()
-        passed = "error" in body
-        errors = [] if passed else [
-            "Expected ExtensionSupportRequiredError when client omits "
-            f"required extension {self._REQUIRED_EXT_URI!r}"
-        ]
+        errors = []
+        if "error" not in body:
+            errors.append(
+                "Expected ExtensionSupportRequiredError when client omits "
+                f"required extension {self._REQUIRED_EXT_URI!r}"
+            )
+        elif isinstance(body["error"], dict):
+            code = body["error"].get("code")
+            if code != _EXTENSION_SUPPORT_REQUIRED_ERROR_CODE:
+                errors.append(
+                    f"Expected error code {_EXTENSION_SUPPORT_REQUIRED_ERROR_CODE} "
+                    f"(ExtensionSupportRequiredError), got {code}"
+                )
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_missing_required_extension_returns_error_http_json(
@@ -350,11 +359,20 @@ class TestCapabilityExtensionRequired:
         response = _rest_call(
             client.base_url, "POST", "/message:send", json_body={"message": msg},
         )
-        passed = response.status_code >= _HTTP_ERROR_STATUS
-        errors = [] if passed else [
-            "Expected error when client omits required extension "
-            f"{self._REQUIRED_EXT_URI!r}, got {response.status_code}"
-        ]
+        errors = []
+        if response.status_code < _HTTP_ERROR_STATUS:
+            errors.append(
+                "Expected error when client omits required extension "
+                f"{self._REQUIRED_EXT_URI!r}, got {response.status_code}"
+            )
+        else:
+            body = response.json()
+            if isinstance(body, dict):
+                reason = body.get("error", {}).get("reason") if isinstance(body.get("error"), dict) else None
+                if reason and reason != "EXTENSION_SUPPORT_REQUIRED":
+                    errors.append(
+                        f"Expected reason 'EXTENSION_SUPPORT_REQUIRED', got {reason!r}"
+                    )
         assert_and_record(compatibility_collector, req, transport, errors)
 
 

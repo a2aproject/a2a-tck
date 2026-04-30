@@ -330,9 +330,10 @@ class TestIgnoreUnrecognizedFields:
         body = response.json()
         errors = []
         if "error" in body:
+            err = body["error"]
+            detail = err.get("message", err) if isinstance(err, dict) else err
             errors.append(
-                f"Server rejected request with unrecognized fields: "
-                f"{body['error'].get('message', body['error'])}"
+                f"Server rejected request with unrecognized fields: {detail}"
             )
         passed = not errors
         record(compatibility_collector, req, transport, passed=passed, errors=errors)
