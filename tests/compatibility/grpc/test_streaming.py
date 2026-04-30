@@ -21,6 +21,7 @@ from specification.generated import a2a_pb2
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
+from tck.validators import STREAM_RESPONSE
 from tck.validators.grpc.error_validator import validate_grpc_error
 from tck.validators.streaming import drain_stream
 from tests.compatibility._task_helpers import create_working_task
@@ -150,6 +151,7 @@ class TestGrpcStreaming:
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """GRPC-ERR-003: Each event has exactly one StreamResponse payload field set."""
         req = GRPC_ERR_003
@@ -160,6 +162,7 @@ class TestGrpcStreaming:
         events = _collect_events(client, agent_card)
 
         errors: list[str] = []
+        proto_validator = validators["grpc"]
         for i, event in enumerate(events):
             payload = event.WhichOneof("payload")
             if payload is None:
@@ -168,6 +171,9 @@ class TestGrpcStreaming:
                 errors.append(
                     f"Event {i}: unexpected payload field {payload!r}"
                 )
+            result = proto_validator.validate(event, STREAM_RESPONSE)
+            if not result.valid:
+                errors.extend(f"Event {i}: {e}" for e in result.errors)
 
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
@@ -257,6 +263,7 @@ class TestGrpcStreaming:
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """STREAM-SUB-001: First event from SubscribeToTask contains a Task."""
         req = STREAM_SUB_001
@@ -288,5 +295,10 @@ class TestGrpcStreaming:
                 f"First event payload should be 'task', got {payload!r}"
             ]
         )
+
+        proto_validator = validators["grpc"]
+        result = proto_validator.validate(first, STREAM_RESPONSE)
+        if not result.valid:
+            errors.extend(result.errors)
 
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
