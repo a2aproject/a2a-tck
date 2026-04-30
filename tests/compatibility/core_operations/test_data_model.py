@@ -6,7 +6,7 @@ against the A2A JSON Schema and protobuf definitions.
 Requirements tested:
     DM-TASK-001, DM-TASK-002, DM-MSG-001, DM-MSG-002, DM-PART-001,
     DM-ART-001, DM-STATUS-001, DM-SERIAL-001, DM-SERIAL-002,
-    DM-SERIAL-003, DM-SERIAL-004
+    DM-SERIAL-003, DM-SERIAL-004, DM-SERIAL-005
 """
 
 from __future__ import annotations
@@ -15,12 +15,14 @@ import re
 
 from typing import TYPE_CHECKING, Any
 
+import httpx
 import pytest
 
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
+from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, record
-from tests.compatibility.markers import core, must
+from tests.compatibility.markers import core, must, should
 
 
 if TYPE_CHECKING:
@@ -43,6 +45,9 @@ DM_SERIAL_001 = get_requirement_by_id("DM-SERIAL-001")
 DM_SERIAL_002 = get_requirement_by_id("DM-SERIAL-002")
 DM_SERIAL_003 = get_requirement_by_id("DM-SERIAL-003")
 DM_SERIAL_004 = get_requirement_by_id("DM-SERIAL-004")
+DM_SERIAL_005 = get_requirement_by_id("DM-SERIAL-005")
+
+_HTTP_ERROR_STATUS = 400
 
 # snake_case detector for DM-SERIAL-001
 _SNAKE_CASE_PATTERN = re.compile(r"^[a-z]+(_[a-z]+)+$")
@@ -278,3 +283,96 @@ class TestTimestampFormat:
             assert_and_record(compatibility_collector, req, transport, errors)
         if not found_timestamp:
             pytest.skip("No timestamps found in responses to validate")
+
+
+# ---------------------------------------------------------------------------
+# Forward compatibility (DM-SERIAL-005)
+# ---------------------------------------------------------------------------
+
+
+@should
+@core
+class TestIgnoreUnrecognizedFields:
+    """DM-SERIAL-005: Implementations should ignore unrecognized fields."""
+
+    def test_extra_fields_ignored_jsonrpc(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """Server should process a request with extra unrecognized fields."""
+        req = DM_SERIAL_005
+        transport = "jsonrpc"
+        client = transport_clients.get(transport)
+        if client is None:
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip(f"Transport {transport!r} not configured")
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "SendMessage",
+            "params": {
+                "message": {
+                    "role": "ROLE_USER",
+                    "parts": [{"text": "unrecognized field test"}],
+                    "messageId": tck_id("dm-serial-005-jsonrpc"),
+                    "tckUnknownField": "should-be-ignored",
+                },
+                "tckExtraParam": 42,
+            },
+        }
+        response = httpx.post(
+            client.base_url,
+            json=payload,
+            headers={"Content-Type": "application/json", A2A_VERSION_HEADER: A2A_VERSION},
+            timeout=30.0,
+        )
+        body = response.json()
+        errors = []
+        if "error" in body:
+            errors.append(
+                f"Server rejected request with unrecognized fields: "
+                f"{body['error'].get('message', body['error'])}"
+            )
+        passed = not errors
+        record(compatibility_collector, req, transport, passed=passed, errors=errors)
+        if errors:
+            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+
+    def test_extra_fields_ignored_rest(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """Server should process an HTTP+JSON request with extra unrecognized fields."""
+        req = DM_SERIAL_005
+        transport = "http_json"
+        client = transport_clients.get(transport)
+        if client is None:
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip(f"Transport {transport!r} not configured")
+        body = {
+            "message": {
+                "role": "ROLE_USER",
+                "parts": [{"text": "unrecognized field test"}],
+                "messageId": tck_id("dm-serial-005-rest"),
+                "tckUnknownField": "should-be-ignored",
+            },
+            "tckExtraParam": 42,
+        }
+        response = httpx.post(
+            f"{client.base_url}/message:send",
+            json=body,
+            headers={"Content-Type": "application/json", A2A_VERSION_HEADER: A2A_VERSION},
+            timeout=30.0,
+        )
+        errors = []
+        if response.status_code >= _HTTP_ERROR_STATUS:
+            errors.append(
+                f"Server rejected request with unrecognized fields: "
+                f"HTTP {response.status_code}"
+            )
+        passed = not errors
+        record(compatibility_collector, req, transport, passed=passed, errors=errors)
+        if errors:
+            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
