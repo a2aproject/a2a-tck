@@ -16,6 +16,7 @@ import pytest
 
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
+from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
@@ -65,7 +66,7 @@ def _jsonrpc_call(
         "method": method,
         "params": params,
     }
-    hdrs = {"Content-Type": "application/json"}
+    hdrs = {"Content-Type": "application/json", A2A_VERSION_HEADER: A2A_VERSION}
     if headers:
         hdrs.update(headers)
     return httpx.post(base_url, json=payload, headers=hdrs)
@@ -218,7 +219,7 @@ class TestJsonRpcErrorCodeMappings:
         response = httpx.post(
             client.base_url,
             content=str(payload).encode(),
-            headers={"Content-Type": "text/plain"},
+            headers={"Content-Type": "text/plain", A2A_VERSION_HEADER: A2A_VERSION},
         )
 
         # The server may reject the wrong Content-Type at the HTTP level
@@ -261,7 +262,7 @@ class TestJsonRpcErrorCodeMappings:
             client.base_url,
             "SendMessage",
             {"message": msg},
-            headers={"A2A-Version": "99.0"},
+            headers={A2A_VERSION_HEADER: "99.0"},
         )
         body = response.json()
         if "error" not in body:
@@ -332,7 +333,7 @@ class TestJsonRpcErrorCodeRange:
                 client.base_url,
                 "SendMessage",
                 {"message": msg},
-                headers={"A2A-Version": "99.0"},
+                headers={A2A_VERSION_HEADER: "99.0"},
             )
             body = raw.json()
 

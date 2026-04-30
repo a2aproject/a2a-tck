@@ -18,6 +18,7 @@ import pytest
 
 from tck.requirements.base import SEND_MESSAGE_BINDING, tck_id
 from tck.requirements.registry import get_requirement_by_id
+from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.transport.http_json_client import TRANSPORT
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
@@ -146,7 +147,7 @@ class TestHttpJsonStatusCodes:
         response = httpx.post(
             f"{client.base_url}{SEND_MESSAGE_BINDING.http_json_path}",
             content=json.dumps({"message": {"role": "ROLE_USER", "parts": [{"text": "ct test"}], "messageId": tck_id("status-ct-004")}}).encode(),
-            headers={"Content-Type": "text/plain"},
+            headers={"Content-Type": "text/plain", A2A_VERSION_HEADER: A2A_VERSION},
         )
 
         if response.status_code < _HTTP_ERROR_MIN:
@@ -205,7 +206,7 @@ class TestHttpJsonStatusCodes:
             json={"message": msg},
             headers={
                 "Content-Type": "application/json",
-                "A2A-Version": "99.0",
+                A2A_VERSION_HEADER: "99.0",
             },
         )
 
