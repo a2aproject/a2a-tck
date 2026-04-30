@@ -10,6 +10,9 @@ from typing import TYPE_CHECKING, Any, Iterator
 if TYPE_CHECKING:
     import httpx
 
+A2A_VERSION_HEADER = "A2A-Version"
+A2A_VERSION = "1.0"
+
 
 def _build_params(**kwargs: Any) -> dict:
     """Build a params dict, omitting None values."""

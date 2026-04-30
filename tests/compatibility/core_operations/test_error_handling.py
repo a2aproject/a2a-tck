@@ -22,6 +22,7 @@ import pytest
 
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
+from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.validators.error_info import validate_error_info
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must
@@ -87,7 +88,7 @@ def _jsonrpc_call(
         "method": method,
         "params": params,
     }
-    hdrs = {"Content-Type": "application/json"}
+    hdrs = {"Content-Type": "application/json", A2A_VERSION_HEADER: A2A_VERSION}
     if headers:
         hdrs.update(headers)
     return httpx.post(base_url, json=payload, headers=hdrs)
@@ -102,7 +103,7 @@ def _rest_call(
     headers: dict[str, str] | None = None,
 ) -> httpx.Response:
     """Make a raw HTTP request for REST binding."""
-    hdrs = {}
+    hdrs = {A2A_VERSION_HEADER: A2A_VERSION}
     if json_body is not None:
         hdrs["Content-Type"] = "application/json"
     if headers:
@@ -339,7 +340,7 @@ class TestVersionErrors:
             client.base_url,
             "SendMessage",
             {"message": msg},
-            headers={"A2A-Version": "99.0"},
+            headers={A2A_VERSION_HEADER: "99.0"},
         )
         body = response.json()
         passed = "error" in body
@@ -366,7 +367,7 @@ class TestVersionErrors:
             "POST",
             "/message:send",
             json_body={"message": msg},
-            headers={"A2A-Version": "99.0"},
+            headers={A2A_VERSION_HEADER: "99.0"},
         )
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error for unsupported version, got {response.status_code}"]
@@ -391,7 +392,7 @@ class TestVersionErrors:
             client.base_url,
             "SendMessage",
             {"message": msg},
-            headers={"A2A-Version": ""},
+            headers={A2A_VERSION_HEADER: ""},
         )
         body = response.json()
         # Empty version should be treated as 0.3. Server must return either
