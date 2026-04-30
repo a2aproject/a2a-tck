@@ -24,6 +24,8 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.validators.error_info import validate_error_info
+from tck.validators.http_json.error_validator import validate_http_json_error
+from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must
 
@@ -68,7 +70,6 @@ _JSONRPC_ERROR_CODE_MAX = -32600
 
 # Specific A2A error codes
 _TASK_NOT_FOUND_ERROR_CODE = -32001
-_EXTENSION_SUPPORT_REQUIRED_ERROR_CODE = -32008
 
 # ---------------------------------------------------------------------------
 # Helpers — raw calls for tests that need custom headers or invalid payloads
@@ -323,19 +324,8 @@ class TestCapabilityExtensionRequired:
         }
         response = _jsonrpc_call(client.base_url, "SendMessage", {"message": msg})
         body = response.json()
-        errors = []
-        if "error" not in body:
-            errors.append(
-                "Expected ExtensionSupportRequiredError when client omits "
-                f"required extension {self._REQUIRED_EXT_URI!r}"
-            )
-        elif isinstance(body["error"], dict):
-            code = body["error"].get("code")
-            if code != _EXTENSION_SUPPORT_REQUIRED_ERROR_CODE:
-                errors.append(
-                    f"Expected error code {_EXTENSION_SUPPORT_REQUIRED_ERROR_CODE} "
-                    f"(ExtensionSupportRequiredError), got {code}"
-                )
+        result = validate_jsonrpc_error(body, "ExtensionSupportRequiredError")
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_missing_required_extension_returns_error_http_json(
@@ -359,20 +349,8 @@ class TestCapabilityExtensionRequired:
         response = _rest_call(
             client.base_url, "POST", "/message:send", json_body={"message": msg},
         )
-        errors = []
-        if response.status_code < _HTTP_ERROR_STATUS:
-            errors.append(
-                "Expected error when client omits required extension "
-                f"{self._REQUIRED_EXT_URI!r}, got {response.status_code}"
-            )
-        else:
-            body = response.json()
-            if isinstance(body, dict):
-                reason = body.get("error", {}).get("reason") if isinstance(body.get("error"), dict) else None
-                if reason and reason != "EXTENSION_SUPPORT_REQUIRED":
-                    errors.append(
-                        f"Expected reason 'EXTENSION_SUPPORT_REQUIRED', got {reason!r}"
-                    )
+        result = validate_http_json_error(response, "ExtensionSupportRequiredError")
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
 
