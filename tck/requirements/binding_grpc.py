@@ -53,6 +53,7 @@ BINDING_GRPC_REQUIREMENTS: list[RequirementSpec] = [
         spec_url=f"{SPEC_BASE}101-protocol-requirements",
         tags=[GRPC, PROTOBUF],
     ),
+    # Not tested: TLS is a production deployment concern.
     RequirementSpec(
         id="GRPC-SVC-003",
         section="10.1",

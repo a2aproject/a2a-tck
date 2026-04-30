@@ -24,6 +24,8 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.validators.error_info import validate_error_info
+from tck.validators.http_json.error_validator import validate_http_json_error
+from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must
 
@@ -283,6 +285,72 @@ class TestCapabilityStreaming:
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Expected error for unsupported streaming"]
+        assert_and_record(compatibility_collector, req, transport, errors)
+
+
+@must
+@core
+class TestCapabilityExtensionRequired:
+    """CORE-CAP-004: Required extension missing returns ExtensionSupportRequiredError."""
+
+    _REQUIRED_EXT_URI = "urn:a2a:tck:required-extension"
+
+    @staticmethod
+    def _has_required_tck_extension(agent_card: dict[str, Any]) -> bool:
+        """Check if the agent card declares the TCK required extension."""
+        caps = agent_card.get("capabilities", {})
+        for ext in caps.get("extensions", []):
+            if ext.get("uri") == TestCapabilityExtensionRequired._REQUIRED_EXT_URI and ext.get("required"):
+                return True
+        return False
+
+    def test_missing_required_extension_returns_error_jsonrpc(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """Client omitting a required extension must trigger an error."""
+        req = CORE_CAP_004
+        transport = "jsonrpc"
+        if not self._has_required_tck_extension(agent_card):
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip(f"Agent card does not declare {self._REQUIRED_EXT_URI} as required")
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+        msg = {
+            "role": "ROLE_USER",
+            "parts": [{"text": "extension test"}],
+            "messageId": tck_id("cap-ext-004-jsonrpc"),
+        }
+        response = _jsonrpc_call(client.base_url, "SendMessage", {"message": msg})
+        body = response.json()
+        result = validate_jsonrpc_error(body, "ExtensionSupportRequiredError")
+        errors = [] if result.valid else [result.message]
+        assert_and_record(compatibility_collector, req, transport, errors)
+
+    def test_missing_required_extension_returns_error_http_json(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """Client omitting a required extension must trigger an error (HTTP+JSON)."""
+        req = CORE_CAP_004
+        transport = "http_json"
+        if not self._has_required_tck_extension(agent_card):
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip(f"Agent card does not declare {self._REQUIRED_EXT_URI} as required")
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+        msg = {
+            "role": "ROLE_USER",
+            "parts": [{"text": "extension test"}],
+            "messageId": tck_id("cap-ext-004-http-json"),
+        }
+        response = _rest_call(
+            client.base_url, "POST", "/message:send", json_body={"message": msg},
+        )
+        result = validate_http_json_error(response, "ExtensionSupportRequiredError")
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
 
