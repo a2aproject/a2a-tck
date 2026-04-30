@@ -25,6 +25,7 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
+from tck.validators import STREAM_RESPONSE
 from tests.compatibility._task_helpers import create_completed_task, create_working_task
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import must
@@ -508,7 +509,7 @@ class TestPushNotificationDelivery:
             )
         else:
             json_validator: JSONSchemaValidator = validators["http_json"]
-            result = json_validator.validate(webhook_req.json_body, "Stream Response")
+            result = json_validator.validate(webhook_req.json_body, STREAM_RESPONSE)
             if not result.valid:
                 errors.extend(result.errors)
 

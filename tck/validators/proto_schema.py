@@ -13,9 +13,22 @@ from typing import TYPE_CHECKING, Any
 
 from google.protobuf.descriptor import FieldDescriptor
 
+from specification.generated import a2a_pb2
+from tck.validators import AGENT_CARD, AGENT_INTERFACE, MESSAGE, SEND_MESSAGE_RESPONSE, STREAM_RESPONSE, TASK
+
 
 if TYPE_CHECKING:
     from google.protobuf.message import Message as ProtoMessage
+
+
+_SCHEMA_REF_TO_PROTO: dict[str, type[ProtoMessage]] = {
+    AGENT_CARD: a2a_pb2.AgentCard,
+    AGENT_INTERFACE: a2a_pb2.AgentInterface,
+    MESSAGE: a2a_pb2.Message,
+    SEND_MESSAGE_RESPONSE: a2a_pb2.SendMessageResponse,
+    STREAM_RESPONSE: a2a_pb2.StreamResponse,
+    TASK: a2a_pb2.Task,
+}
 
 
 # Field behavior values from google/api/field_behavior.proto
@@ -81,17 +94,30 @@ class ProtoSchemaValidator:
         """Initialize the validator."""
 
     def validate(
-        self, response: ProtoMessage, expected_type: type[ProtoMessage]
+        self,
+        response: ProtoMessage,
+        expected_type: str | type[ProtoMessage],
     ) -> ValidationResult:
         """Validate a proto message against an expected type.
 
         Args:
             response: The protobuf message to validate.
-            expected_type: The expected protobuf message class.
+            expected_type: The expected protobuf message class, or a schema
+                ref string (e.g. ``"Stream Response"``) that is resolved
+                via the built-in mapping.
 
         Returns:
             A ValidationResult with validation status and any errors.
         """
+        if isinstance(expected_type, str):
+            resolved = _SCHEMA_REF_TO_PROTO.get(expected_type)
+            if resolved is None:
+                return ValidationResult(
+                    valid=False,
+                    errors=[f"Unknown schema ref: {expected_type!r}"],
+                )
+            expected_type = resolved
+
         errors: list[str] = []
         proto_type = expected_type.DESCRIPTOR.full_name
 

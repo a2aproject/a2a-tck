@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from specification.generated import a2a_pb2
 from tck.requirements.base import (
     TASK_STATE_AUTH_REQUIRED,
     TASK_STATE_CANCELED,
@@ -27,11 +26,14 @@ from tck.requirements.base import (
 )
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
+from tck.validators import STREAM_RESPONSE
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import must, streaming
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from tck.transport.base import BaseTransportClient
 
 
@@ -53,7 +55,7 @@ _SAMPLE_MESSAGE = {
 }
 
 # State ordering: 0 = initial, 1 = active, 2 = terminal.
-_ALL_STATES = [
+_ALL_STATES_WITH_ORDER = [
     (TASK_STATE_SUBMITTED, 0),
     (TASK_STATE_WORKING, 1),
     (TASK_STATE_INPUT_REQUIRED, 1),
@@ -64,8 +66,17 @@ _ALL_STATES = [
     (TASK_STATE_REJECTED, 2),
 ]
 
-_GRPC_STATE_ORDER = {s.grpc_value: order for s, order in _ALL_STATES}
-_JSON_STATE_ORDER = {s.json_value: order for s, order in _ALL_STATES}
+# Maps json_value (str) → order. Both gRPC and JSON extractors return
+# the json_value string so a single lookup table works for all transports.
+_STATE_ORDER: dict[str, int] = {
+    s.json_value: order for s, order in _ALL_STATES_WITH_ORDER
+}
+
+# Reverse lookup: gRPC int enum → json_value string, so the gRPC
+# state extractor can return a transport-neutral key.
+_GRPC_STATE_TO_NAME: dict[int, str] = {
+    s.grpc_value: s.json_value for s, _ in _ALL_STATES_WITH_ORDER
+}
 
 
 # ---------------------------------------------------------------------------
@@ -99,13 +110,13 @@ def _get_streaming_events(
     return events
 
 
-def _get_event_state_grpc(event: Any) -> int | None:
-    """Extract task state from a gRPC StreamResponse event."""
+def _get_event_state_grpc(event: Any) -> str | None:
+    """Extract task state name from a gRPC StreamResponse event."""
     payload = event.WhichOneof("payload")
     if payload == "task":
-        return event.task.status.state
+        return _GRPC_STATE_TO_NAME.get(event.task.status.state)
     if payload == "status_update":
-        return event.status_update.status.state
+        return _GRPC_STATE_TO_NAME.get(event.status_update.status.state)
     return None
 
 
@@ -128,38 +139,21 @@ def _get_event_state_json(event: dict) -> str | None:
     return None
 
 
-def _check_ordering_grpc(events: list[Any]) -> list[str]:
-    """Check gRPC event ordering: no state regression."""
+def _check_ordering(
+    events: list[Any],
+    get_state: Callable[[Any], str | None],
+) -> list[str]:
+    """Check event ordering: no state regression."""
     errors: list[str] = []
     max_order = -1
     for i, event in enumerate(events):
-        state = _get_event_state_grpc(event)
+        state = get_state(event)
         if state is None:
             continue
-        order = _GRPC_STATE_ORDER.get(state, -1)
+        order = _STATE_ORDER.get(state, -1)
         if order < max_order:
             errors.append(
-                f"Event {i}: state {a2a_pb2.TaskState.Name(state)} "
-                f"regresses from a later state"
-            )
-        else:
-            max_order = order
-
-    return errors
-
-
-def _check_ordering_json(events: list[dict]) -> list[str]:
-    """Check JSON event ordering: no state regression."""
-    errors: list[str] = []
-    max_order = -1
-    for i, event in enumerate(events):
-        state = _get_event_state_json(event)
-        if state is None:
-            continue
-        order = _JSON_STATE_ORDER.get(state, -1)
-        if order < max_order:
-            errors.append(
-                f"Event {i}: state {state!r} regresses from a later state"
+                f"Event {i}: state {state} regresses from a later state"
             )
         else:
             max_order = order
@@ -184,6 +178,7 @@ class TestStreamEventOrdering:
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """STREAM-ORDER-001: Task states do not regress; last event is terminal."""
         req = STREAM_ORDER_001
@@ -201,6 +196,13 @@ class TestStreamEventOrdering:
 
         events = _get_streaming_events(client, agent_card)
 
-        errors = _check_ordering_grpc(events) if transport == "grpc" else _check_ordering_json(events)
+        get_state = _get_event_state_grpc if transport == "grpc" else _get_event_state_json
+        errors = _check_ordering(events, get_state)
+
+        validator = validators[transport]
+        for i, event in enumerate(events):
+            result = validator.validate(event, STREAM_RESPONSE)
+            if not result.valid:
+                errors.extend(f"Event {i}: {e}" for e in result.errors)
 
         assert_and_record(compatibility_collector, req, transport, errors)

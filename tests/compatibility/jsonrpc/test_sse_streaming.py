@@ -18,6 +18,7 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
+from tck.validators import STREAM_RESPONSE
 from tests.compatibility._task_helpers import create_working_task
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import jsonrpc, must, streaming
@@ -127,6 +128,7 @@ class TestSseStreamingFormat:
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """JSONRPC-SSE-001: Each event result contains a StreamResponse object."""
         req = JSONRPC_SSE_001
@@ -138,6 +140,7 @@ class TestSseStreamingFormat:
         events = _get_streaming_events(client, agent_card)
 
         errors: list[str] = []
+        validator = validators[transport]
         for i, event in enumerate(events):
             result = event.get("result")
             if result is None:
@@ -151,6 +154,9 @@ class TestSseStreamingFormat:
                     f"Event {i}: result has none of {sorted(_STREAM_RESPONSE_KEYS)}, "
                     f"got keys {sorted(result.keys())}"
                 )
+            validation = validator.validate(event, STREAM_RESPONSE)
+            if not validation.valid:
+                errors.extend(f"Event {i}: {e}" for e in validation.errors)
 
         assert_and_record(compatibility_collector, req, transport, errors)
 
@@ -220,6 +226,7 @@ class TestSseSubscribeToTask:
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """STREAM-SUB-001: First event from SubscribeToTask contains a Task object."""
         req = STREAM_SUB_001
@@ -255,5 +262,10 @@ class TestSseSubscribeToTask:
                 f"got keys {sorted(first_result.keys())}"
             ]
         )
+
+        validator = validators[transport]
+        validation = validator.validate(first_event, STREAM_RESPONSE)
+        if not validation.valid:
+            errors.extend(validation.errors)
 
         assert_and_record(compatibility_collector, req, transport, errors)
