@@ -27,7 +27,7 @@ from tck.requirements.base import (
     SEND_MESSAGE_BINDING,
     SUBSCRIBE_TO_TASK_BINDING,
 )
-from tck.transport._helpers import _build_params, _stream_sse
+from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER, _build_params, _stream_sse
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
@@ -113,6 +113,7 @@ class HttpJsonClient(BaseTransportClient):
         self._client = httpx.Client(
             base_url=base_url,
             timeout=httpx.Timeout(5.0, read=30.0),
+            headers={A2A_VERSION_HEADER: A2A_VERSION},
         )
 
     def close(self) -> None:

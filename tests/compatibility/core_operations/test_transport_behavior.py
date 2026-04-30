@@ -21,6 +21,7 @@ import pytest
 
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
+from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import grpc, http_json, jsonrpc, must, streaming
 
@@ -183,6 +184,7 @@ class TestJsonRpcServiceParams:
             json=payload,
             headers={
                 "Content-Type": "application/json",
+                A2A_VERSION_HEADER: A2A_VERSION,
                 "A2A-Extensions": "https://example.com/ext/v1,https://example.com/ext/v2",
             },
         )
@@ -303,6 +305,7 @@ class TestRestServiceParams:
             json={"message": msg},
             headers={
                 "Content-Type": "application/json",
+                A2A_VERSION_HEADER: A2A_VERSION,
                 "A2A-Extensions": "https://example.com/ext/v1,https://example.com/ext/v2",
             },
         )
