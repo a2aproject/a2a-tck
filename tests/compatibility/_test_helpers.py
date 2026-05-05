@@ -98,10 +98,13 @@ def collect_events_with_timeout(
     collected: list[Any] = []
 
     def _drain() -> None:
-        for event in events_iter:
-            collected.append(event)
-            if stop_after_first:
-                break
+        try:
+            for event in events_iter:
+                collected.append(event)
+                if stop_after_first:
+                    break
+        except Exception:
+            pass
 
     thread = threading.Thread(target=_drain, daemon=True)
     thread.start()
