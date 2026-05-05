@@ -539,6 +539,7 @@ class TestGrpcServiceParams:
         )
         # gRPC metadata keys are lowercase per HTTP/2
         grpc_metadata = [
+            (A2A_VERSION_HEADER.lower(), A2A_VERSION),
             ("a2a-extensions", "https://example.com/ext/v1,https://example.com/ext/v2"),
         ]
         errors = []
