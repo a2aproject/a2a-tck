@@ -251,7 +251,34 @@ class JSONSchemaValidator:
         path = self._format_json_path(list(error.absolute_path))
         return f"{path}: {error.message}"
 
-    def validate(self, response: dict[str, Any], schema_ref: str) -> ValidationResult:
+    @staticmethod
+    def _strip_additional_properties(schema: dict[str, Any]) -> dict[str, Any]:
+        """Return a copy of *schema* with all ``"additionalProperties": false`` removed.
+
+        This allows the validator to check required fields and types while
+        accepting unknown extension fields — which the A2A spec permits on
+        several structures (e.g. Agent Card).
+        """
+        def _walk(node: Any) -> None:
+            if isinstance(node, dict):
+                if node.get("additionalProperties") is False:
+                    del node["additionalProperties"]
+                for value in node.values():
+                    _walk(value)
+            elif isinstance(node, list):
+                for item in node:
+                    _walk(item)
+
+        _walk(schema)
+        return schema
+
+    def validate(
+        self,
+        response: dict[str, Any],
+        schema_ref: str,
+        *,
+        allow_additional: bool = False,
+    ) -> ValidationResult:
         """Validate a JSON response against a specific schema definition.
 
         Args:
@@ -259,6 +286,8 @@ class JSONSchemaValidator:
             schema_ref: The schema reference to validate against. Can be:
                        - A definition name (e.g., "Task")
                        - A full reference (e.g., "#/definitions/Task")
+            allow_additional: When True, strip ``"additionalProperties": false``
+                from the schema so that unknown extension fields are accepted.
 
         Returns:
             A ValidationResult with validation status and any errors.
@@ -273,6 +302,9 @@ class JSONSchemaValidator:
 
         # Resolve all $refs in the definition
         resolved_definition = self._resolve_all_refs(definition)
+
+        if allow_additional:
+            resolved_definition = self._strip_additional_properties(resolved_definition)
 
         # Create a validator
         validator_cls = validator_for(resolved_definition)
