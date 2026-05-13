@@ -257,3 +257,56 @@ class TestRefResolution:
         }
         result = validator.validate(task, "Task")
         assert result.valid is True
+
+
+class TestAllowAdditionalProperties:
+    """Tests for the allow_additional parameter."""
+
+    def test_extra_fields_accepted(self, validator: JSONSchemaValidator) -> None:
+        """Additional properties pass when allow_additional=True."""
+        agent_card = {
+            "name": "Test Agent",
+            "description": "A test agent",
+            "version": "1.0.0",
+            "x-custom-extension": "hello",
+        }
+        result = validator.validate(agent_card, "Agent Card", allow_additional=True)
+        assert result.valid is True
+        assert result.errors == []
+
+    def test_extra_fields_rejected_by_default(self, validator: JSONSchemaValidator) -> None:
+        """Additional properties still fail without allow_additional."""
+        agent_card = {
+            "name": "Test Agent",
+            "description": "A test agent",
+            "version": "1.0.0",
+            "x-custom-extension": "hello",
+        }
+        result = validator.validate(agent_card, "Agent Card")
+        assert result.valid is False
+        assert any("x-custom-extension" in e for e in result.errors)
+
+    def test_type_errors_still_caught(self, validator: JSONSchemaValidator) -> None:
+        """Type errors are still reported even with allow_additional=True."""
+        agent_card = {
+            "name": 123,  # Should be string
+            "description": "A test agent",
+            "version": "1.0.0",
+        }
+        result = validator.validate(agent_card, "Agent Card", allow_additional=True)
+        assert result.valid is False
+        assert any("name" in e for e in result.errors)
+
+    def test_nested_extra_fields_accepted(self, validator: JSONSchemaValidator) -> None:
+        """Additional properties in nested objects pass with allow_additional=True."""
+        task = {
+            "id": "task-123",
+            "status": {
+                "state": "TASK_STATE_WORKING",
+                "x-extra": "value",
+            },
+            "x-top-level-extra": True,
+        }
+        result = validator.validate(task, "Task", allow_additional=True)
+        assert result.valid is True
+        assert result.errors == []
