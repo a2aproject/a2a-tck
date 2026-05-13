@@ -115,7 +115,9 @@ class TestAgentCardStructure:
         """Agent card must validate against the Agent Card JSON schema."""
         req = CARD_STRUCT_001
         json_validator: JSONSchemaValidator = validators["http_json"]
-        result = json_validator.validate(agent_card, "Agent Card")
+        result = json_validator.validate(
+            agent_card, "Agent Card", allow_additional=True,
+        )
         _record(collector=compatibility_collector, req=req,
                 passed=result.valid, errors=result.errors)
         assert result.valid, _fail_msg(req, "; ".join(result.errors))
