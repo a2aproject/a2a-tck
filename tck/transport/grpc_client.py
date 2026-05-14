@@ -899,9 +899,18 @@ class GRPCClient(BaseTransportClient):
             pb = self._pb
 
             # Build push notification config
-            push_config = pb.PushNotificationConfig(
-                id=config.get("id", "default"), url=config.get("url", ""), token=config.get("token", "")
-            )
+            push_kwargs = {
+                "id": config.get("id", "default"),
+                "url": config.get("url", ""),
+                "token": config.get("token", ""),
+            }
+            auth = config.get("authentication")
+            if auth:
+                push_kwargs["authentication"] = pb.AuthenticationInfo(
+                    schemes=auth.get("schemes", []),
+                    credentials=auth.get("credentials", ""),
+                )
+            push_config = pb.PushNotificationConfig(**push_kwargs)
 
             # Build task push notification config
             task_config = pb.TaskPushNotificationConfig(

@@ -5,6 +5,7 @@ import requests
 import uuid
 import logging
 from tck import agent_card_utils
+from tck.webhook.server import WebhookReceiver
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,12 @@ def pytest_addoption(parser):
         action="store_true",
         default=True,
         help="Enable transport equivalence testing for multi-transport SUTs",
+    )
+    parser.addoption(
+        "--webhook-host",
+        action="store",
+        default="localhost",
+        help="Hostname the SUT uses to reach the TCK webhook receiver (default: localhost)",
     )
 
 
@@ -100,6 +107,21 @@ def agent_card_data(request):
         if card is None:
             pytest.fail("Failed to fetch or parse Agent Card from the SUT. Check SUT URL and Agent Card endpoint.")
         return card
+
+
+@pytest.fixture(scope="session")
+def webhook_host(request):
+    """Return the hostname the SUT should use to reach the webhook receiver."""
+    return request.config.getoption("--webhook-host")
+
+
+@pytest.fixture(scope="session")
+def webhook_receiver():
+    """Start a webhook receiver for the duration of the test session."""
+    receiver = WebhookReceiver()
+    receiver.start()
+    yield receiver
+    receiver.stop()
 
 
 def pytest_generate_tests(metafunc):
