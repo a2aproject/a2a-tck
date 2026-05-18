@@ -188,8 +188,8 @@ cython_debug/
 
 .local-documents/
 #ignore local SDK as SUT
-/a2a-python
-/a2a-java-sdk
+a2a-python
+a2a-java-sdk
 
 # spec cache
 spec_tracker/cache
@@ -200,11 +200,7 @@ spec_tracker/cache
 reports/
 
 .DS_Store
-<<<<<<< HEAD
-.serena/
 .claude/
 .bob/
-=======
 .serena
 .claude/settings.local.json
->>>>>>> 7355020 (chore: add .claude/settings.local.json to .gitignore)
