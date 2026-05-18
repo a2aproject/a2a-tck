@@ -1113,7 +1113,7 @@ class TestHttpJsonStatus:
     def test_problem_details_format(self, rest_client):
         """Error responses SHOULD use RFC 7807 Problem Details."""
         response = rest_client.get_task("nonexistent-task-id")
-        result = validate_rest_error(response.raw_response, "TaskNotFoundError")
+        result = validate_http_json_error(response.raw_response, "TaskNotFoundError")
 
         assert result.problem_details is not None, "Missing Problem Details"
         assert result.problem_details.type == "TaskNotFoundError"
