@@ -63,7 +63,7 @@ All A2A bindings (transport methods, error codes, task states, etc.) are defined
 - Python 3.11+, `from __future__ import annotations` in every file
 - Linter: run `make lint`
 - Third-party imports used only as type hints go under `if TYPE_CHECKING:` (ruff TC002 rule)
-- Import statemments are sorted
+- Import statements are sorted
 - No private member access across modules (ruff SLF001 rule) — use public properties
 
 ### Code generation
