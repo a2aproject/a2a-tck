@@ -1,9 +1,0 @@
-# buf generate
-# Configuration for the buf generate command
-# Uses remote plugins, no separate install required.
-version: v2
-plugins:
-  - remote: buf.build/protocolbuffers/python:v29.3
-    out: ../tck/grpc_stubs
-  - remote: buf.build/grpc/python
-    out: ../tck/grpc_stubs

@@ -1,0 +1,302 @@
+"""Tests for the CompatibilityAggregator."""
+
+from __future__ import annotations
+
+from unittest.mock import patch
+
+import pytest
+
+from tck.reporting.aggregator import CompatibilityAggregator
+from tck.reporting.collector import CompatibilityCollector
+
+
+FULL = 100.0
+HALF = 50.0
+ZERO = 0.0
+
+
+@pytest.fixture
+def collector() -> CompatibilityCollector:
+    """Return a fresh CompatibilityCollector."""
+    return CompatibilityCollector()
+
+
+class TestEmptyCollector:
+    """Aggregating an empty collector."""
+
+    def test_empty_gives_100_percent(self, collector: CompatibilityCollector) -> None:
+        """Empty collector yields 100% compatibility everywhere."""
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", []):
+            report = CompatibilityAggregator(collector).aggregate()
+        assert report.overall_compatibility == FULL
+        assert report.must_compatibility == FULL
+        assert report.should_compatibility == FULL
+        assert report.may_compatibility == FULL
+        assert report.per_requirement == {}
+        assert report.per_transport == {}
+
+
+class TestAllPassing:
+    """All MUST requirements passing."""
+
+    def test_all_must_passing(self, collector: CompatibilityCollector) -> None:
+        """All MUST requirements pass yields 100% compatibility."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=True, level="MUST")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        assert report.must_compatibility == FULL
+        assert report.overall_compatibility == FULL
+        assert report.per_requirement["R1"].status == "PASS"
+        assert report.per_requirement["R2"].status == "PASS"
+
+
+class TestMixedPassFail:
+    """Mixed pass/fail across levels."""
+
+    def test_mixed_compatibility(self, collector: CompatibilityCollector) -> None:
+        """One MUST pass and one MUST fail yields 50% MUST compatibility."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="MUST")
+        collector.record(requirement_id="R3", transport="http", passed=True, level="SHOULD")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        assert report.must_compatibility == HALF
+        assert report.should_compatibility == FULL
+
+    def test_overall_includes_all_levels(self, collector: CompatibilityCollector) -> None:
+        """Overall compatibility considers requirements across all levels."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="SHOULD")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        assert report.overall_compatibility == HALF
+
+
+class TestRequirementAcrossTransports:
+    """A requirement failing on one transport is FAIL overall."""
+
+    def test_fail_on_one_transport(self, collector: CompatibilityCollector) -> None:
+        """Requirement failing on grpc but passing on http is FAIL overall."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R1", transport="grpc", passed=False, level="MUST")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        req = report.per_requirement["R1"]
+        assert req.status == "FAIL"
+        assert req.transports == {"http": "PASS", "grpc": "FAIL"}
+
+    def test_pass_on_all_transports(self, collector: CompatibilityCollector) -> None:
+        """Requirement passing on all transports is PASS overall."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R1", transport="grpc", passed=True, level="MUST")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        req = report.per_requirement["R1"]
+        assert req.status == "PASS"
+        assert req.transports == {"http": "PASS", "grpc": "PASS"}
+
+
+class TestPerTransport:
+    """Per-transport counts are correct."""
+
+    def test_transport_counts(self, collector: CompatibilityCollector) -> None:
+        """Per-transport totals, passed, and failed are counted correctly."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="MUST")
+        collector.record(requirement_id="R3", transport="grpc", passed=True, level="MUST")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        http = report.per_transport["http"]
+        grpc = report.per_transport["grpc"]
+        expected_http_total = 2
+        assert http.total == expected_http_total
+        assert http.passed == 1
+        assert http.failed == 1
+        assert grpc.total == 1
+        assert grpc.passed == 1
+        assert grpc.failed == 0
+
+
+class TestLevelSpecific:
+    """Level-specific compatibility computed independently."""
+
+    def test_independent_levels(self, collector: CompatibilityCollector) -> None:
+        """Each level's compatibility is computed independently."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="SHOULD")
+        collector.record(requirement_id="R3", transport="http", passed=True, level="MAY")
+        collector.record(requirement_id="R4", transport="http", passed=True, level="MAY")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        assert report.must_compatibility == FULL
+        assert report.should_compatibility == ZERO
+        assert report.may_compatibility == FULL
+
+
+class TestToDict:
+    """to_dict() returns a JSON-serialisable dict."""
+
+    def test_to_dict_serializable(self, collector: CompatibilityCollector) -> None:
+        """to_dict() returns a plain dict with correct structure."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        d = report.to_dict()
+
+        assert isinstance(d, dict)
+        assert isinstance(d["per_requirement"], dict)
+        assert isinstance(d["per_requirement"]["R1"], dict)
+        assert d["per_requirement"]["R1"]["status"] == "PASS"
+        assert isinstance(d["overall_compatibility"], float)
+
+    def test_to_dict_has_timestamp(self, collector: CompatibilityCollector) -> None:
+        """to_dict() includes an ISO 8601 timestamp."""
+        report = CompatibilityAggregator(collector).aggregate()
+        d = report.to_dict()
+        assert "timestamp" in d
+        assert isinstance(d["timestamp"], str)
+
+
+class TestSkippedStatus:
+    """Skipped tests are tracked separately from pass/fail."""
+
+    def test_skipped_only_requirement(self, collector: CompatibilityCollector) -> None:
+        """Requirement with only skipped results has status SKIPPED."""
+        collector.record(requirement_id="R1", transport="http", passed=False, level="MUST", skipped=True)
+
+        report = CompatibilityAggregator(collector).aggregate()
+        assert report.per_requirement["R1"].status == "SKIPPED"
+        assert report.per_requirement["R1"].transports == {"http": "SKIPPED"}
+
+    def test_mixed_pass_and_skipped(self, collector: CompatibilityCollector) -> None:
+        """Requirement passing on one transport and skipped on another is PASS."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R1", transport="grpc", passed=False, level="MUST", skipped=True)
+
+        report = CompatibilityAggregator(collector).aggregate()
+        assert report.per_requirement["R1"].status == "PASS"
+        assert report.per_requirement["R1"].transports == {"http": "PASS", "grpc": "SKIPPED"}
+
+    def test_mixed_fail_and_skipped(self, collector: CompatibilityCollector) -> None:
+        """Requirement failing on one transport and skipped on another is FAIL."""
+        collector.record(
+            requirement_id="R1", transport="http", passed=False, level="MUST", errors=["err"]
+        )
+        collector.record(requirement_id="R1", transport="grpc", passed=False, level="MUST", skipped=True)
+
+        report = CompatibilityAggregator(collector).aggregate()
+        assert report.per_requirement["R1"].status == "FAIL"
+
+    def test_skipped_excluded_from_compatibility(self, collector: CompatibilityCollector) -> None:
+        """Skipped requirements are excluded from compatibility percentage."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="MUST", skipped=True)
+
+        report = CompatibilityAggregator(collector).aggregate()
+        # R1 passes, R2 skipped → only R1 counts → 100%
+        assert report.must_compatibility == FULL
+        assert report.overall_compatibility == FULL
+
+    def test_per_transport_includes_skipped(self, collector: CompatibilityCollector) -> None:
+        """Per-transport counts include a skipped field."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+        collector.record(requirement_id="R2", transport="http", passed=False, level="MUST", skipped=True)
+
+        report = CompatibilityAggregator(collector).aggregate()
+        http = report.per_transport["http"]
+        assert http.passed == 1
+        assert http.skipped == 1
+        assert http.failed == 0
+        expected_total = 2
+        assert http.total == expected_total
+
+
+class TestErrorAggregation:
+    """Errors are aggregated from failing results."""
+
+    def test_errors_collected(self, collector: CompatibilityCollector) -> None:
+        """Errors from all failing transports are aggregated."""
+        collector.record(
+            requirement_id="R1",
+            transport="http",
+            passed=False,
+            errors=["bad status"],
+            level="MUST",
+        )
+        collector.record(
+            requirement_id="R1",
+            transport="grpc",
+            passed=False,
+            errors=["timeout", "connection refused"],
+            level="MUST",
+        )
+
+        report = CompatibilityAggregator(collector).aggregate()
+        req = report.per_requirement["R1"]
+        assert req.errors == ["bad status", "timeout", "connection refused"]
+
+    def test_passing_has_no_errors(self, collector: CompatibilityCollector) -> None:
+        """Passing requirement has an empty errors list."""
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+
+        report = CompatibilityAggregator(collector).aggregate()
+        assert report.per_requirement["R1"].errors == []
+
+
+class TestUntestedRequirements:
+    """Untested requirements from the registry appear with NOT TESTED status."""
+
+    def _make_spec(self, req_id: str, level: str) -> object:
+        """Create a minimal RequirementSpec-like object."""
+        from tck.requirements.base import RequirementLevel, RequirementSpec
+
+        return RequirementSpec(
+            id=req_id,
+            title=f"Title for {req_id}",
+            description=f"Description for {req_id}",
+            level=RequirementLevel(level),
+            section="1.0",
+        )
+
+    def test_untested_requirements_included(self, collector: CompatibilityCollector) -> None:
+        """Requirements in registry but not tested appear as NOT TESTED."""
+        fake_registry = [
+            self._make_spec("R1", "MUST"),
+            self._make_spec("R-UNTESTED", "SHOULD"),
+        ]
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", fake_registry):
+            report = CompatibilityAggregator(collector).aggregate()
+
+        assert "R-UNTESTED" in report.per_requirement
+        untested = report.per_requirement["R-UNTESTED"]
+        assert untested.status == "NOT TESTED"
+        assert untested.level == "SHOULD"
+        assert untested.transports == {}
+        assert untested.description == "Description for R-UNTESTED"
+
+    def test_untested_excluded_from_compatibility(self, collector: CompatibilityCollector) -> None:
+        """NOT TESTED requirements do not affect compatibility percentages."""
+        fake_registry = [
+            self._make_spec("R1", "MUST"),
+            self._make_spec("R-UNTESTED", "MUST"),
+        ]
+        collector.record(requirement_id="R1", transport="http", passed=True, level="MUST")
+
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", fake_registry):
+            report = CompatibilityAggregator(collector).aggregate()
+
+        assert report.must_compatibility == FULL
+        assert report.overall_compatibility == FULL
+
+    def test_tested_requirement_not_overwritten(self, collector: CompatibilityCollector) -> None:
+        """A requirement that was tested keeps its actual result."""
+        fake_registry = [self._make_spec("R1", "MUST")]
+        collector.record(requirement_id="R1", transport="http", passed=False, level="MUST")
+
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", fake_registry):
+            report = CompatibilityAggregator(collector).aggregate()
+
+        assert report.per_requirement["R1"].status == "FAIL"

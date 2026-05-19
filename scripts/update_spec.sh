@@ -3,7 +3,7 @@
 # Default values
 ORG="a2aproject"
 BRANCH="main"
-SPEC_DIR="current_spec"
+SPEC_DIR="specification"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -70,13 +70,26 @@ download "${BASE_URL}/specification/buf.lock" "buf.lock" || exit 1
 download "${BASE_URL}/specification/buf.yaml" "buf.yaml" || exit 1
 download "${BASE_URL}/docs/specification.md" "specification.md" || exit 1
 
-# Create info.json with download metadata
+# Get the latest commit hash from GitHub API
+echo "Fetching commit hash..."
+COMMIT_HASH=$(curl -sf "https://api.github.com/repos/${ORG}/A2A/commits/${BRANCH}" | grep -m1 '"sha"' | cut -d'"' -f4)
+if [ -z "$COMMIT_HASH" ]; then
+    echo "⚠️ Could not fetch commit hash, using 'unknown'"
+    COMMIT_HASH="unknown"
+else
+    echo "📌 Commit: ${COMMIT_HASH:0:7}"
+fi
+
+# Create version.json with download metadata
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-cat > "${SPEC_DIR}/info.json" <<EOF
+cat > "${SPEC_DIR}/version.json" <<EOF
 {
   "downloadTime": "${TIMESTAMP}",
   "organization": "${ORG}",
+  "repository": "A2A",
   "branch": "${BRANCH}",
+  "commitHash": "${COMMIT_HASH}",
+  "sourceUrl": "https://github.com/${ORG}/A2A/tree/${COMMIT_HASH}/specification",
   "files": [
     "a2a.proto",
     "buf.lock",
@@ -88,4 +101,4 @@ EOF
 
 echo ""
 echo "✅ All files downloaded successfully to ${SPEC_DIR}/"
-echo "📝 Download metadata saved to ${SPEC_DIR}/info.json"
+echo "📝 Version metadata saved to ${SPEC_DIR}/version.json"

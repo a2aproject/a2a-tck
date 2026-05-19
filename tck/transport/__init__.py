@@ -1,21 +1,27 @@
-"""
-A2A Transport Layer Module
+"""A2A transport layer - clients, manager, and shared types."""
 
-This module provides transport-agnostic client implementations for the A2A protocol v0.3.0.
-Supports multiple transport protocols: JSON-RPC 2.0, gRPC, and HTTP+JSON/REST.
+from __future__ import annotations
 
-The transport layer abstracts protocol-specific details while maintaining functional
-equivalence across all supported transports.
+from tck.transport.base import (
+    BaseTransportClient,
+    StreamingResponse,
+    TransportResponse,
+)
+from tck.transport.dispatch import execute_operation
+from tck.transport.grpc_client import GrpcClient
+from tck.transport.http_json_client import HttpJsonClient
+from tck.transport.jsonrpc_client import JsonRpcClient
+from tck.transport.manager import ALL_TRANSPORTS, TransportManager
 
-Specification: A2A Protocol v0.3.0 §3 - Transport and Format
-"""
-
-from .base_client import BaseTransportClient, TransportError, TransportType
-# from .transport_manager import TransportManager  # Will be added in Task 1.3
 
 __all__ = [
+    "ALL_TRANSPORTS",
     "BaseTransportClient",
-    "TransportError",
-    "TransportType",
-    # "TransportManager",  # Will be added in Task 1.3
+    "GrpcClient",
+    "HttpJsonClient",
+    "JsonRpcClient",
+    "StreamingResponse",
+    "TransportManager",
+    "TransportResponse",
+    "execute_operation",
 ]
