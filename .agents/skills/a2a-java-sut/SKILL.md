@@ -7,18 +7,18 @@ allowed-tools: Bash(make:*) Bash(mvn:*) Bash(java:*) Bash(curl:*) Bash(kill:*) B
 
 # Work with the a2a-java SUT
 
-The a2a-java SUT is a Quarkus application generated from Gherkin `.feature` files in `scenarios/`. It implements the A2A protocol using the a2a-java SDK and serves as a conformance target for TCK tests.
+The a2a-java SUT is a Quarkus application that lives in the [`tck` module](https://github.com/a2aproject/a2a-java/tree/main/tck) of the a2a-java repository. The TCK code generator produces two CDI producer files (`TckAgentCardProducer.java` and `TckAgentExecutorProducer.java`) from Gherkin `.feature` files and copies them into the user's local clone of the a2a-java repo.
 
 ## Architecture overview
 
 ```
-scenarios/*.feature → codegen (parser + steps + java_emitter) → sut/a2a-java/
+scenarios/*.feature → codegen (parser + steps + java_emitter) → $A2A_JAVA_DIR/tck/
 ```
 
 - **Gherkin scenarios** (`scenarios/*.feature`) define SUT behavior via messageId prefix matching
-- **Code generator** (`codegen/`) parses `.feature` files and emits a Quarkus project
-- **Jinja2 templates** (`codegen/a2a-java/*.j2`) produce the Java sources, `pom.xml`, and `application.properties`
-- **Generated output** (`sut/a2a-java/`) is a complete Maven project
+- **Code generator** (`codegen/`) parses `.feature` files and emits Java sources
+- **Jinja2 templates** (`codegen/a2a-java/*.j2`) produce the two CDI producer files
+- **Generated output** goes into the `tck` module of the user's local a2a-java clone
 
 ### Key generated files
 
@@ -26,8 +26,6 @@ scenarios/*.feature → codegen (parser + steps + java_emitter) → sut/a2a-java
 |------|----------|---------|
 | `TckAgentExecutorProducer.java` | `TckAgentExecutorProducer.java.j2` | CDI producer for `AgentExecutor`; routes by messageId prefix |
 | `TckAgentCardProducer.java` | `TckAgentCardProducer.java.j2` | CDI producer for `AgentCard` with all three transports |
-| `pom.xml` | `pom.xml.j2` | Maven build with Quarkus BOM and a2a-java SDK dependencies |
-| `application.properties` | `application.properties.j2` | Quarkus config: port 9999, gRPC on same server |
 
 ### How the executor works
 
@@ -42,33 +40,40 @@ if (messageId.startsWith("tck-complete-task")) {
 
 The TCK tests use `tck_id("complete-task")` which generates `tck-complete-task-<session_hex>`, matching the prefix.
 
-## Step 0: Inform the user of the version of a2a-java
+## Step 0: Set up the a2a-java clone
 
-The a2a-java SDK version is controlled by the `A2A_JAVA_SDK_VERSION` environment variable.
-The default value is defined in `codegen/java_emitter.py` (`_DEFAULT_A2A_JAVA_SDK_VERSION`).
+The `A2A_JAVA_DIR` environment variable must point to the root of a local clone of the [a2a-java](https://github.com/a2aproject/a2a-java) repository.
 
-Read the actual default version from `codegen/java_emitter.py` (grep for `_DEFAULT_A2A_JAVA_SDK_VERSION`) and check the env var. Report to the user which version will be used and propose setting the env var if they want a different version:
+Check if the clone already exists as a sibling directory:
 
 ```bash
-# Use default version
-make codegen-a2a-java-sut
+ls -d ../a2a-java 2>/dev/null && echo "Found at ../a2a-java"
+```
 
-# Use a specific version
-A2A_JAVA_SDK_VERSION=1.0.0.Final make codegen-a2a-java-sut
+If it exists, set:
+```bash
+export A2A_JAVA_DIR=$(cd ../a2a-java && pwd)
+```
+
+If not, clone it:
+```bash
+git clone https://github.com/a2aproject/a2a-java.git ../a2a-java
+export A2A_JAVA_DIR=$(cd ../a2a-java && pwd)
 ```
 
 ## Step 1: Regenerate the SUT
 
-When Gherkin scenarios change, regenerate the Java project:
+When Gherkin scenarios change, regenerate the Java producer files:
 
 ```bash
-make codegen-a2a-java-sut
+A2A_JAVA_DIR=/path/to/a2a-java make codegen-a2a-java-sut
 ```
 
-This runs `uv run python -m codegen.generator --target a2a-java --output sut/a2a-java` which:
+This runs `uv run python -m codegen.generator --target a2a-java --output $A2A_JAVA_DIR/tck` which:
 1. Parses all `scenarios/*.feature` files
 2. Resolves step text to Trigger/Action objects via `codegen/steps.py`
-3. Emits Java sources using Jinja2 templates from `codegen/a2a-java/`
+3. Emits `TckAgentCardProducer.java` and `TckAgentExecutorProducer.java` using Jinja2 templates from `codegen/a2a-java/`
+4. Writes them into `$A2A_JAVA_DIR/tck/src/main/java/org/a2aproject/sdk/sut/`
 
 ### Adding new SUT behaviors
 
@@ -84,26 +89,21 @@ To add new behaviors:
 Templates are in `codegen/a2a-java/`:
 - `TckAgentExecutorProducer.java.j2` — handler routing and action code
 - `TckAgentCardProducer.java.j2` — agent card with capabilities and interfaces
-- `pom.xml.j2` — Maven dependencies (Quarkus BOM, a2a-java SDK, protobuf override)
-- `application.properties.j2` — Quarkus runtime config
 
 After modifying templates, regenerate with `make codegen-a2a-java-sut`.
 
 ## Step 2: Build the SUT
 
+Build from the root of the a2a-java repository so the parent pom and SDK modules are installed first:
+
 ```bash
-cd sut/a2a-java && mvn package
+cd $A2A_JAVA_DIR && mvn clean install
 ```
-
-### Common build issues
-
-- **Protobuf version mismatch** — The a2a-java SDK gencode requires a specific protobuf version. The `pom.xml.j2` overrides `protobuf-java.version` in `dependencyManagement` to match.
-- **Missing SDK snapshots** — The a2a-java SDK uses SNAPSHOT versions. Ensure they are installed in the local Maven repository (`~/.m2/repository/io/github/a2asdk/`).
 
 ## Step 3: Start the SUT
 
 ```bash
-cd sut/a2a-java && mvn quarkus:dev -Dquarkus.console.enabled=false
+cd $A2A_JAVA_DIR/tck && mvn quarkus:dev -Dquarkus.console.enabled=false
 ```
 
 The `-Dquarkus.console.enabled=false` flag disables the interactive Quarkus console, which is required when running in the background or non-interactively.
@@ -173,13 +173,14 @@ Read `reports/compatibility.json` for structured results. For detailed diagnosis
 2. **Agent card 404** — Wrong URL; the a2a-java SDK serves at `/.well-known/agent-card.json`
 3. **Unmatched messageId prefix** — The scenario prefix doesn't match what the TCK test sends; check `tck_id()` usage in tests vs prefix in `.feature` file
 4. **Missing action** — Scenario doesn't handle the expected behavior; add the appropriate Then/And step
+
 ## Step 6: Iterate
 
 The typical development cycle is:
 
 1. Add or modify a scenario in `scenarios/*.feature`
-2. Regenerate: `make codegen-a2a-java-sut`
-3. Build: `cd sut/a2a-java && mvn package`
+2. Regenerate: `A2A_JAVA_DIR=/path/to/a2a-java make codegen-a2a-java-sut`
+3. Build: `cd $A2A_JAVA_DIR && mvn clean install`
 4. Restart the SUT
 5. Run the relevant TCK test: `uv run ./run_tck.py --sut-host http://localhost:9999 -- -k "test_name" -v`
 6. Repeat until tests pass

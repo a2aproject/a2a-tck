@@ -21,8 +21,9 @@ lint: ## Run linter
 codegen-a2a-jakarta-sut: ## Generate the a2a-jakarta SUT from Gherkin scenarios
 	uv run python -m codegen.generator --target a2a-jakarta --output sut/a2a-jakarta
 
-codegen-a2a-java-sut: ## Generate the a2a-java SUT from Gherkin scenarios
-	uv run python -m codegen.generator --target a2a-java --output sut/a2a-java
+codegen-a2a-java-sut: ## Generate the a2a-java SUT from Gherkin scenarios (requires A2A_JAVA_DIR)
+	@if [ -z "$$A2A_JAVA_DIR" ]; then echo "Error: A2A_JAVA_DIR must be set to the root of your a2a-java clone"; exit 1; fi
+	uv run python -m codegen.generator --target a2a-java --output $${A2A_JAVA_DIR}/tck
 
 codegen-a2a-python-sut: ## Generate the a2a-python SUT from Gherkin scenarios
 	uv run python -m codegen.generator --target a2a-python --output sut/a2a-python

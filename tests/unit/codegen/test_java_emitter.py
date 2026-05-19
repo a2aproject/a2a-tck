@@ -80,14 +80,11 @@ class TestEmitJavaProject:
     """Tests for emit_java_project()."""
 
     def test_generates_expected_files(self, tmp_path: Path) -> None:
-        """All four project files are generated."""
+        """Both Java source files are generated."""
         generated = emit_java_project(_basic_scenarios(), tmp_path)
         names = {p.name for p in generated}
 
-        assert "TckAgentExecutorProducer.java" in names
-        assert "TckAgentCardProducer.java" in names
-        assert "pom.xml" in names
-        assert "application.properties" in names
+        assert names == {"TckAgentExecutorProducer.java", "TckAgentCardProducer.java"}
 
     def test_executor_contains_prefix_routing(self, tmp_path: Path) -> None:
         """Generated executor routes on messageId prefix."""
@@ -140,10 +137,3 @@ class TestEmitJavaProject:
         content = card.read_text()
         assert ".streaming(true)" in content
 
-    def test_pom_contains_a2a_dependency(self, tmp_path: Path) -> None:
-        """Generated pom.xml includes a2a-java-sdk dependency."""
-        emit_java_project(_basic_scenarios(), tmp_path)
-        pom = tmp_path / "pom.xml"
-        content = pom.read_text()
-        assert "a2a-java-sdk-reference-jsonrpc" in content
-        assert "org.a2aproject.sdk" in content

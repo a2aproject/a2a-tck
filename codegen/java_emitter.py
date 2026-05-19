@@ -1,13 +1,14 @@
 """Java code emitter for a2a-java SDK (Quarkus).
 
-Generates a complete runnable Java project from parsed Scenario objects
-using Jinja2 templates stored in ``codegen/a2a-java/``.
+Generates TckAgentCardProducer.java and TckAgentExecutorProducer.java
+from parsed Scenario objects using Jinja2 templates stored in
+``codegen/a2a-java/``.  The generated files are written into the
+user's local clone of the a2a-java repository.
 """
 
 from __future__ import annotations
 
 import json
-import os
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,8 +35,6 @@ from codegen.model import (
 
 _TEMPLATES_DIR = Path(__file__).parent / "a2a-java"
 
-_DEFAULT_A2A_JAVA_SDK_VERSION = "1.0.0.Beta2-SNAPSHOT"
-
 _JAVA_PACKAGE = "org.a2aproject.sdk.sut"
 _JAVA_PACKAGE_DIR = _JAVA_PACKAGE.replace(".", "/")
 
@@ -48,9 +47,11 @@ _STREAMING_WAIT_TIMEOUT_MS = 2000
 
 
 def emit_java_project(scenarios: list[Scenario], output_dir: Path) -> list[Path]:
-    """Generate a complete Quarkus + a2a-java project under *output_dir*.
+    """Generate TckAgentCardProducer.java and TckAgentExecutorProducer.java.
 
-    Returns the list of generated file paths.
+    *output_dir* should point to the ``tck`` module inside a local
+    clone of the a2a-java repository.  Returns the list of generated
+    file paths.
     """
     env = Environment(
         loader=FileSystemLoader(str(_TEMPLATES_DIR)),
@@ -64,21 +65,15 @@ def emit_java_project(scenarios: list[Scenario], output_dir: Path) -> list[Path]
         isinstance(s.trigger, StreamingMessageTrigger) for s in scenarios
     )
 
-    a2a_java_sdk_version = os.environ.get(
-        "A2A_JAVA_SDK_VERSION", _DEFAULT_A2A_JAVA_SDK_VERSION,
-    )
-
     context = {
         "handlers": handlers,
         "has_streaming": has_streaming,
         "has_push_notifications": True,
         "package": _JAVA_PACKAGE,
-        "a2a_java_sdk_version": a2a_java_sdk_version,
     }
 
     generated: list[Path] = []
 
-    # Java sources
     java_src = output_dir / "src" / "main" / "java" / _JAVA_PACKAGE_DIR
     java_src.mkdir(parents=True, exist_ok=True)
 
@@ -87,16 +82,6 @@ def emit_java_project(scenarios: list[Scenario], output_dir: Path) -> list[Path]
         ("TckAgentCardProducer.java.j2", "TckAgentCardProducer.java"),
     ]:
         generated.append(_render(env, template_name, context, java_src / filename))
-
-    # Resources
-    resources = output_dir / "src" / "main" / "resources"
-    resources.mkdir(parents=True, exist_ok=True)
-    generated.append(
-        _render(env, "application.properties.j2", context, resources / "application.properties")
-    )
-
-    # Build file
-    generated.append(_render(env, "pom.xml.j2", context, output_dir / "pom.xml"))
 
     return generated
 
