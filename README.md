@@ -120,7 +120,7 @@ export A2A_JAVA_DIR=/path/to/a2a-java
 A2A_JAVA_DIR=$A2A_JAVA_DIR make codegen-a2a-java-sut
 
 # Build and start the SUT
-cd $A2A_JAVA_DIR/tck && mvn clean install && mvn quarkus:dev -Dquarkus.console.enabled=false
+cd $A2A_JAVA_DIR && mvn clean install && cd tck && mvn quarkus:dev -Dquarkus.console.enabled=false
 
 # Run the TCK against it
 ./run_tck.py --sut-host http://localhost:9999
