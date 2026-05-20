@@ -27,12 +27,11 @@ codegen/                    # Code generator: parses scenarios and emits SUT pro
   parser.py                 # Gherkin parser
   steps.py                  # Step text → Trigger/Action resolution
   model.py                  # Data model (Scenario, Trigger, Action)
-  java_emitter.py           # Jinja2-based Java/Quarkus emitter
+  java_emitter.py           # Jinja2-based Java/Quarkus emitter (generates CDI producers)
   python_emitter.py         # Jinja2-based Python emitter
-  a2a-java/                 # Jinja2 templates for the a2a-java SUT
+  a2a-java/                 # Jinja2 templates for a2a-java CDI producers
   a2a-python/               # Jinja2 templates for the a2a-python SUT
 sut/
-  a2a-java/                 # Generated Quarkus project (a2a-java SDK)
   a2a-python/               # Generated Python project (a2a-python SDK)
 specification/              # A2A spec files and derived resources (JSON schema, proto stubs)
   generated/                # Stubs Generated from a2a.proto
@@ -93,7 +92,7 @@ All A2A bindings (transport methods, error codes, task states, etc.) are defined
 - `make unit-test` — run unit tests (no SUT required)
 - `make spec` — update A2A specification files
 - `make proto` — regenerate gRPC stubs from a2a.proto
-- `make codegen-a2a-java-sut` — generate the a2a-java SUT from Gherkin scenarios in `scenarios/` (uses `--target a2a-java`)
+- `A2A_JAVA_DIR=/path/to/a2a-java make codegen-a2a-java-sut` — generate a2a-java CDI producers from Gherkin scenarios and copy into the a2a-java repo's `tck` module
 - `make codegen-a2a-python-sut` — generate the a2a-python SUT from Gherkin scenarios in `scenarios/` (uses `--target a2a-python`)
 - `uv run ./run_tck.py --sut-host http://localhost:9999` — run full conformance suite against the SUT that exposes its agent card on `localhost:9999`
 - `uv run ./run_tck.py --sut-host http://localhost:9999 --transport grpc` — run single transport

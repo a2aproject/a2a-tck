@@ -12,12 +12,13 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from codegen.java_emitter import _DEFAULT_A2A_JAVA_SDK_VERSION, _build_handlers, _render
+from codegen.java_emitter import _build_handlers, _render
 from codegen.model import Scenario, StreamingMessageTrigger
 
 
 _TEMPLATES_DIR = Path(__file__).parent / "a2a-jakarta"
 
+_DEFAULT_A2A_JAVA_SDK_VERSION = "1.0.0.Beta2-SNAPSHOT"
 _DEFAULT_A2A_JAKARTA_SDK_VERSION = "1.0.0.Alpha4-SNAPSHOT"
 _DEFAULT_WILDFLY_VERSION = "39.0.1.Final"
 _DEFAULT_GRPC_FEATURE_PACK_VERSION = "0.1.16.Final"

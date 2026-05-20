@@ -106,20 +106,25 @@ Reports are always generated in the `reports/` directory after every run:
 
 ## SUT Code Generation
 
-The TCK includes a code generator that produces System Under Test (SUT) implementations from Gherkin scenario files in `scenarios/`. The generator supports a `--target` flag to select the SUT type. Currently, the `a2a-java` target (a Quarkus application using the [a2a-java SDK](https://github.com/a2aproject/a2a-java)) is supported.
+The TCK includes a code generator that produces System Under Test (SUT) implementations from Gherkin scenario files in `scenarios/`. The generator supports a `--target` flag to select the SUT type.
+
+### a2a-java
+
+The `a2a-java` target generates CDI producer files for the [a2a-java SDK](https://github.com/a2aproject/a2a-java) `tck` module. You need a local clone of the a2a-java repository:
 
 ```bash
-# Generate the a2a-java SUT from Gherkin scenarios
-make codegen-a2a-java-sut
+# Set A2A_JAVA_DIR to your a2a-java clone
+export A2A_JAVA_DIR=/path/to/a2a-java
+
+# Generate CDI producers from Gherkin scenarios
+A2A_JAVA_DIR=$A2A_JAVA_DIR make codegen-a2a-java-sut
 
 # Build and start the SUT
-cd sut/a2a-java && mvn package && mvn quarkus:dev
+cd $A2A_JAVA_DIR && mvn clean install && cd tck && mvn quarkus:dev -Dquarkus.console.enabled=false
 
 # Run the TCK against it
 ./run_tck.py --sut-host http://localhost:9999
 ```
-
-The SDK version is controlled by the `A2A_JAVA_SDK_VERSION` environment variable (see `codegen/java_emitter.py` for the default).
 
 ## Development
 
@@ -129,7 +134,7 @@ The SDK version is controlled by the `A2A_JAVA_SDK_VERSION` environment variable
 | `make unit-test` | Run unit tests (no SUT required) |
 | `make spec` | Update A2A specification files from [https://github.com/a2aproject/A2A](A2A GitHub repository) |
 | `make proto` | Regenerate gRPC stubs from `a2a.proto` |
-| `make codegen-a2a-java-sut` | Generate the a2a-java SUT from Gherkin scenarios |
+| `A2A_JAVA_DIR=/path/to/a2a-java make codegen-a2a-java-sut` | Generate a2a-java CDI producers from Gherkin scenarios |
 
 See [AGENTS.md](AGENTS.md) for architecture details and contribution guidelines.
 

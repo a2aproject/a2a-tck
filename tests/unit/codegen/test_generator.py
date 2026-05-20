@@ -17,11 +17,10 @@ class TestGeneratorCLI:
     """Tests for the generator CLI entry point."""
 
     def test_generates_a2a_java_project(self, tmp_path: Path) -> None:
-        """Running the generator with --target a2a-java produces a Java project."""
+        """Running the generator with --target a2a-java produces Java source files."""
         rc = main(["--target", "a2a-java", "--output", str(tmp_path), "--scenarios", str(_SCENARIOS_DIR)])
         assert rc == 0
 
-        assert (tmp_path / "pom.xml").exists()
         assert (
             tmp_path / "src" / "main" / "java"
             / "org" / "a2aproject" / "sdk" / "sut"
@@ -49,7 +48,11 @@ class TestGeneratorCLI:
         """Default target is a2a-java when --target is omitted."""
         rc = main(["--output", str(tmp_path), "--scenarios", str(_SCENARIOS_DIR)])
         assert rc == 0
-        assert (tmp_path / "pom.xml").exists()
+        assert (
+            tmp_path / "src" / "main" / "java"
+            / "org" / "a2aproject" / "sdk" / "sut"
+            / "TckAgentExecutorProducer.java"
+        ).exists()
 
     def test_missing_scenarios_returns_error(self, tmp_path: Path) -> None:
         """Empty scenarios directory returns exit code 1."""
