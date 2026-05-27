@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "a2a-sdk[http-server,grpc,sqlite]>=0.3.0",
     "packaging",
-    "starlette",
+    "starlette>=1.1.0",
     "uvicorn",
 ]
 
