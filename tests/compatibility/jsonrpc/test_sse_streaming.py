@@ -195,6 +195,8 @@ class TestSseSubscribeToTask:
             errors = [
                 "Expected TaskNotFoundError but operation succeeded"
             ]
+            from tck.validators.streaming import drain_stream
+            drain_stream(response)
         else:
             code = response.error_code
             passed = code == _TASK_NOT_FOUND_CODE
