@@ -390,8 +390,14 @@ class TestExtendedCardNotConfigured:
     This test probes the GetExtendedAgentCard endpoint to determine whether
     the test precondition holds (the server declares support but has not
     configured an extended card).  When the server returns a successful
-    response or an authentication error the card IS configured and the test
-    is skipped.
+    response or a non-matching error (e.g. an authentication error) the card
+    IS configured and the test is skipped.
+
+    By design this test can only pass or skip — it never fails.  The
+    precondition (card not configured) is not observable from the agent card
+    alone, so we infer it from the response: if the server returns the
+    expected ExtendedAgentCardNotConfiguredError the test passes; any other
+    outcome means the precondition does not hold and the test is skipped.
     """
 
     @staticmethod
