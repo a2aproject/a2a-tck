@@ -1,0 +1,67 @@
+{
+  "description": "Reference canonicalization vectors for A2A AgentCard signing (CARD-SIGN-001, CARD-SIGN-002). Each case gives an AgentCard and the expected RFC 8785 (JCS) canonical signing payload after excluding the signatures field, per spec sections 8.4.1 and 8.4.2. A signer that produces these bytes has canonicalized correctly and excluded signatures.",
+  "source": "Derived from card_ref (github.com/chopmob-cloud/AlgoVoi-A2A-Card) and the algovoi-jcs-conformance-vectors corpus set card_ref_v1. Apache-2.0.",
+  "cases": [
+    {
+      "id": "cardsign-canon-001",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "Example Agent",
+        "description": "",
+        "capabilities": {
+          "streaming": false,
+          "pushNotifications": false
+        },
+        "skills": []
+      },
+      "expected_jcs_payload": "{\"capabilities\":{\"pushNotifications\":false,\"streaming\":false},\"description\":\"\",\"name\":\"Example Agent\",\"skills\":[]}",
+      "note": "minimal card; JCS sorts keys, no insignificant whitespace"
+    },
+    {
+      "id": "cardsign-canon-002",
+      "requirement": "CARD-SIGN-002",
+      "agent_card": {
+        "name": "Example Agent",
+        "description": "",
+        "capabilities": {
+          "streaming": false,
+          "pushNotifications": false
+        },
+        "skills": [],
+        "signatures": [
+          {
+            "protected": "eyJ...",
+            "signature": "MEUC..."
+          }
+        ]
+      },
+      "expected_jcs_payload": "{\"capabilities\":{\"pushNotifications\":false,\"streaming\":false},\"description\":\"\",\"name\":\"Example Agent\",\"skills\":[]}",
+      "note": "same card with a signatures field present; the signatures field is excluded, so the payload equals cardsign-canon-001"
+    },
+    {
+      "id": "cardsign-canon-003",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "Pay Agent",
+        "version": "1.0.0",
+        "url": "https://pay.example/a2a",
+        "capabilities": {
+          "streaming": true
+        },
+        "securitySchemes": {
+          "oauth": {
+            "type": "oauth2"
+          }
+        },
+        "skills": [
+          {
+            "id": "quote",
+            "name": "Quote"
+          }
+        ]
+      },
+      "expected_jcs_payload": "{\"capabilities\":{\"streaming\":true},\"name\":\"Pay Agent\",\"securitySchemes\":{\"oauth\":{\"type\":\"oauth2\"}},\"skills\":[{\"id\":\"quote\",\"name\":\"Quote\"}],\"url\":\"https://pay.example/a2a\",\"version\":\"1.0.0\"}",
+      "note": "richer card with provider url, capabilities, securityScheme, skills"
+    }
+  ]
+}
