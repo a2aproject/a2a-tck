@@ -13,9 +13,11 @@ algovoi-jcs-conformance-vectors corpus set card_ref_v1. Apache-2.0.
 from __future__ import annotations
 
 import json
+
 from pathlib import Path
 
 import pytest
+
 
 rfc8785 = pytest.importorskip("rfc8785")
 
@@ -30,6 +32,7 @@ def _jcs_signing_payload(card: dict) -> str:
 
 @pytest.mark.parametrize("case", _VECTORS["cases"], ids=lambda c: c["id"])
 def test_agent_card_signing_payload_is_jcs_without_signatures(case: dict) -> None:
+    """The JCS signing payload equals the expected canonical bytes with the signatures field excluded."""
     payload = _jcs_signing_payload(case["agent_card"])
     assert payload == case["expected_jcs_payload"], (
         f"{case['id']} ({case['requirement']}): canonical signing payload mismatch"
