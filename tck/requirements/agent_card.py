@@ -7,6 +7,7 @@ extended card auth, JCS signing.
 from __future__ import annotations
 
 from tck.requirements.base import (
+    EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR,
     GET_EXTENDED_AGENT_CARD_BINDING,
     SPEC_BASE,
     OperationType,
@@ -117,9 +118,9 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
             "If the agent declares support but has not configured an extended "
             "card, it MUST return ExtendedAgentCardNotConfiguredError."
         ),
-        operation=OperationType.GET_EXTENDED_AGENT_CARD,
         binding=GET_EXTENDED_AGENT_CARD_BINDING,
         proto_request_type="GetExtendedAgentCardRequest",
+        expected_error=EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR,
         expected_behavior="ExtendedAgentCardNotConfiguredError returned",
         spec_url=f"{SPEC_BASE}3111-get-extended-agent-card",
         tags=[AGENT_CARD, EXTENDED, ERROR],

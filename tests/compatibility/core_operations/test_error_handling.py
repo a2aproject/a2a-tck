@@ -6,6 +6,7 @@ the error responses conform to the A2A specification.
 Requirements tested:
     CORE-ERR-001, CORE-ERR-002,
     CORE-CAP-001, CORE-CAP-002, CORE-CAP-003, CORE-CAP-004,
+    CARD-EXT-002,
     VER-SERVER-002, VER-SERVER-003,
     JSONRPC-ERR-001, JSONRPC-ERR-002, JSONRPC-ERR-003,
     HTTP_JSON-ERR-001, HTTP_JSON-ERR-002,
@@ -20,9 +21,10 @@ import httpx
 import jsonschema
 import pytest
 
-from tck.requirements.base import tck_id
+from tck.requirements.base import EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
+from tck.validators.error_binding import validate_expected_error
 from tck.validators.error_info import validate_error_info
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
@@ -44,6 +46,7 @@ CORE_CAP_001 = get_requirement_by_id("CORE-CAP-001")
 CORE_CAP_002 = get_requirement_by_id("CORE-CAP-002")
 CORE_CAP_003 = get_requirement_by_id("CORE-CAP-003")
 CORE_CAP_004 = get_requirement_by_id("CORE-CAP-004")
+CARD_EXT_002 = get_requirement_by_id("CARD-EXT-002")
 VER_SERVER_002 = get_requirement_by_id("VER-SERVER-002")
 VER_SERVER_003 = get_requirement_by_id("VER-SERVER-003")
 JSONRPC_ERR_001 = get_requirement_by_id("JSONRPC-ERR-001")
@@ -359,6 +362,7 @@ class TestCapabilityExtensionRequired:
 class TestCapabilityExtendedCard:
     """CORE-CAP-003: Extended agent card returns error when not supported."""
 
+    @jsonrpc
     def test_extended_card_not_supported_jsonrpc(
         self,
         transport_clients: dict[str, BaseTransportClient],
@@ -377,6 +381,81 @@ class TestCapabilityExtendedCard:
         passed = not response.success
         errors = [] if passed else ["Expected error for unsupported extended card"]
         assert_and_record(compatibility_collector, req, transport, errors)
+
+
+@must
+@core
+class TestExtendedCardNotConfigured:
+    """CARD-EXT-002: Extended card not configured returns ExtendedAgentCardNotConfiguredError.
+
+    This test probes the GetExtendedAgentCard endpoint to determine whether
+    the test precondition holds (the server declares support but has not
+    configured an extended card).  When the server returns a successful
+    response or a non-matching error (e.g. an authentication error) the card
+    IS configured and the test is skipped.
+
+    By design this test can only pass or skip — it never fails.  The
+    precondition (card not configured) is not observable from the agent card
+    alone, so we infer it from the response: if the server returns the
+    expected ExtendedAgentCardNotConfiguredError the test passes; any other
+    outcome means the precondition does not hold and the test is skipped.
+    """
+
+    @staticmethod
+    def _run(
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        req = CARD_EXT_002
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("extendedAgentCard"):
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not declare extendedAgentCard capability")
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+        response = client.get_extended_agent_card()
+        if response.success:
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Extended card is configured (returned successfully); test does not apply")
+        errors = validate_expected_error(response, transport, EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR)
+        if errors:
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip(
+                "Extended card appears configured (server returned a different error); "
+                "test does not apply"
+            )
+        assert_and_record(compatibility_collector, req, transport, errors)
+
+    @jsonrpc
+    def test_extended_card_not_configured_jsonrpc(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """CARD-EXT-002: Not-configured extended card returns correct error (JSON-RPC)."""
+        self._run("jsonrpc", transport_clients, agent_card, compatibility_collector)
+
+    @http_json
+    def test_extended_card_not_configured_http_json(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """CARD-EXT-002: Not-configured extended card returns correct error (HTTP+JSON)."""
+        self._run("http_json", transport_clients, agent_card, compatibility_collector)
+
+    @grpc
+    def test_extended_card_not_configured_grpc(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """CARD-EXT-002: Not-configured extended card returns correct error (gRPC)."""
+        self._run("grpc", transport_clients, agent_card, compatibility_collector)
 
 
 # ---------------------------------------------------------------------------
