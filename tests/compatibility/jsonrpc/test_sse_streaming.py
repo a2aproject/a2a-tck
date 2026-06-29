@@ -19,6 +19,7 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators import STREAM_RESPONSE
+from tck.validators.streaming import drain_stream
 from tests.compatibility._task_helpers import create_working_task
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import jsonrpc, must, streaming
@@ -192,11 +193,10 @@ class TestSseSubscribeToTask:
         response = client.subscribe_to_task(id=tck_id("nonexistent-subscribe-001"))
 
         if response.success:
+            drain_stream(response)
             errors = [
                 "Expected TaskNotFoundError but operation succeeded"
             ]
-            from tck.validators.streaming import drain_stream
-            drain_stream(response)
         else:
             code = response.error_code
             passed = code == _TASK_NOT_FOUND_CODE
