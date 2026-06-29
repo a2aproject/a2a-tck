@@ -19,6 +19,7 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators import STREAM_RESPONSE
+from tck.validators.streaming import drain_stream
 from tests.compatibility._task_helpers import create_working_task
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import jsonrpc, must, streaming
@@ -191,9 +192,12 @@ class TestSseSubscribeToTask:
 
         response = client.subscribe_to_task(id=tck_id("nonexistent-subscribe-001"))
 
-        # The server may return a plain JSON-RPC error (not SSE) for
-        # non-existent tasks — detected via success=False on the client.
-        if not response.success and response.error_code is not None:
+        if response.success:
+            drain_stream(response)
+            errors = [
+                "Expected TaskNotFoundError but operation succeeded"
+            ]
+        else:
             code = response.error_code
             passed = code == _TASK_NOT_FOUND_CODE
             errors = (
@@ -201,23 +205,6 @@ class TestSseSubscribeToTask:
                 if passed
                 else [f"Expected TaskNotFoundError (-32001), got code {code}"]
             )
-        else:
-            # Try consuming events — some servers may send error as SSE event
-            events = list(response.events)
-            if events and "error" in events[0]:
-                code = events[0]["error"].get("code")
-                passed = code == _TASK_NOT_FOUND_CODE
-                errors = (
-                    []
-                    if passed
-                    else [
-                        f"Expected TaskNotFoundError (-32001), got code {code}"
-                    ]
-                )
-            else:
-                pytest.skip(
-                    "Server did not return an error for non-existent task subscribe"
-                )
 
         assert_and_record(compatibility_collector, req, transport, errors)
 
