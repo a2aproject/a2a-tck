@@ -362,6 +362,7 @@ class TestCapabilityExtensionRequired:
 class TestCapabilityExtendedCard:
     """CORE-CAP-003: Extended agent card returns error when not supported."""
 
+    @jsonrpc
     def test_extended_card_not_supported_jsonrpc(
         self,
         transport_clients: dict[str, BaseTransportClient],
@@ -426,6 +427,7 @@ class TestExtendedCardNotConfigured:
             )
         assert_and_record(compatibility_collector, req, transport, errors)
 
+    @jsonrpc
     def test_extended_card_not_configured_jsonrpc(
         self,
         transport_clients: dict[str, BaseTransportClient],
@@ -435,6 +437,7 @@ class TestExtendedCardNotConfigured:
         """CARD-EXT-002: Not-configured extended card returns correct error (JSON-RPC)."""
         self._run("jsonrpc", transport_clients, agent_card, compatibility_collector)
 
+    @http_json
     def test_extended_card_not_configured_http_json(
         self,
         transport_clients: dict[str, BaseTransportClient],
@@ -444,6 +447,7 @@ class TestExtendedCardNotConfigured:
         """CARD-EXT-002: Not-configured extended card returns correct error (HTTP+JSON)."""
         self._run("http_json", transport_clients, agent_card, compatibility_collector)
 
+    @grpc
     def test_extended_card_not_configured_grpc(
         self,
         transport_clients: dict[str, BaseTransportClient],
