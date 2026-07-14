@@ -17,7 +17,7 @@ import grpc
 from google.protobuf.json_format import ParseDict
 
 from specification.generated import a2a_pb2, a2a_pb2_grpc
-from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER, _build_params
+from tck.transport._helpers import _build_params, build_default_headers, merge_headers
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
@@ -98,10 +98,9 @@ class GrpcClient(BaseTransportClient):
         grpc.StatusCode.INTERNAL,
     })
 
-    _METADATA = ((A2A_VERSION_HEADER.lower(), A2A_VERSION),)
-
     def __init__(self, base_url: str) -> None:
         super().__init__(base_url, TRANSPORT)
+        self._headers = build_default_headers()
         self._channel: grpc.Channel | None = None
         self._stub: a2a_pb2_grpc.A2AServiceStub | None = None
         self._connect()
@@ -124,6 +123,10 @@ class GrpcClient(BaseTransportClient):
         if self._channel is not None:
             self._channel.close()
 
+    def _metadata(self, extra_headers: dict[str, str] | None = None) -> tuple[tuple[str, str], ...]:
+        """Build gRPC metadata from default and per-call headers."""
+        return tuple(merge_headers(self._headers, extra_headers).items())
+
     # Default timeout (seconds) for streaming RPCs.  Without a deadline the
     # gRPC Python iterator can block indefinitely in certain environments
     # (e.g. pytest) even when the server has already sent data.
@@ -137,6 +140,7 @@ class GrpcClient(BaseTransportClient):
         make_err: callable,
         *,
         timeout: float | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse | StreamingResponse:
         """Execute a gRPC call with one retry on connection errors.
 
@@ -144,19 +148,26 @@ class GrpcClient(BaseTransportClient):
         build the transport-specific result object.
         """
         rpc = getattr(self._stub, rpc_name)
+        metadata = self._metadata(extra_headers)
         try:
-            return make_ok(rpc(request, timeout=timeout, metadata=self._METADATA))
+            return make_ok(rpc(request, timeout=timeout, metadata=metadata))
         except grpc.RpcError as e:
             if e.code() not in self._RETRIABLE_CODES:
                 return make_err(e)
             self._connect()
             try:
                 rpc = getattr(self._stub, rpc_name)
-                return make_ok(rpc(request, timeout=timeout, metadata=self._METADATA))
+                return make_ok(rpc(request, timeout=timeout, metadata=metadata))
             except grpc.RpcError as e2:
                 return make_err(e2)
 
-    def _unary_call(self, rpc_name: str, request: Any) -> TransportResponse:
+    def _unary_call(
+        self,
+        rpc_name: str,
+        request: Any,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> TransportResponse:
         """Execute a unary gRPC call with one retry on connection errors."""
         return self._call_with_retry(
             rpc_name, request,
@@ -166,6 +177,7 @@ class GrpcClient(BaseTransportClient):
             make_err=lambda e: GrpcResponse(
                 transport=self.transport, success=False, raw_response=e,
             ),
+            extra_headers=extra_headers,
         )
 
     def send_message(
@@ -174,13 +186,20 @@ class GrpcClient(BaseTransportClient):
         *,
         configuration: dict | None = None,
         metadata: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Send a message to the agent."""
         params = _build_params(message=message, configuration=configuration, metadata=metadata)
         proto_request = _dict_to_proto(params, a2a_pb2.SendMessageRequest)
-        return self._unary_call("SendMessage", proto_request)
+        return self._unary_call("SendMessage", proto_request, extra_headers=extra_headers)
 
-    def _streaming_call(self, rpc_name: str, request: Any) -> StreamingResponse:
+    def _streaming_call(
+        self,
+        rpc_name: str,
+        request: Any,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> StreamingResponse:
         """Execute a streaming gRPC call with one retry on connection errors.
 
         Peeks at the first event to detect an empty stream early.  Any
@@ -192,7 +211,7 @@ class GrpcClient(BaseTransportClient):
         for attempt in range(2):
             rpc = getattr(self._stub, rpc_name)
             try:
-                stream = rpc(request, timeout=self._STREAMING_TIMEOUT_S, metadata=self._METADATA)
+                stream = rpc(request, timeout=self._STREAMING_TIMEOUT_S, metadata=self._metadata(extra_headers))
                 try:
                     first = next(stream)
                 except StopIteration:
@@ -217,22 +236,24 @@ class GrpcClient(BaseTransportClient):
         *,
         configuration: dict | None = None,
         metadata: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> StreamingResponse:
         """Send a streaming message to the agent."""
         params = _build_params(message=message, configuration=configuration, metadata=metadata)
         proto_request = _dict_to_proto(params, a2a_pb2.SendMessageRequest)
-        return self._streaming_call("SendStreamingMessage", proto_request)
+        return self._streaming_call("SendStreamingMessage", proto_request, extra_headers=extra_headers)
 
     def get_task(
         self,
         id: str,
         *,
         history_length: int | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Get a task by ID."""
         params = _build_params(id=id, history_length=history_length)
         proto_request = _dict_to_proto(params, a2a_pb2.GetTaskRequest)
-        return self._unary_call("GetTask", proto_request)
+        return self._unary_call("GetTask", proto_request, extra_headers=extra_headers)
 
     def list_tasks(
         self,
@@ -244,6 +265,7 @@ class GrpcClient(BaseTransportClient):
         history_length: int | None = None,
         status_timestamp_after: str | None = None,
         include_artifacts: bool | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """List tasks filtered by context ID."""
         params = _build_params(
@@ -256,33 +278,41 @@ class GrpcClient(BaseTransportClient):
         )
         params["context_id"] = context_id
         proto_request = _dict_to_proto(params, a2a_pb2.ListTasksRequest)
-        return self._unary_call("ListTasks", proto_request)
+        return self._unary_call("ListTasks", proto_request, extra_headers=extra_headers)
 
-    def cancel_task(self, id: str) -> TransportResponse:
+    def cancel_task(self, id: str, *, extra_headers: dict[str, str] | None = None) -> TransportResponse:
         """Cancel a task by ID."""
         proto_request = _dict_to_proto({"id": id}, a2a_pb2.CancelTaskRequest)
-        return self._unary_call("CancelTask", proto_request)
+        return self._unary_call("CancelTask", proto_request, extra_headers=extra_headers)
 
-    def subscribe_to_task(self, id: str) -> StreamingResponse:
+    def subscribe_to_task(self, id: str, *, extra_headers: dict[str, str] | None = None) -> StreamingResponse:
         """Subscribe to task updates."""
         proto_request = _dict_to_proto({"id": id}, a2a_pb2.SubscribeToTaskRequest)
-        return self._streaming_call("SubscribeToTask", proto_request)
+        return self._streaming_call("SubscribeToTask", proto_request, extra_headers=extra_headers)
 
     def create_push_notification_config(
         self,
         task_id: str,
         config: dict,
+        *,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Create a push notification config for a task."""
         params = {"task_id": task_id, **config}
         proto_request = _dict_to_proto(params, a2a_pb2.TaskPushNotificationConfig)
-        return self._unary_call("CreateTaskPushNotificationConfig", proto_request)
+        return self._unary_call("CreateTaskPushNotificationConfig", proto_request, extra_headers=extra_headers)
 
-    def get_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
+    def get_push_notification_config(
+        self,
+        task_id: str,
+        id: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> TransportResponse:
         """Get a push notification config by task and config ID."""
         params = {"task_id": task_id, "id": id}
         proto_request = _dict_to_proto(params, a2a_pb2.GetTaskPushNotificationConfigRequest)
-        return self._unary_call("GetTaskPushNotificationConfig", proto_request)
+        return self._unary_call("GetTaskPushNotificationConfig", proto_request, extra_headers=extra_headers)
 
     def list_push_notification_configs(
         self,
@@ -290,19 +320,26 @@ class GrpcClient(BaseTransportClient):
         *,
         page_size: int | None = None,
         page_token: str | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """List push notification configs for a task."""
         params = _build_params(task_id=task_id, page_size=page_size, page_token=page_token)
         proto_request = _dict_to_proto(params, a2a_pb2.ListTaskPushNotificationConfigsRequest)
-        return self._unary_call("ListTaskPushNotificationConfigs", proto_request)
+        return self._unary_call("ListTaskPushNotificationConfigs", proto_request, extra_headers=extra_headers)
 
-    def delete_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
+    def delete_push_notification_config(
+        self,
+        task_id: str,
+        id: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> TransportResponse:
         """Delete a push notification config by task and config ID."""
         params = {"task_id": task_id, "id": id}
         proto_request = _dict_to_proto(params, a2a_pb2.DeleteTaskPushNotificationConfigRequest)
-        return self._unary_call("DeleteTaskPushNotificationConfig", proto_request)
+        return self._unary_call("DeleteTaskPushNotificationConfig", proto_request, extra_headers=extra_headers)
 
-    def get_extended_agent_card(self) -> TransportResponse:
+    def get_extended_agent_card(self, *, extra_headers: dict[str, str] | None = None) -> TransportResponse:
         """Get the extended agent card."""
         proto_request = a2a_pb2.GetExtendedAgentCardRequest()
-        return self._unary_call("GetExtendedAgentCard", proto_request)
+        return self._unary_call("GetExtendedAgentCard", proto_request, extra_headers=extra_headers)
