@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 authors = [
     {name = "A2A Protocol Developers"}
 ]
-license = "MIT"
+license = "Apache-2.0"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
