@@ -27,7 +27,7 @@ from tck.requirements.base import (
     SEND_MESSAGE_BINDING,
     SUBSCRIBE_TO_TASK_BINDING,
 )
-from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER, _build_params, _stream_sse
+from tck.transport._helpers import _build_params, _stream_sse, build_default_headers, merge_headers
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
@@ -110,10 +110,11 @@ class HttpJsonClient(BaseTransportClient):
 
     def __init__(self, base_url: str) -> None:
         super().__init__(base_url, TRANSPORT)
+        self._headers = build_default_headers()
         self._client = httpx.Client(
             base_url=base_url,
             timeout=httpx.Timeout(5.0, read=30.0),
-            headers={A2A_VERSION_HEADER: A2A_VERSION},
+            headers=self._headers,
         )
 
     def close(self) -> None:
@@ -127,6 +128,7 @@ class HttpJsonClient(BaseTransportClient):
         *,
         json_body: dict | None = None,
         params: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Make an HTTP request and return a TransportResponse."""
         try:
@@ -135,7 +137,11 @@ class HttpJsonClient(BaseTransportClient):
                 path,
                 json=json_body,
                 params=params,
-                headers={"Content-Type": "application/json"} if method.upper() == "POST" else None,
+                headers=merge_headers(
+                    self._headers,
+                    {"Content-Type": "application/json"} if method.upper() == "POST" else None,
+                    extra_headers,
+                ),
             )
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
@@ -165,6 +171,7 @@ class HttpJsonClient(BaseTransportClient):
         path: str,
         *,
         json_body: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> StreamingResponse:
         """Make an HTTP request expecting an SSE streaming response.
 
@@ -176,10 +183,14 @@ class HttpJsonClient(BaseTransportClient):
                 method,
                 path,
                 json=json_body,
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept": "text/event-stream",
-                },
+                headers=merge_headers(
+                    self._headers,
+                    {
+                        "Content-Type": "application/json",
+                        "Accept": "text/event-stream",
+                    },
+                    extra_headers,
+                ),
             )
             response = self._client.send(request, stream=True)
             resp_headers = dict(response.headers)
@@ -219,6 +230,7 @@ class HttpJsonClient(BaseTransportClient):
         *,
         configuration: dict | None = None,
         metadata: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Send a message to the agent via ``POST /message:send``."""
         body = _build_params(message=message, configuration=configuration, metadata=metadata)
@@ -226,6 +238,7 @@ class HttpJsonClient(BaseTransportClient):
             SEND_MESSAGE_BINDING.http_json_method,
             PATH_MESSAGE_SEND,
             json_body=body,
+            extra_headers=extra_headers,
         )
 
     def send_streaming_message(
@@ -234,6 +247,7 @@ class HttpJsonClient(BaseTransportClient):
         *,
         configuration: dict | None = None,
         metadata: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> StreamingResponse:
         """Send a streaming message to the agent via ``POST /message:stream``."""
         body = _build_params(message=message, configuration=configuration, metadata=metadata)
@@ -241,6 +255,7 @@ class HttpJsonClient(BaseTransportClient):
             SEND_MESSAGE_BINDING.http_json_method,
             PATH_MESSAGE_STREAM,
             json_body=body,
+            extra_headers=extra_headers,
         )
 
     # -- Task Operations --
@@ -250,6 +265,7 @@ class HttpJsonClient(BaseTransportClient):
         id: str,
         *,
         history_length: int | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Get a task by ID via ``GET /tasks/{id}``."""
         params = _build_params(historyLength=history_length)
@@ -257,6 +273,7 @@ class HttpJsonClient(BaseTransportClient):
             GET_TASK_BINDING.http_json_method,
             GET_TASK_BINDING.http_json_path.format(id=id),
             params=params or None,
+            extra_headers=extra_headers,
         )
 
     def list_tasks(
@@ -269,6 +286,7 @@ class HttpJsonClient(BaseTransportClient):
         history_length: int | None = None,
         status_timestamp_after: str | None = None,
         include_artifacts: bool | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """List tasks filtered by context ID via ``GET /tasks``."""
         params = _build_params(
@@ -284,20 +302,23 @@ class HttpJsonClient(BaseTransportClient):
             LIST_TASKS_BINDING.http_json_method,
             LIST_TASKS_BINDING.http_json_path,
             params=params,
+            extra_headers=extra_headers,
         )
 
-    def cancel_task(self, id: str) -> TransportResponse:
+    def cancel_task(self, id: str, *, extra_headers: dict[str, str] | None = None) -> TransportResponse:
         """Cancel a task by ID via ``POST /tasks/{id}:cancel``."""
         return self._request(
             CANCEL_TASK_BINDING.http_json_method,
             CANCEL_TASK_BINDING.http_json_path.format(id=id),
+            extra_headers=extra_headers,
         )
 
-    def subscribe_to_task(self, id: str) -> StreamingResponse:
+    def subscribe_to_task(self, id: str, *, extra_headers: dict[str, str] | None = None) -> StreamingResponse:
         """Subscribe to task updates via ``POST /tasks/{id}:subscribe``."""
         return self._request_streaming(
             SUBSCRIBE_TO_TASK_BINDING.http_json_method,
             SUBSCRIBE_TO_TASK_BINDING.http_json_path.format(id=id),
+            extra_headers=extra_headers,
         )
 
     # -- Push Notification Configuration --
@@ -306,6 +327,8 @@ class HttpJsonClient(BaseTransportClient):
         self,
         task_id: str,
         config: dict,
+        *,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Create a push notification config via ``POST /tasks/{id}/pushNotificationConfigs``."""
         body = config
@@ -313,13 +336,21 @@ class HttpJsonClient(BaseTransportClient):
             CREATE_PUSH_CONFIG_BINDING.http_json_method,
             CREATE_PUSH_CONFIG_BINDING.http_json_path.format(id=task_id),
             json_body=body,
+            extra_headers=extra_headers,
         )
 
-    def get_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
+    def get_push_notification_config(
+        self,
+        task_id: str,
+        id: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> TransportResponse:
         """Get a push notification config via ``GET /tasks/{id}/pushNotificationConfigs/{configId}``."""
         return self._request(
             GET_PUSH_CONFIG_BINDING.http_json_method,
             GET_PUSH_CONFIG_BINDING.http_json_path.format(id=task_id, configId=id),
+            extra_headers=extra_headers,
         )
 
     def list_push_notification_configs(
@@ -328,6 +359,7 @@ class HttpJsonClient(BaseTransportClient):
         *,
         page_size: int | None = None,
         page_token: str | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """List push notification configs via ``GET /tasks/{id}/pushNotificationConfigs``."""
         params = _build_params(pageSize=page_size, pageToken=page_token)
@@ -335,20 +367,29 @@ class HttpJsonClient(BaseTransportClient):
             LIST_PUSH_CONFIGS_BINDING.http_json_method,
             LIST_PUSH_CONFIGS_BINDING.http_json_path.format(id=task_id),
             params=params or None,
+            extra_headers=extra_headers,
         )
 
-    def delete_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
+    def delete_push_notification_config(
+        self,
+        task_id: str,
+        id: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> TransportResponse:
         """Delete a push notification config via ``DELETE /tasks/{id}/pushNotificationConfigs/{configId}``."""
         return self._request(
             DELETE_PUSH_CONFIG_BINDING.http_json_method,
             DELETE_PUSH_CONFIG_BINDING.http_json_path.format(id=task_id, configId=id),
+            extra_headers=extra_headers,
         )
 
     # -- Agent Card --
 
-    def get_extended_agent_card(self) -> TransportResponse:
+    def get_extended_agent_card(self, *, extra_headers: dict[str, str] | None = None) -> TransportResponse:
         """Get the extended agent card via ``GET /extendedAgentCard``."""
         return self._request(
             GET_EXTENDED_AGENT_CARD_BINDING.http_json_method,
             GET_EXTENDED_AGENT_CARD_BINDING.http_json_path,
+            extra_headers=extra_headers,
         )

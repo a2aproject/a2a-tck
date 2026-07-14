@@ -86,6 +86,7 @@ class BaseTransportClient(ABC):
         *,
         configuration: dict | None = None,
         metadata: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse: ...
 
     @abstractmethod
@@ -95,6 +96,7 @@ class BaseTransportClient(ABC):
         *,
         configuration: dict | None = None,
         metadata: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> StreamingResponse: ...
 
     @abstractmethod
@@ -103,6 +105,7 @@ class BaseTransportClient(ABC):
         id: str,
         *,
         history_length: int | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse: ...
 
     @abstractmethod
@@ -116,19 +119,22 @@ class BaseTransportClient(ABC):
         history_length: int | None = None,
         status_timestamp_after: str | None = None,
         include_artifacts: bool | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse: ...
 
     @abstractmethod
-    def cancel_task(self, id: str) -> TransportResponse: ...
+    def cancel_task(self, id: str, *, extra_headers: dict[str, str] | None = None) -> TransportResponse: ...
 
     @abstractmethod
-    def subscribe_to_task(self, id: str) -> StreamingResponse: ...
+    def subscribe_to_task(self, id: str, *, extra_headers: dict[str, str] | None = None) -> StreamingResponse: ...
 
     @abstractmethod
     def create_push_notification_config(
         self,
         task_id: str,
         config: dict,
+        *,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse: ...
 
     @abstractmethod
@@ -136,6 +142,8 @@ class BaseTransportClient(ABC):
         self,
         task_id: str,
         id: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse: ...
 
     @abstractmethod
@@ -145,6 +153,7 @@ class BaseTransportClient(ABC):
         *,
         page_size: int | None = None,
         page_token: str | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse: ...
 
     @abstractmethod
@@ -152,10 +161,12 @@ class BaseTransportClient(ABC):
         self,
         task_id: str,
         id: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse: ...
 
     @abstractmethod
-    def get_extended_agent_card(self) -> TransportResponse: ...
+    def get_extended_agent_card(self, *, extra_headers: dict[str, str] | None = None) -> TransportResponse: ...
 
     def close(self) -> None:
         """Clean up resources. Override in subclasses if needed."""

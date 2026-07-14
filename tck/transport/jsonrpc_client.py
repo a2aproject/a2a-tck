@@ -14,7 +14,7 @@ from typing import Any
 import httpx
 
 from tck.requirements.base import OperationType
-from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER, _build_params, _stream_sse
+from tck.transport._helpers import _build_params, _stream_sse, build_default_headers, merge_headers
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
@@ -78,10 +78,11 @@ class JsonRpcClient(BaseTransportClient):
     def __init__(self, base_url: str) -> None:
         super().__init__(base_url, TRANSPORT)
         self._id_counter = itertools.count(1)
+        self._headers = build_default_headers()
         self._client = httpx.Client(
             base_url=base_url,
             timeout=httpx.Timeout(5.0, read=30.0),
-            headers={A2A_VERSION_HEADER: A2A_VERSION},
+            headers=self._headers,
         )
 
     def close(self) -> None:
@@ -92,7 +93,13 @@ class JsonRpcClient(BaseTransportClient):
         """Generate the next unique request ID."""
         return next(self._id_counter)
 
-    def _call(self, method: str, params: dict) -> TransportResponse:
+    def _call(
+        self,
+        method: str,
+        params: dict,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> TransportResponse:
         """Make a JSON-RPC 2.0 call and return a TransportResponse."""
         payload = {
             "jsonrpc": "2.0",
@@ -104,7 +111,7 @@ class JsonRpcClient(BaseTransportClient):
             response = self._client.post(
                 "/",
                 json=payload,
-                headers={"Content-Type": "application/json"},
+                headers=merge_headers(self._headers, {"Content-Type": "application/json"}, extra_headers),
             )
             body = response.json()
             resp_headers = dict(response.headers)
@@ -120,7 +127,13 @@ class JsonRpcClient(BaseTransportClient):
                 transport=self.transport, success=False, raw_response=e,
             )
 
-    def _call_streaming(self, method: str, params: dict) -> StreamingResponse:
+    def _call_streaming(
+        self,
+        method: str,
+        params: dict,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> StreamingResponse:
         """Make a JSON-RPC 2.0 streaming call and return a StreamingResponse.
 
         If the server responds with ``text/event-stream``, events are yielded
@@ -139,10 +152,14 @@ class JsonRpcClient(BaseTransportClient):
                 "POST",
                 "/",
                 json=payload,
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept": "text/event-stream",
-                },
+                headers=merge_headers(
+                    self._headers,
+                    {
+                        "Content-Type": "application/json",
+                        "Accept": "text/event-stream",
+                    },
+                    extra_headers,
+                ),
             )
             response = self._client.send(request, stream=True)
             content_type = response.headers.get("content-type", "")
@@ -185,10 +202,11 @@ class JsonRpcClient(BaseTransportClient):
         *,
         configuration: dict | None = None,
         metadata: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Send a message to the agent."""
         params = _build_params(message=message, configuration=configuration, metadata=metadata)
-        return self._call(OperationType.SEND_MESSAGE.value, params)
+        return self._call(OperationType.SEND_MESSAGE.value, params, extra_headers=extra_headers)
 
     def send_streaming_message(
         self,
@@ -196,20 +214,22 @@ class JsonRpcClient(BaseTransportClient):
         *,
         configuration: dict | None = None,
         metadata: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> StreamingResponse:
         """Send a streaming message to the agent."""
         params = _build_params(message=message, configuration=configuration, metadata=metadata)
-        return self._call_streaming(OperationType.SEND_STREAMING_MESSAGE.value, params)
+        return self._call_streaming(OperationType.SEND_STREAMING_MESSAGE.value, params, extra_headers=extra_headers)
 
     def get_task(
         self,
         id: str,
         *,
         history_length: int | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Get a task by ID."""
         params = _build_params(id=id, history_length=history_length)
-        return self._call(OperationType.GET_TASK.value, params)
+        return self._call(OperationType.GET_TASK.value, params, extra_headers=extra_headers)
 
     def list_tasks(
         self,
@@ -221,6 +241,7 @@ class JsonRpcClient(BaseTransportClient):
         history_length: int | None = None,
         status_timestamp_after: str | None = None,
         include_artifacts: bool | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """List tasks filtered by context ID."""
         params = _build_params(
@@ -232,28 +253,40 @@ class JsonRpcClient(BaseTransportClient):
             include_artifacts=include_artifacts,
         )
         params["context_id"] = context_id
-        return self._call(OperationType.LIST_TASKS.value, params)
+        return self._call(OperationType.LIST_TASKS.value, params, extra_headers=extra_headers)
 
-    def cancel_task(self, id: str) -> TransportResponse:
+    def cancel_task(self, id: str, *, extra_headers: dict[str, str] | None = None) -> TransportResponse:
         """Cancel a task by ID."""
-        return self._call(OperationType.CANCEL_TASK.value, {"id": id})
+        return self._call(OperationType.CANCEL_TASK.value, {"id": id}, extra_headers=extra_headers)
 
-    def subscribe_to_task(self, id: str) -> StreamingResponse:
+    def subscribe_to_task(self, id: str, *, extra_headers: dict[str, str] | None = None) -> StreamingResponse:
         """Subscribe to task updates."""
-        return self._call_streaming(OperationType.SUBSCRIBE_TO_TASK.value, {"id": id})
+        return self._call_streaming(OperationType.SUBSCRIBE_TO_TASK.value, {"id": id}, extra_headers=extra_headers)
 
     def create_push_notification_config(
         self,
         task_id: str,
         config: dict,
+        *,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """Create a push notification config for a task."""
         params = {"task_id": task_id, **config}
-        return self._call(OperationType.CREATE_PUSH_CONFIG.value, params)
+        return self._call(OperationType.CREATE_PUSH_CONFIG.value, params, extra_headers=extra_headers)
 
-    def get_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
+    def get_push_notification_config(
+        self,
+        task_id: str,
+        id: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> TransportResponse:
         """Get a push notification config by task and config ID."""
-        return self._call(OperationType.GET_PUSH_CONFIG.value, {"task_id": task_id, "id": id})
+        return self._call(
+            OperationType.GET_PUSH_CONFIG.value,
+            {"task_id": task_id, "id": id},
+            extra_headers=extra_headers,
+        )
 
     def list_push_notification_configs(
         self,
@@ -261,15 +294,26 @@ class JsonRpcClient(BaseTransportClient):
         *,
         page_size: int | None = None,
         page_token: str | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> TransportResponse:
         """List push notification configs for a task."""
         params = _build_params(task_id=task_id, page_size=page_size, page_token=page_token)
-        return self._call(OperationType.LIST_PUSH_CONFIGS.value, params)
+        return self._call(OperationType.LIST_PUSH_CONFIGS.value, params, extra_headers=extra_headers)
 
-    def delete_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
+    def delete_push_notification_config(
+        self,
+        task_id: str,
+        id: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ) -> TransportResponse:
         """Delete a push notification config by task and config ID."""
-        return self._call(OperationType.DELETE_PUSH_CONFIG.value, {"task_id": task_id, "id": id})
+        return self._call(
+            OperationType.DELETE_PUSH_CONFIG.value,
+            {"task_id": task_id, "id": id},
+            extra_headers=extra_headers,
+        )
 
-    def get_extended_agent_card(self) -> TransportResponse:
+    def get_extended_agent_card(self, *, extra_headers: dict[str, str] | None = None) -> TransportResponse:
         """Get the extended agent card."""
-        return self._call(OperationType.GET_EXTENDED_AGENT_CARD.value, {})
+        return self._call(OperationType.GET_EXTENDED_AGENT_CARD.value, {}, extra_headers=extra_headers)

@@ -87,10 +87,10 @@ Once configured, run tests normally:
 
 ```bash
 # Run all tests with authentication
-./run_tck.py --sut-url https://your-sut.example.com --category all
+uv run --env-file .env ./run_tck.py --sut-host https://your-sut.example.com
 
-# Run mandatory tests only
-./run_tck.py --sut-url https://your-sut.example.com --category mandatory
+# Run MUST-level requirements only
+uv run --env-file .env ./run_tck.py --sut-host https://your-sut.example.com --level must
 ```
 
 The TCK will automatically inject authentication headers into every request.
@@ -168,7 +168,7 @@ The TCK includes tests to verify authentication enforcement:
 
 ```bash
 # Run with verbose logging to see headers
-./run_tck.py --sut-url https://your-sut.example.com --category mandatory --verbose-log
+uv run --env-file .env ./run_tck.py --sut-host https://your-sut.example.com --level must --verbose-log
 ```
 
 ### Authentication headers not being sent
@@ -180,7 +180,7 @@ The TCK includes tests to verify authentication enforcement:
 2. Verify format (no extra spaces, valid JSON for `A2A_AUTH_HEADERS`)
 3. Restart the test run after modifying `.env`
 
-### "Failed to parse A2A_AUTH_HEADERS" warning
+### "A2A_AUTH_HEADERS must contain a JSON object" error
 
 **Cause**: `A2A_AUTH_HEADERS` contains invalid JSON.
 
@@ -188,6 +188,8 @@ The TCK includes tests to verify authentication enforcement:
 - Ensure JSON is valid: `{"key":"value"}` not `{key:value}`
 - Use double quotes, not single quotes
 - Escape special characters if needed
+
+The TCK stops before sending requests when the configured headers are invalid.
 
 ### SUT accepts requests without authentication
 
@@ -209,7 +211,7 @@ A2A_AUTH_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0Y2stdGVzdCJ9.abc
 
 ```bash
 # Run tests
-./run_tck.py --sut-url https://my-sut.example.com --category all
+uv run --env-file .env ./run_tck.py --sut-host https://my-sut.example.com
 ```
 
 ### Example 2: Testing a SUT with API Key
@@ -223,7 +225,7 @@ A2A_AUTH_HEADER=X-API-Key
 
 ```bash
 # Run tests
-./run_tck.py --sut-url https://api.example.com --category mandatory
+uv run --env-file .env ./run_tck.py --sut-host https://api.example.com --level must
 ```
 
 ### Example 3: Testing a SUT with Basic Auth
@@ -237,7 +239,7 @@ A2A_AUTH_PASSWORD=testpass123
 
 ```bash
 # Run tests
-./run_tck.py --sut-url http://localhost:9999 --category all
+uv run --env-file .env ./run_tck.py --sut-host http://localhost:9999
 ```
 
 ### Example 4: Testing with Multiple Headers
@@ -249,7 +251,7 @@ A2A_AUTH_HEADERS={"Authorization":"Bearer token123","X-Tenant-ID":"tenant-001","
 
 ```bash
 # Run tests
-./run_tck.py --sut-url https://multi-tenant.example.com --category all
+uv run --env-file .env ./run_tck.py --sut-host https://multi-tenant.example.com
 ```
 
 ## Security Best Practices
@@ -272,7 +274,7 @@ For CI/CD pipelines, set environment variables directly instead of using `.env`:
 # GitHub Actions example
 export A2A_AUTH_TYPE=bearer
 export A2A_AUTH_TOKEN=${{ secrets.TCK_AUTH_TOKEN }}
-./run_tck.py --sut-url ${{ secrets.SUT_URL }} --category all
+uv run ./run_tck.py --sut-host ${{ secrets.SUT_URL }}
 ```
 
 ## See Also
