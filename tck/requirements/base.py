@@ -102,6 +102,7 @@ class RequirementSpec:
     spec_url: str = ""
     tags: list[str] = field(default_factory=list)
     validators: list[Callable[[Any, str], list[str]]] = field(default_factory=list)
+    allows_error: bool = False
 
 
 # Shared spec URL base pointing to the local specification file.

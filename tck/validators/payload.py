@@ -29,6 +29,12 @@ _TRANSPORT_VALIDATORS = {
     "http_json": _http_json.validate_message_response_contains_field,
 }
 
+_TRANSPORT_EQUALITY_VALIDATORS = {
+    "grpc": _grpc.validate_message_response_field_equals,
+    "jsonrpc": _jsonrpc.validate_message_response_field_equals,
+    "http_json": _http_json.validate_message_response_field_equals,
+}
+
 _STATE_VALIDATORS = {
     "grpc": _grpc.validate_task_state,
     "jsonrpc": _jsonrpc.validate_task_state,
@@ -83,6 +89,23 @@ def validate_message_response_contains_field(
             return []
         f = grpc_field if transport == "grpc" else field
         return validate(response, f)
+
+    return _validate
+
+
+def validate_message_response_field_equals(
+    field: str,
+    expected: Any,
+) -> Callable[[Any, str], list[str]]:
+    """Return a validator that checks a SendMessageResponse field value."""
+    grpc_field = _to_snake_case(field)
+
+    def _validate(response: Any, transport: str) -> list[str]:
+        validate = _TRANSPORT_EQUALITY_VALIDATORS.get(transport)
+        if validate is None:
+            return []
+        f = grpc_field if transport == "grpc" else field
+        return validate(response, f, expected)
 
     return _validate
 
