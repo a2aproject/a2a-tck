@@ -397,7 +397,8 @@ class TestExtendedCardNotConfigured:
     The precondition (server declares support but has not configured a card)
     is not observable from the agent card, so the test probes the
     GetExtendedAgentCard endpoint and routes on the response.  A successful
-    response or an HTTP 401/403 auth challenge means the card IS configured,
+    response or an auth challenge (HTTP 401/403, or the gRPC
+    UNAUTHENTICATED/PERMISSION_DENIED statuses) means the card IS configured,
     so the test is skipped.  The expected ExtendedAgentCardNotConfiguredError
     passes.  Any *other* error is a conformance violation — the server
     declared support but returned neither the card, an auth challenge, nor
