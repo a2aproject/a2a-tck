@@ -139,7 +139,7 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Agent Card canonicalized per RFC 8785 before signing",
         spec_url=f"{SPEC_BASE}841-canonicalization-requirements",
-        tags=[AGENT_CARD, SIGNING, JCS, NOT_AUTOMATABLE],
+        tags=[AGENT_CARD, SIGNING, JCS],
     ),
     RequirementSpec(
         id="CARD-SIGN-002",
@@ -152,7 +152,7 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Signatures field excluded from signing payload",
         spec_url=f"{SPEC_BASE}841-canonicalization-requirements",
-        tags=[AGENT_CARD, SIGNING, NOT_AUTOMATABLE],
+        tags=[AGENT_CARD, SIGNING],
     ),
     RequirementSpec(
         id="CARD-SIGN-003",
@@ -165,8 +165,11 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Protected header contains alg and kid",
         spec_url=f"{SPEC_BASE}842-signature-format",
-        tags=[AGENT_CARD, SIGNING, JWS, NOT_AUTOMATABLE],
+        tags=[AGENT_CARD, SIGNING, JWS],
     ),
+    # CARD-SIGN-004 stays not-automatable: key expiry/revocation state cannot
+    # be derived from a served Agent Card alone, so a black-box conformance run
+    # has no observable signal to assert against.
     RequirementSpec(
         id="CARD-SIGN-004",
         section="8.4.3",
