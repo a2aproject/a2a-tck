@@ -15,6 +15,7 @@ from tck.requirements.base import EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR
 
 
 _AUTH_CHALLENGE_STATUS = frozenset({401, 403})
+_AUTH_CHALLENGE_GRPC = frozenset({"UNAUTHENTICATED", "PERMISSION_DENIED"})
 
 
 class ExtendedCardProbe(Enum):
@@ -31,8 +32,9 @@ def classify_extended_card_probe(response: Any, transport: str) -> ExtendedCardP
 
     Returns:
         ``CONFIGURED`` when the call succeeds (a card was returned);
-        ``AUTH_REQUIRED`` on an HTTP 401/403 auth challenge (the card exists
-        but the request was not authorized); ``NOT_CONFIGURED`` when the
+        ``AUTH_REQUIRED`` on an auth challenge — HTTP 401/403, or the gRPC
+        ``UNAUTHENTICATED``/``PERMISSION_DENIED`` statuses (gRPC responses
+        carry no HTTP status code); ``NOT_CONFIGURED`` when the
         transport returns ``ExtendedAgentCardNotConfiguredError`` (the
         precondition holds); ``WRONG_ERROR`` for any other error — a
         conformance violation, since a server that declares support must
@@ -40,7 +42,7 @@ def classify_extended_card_probe(response: Any, transport: str) -> ExtendedCardP
     """
     if response.success:
         return ExtendedCardProbe.CONFIGURED
-    if response.status_code in _AUTH_CHALLENGE_STATUS:
+    if response.status_code in _AUTH_CHALLENGE_STATUS or response.error_code in _AUTH_CHALLENGE_GRPC:
         return ExtendedCardProbe.AUTH_REQUIRED
     expected = EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR.expected_code(transport)
     if expected is not None and response.error_code == expected:

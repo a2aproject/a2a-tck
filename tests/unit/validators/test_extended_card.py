@@ -69,6 +69,22 @@ class TestClassifyExtendedCardProbe:
             is ExtendedCardProbe.AUTH_REQUIRED
         )
 
+    def test_grpc_not_configured_status(self) -> None:
+        """A gRPC FAILED_PRECONDITION maps to the not-configured precondition."""
+        response = _resp("grpc", error_code="FAILED_PRECONDITION")
+        assert classify_extended_card_probe(response, "grpc") is ExtendedCardProbe.NOT_CONFIGURED
+
+    @pytest.mark.parametrize("code", ["UNAUTHENTICATED", "PERMISSION_DENIED"])
+    def test_grpc_auth_status_is_auth_required(self, code: str) -> None:
+        """The gRPC auth statuses are auth challenges; gRPC has no HTTP status code."""
+        response = _resp("grpc", error_code=code)
+        assert classify_extended_card_probe(response, "grpc") is ExtendedCardProbe.AUTH_REQUIRED
+
+    def test_grpc_other_status_is_wrong_error(self) -> None:
+        """Any other gRPC status is a conformance violation."""
+        response = _resp("grpc", error_code="INTERNAL")
+        assert classify_extended_card_probe(response, "grpc") is ExtendedCardProbe.WRONG_ERROR
+
     @pytest.mark.parametrize("code", [-32601, -32603, -32004])
     def test_other_jsonrpc_error_is_wrong_error(self, code: int) -> None:
         """Any other A2A/JSON-RPC error is a conformance violation."""
