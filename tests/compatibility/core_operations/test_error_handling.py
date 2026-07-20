@@ -330,7 +330,7 @@ class TestCapabilityExtensionRequired:
         }
         response = _jsonrpc_call(client.base_url, "SendMessage", {"message": msg})
         body = response.json()
-        result = validate_jsonrpc_error(body, "ExtensionSupportRequiredError")
+        result = validate_jsonrpc_error(body, expected_error_of(req).name)
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
@@ -355,7 +355,7 @@ class TestCapabilityExtensionRequired:
         response = _rest_call(
             client.base_url, "POST", "/message:send", json_body={"message": msg},
         )
-        result = validate_http_json_error(response, "ExtensionSupportRequiredError")
+        result = validate_http_json_error(response, expected_error_of(req).name)
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
