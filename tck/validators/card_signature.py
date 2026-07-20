@@ -51,6 +51,10 @@ _TYPE_ENUM = 14
 _OMIT = object()
 
 
+class KeyResolutionError(Exception):
+    """The ``jku`` JWKS fetch or parse failed; recorded on the outcome."""
+
+
 @dataclass
 class VerificationOutcome:
     """Result of verifying a card's ``signatures`` array.
@@ -247,8 +251,11 @@ def _resolve_key(
         return _as_jwk(trusted_keys[kid])
     jku = header.get("jku")
     if jku and fetch_jwks is not None:
-        keyset = jwk.JWKSet.from_json(json.dumps(fetch_jwks(jku)))
-        key = keyset.get_key(kid) if kid else None
+        try:
+            keyset = jwk.JWKSet.from_json(json.dumps(fetch_jwks(jku)))
+            key = keyset.get_key(kid) if kid else None
+        except Exception as exc:  # fetch_jwks is caller-supplied and may raise anything (network, parsing)
+            raise KeyResolutionError(f"jku fetch/parse failed ({exc})") from exc
         if key is not None:
             return key
     return None
@@ -262,7 +269,7 @@ def _resolve_key_safe(
     """Resolve a key, converting any resolution failure into an error string."""
     try:
         return _resolve_key(header, trusted_keys, fetch_jwks), None
-    except (JWException, ValueError, TypeError, KeyError, RecursionError) as exc:
+    except (KeyResolutionError, JWException, ValueError, TypeError, KeyError, RecursionError) as exc:
         return None, f"key resolution failed ({exc})"
 
 
@@ -336,7 +343,7 @@ def verify_card_signatures(
         return VerificationOutcome(errors=["'signatures' is present but is not a JSON array"])
     try:
         payload = canonicalize_for_signing(card, strip_defaults=True)
-    except (ValueError, RecursionError) as exc:
+    except (TypeError, ValueError, RecursionError) as exc:
         return VerificationOutcome(errors=[f"card canonicalization failed ({exc})"])
     outcome = VerificationOutcome()
     checked_any = False

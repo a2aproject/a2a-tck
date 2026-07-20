@@ -310,6 +310,26 @@ class TestHostileInput:
         assert not outcome.verified
         assert any("canonicalization failed" in error for error in outcome.errors)
 
+    def test_nan_valued_card_reports_error(self, key: jwk.JWK) -> None:
+        """A card with a JCS-invalid number (NaN) is rejected, not a crash."""
+        signed = _sign(_base_card(), key, "key-1")
+        signed["x-nan"] = float("nan")
+        outcome = verify_card_signatures(signed, trusted_keys={"key-1": key})
+        assert not outcome.verified
+        assert any("canonicalization failed" in error for error in outcome.errors)
+
+    def test_raising_jwks_fetcher_is_recorded_not_raised(self, key: jwk.JWK) -> None:
+        """An arbitrary error from the injected fetcher is recorded, not propagated."""
+
+        def _broken_fetcher(url: str) -> dict[str, Any]:
+            raise RuntimeError(f"connection refused: {url}")
+
+        signed = _sign(_base_card(), key, "key-1", jku="https://a.example/jwks.json")
+        outcome = verify_card_signatures(signed, fetch_jwks=_broken_fetcher)
+        assert not outcome.verified
+        assert outcome.inconclusive
+        assert any("key resolution failed" in error for error in outcome.errors)
+
 
 # ---------------------------------------------------------------------------
 # Canonicalization
