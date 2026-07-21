@@ -34,7 +34,7 @@ from codegen.model import (
 
 _TEMPLATES_DIR = Path(__file__).parent / "a2a-python"
 
-_DEFAULT_A2A_PYTHON_SDK_VERSION = "0.3.0"
+_DEFAULT_A2A_PYTHON_SDK_VERSION = "1.1.1"
 _DEFAULT_A2A_PYTHON_SDK_PATH = "../../../a2a-python"
 
 _STREAMING_TIMEOUT_S = 2
