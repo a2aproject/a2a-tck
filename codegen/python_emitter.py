@@ -99,6 +99,22 @@ class _Handler:
     prefix: str
     python_code: str
     raises: bool = False
+    needs_task: bool = False
+
+
+def _needs_task(scenario: Scenario) -> bool:
+    """Whether the handler emits a task status update.
+
+    The SDK rejects a ``TaskStatusUpdateEvent`` that arrives before the task
+    exists, so such handlers must enqueue the initial ``Task`` first. Artifact
+    events create the task on demand and so do not need it, and a handler that
+    only returns a ``Message`` must NOT create one, since mixing a Message into
+    task mode is itself an error.
+    """
+    return any(
+        isinstance(action, (CompleteTask, UpdateTaskStatus))
+        for action in scenario.actions
+    )
 
 
 def _build_handlers(scenarios: list[Scenario]) -> list[_Handler]:
@@ -113,7 +129,14 @@ def _build_handlers(scenarios: list[Scenario]) -> list[_Handler]:
         trigger = scenario.trigger
         if isinstance(trigger, (MessageTrigger, StreamingMessageTrigger)):
             code, raises = _render_actions(scenario)
-            handlers.append(_Handler(prefix=trigger.prefix, python_code=code, raises=raises))
+            handlers.append(
+                _Handler(
+                    prefix=trigger.prefix,
+                    python_code=code,
+                    raises=raises,
+                    needs_task=_needs_task(scenario),
+                )
+            )
     handlers.sort(key=lambda h: len(h.prefix), reverse=True)
     return handlers
 

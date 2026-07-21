@@ -17,6 +17,7 @@ from fastapi import FastAPI
 
 import a2a.types.a2a_pb2_grpc as a2a_grpc
 
+from a2a.helpers import new_task
 from a2a.server.agent_execution.agent_executor import AgentExecutor
 from a2a.server.agent_execution.context import RequestContext
 from a2a.server.events.event_queue import EventQueue
@@ -35,6 +36,7 @@ from a2a.types import (
     AgentProvider,
     AgentSkill,
     Part,
+    TaskState,
 )
 from a2a.utils.errors import (
     A2AError,
@@ -63,8 +65,27 @@ class TckAgentExecutor(AgentExecutor):
             return
 
         updater = TaskUpdater(event_queue, task_id, context_id)
+
+        async def ensure_task() -> None:
+            """Enqueue the initial Task before any status update.
+
+            The SDK rejects a TaskStatusUpdateEvent that arrives before the
+            task exists. Artifact events create the task on demand, so this is
+            only emitted for handlers that publish a status update.
+            """
+            if context.current_task is None:
+                await event_queue.enqueue_event(
+                    new_task(
+                        task_id,
+                        context_id,
+                        TaskState.TASK_STATE_SUBMITTED,
+                        history=[context.message] if context.message else [],
+                    )
+                )
+
         message = context.message
         if message is None:
+            await ensure_task()
             await updater.complete(
                 updater.new_agent_message([Part(text='No message provided')])
             )
@@ -74,6 +95,9 @@ class TckAgentExecutor(AgentExecutor):
         {% for handler in handlers %}
 
         if message_id.startswith('{{ handler.prefix }}'):
+            {% if handler.needs_task %}
+            await ensure_task()
+            {% endif %}
             {{ handler.python_code | indent(12) }}
             {% if not handler.raises %}
             return
@@ -81,6 +105,7 @@ class TckAgentExecutor(AgentExecutor):
         {% endfor %}
 
         # Default: complete the task with an echo response
+        await ensure_task()
         await updater.complete(
             updater.new_agent_message(
                 [Part(text='Unhandled messageId prefix: ' + message_id)]
