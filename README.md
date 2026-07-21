@@ -126,6 +126,32 @@ cd $A2A_JAVA_DIR && mvn clean install && cd tck && mvn quarkus:dev -Dquarkus.con
 ./run_tck.py --sut-host http://localhost:9999
 ```
 
+### a2a-python
+
+The `a2a-python` target generates a complete runnable Python SUT project in `sut/a2a-python/` built on the [a2a-python SDK](https://github.com/a2aproject/a2a-python). The generated project resolves the SDK from a local clone of a2a-python placed as a sibling of this repository; set `A2A_PYTHON_SDK_PATH` or `A2A_PYTHON_SDK_VERSION` before generating to override.
+
+```bash
+# Generate the SUT from Gherkin scenarios
+make codegen-a2a-python-sut
+
+# Install dependencies
+cd sut/a2a-python && uv sync
+
+# Start the SUT (HTTP on :9999, gRPC on :10000 by default)
+uv run python sut_agent.py
+
+# Run the TCK against it
+./run_tck.py --sut-host http://localhost:9999
+```
+
+### a2a-jakarta
+
+The `a2a-jakarta` target generates a Jakarta EE SUT project in `sut/a2a-jakarta/` built on the [a2a-java SDK](https://github.com/a2aproject/a2a-java) and deployed with the WildFly Maven plugin:
+
+```bash
+make codegen-a2a-jakarta-sut
+```
+
 ## Development
 
 | Command | Description |
@@ -135,6 +161,8 @@ cd $A2A_JAVA_DIR && mvn clean install && cd tck && mvn quarkus:dev -Dquarkus.con
 | `make spec` | Update A2A specification files from [https://github.com/a2aproject/A2A](A2A GitHub repository) |
 | `make proto` | Regenerate gRPC stubs from `a2a.proto` |
 | `A2A_JAVA_DIR=/path/to/a2a-java make codegen-a2a-java-sut` | Generate a2a-java CDI producers from Gherkin scenarios |
+| `make codegen-a2a-python-sut` | Generate the a2a-python SUT from Gherkin scenarios |
+| `make codegen-a2a-jakarta-sut` | Generate the a2a-jakarta SUT from Gherkin scenarios |
 
 See [AGENTS.md](AGENTS.md) for architecture details and contribution guidelines.
 
