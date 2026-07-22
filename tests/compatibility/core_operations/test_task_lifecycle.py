@@ -452,13 +452,11 @@ class TestSubscribeLifecycle:
         # Some servers open the stream and deliver the error on iteration; the
         # error code is not observable from the stream, so any iteration error
         # is accepted and only a successfully-yielded event is a failure.
-        try:
-            collect_events_with_timeout(sub_response.events)[0]
+        events, _ = collect_events_with_timeout(sub_response.events, stop_after_first=True)
+        if events:
             errors.append(
                 "SubscribeToTask on a terminal task should return an error, "
                 "but yielded an event"
             )
-        except Exception:
-            pass
 
         assert_and_record(compatibility_collector, req, transport, errors)
