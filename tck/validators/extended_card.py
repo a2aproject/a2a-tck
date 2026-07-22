@@ -9,9 +9,13 @@ endpoint and route on the response rather than asserting a fixed outcome.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING
 
 from tck.requirements.base import EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR
+
+
+if TYPE_CHECKING:
+    from tck.transport.base import TransportResponse
 
 
 _AUTH_CHALLENGE_STATUS = frozenset({401, 403})
@@ -27,7 +31,7 @@ class ExtendedCardProbe(Enum):
     WRONG_ERROR = "wrong_error"
 
 
-def classify_extended_card_probe(response: Any, transport: str) -> ExtendedCardProbe:
+def classify_extended_card_probe(response: TransportResponse, transport: str) -> ExtendedCardProbe:
     """Classify a GetExtendedAgentCard probe response.
 
     Returns:
