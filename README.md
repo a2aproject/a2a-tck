@@ -149,7 +149,14 @@ uv run python sut_agent.py
 The `a2a-jakarta` target generates a Jakarta EE SUT project in `sut/a2a-jakarta/` built on the [a2a-java SDK](https://github.com/a2aproject/a2a-java) and deployed with the WildFly Maven plugin:
 
 ```bash
+# Generate the SUT from Gherkin scenarios
 make codegen-a2a-jakarta-sut
+
+# Build and start the SUT on WildFly
+cd sut/a2a-jakarta && mvn wildfly:run
+
+# Run the TCK against it
+./run_tck.py --sut-host http://localhost:8080
 ```
 
 ## Development
