@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from tck.requirements.base import (
     CANCEL_TASK_BINDING,
+    CONTENT_TYPE_NOT_SUPPORTED_ERROR,
     GET_TASK_BINDING,
+    INVALID_PARAMS_ERROR,
     LIST_TASKS_BINDING,
     SEND_MESSAGE_BINDING,
     SEND_STREAMING_MESSAGE_BINDING,
@@ -105,6 +107,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         binding=SEND_MESSAGE_BINDING,
         proto_request_type="SendMessageRequest",
         expected_behavior="ContentTypeNotSupportedError returned",
+        expected_error=CONTENT_TYPE_NOT_SUPPORTED_ERROR,
         spec_url=f"{SPEC_BASE}311-send-message",
         tags=[CORE, SEND_MESSAGE, ERROR],
         sample_input={
@@ -594,6 +597,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         operation=OperationType.SEND_MESSAGE,
         binding=SEND_MESSAGE_BINDING,
         expected_behavior="Error returned when client contextId not accepted",
+        expected_error=INVALID_PARAMS_ERROR,
         spec_url=f"{SPEC_BASE}341-context-identifier-semantics",
         tags=[CORE, MULTI_TURN, CONTEXT, ERROR],
         sample_input={
