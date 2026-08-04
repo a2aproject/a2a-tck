@@ -127,17 +127,70 @@ def _is_auth_required_status(response: Any, transport: str) -> bool:
     return state == _JSON_AUTH_REQUIRED
 
 
-def _send_auth_required(client: BaseTransportClient) -> Any:
+def _is_message_response(response: Any, transport: str) -> bool:
+    """Return True when a successful, task-less response is a bare Message.
+
+    AUTH-INTASK-001 requires the agent to track an authorization-gated
+    operation with a Task.  A successful ``send_message`` that answers with a
+    Message instead is the exact violation these tests exist to catch, so it
+    must be distinguished from a response whose shape the client simply could
+    not parse.  A recognized Message shape returns True (the caller fails);
+    anything unrecognized returns False (the caller skips, since there is
+    nothing to assert on).
+    """
+    raw = response.raw_response
+    if transport == "grpc":
+        # SendMessageResponse.payload is a oneof of "task" or "message".
+        try:
+            return raw.WhichOneof("payload") == "message"
+        except (ValueError, AttributeError):
+            return False
+
+    # JSON-RPC or HTTP+JSON
+    if not isinstance(raw, dict):
+        return False
+    result = raw.get("result") if transport == "jsonrpc" else raw
+    if not isinstance(result, dict):
+        return False
+    # A Message may arrive directly as the result or under a "message" key.
+    candidate = result.get("message", result)
+    if not isinstance(candidate, dict):
+        return False
+    if candidate.get("kind") == "message":
+        return True
+    # No discriminator present: treat a Message-shaped object (messageId and
+    # parts, without the Task-only id/status) as a bare Message.  Anything
+    # else is an unrecognized shape and is left for the caller to skip.
+    return (
+        "messageId" in candidate
+        and "parts" in candidate
+        and "status" not in candidate
+        and "id" not in candidate
+    )
+
+
+def _send_auth_required(
+    client: BaseTransportClient,
+    collector: Any,
+    req: Any,
+) -> Any:
     """Send the ``tck-auth-required`` message and return the raw response.
 
     Deliberately does NOT go through ``_task_helpers``: those factories call
     ``pytest.skip`` when the task does not reach the expected state, which
     would convert the exact failure these tests exist to catch -- an agent
     settling an authorization-gated operation instead of asking for
-    authorization -- into a silent skip.  Only a transport-level failure or
-    a missing task id skips here, because those leave nothing to assert on.
-    The task state itself is always asserted by the caller.
+    authorization -- into a silent skip.
+
+    A successful response that carries no task id is inspected rather than
+    skipped: if it is a bare Message, the agent has answered an
+    authorization-gated request without tracking it as a Task, which is the
+    AUTH-INTASK-001 violation and is recorded as a failure.  Only a
+    transport-level failure or a genuinely unrecognized payload shape skips,
+    because those leave nothing to assert on.  The task state itself is
+    always asserted by the caller.
     """
+    transport = client.transport
     message: dict[str, Any] = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK auth-required task creation"}],
@@ -147,6 +200,16 @@ def _send_auth_required(client: BaseTransportClient) -> Any:
     if not response.success:
         pytest.skip(f"send_message failed: {response.error}")
     if not response.task_id:
+        if _is_message_response(response, transport):
+            assert_and_record(
+                collector,
+                req,
+                transport,
+                [
+                    "agent returned a bare Message where a Task is required "
+                    "for in-task authorization"
+                ],
+            )
         pytest.skip("Could not extract task ID from send_message response")
     return response
 
@@ -171,13 +234,14 @@ class TestAuthRequiredLifecycle:
 
         An agent requesting authorization MUST track the operation with a
         Task rather than answering with a bare Message.  ``_send_auth_required``
-        skips unless a task id was returned, so reaching this point means a
-        Task exists; the assertion confirms it is retrievable by that id,
+        fails outright when the response is a bare Message and skips only on a
+        genuinely unrecognized shape, so reaching this point means a Task id
+        was returned; the assertion confirms it is retrievable by that id,
         which is what makes the authorization request addressable.
         """
         req = AUTH_INTASK_001
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        send_response = _send_auth_required(client)
+        send_response = _send_auth_required(client, compatibility_collector, req)
 
         get_response = client.get_task(id=send_response.task_id)
 
@@ -211,7 +275,7 @@ class TestAuthRequiredLifecycle:
         """
         req = AUTH_INTASK_002
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        send_response = _send_auth_required(client)
+        send_response = _send_auth_required(client, compatibility_collector, req)
 
         get_response = client.get_task(id=send_response.task_id)
         if not get_response.success:
@@ -248,7 +312,7 @@ class TestAuthRequiredLifecycle:
         """
         req = CORE_EXECUTION_MODE_001
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        send_response = _send_auth_required(client)
+        send_response = _send_auth_required(client, compatibility_collector, req)
 
         get_response = client.get_task(id=send_response.task_id)
         if not get_response.success:
