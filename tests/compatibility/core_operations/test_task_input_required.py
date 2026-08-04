@@ -8,6 +8,17 @@ cover both halves of that requirement for the ``input_required`` path:
 the initial request that stops at ``input_required`` and the follow-up
 request that continues such a task to a terminal state.
 
+The lifecycle state is asserted on the send_message RESPONSE itself, not
+on a later GetTask.  That is the tightest binding to the requirement: the
+rule is about what a blocking send returns, so the returned state is the
+direct evidence that the agent waited before returning rather than
+answering early.  These tests deliberately do NOT route through the
+``_task_helpers`` factories: those call ``pytest.skip`` when the task does
+not reach the expected state, which would convert the exact failure these
+tests exist to catch -- a blocking send answering with the wrong state --
+into a silent skip.  Only a transport-level failure or a missing task id
+skips here, because those leave nothing to assert on.
+
 Requirements tested:
     CORE-EXECUTION-MODE-001 - Blocking mode waits for terminal or
                               interrupted state (input_required, auth_required)
@@ -23,10 +34,10 @@ import pytest
 from tck.requirements.base import (
     TASK_STATE_INPUT_REQUIRED,
     TERMINAL_STATES,
+    tck_id,
 )
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tests.compatibility._task_helpers import create_multiturn_task, create_working_task
 from tests.compatibility._test_helpers import assert_and_record, get_client
 from tests.compatibility.markers import must
 
@@ -66,7 +77,9 @@ def _task_state(response: Any, transport: str) -> Any:
     Mirrors the extraction in ``_is_terminal_status`` from
     ``test_task_lifecycle.py`` but returns the raw state value (a gRPC
     enum int or a ProtoJSON enum name) so callers can compare against
-    either the terminal set or the input_required binding.
+    either the terminal set or the input_required binding.  Handles both
+    a SendMessage response (whose ``payload``/``result`` carries the task)
+    and a bare Task proto or dict.
     """
     raw = response.raw_response
     if transport == "grpc":
@@ -117,6 +130,50 @@ def _is_input_required_status(response: Any, transport: str) -> bool:
     return state == _JSON_INPUT_REQUIRED
 
 
+def _send_input_required(client: BaseTransportClient) -> Any:
+    """Send the ``tck-input-required`` message and return the raw response.
+
+    Deliberately does NOT go through ``_task_helpers``: those factories call
+    ``pytest.skip`` when the task does not reach the expected state, which
+    would convert the exact failure these tests exist to catch -- a blocking
+    send answering with the wrong state -- into a silent skip.  Only a
+    transport-level failure or a missing task id skips here, because those
+    leave nothing to assert on.  The task state itself is always asserted by
+    the caller.
+    """
+    message: dict[str, Any] = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK input-required task creation"}],
+        "messageId": tck_id("input-required"),
+    }
+    response = client.send_message(message=message)
+    if not response.success:
+        pytest.skip(f"send_message failed: {response.error}")
+    if not response.task_id:
+        pytest.skip("Could not extract task ID from send_message response")
+    return response
+
+
+def _send_completion_followup(client: BaseTransportClient, task_id: str) -> Any:
+    """Send a completing follow-up on *task_id* and return the raw response.
+
+    Same skip discipline as :func:`_send_input_required`: only a
+    transport-level failure skips, so a follow-up that returns a
+    non-terminal state -- the failure this continuation test exists to
+    catch -- reaches the caller's assertion rather than being masked.
+    """
+    followup: dict[str, Any] = {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK follow-up completion"}],
+        "messageId": tck_id("complete-task"),
+        "taskId": task_id,
+    }
+    response = client.send_message(message=followup)
+    if not response.success:
+        pytest.skip(f"Follow-up send_message failed: {response.error}")
+    return response
+
+
 # ---------------------------------------------------------------------------
 # INPUT_REQUIRED lifecycle tests
 # ---------------------------------------------------------------------------
@@ -139,29 +196,27 @@ class TestInputRequiredLifecycle:
         waits and returns with the task in the input_required interrupted
         state, not a terminal state.
 
-        ``create_working_task`` issues a default (blocking) send_message
-        that the SUT answers by requiring input.  The task must therefore
-        settle in input_required, which is an interrupted, NON-terminal
-        state.
+        Terminality is checked first and reported separately: a terminal
+        state here means the blocking send answered early, reporting a task
+        that still needs client input as settled, which is a materially
+        different defect than landing in some other non-terminal state.
+        The assertion is on the send RESPONSE, the tightest binding to
+        "the agent waits before returning".
         """
         req = CORE_EXECUTION_MODE_001
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_working_task(client)
-
-        get_response = client.get_task(id=info.task_id)
-        if not get_response.success:
-            pytest.skip(f"GetTask failed: {get_response.error}")
+        send_response = _send_input_required(client)
 
         errors: list[str] = []
-        if _is_terminal_status(get_response, transport):
+        if _is_terminal_status(send_response, transport):
             errors.append(
                 "Blocking send_message returned a terminal state; "
                 "expected the interrupted input_required state"
             )
-        elif not _is_input_required_status(get_response, transport):
+        elif not _is_input_required_status(send_response, transport):
             errors.append(
-                "Task is not in the input_required state after a blocking "
-                "send_message that requires input"
+                "Blocking send_message response is not in the input_required "
+                "state after a send that requires input"
             )
 
         assert_and_record(compatibility_collector, req, transport, errors)
@@ -178,20 +233,19 @@ class TestInputRequiredLifecycle:
         task waits until the task reaches a terminal state before
         returning.
 
-        ``create_multiturn_task`` first drives the task to input_required,
-        then sends a completing follow-up.  After the blocking follow-up
-        returns, the task must be in a terminal state.
+        The initial send establishes an input_required task; the follow-up
+        completes it.  The terminal state is asserted on the follow-up send
+        RESPONSE, so a SUT whose blocking follow-up returns a non-terminal
+        state -- answering before the work is done -- fails here rather than
+        being skipped by a setup helper.
         """
         req = CORE_EXECUTION_MODE_001
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        info = create_multiturn_task(client)
-
-        get_response = client.get_task(id=info.task_id)
-        if not get_response.success:
-            pytest.skip(f"GetTask failed: {get_response.error}")
+        send_response = _send_input_required(client)
+        followup_response = _send_completion_followup(client, send_response.task_id)
 
         errors: list[str] = []
-        if not _is_terminal_status(get_response, transport):
+        if not _is_terminal_status(followup_response, transport):
             errors.append(
                 "Blocking follow-up send_message on an input_required task "
                 "did not reach a terminal state before returning"
