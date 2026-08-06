@@ -85,6 +85,20 @@ class TestExecutiveSummary:
         html = formatter.format(report)
         assert "http://localhost:9999" in html
 
+    def test_missing_version_does_not_crash(
+        self, collector: CompatibilityCollector, formatter: HTMLFormatter
+    ) -> None:
+        """A report with no agent_card (e.g. an unreachable SUT) doesn't raise KeyError.
+
+        Regression test: CompatibilityAggregator defaults agent_card to {}
+        when none is available, and report.agent_card['version'] used to
+        raise KeyError formatting that report instead of rendering it.
+        """
+        report = CompatibilityAggregator(collector, agent_card={}).aggregate()
+        html = formatter.format(report)
+        assert "SUT Version: ?" in html
+
+
 class TestPerRequirementTable:
     """Per-requirement table contents."""
 

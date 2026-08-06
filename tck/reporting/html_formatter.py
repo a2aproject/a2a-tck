@@ -80,7 +80,7 @@ class HTMLFormatter:
             "</table>\n"
             f"<p>Timestamp: {escape(report.timestamp)}</p>\n"
             f'<p>SUT URL: <a href="{escape(self._sut_url)}">{escape(self._sut_url)}</a></p>\n'
-            f"<p>SUT Version: {escape(report.agent_card['version'])}</p>\n"
+            f"<p>SUT Version: {escape(str(report.agent_card.get('version','?')))}</p>\n"
             "</div>\n"
         )
 
