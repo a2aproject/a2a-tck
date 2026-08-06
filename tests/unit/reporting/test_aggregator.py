@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
 from tck.reporting.aggregator import CompatibilityAggregator
 from tck.reporting.collector import CompatibilityCollector
+
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 FULL = 100.0
@@ -19,6 +24,21 @@ ZERO = 0.0
 def collector() -> CompatibilityCollector:
     """Return a fresh CompatibilityCollector."""
     return CompatibilityCollector()
+
+
+@pytest.fixture(autouse=True)
+def _empty_registry() -> Iterator[None]:
+    """Keep aggregator tests hermetic against the real ~129-requirement registry.
+
+    Since GH-214, NOT TESTED requirements count against compatibility, so any
+    test that doesn't explicitly care about untested-registry behavior must
+    not have the real ALL_REQUIREMENTS registry silently mixed into its
+    counts. Tests that do care (``TestUntestedRequirements``) patch their own
+    fake registry inside a nested ``with``, which overrides this one for the
+    duration of that block.
+    """
+    with patch("tck.requirements.registry.ALL_REQUIREMENTS", []):
+        yield
 
 
 class TestEmptyCollector:
@@ -277,8 +297,13 @@ class TestUntestedRequirements:
         assert untested.transports == {}
         assert untested.description == "Description for R-UNTESTED"
 
-    def test_untested_excluded_from_compatibility(self, collector: CompatibilityCollector) -> None:
-        """NOT TESTED requirements do not affect compatibility percentages."""
+    def test_untested_counts_against_compatibility(self, collector: CompatibilityCollector) -> None:
+        """NOT TESTED requirements count against compatibility, like a failure.
+
+        Regression test for GH-214: a requirement that was registered but
+        never exercised must not be silently excluded from the denominator —
+        otherwise a SUT that answers almost nothing can still report 100%.
+        """
         fake_registry = [
             self._make_spec("R1", "MUST"),
             self._make_spec("R-UNTESTED", "MUST"),
@@ -288,8 +313,27 @@ class TestUntestedRequirements:
         with patch("tck.requirements.registry.ALL_REQUIREMENTS", fake_registry):
             report = CompatibilityAggregator(collector).aggregate()
 
-        assert report.must_compatibility == FULL
-        assert report.overall_compatibility == FULL
+        assert report.must_compatibility == HALF
+        assert report.overall_compatibility == HALF
+
+    def test_unreachable_sut_does_not_report_full_compatibility(
+        self, collector: CompatibilityCollector
+    ) -> None:
+        """A SUT that never responds must not report vacuous 100% compatibility.
+
+        Reproduces the exact shape of GH-214's repro: a handful of
+        requirements happen to pass (e.g. a health check answered before the
+        rest of the run timed out) while the vast majority never ran.
+        """
+        fake_registry = [self._make_spec(f"R{i}", "MUST") for i in range(129)]
+        for i in range(4):
+            collector.record(requirement_id=f"R{i}", transport="http", passed=True, level="MUST")
+
+        with patch("tck.requirements.registry.ALL_REQUIREMENTS", fake_registry):
+            report = CompatibilityAggregator(collector).aggregate()
+
+        assert report.must_compatibility != FULL
+        assert report.must_compatibility == pytest.approx(4 / 129 * 100.0)
 
     def test_tested_requirement_not_overwritten(self, collector: CompatibilityCollector) -> None:
         """A requirement that was tested keeps its actual result."""
