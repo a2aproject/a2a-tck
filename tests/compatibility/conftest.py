@@ -247,6 +247,45 @@ def _extract_requirement_and_transport(
     return requirement_id, transport
 
 
+def _extract_from_crashed_frame(
+    item: pytest.Item, call: pytest.CallInfo[None]
+) -> tuple[str | None, str | None]:
+    """Recover ``(requirement_id, transport)`` from the crashed frame's locals.
+
+    Fallback for when ``_extract_requirement_and_transport`` comes up empty.
+    That happens whenever a test's *class* docstring documents the
+    requirement ID but the individual *method* docstring doesn't (a common
+    pattern in this suite — see e.g. ``TestCapabilityStreaming``), or the
+    transport is a hardcoded local rather than a parametrize/marker (as in
+    tests that need a raw client for a specific transport, like
+    ``test_streaming_not_supported_jsonrpc``). Every compatibility test
+    assigns ``req = <REQUIREMENT_CONST>`` before doing any I/O that could
+    raise, so the crashed frame's own locals are ground truth for what the
+    test was actually checking — the same object it would have passed to
+    ``record()``/``assert_and_record()`` had it gotten that far.
+    """
+    excinfo = call.excinfo
+    if excinfo is None:
+        return None, None
+    func = getattr(item, "function", None)
+    func_code = getattr(func, "__code__", None)
+    if func_code is None:
+        return None, None
+
+    tb = excinfo.tb
+    while tb is not None:
+        frame = tb.tb_frame
+        if frame.f_code is func_code:
+            req = frame.f_locals.get("req")
+            transport = frame.f_locals.get("transport")
+            requirement_id = getattr(req, "id", None)
+            if not isinstance(transport, str):
+                transport = None
+            return requirement_id, transport
+        tb = tb.tb_next
+    return None, None
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo[None]
@@ -270,6 +309,13 @@ def pytest_runtest_makereport(
         return
     if report.passed:
         return
+    if report.skipped:
+        # A bare pytest.skip() with no prior record() is a deliberate,
+        # untracked skip (e.g. "this check doesn't apply here") — not a
+        # crash. Auto-recording it as a FAIL would misrepresent it; leave it
+        # to surface as NOT TESTED via the registry gap-fill, same as before
+        # the crashed-frame fallback below existed.
+        return
 
     before = item.stash.get(_record_count_key, None)
     if before is None:
@@ -279,6 +325,10 @@ def pytest_runtest_makereport(
         return
 
     requirement_id, transport = _extract_requirement_and_transport(item)
+    if requirement_id is None or transport is None:
+        frame_requirement_id, frame_transport = _extract_from_crashed_frame(item, call)
+        requirement_id = requirement_id or frame_requirement_id
+        transport = transport or frame_transport
     if requirement_id is None or transport is None:
         return
 
