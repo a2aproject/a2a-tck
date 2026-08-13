@@ -1,4 +1,6 @@
-"""A2 -- signatures field exclusion. a2a spec section 8.4.1 rule 3. Reading
+"""A2 -- signatures field exclusion.
+
+a2a spec section 8.4.1 rule 3. Reading
 a2a-python's own public source confirms the rule: `card_dict.pop(
 'signatures', None)` runs BEFORE canonicalization, because a signature
 cannot cover the field that carries itself -- the same self-reference RFC
@@ -31,14 +33,17 @@ import json
 
 from gen_layer_a import _write, go_canonical, py_canonical
 
+
 GROUP = "a2-signatures-exclusion"
 
 
-def _strip_signatures(obj):
+def _strip_signatures(obj: dict) -> dict:
+    """Return obj with its top-level `signatures` key removed."""
     return {k: v for k, v in obj.items() if k != "signatures"}
 
 
-def _make_accept_excluding_signatures(vid, rationale, full_input):
+def _make_accept_excluding_signatures(vid: str, rationale: str, full_input: dict) -> None:
+    """Build a MUST-ACCEPT vector for the signatures-exclusion rule."""
     stripped = _strip_signatures(full_input)
     raw = json.dumps(stripped, ensure_ascii=False).encode("utf-8")
     py_out = py_canonical(stripped)
@@ -58,12 +63,17 @@ def _make_accept_excluding_signatures(vid, rationale, full_input):
     _write(GROUP, vid, vector)
 
 
-def _make_reject_signatures_present(vid, rationale, claimed_canonical_bytes: bytes):
-    # Structural check, not an oracle-refusal check: does the byte string
-    # actually being tested (what a producer WRONGLY emitted as canonical)
-    # still carry a top-level "signatures" key. Confirmed against the real
-    # parsed object rather than a substring search, so this is not fooled
-    # by e.g. a string VALUE that happens to contain the word "signatures".
+def _make_reject_signatures_present(
+    vid: str, rationale: str, claimed_canonical_bytes: bytes
+) -> None:
+    """Build a MUST-REJECT vector for claimed-canonical output that still carries `signatures`.
+
+    Structural check, not an oracle-refusal check: does the byte string
+    actually being tested (what a producer WRONGLY emitted as canonical)
+    still carry a top-level "signatures" key. Confirmed against the real
+    parsed object rather than a substring search, so this is not fooled
+    by e.g. a string VALUE that happens to contain the word "signatures".
+    """
     obj = json.loads(claimed_canonical_bytes.decode("utf-8"))
     if "signatures" not in obj:
         raise RuntimeError(
@@ -87,7 +97,8 @@ def _make_reject_signatures_present(vid, rationale, claimed_canonical_bytes: byt
     _write(GROUP, vid, vector)
 
 
-def generate():
+def generate() -> None:
+    """Emit all four A2 (signatures-exclusion) vectors."""
     _make_accept_excluding_signatures(
         "A2-001",
         "A card carrying a populated `signatures` array canonicalizes as if that key were "

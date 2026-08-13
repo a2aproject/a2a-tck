@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Layer-A (canonicalization) conformance vectors for the A2A §8.4.1
-signature corpus.
+"""Generate Layer-A (canonicalization) conformance vectors for the A2A signature corpus.
 
 Every MUST-ACCEPT vector's expected bytes are computed by running the input
 through BOTH independent RFC 8785 oracles (rfc8785.py via PyPI, gowebpki/jcs
@@ -17,9 +16,11 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+
 from pathlib import Path
 
 import rfc8785
+
 
 HERE = Path(__file__).resolve().parent
 GO_ORACLE = HERE / "oracle-go" / "jcsoracle"
@@ -30,15 +31,17 @@ SPEC_REF_BASE = (
 )
 
 
-class OracleDisagreement(Exception):
-    pass
+class OracleDisagreementError(Exception):
+    """Raised when the two independent RFC 8785 oracles disagree on a MUST-ACCEPT vector."""
 
 
-def py_canonical(obj) -> bytes:
+def py_canonical(obj: object) -> bytes:
+    """Canonicalize obj with the Python (rfc8785) oracle."""
     return rfc8785.dumps(obj)
 
 
 def go_canonical(raw_json: bytes) -> bytes:
+    """Canonicalize raw_json with the Go (gowebpki/jcs) oracle."""
     p = subprocess.run(
         [str(GO_ORACLE)], input=raw_json, capture_output=True, check=False
     )
@@ -50,6 +53,7 @@ def go_canonical(raw_json: bytes) -> bytes:
 
 
 def go_rejects(raw_json: bytes) -> bool:
+    """True if the Go oracle refuses to canonicalize raw_json."""
     p = subprocess.run(
         [str(GO_ORACLE)], input=raw_json, capture_output=True, check=False
     )
@@ -83,12 +87,12 @@ def py_rejects(raw_json_text: str) -> bool:
 def make_accept(
     vid: str,
     group_dir: str,
+    *,
     clause: str,
     rationale: str,
-    input_obj,
-    *,
+    input_obj: object,
     raw_override: bytes | None = None,
-):
+) -> bytes:
     """Build one MUST-ACCEPT vector, cross-checking both oracles for real."""
     raw = (
         raw_override
@@ -98,7 +102,7 @@ def make_accept(
     py_out = py_canonical(json.loads(raw.decode("utf-8")))
     go_out = go_canonical(raw)
     if py_out != go_out:
-        raise OracleDisagreement(
+        raise OracleDisagreementError(
             f"{vid}: oracles disagree\n  py: {py_out!r}\n  go: {go_out!r}"
         )
     vector = {
@@ -118,20 +122,23 @@ def make_accept(
 def make_reject(
     vid: str,
     group_dir: str,
+    *,
     clause: str,
     rejecting_clause: str,
     rejection_layer: str,
     rationale: str,
     raw_text: str,
-):
-    """Build one MUST-REJECT vector. Requires BOTH independent oracles to
-    refuse the input -- a reject vector adjudicated by only one oracle is
-    not adjudicated at all, it is one implementation's opinion wearing a
-    two-oracle corpus's credibility. (Discovered the hard way: two earlier
-    surrogate-pair vectors passed on Python-only agreement while Go's
-    gowebpki/jcs silently substituted U+FFFD instead of erroring -- a real
-    oracle disagreement, not a harness bug, and exactly what an OR check
-    would hide.)"""
+) -> None:
+    """Build one MUST-REJECT vector.
+
+    Requires BOTH independent oracles to refuse the input -- a reject
+    vector adjudicated by only one oracle is not adjudicated at all, it is
+    one implementation's opinion wearing a two-oracle corpus's credibility.
+    (Discovered the hard way: two earlier surrogate-pair vectors passed on
+    Python-only agreement while Go's gowebpki/jcs silently substituted
+    U+FFFD instead of erroring -- a real oracle disagreement, not a harness
+    bug, and exactly what an OR check would hide.)
+    """
     refused_by_go = go_rejects(raw_text.encode("utf-8"))
     refused_by_py = py_rejects(raw_text)
     if not (refused_by_go and refused_by_py):
@@ -154,7 +161,8 @@ def make_reject(
     _write(group_dir, vid, vector)
 
 
-def _write(group_dir: str, vid: str, vector: dict):
+def _write(group_dir: str, vid: str, vector: dict) -> None:
+    """Write one vector JSON file into group_dir under OUT_ROOT."""
     d = OUT_ROOT / group_dir
     d.mkdir(parents=True, exist_ok=True)
     p = d / f"{vid}.json"
@@ -165,7 +173,8 @@ def _write(group_dir: str, vid: str, vector: dict):
     print(f"wrote {p.relative_to(HERE)}")
 
 
-def main():
+def main() -> int:
+    """Regenerate the requested groups (default: all five) into OUT_ROOT."""
     if not GO_ORACLE.exists():
         print(f"FATAL: go oracle not built at {GO_ORACLE}", file=sys.stderr)
         return 2

@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""Build MANIFEST.json for the a2a-jcs-v01 corpus: every vector's sha256,
-sorted by id, and a corpus digest that is the sha256 of the manifest body
-itself.
+"""Build MANIFEST.json for the a2a-jcs-v01 corpus.
+
+Every vector's sha256, sorted by id, and a corpus digest that is the
+sha256 of the manifest body itself.
 """
 
 import hashlib
 import json
+
 from pathlib import Path
+
 
 HERE = Path(__file__).resolve().parent
 VROOT = HERE
 
 
-def main():
+def main() -> None:
+    """Build MANIFEST.json from every vector file under VROOT."""
     entries = []
     for f in sorted(VROOT.glob("*/*.json")):
         digest = hashlib.sha256(f.read_bytes()).hexdigest()
