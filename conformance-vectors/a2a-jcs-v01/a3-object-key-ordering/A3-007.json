@@ -1,0 +1,15 @@
+{
+  "id": "A3-007",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A second astral-vs-high-BMP inversion pair, generalizing A3-006 beyond one example: U+10000 (surrogate pair D800 DC00) sorts before U+E000 (single unit E000, Private Use Area) by the same UTF-16-vs-code-point divergence.",
+  "input": {
+    "x𐀀end": 1,
+    "xend": 2
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2278f0908080656e64223a312c2278ee8080656e64223a327d"
+  }
+}

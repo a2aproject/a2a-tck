@@ -1,0 +1,16 @@
+{
+  "id": "A3-001",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Baseline: keys already in UTF-16 code-unit order pass through unchanged.",
+  "input": {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2261223a312c2262223a322c2263223a337d"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "A5-010",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A negative decimal combines the sign rule (A5-004) with fractional shortest-digit serialization (A5-007) in one value.",
+  "input": {
+    "n": -123.456
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a2d3132332e3435367d"
+  }
+}

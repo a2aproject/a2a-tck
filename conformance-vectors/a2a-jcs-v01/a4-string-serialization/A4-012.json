@@ -1,0 +1,14 @@
+{
+  "id": "A4-012",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A string built entirely from two adjacent astral-plane characters (both requiring surrogate pairs in UTF-16) confirms multi-character non-BMP content is handled, not just a single isolated case like A4-003.",
+  "input": {
+    "emoji_pair": "😀😁"
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22656d6f6a695f70616972223a22f09f9880f09f9881227d"
+  }
+}

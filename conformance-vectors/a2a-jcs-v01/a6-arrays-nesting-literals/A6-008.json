@@ -1,0 +1,26 @@
+{
+  "id": "A6-008",
+  "clause": "RFC8785-3.2.1",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Deep alternation of arrays containing objects containing arrays exercises the recursion to more than two levels; order is preserved at every array level and keys sorted at every object level.",
+  "input": {
+    "deep": [
+      {
+        "x": [
+          1,
+          {
+            "y": 2
+          }
+        ]
+      },
+      {
+        "x": []
+      }
+    ]
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2264656570223a5b7b2278223a5b312c7b2279223a327d5d7d2c7b2278223a5b5d7d5d7d"
+  }
+}

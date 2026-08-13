@@ -1,0 +1,254 @@
+{
+  "corpus": "a2a-jcs-v01",
+  "suite": "a2a-agent-card-canonicalization-conformance",
+  "specRef": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "scope": "Layer A only (RFC 8785 canonicalization + a2a signatures-exclusion); field-presence vectors (spec section 8.4.1 rule 1) are deliberately excluded pending resolution of a2aproject/A2A#2122's rule-1 question.",
+  "oracles": [
+    "rfc8785 (PyPI, 0.1.4)",
+    "gowebpki/jcs (Go, v1.0.1)"
+  ],
+  "counts": {
+    "accept": 47,
+    "reject": 10,
+    "total": 57
+  },
+  "groups": [
+    "a2-signatures-exclusion",
+    "a3-object-key-ordering",
+    "a4-string-serialization",
+    "a5-number-serialization",
+    "a6-arrays-nesting-literals"
+  ],
+  "vectors": [
+    {
+      "path": "a2-signatures-exclusion/A2-001.json",
+      "sha256": "dc15ec0f7dea5c98cb6e23a1f0ad36f69b8b945c269e71846b4f1cbfcb1b279c"
+    },
+    {
+      "path": "a2-signatures-exclusion/A2-002.json",
+      "sha256": "70707b61ffbf80bb4a983de21af9677cc0611be1ad05184e538bcfdbabafe2d5"
+    },
+    {
+      "path": "a2-signatures-exclusion/A2-REJECT-003.json",
+      "sha256": "faf5bec55b05269aac80fd41b3e6e4daa4f2f241074869315f36823bfb9ec7c3"
+    },
+    {
+      "path": "a2-signatures-exclusion/A2-REJECT-004.json",
+      "sha256": "e71201b74da090f2ac07b944726298c8ee765268f819cb58be5924bf9d50aa47"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-001.json",
+      "sha256": "5a03287ce73d20825bf76995142fbebf6d229f83526d1b0b16bebdb0117015a9"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-002.json",
+      "sha256": "51a2d698a9daa2e975760827415ca05e954bb2dfda14c95f09a8f354e71e66c0"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-003.json",
+      "sha256": "b406598175653952c2a3b669fb79cb5574e5afad25118a2cc9ea7e40a6e92efc"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-004.json",
+      "sha256": "9cf8781a9c9a9df3399532c8dde237c470c4d29a1e4229bf0326885e40315c83"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-005.json",
+      "sha256": "b6f278ef5d0ba6fa69132818bff97872b8fccf04a3a8ad9c83115cc85b63727d"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-006.json",
+      "sha256": "2481521ac7bf127de9dc85fde0f14a4c53d1691dab65df99b9dd9c2193b6e2a1"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-007.json",
+      "sha256": "cf59dbf5e7cca5dcad839759400968067a832dc6ed6e0e9dcfbc036a142a295e"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-008.json",
+      "sha256": "6aa786180ef7a85d5ea67415d4f5ae4d0e702dcead0d510117c2b3b8721927df"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-009.json",
+      "sha256": "ea433756b1f0797dfe6ba6ce8e40885e9359b9ac4b5d18c477625118b20528ea"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-010.json",
+      "sha256": "253eb0fd52ec577e32a673cd7a067ea09d253deed351b58f1eaee9f62fa8bf7b"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-REJECT-011.json",
+      "sha256": "cf2cdefed7e898f37c866d4c32ed6d9af70d1ce4b244e455470ebb94922b0e17"
+    },
+    {
+      "path": "a3-object-key-ordering/A3-REJECT-012.json",
+      "sha256": "fc79882a79e13cc8d7547098760612a7a61ed3e48dd3eeadfbdfa595eef2075f"
+    },
+    {
+      "path": "a4-string-serialization/A4-001.json",
+      "sha256": "42435ce2469a64617fff54f2b87a963285285ae006dbcbea53e5b055cbf2c8ff"
+    },
+    {
+      "path": "a4-string-serialization/A4-002.json",
+      "sha256": "d3addd71274174b61aa60aebb1e0565b832befdac871c979b30dc23fdc247cb3"
+    },
+    {
+      "path": "a4-string-serialization/A4-003.json",
+      "sha256": "01364d7bc81cb7efcb90bb94b6bd3502ad31ac7af8fc48f1d451953475840802"
+    },
+    {
+      "path": "a4-string-serialization/A4-004.json",
+      "sha256": "19d6c11df3db73610b1d227d6ff1d33a4406ac06848faf4960c5a73040d06a0e"
+    },
+    {
+      "path": "a4-string-serialization/A4-005.json",
+      "sha256": "794942353846a99990a8809a017489d7b6646d395bb8a249f9a4e7dcbc73eea4"
+    },
+    {
+      "path": "a4-string-serialization/A4-006.json",
+      "sha256": "f2fd4fc9ccd7b37d154aeadf9fb61aec3c8fc7b87acff5adff9c95a761fdf30f"
+    },
+    {
+      "path": "a4-string-serialization/A4-007.json",
+      "sha256": "e859bde2ccccf90098f67acfc1fcab828ad082ee69177888c026a5f0ad244eb5"
+    },
+    {
+      "path": "a4-string-serialization/A4-008.json",
+      "sha256": "b91282d1835e9e24fa72b2e52780841c46377a405c2fcd93fc9002005b1732b0"
+    },
+    {
+      "path": "a4-string-serialization/A4-009.json",
+      "sha256": "2efe4cc3a7ddd5a421d772b1c8cfcc27741589d35c575c91bb7453c60def78af"
+    },
+    {
+      "path": "a4-string-serialization/A4-010.json",
+      "sha256": "ffa7ab4f25b4261290e218f1d003faf1e4653571b108414883f0d6219deaef7e"
+    },
+    {
+      "path": "a4-string-serialization/A4-011.json",
+      "sha256": "35a9601abaa0c7bf2a9c96ada53af6a35a45683327030bc85425596e128376e1"
+    },
+    {
+      "path": "a4-string-serialization/A4-012.json",
+      "sha256": "a776b6bad02bd42a5682f4ded793da13dbc9f2d8e7b907513c140c9dd81951cd"
+    },
+    {
+      "path": "a4-string-serialization/A4-REJECT-013.json",
+      "sha256": "eae05e171d6c69c3bd18931b12c14271c73eaa78a8b4322d7e77ae7b1ae5fc37"
+    },
+    {
+      "path": "a4-string-serialization/A4-REJECT-014.json",
+      "sha256": "00e854bc0dc6a17718e7489874fbe6111e517a29d3236ba325811627f3694878"
+    },
+    {
+      "path": "a4-string-serialization/A4-REJECT-015.json",
+      "sha256": "caebeb1e17f8b5343143c78e0e1f46ad08e0af92f69df6b6b99a0f86836b4bc4"
+    },
+    {
+      "path": "a5-number-serialization/A5-001.json",
+      "sha256": "3fd76250f640c0b5cde9e3b377c69562ccdabf521e52ffe00ce6f845ab61459d"
+    },
+    {
+      "path": "a5-number-serialization/A5-002.json",
+      "sha256": "2e1f65f43c7106e1ff9112e923e09eac52cb272cfc831ee880b4bf0c21907e36"
+    },
+    {
+      "path": "a5-number-serialization/A5-003.json",
+      "sha256": "bf1fe9df5213009047e87e68b7f7713b8b45288300569653e477346b6a129e69"
+    },
+    {
+      "path": "a5-number-serialization/A5-004.json",
+      "sha256": "93ade06748a17e2da121ccf2aec0b01412a9b1db6fbe092f9009f259d8e9c860"
+    },
+    {
+      "path": "a5-number-serialization/A5-005.json",
+      "sha256": "ed2227144b764074538e954f8ba41be1be0e91b37f40d50657ffe046c0e6d201"
+    },
+    {
+      "path": "a5-number-serialization/A5-006.json",
+      "sha256": "9743c1b0d28d05230afb177dca712b3b43fe121a0717184ab5b6fb138af69257"
+    },
+    {
+      "path": "a5-number-serialization/A5-007.json",
+      "sha256": "a16a1e04a559e54c6b97335b73418ed81240914fab9efc12d1c3501920c2e385"
+    },
+    {
+      "path": "a5-number-serialization/A5-008.json",
+      "sha256": "4bca7750bbad5b8709ea3f5730aa22ae76ede6e4e9b1e9e123f83d6cf8e6b995"
+    },
+    {
+      "path": "a5-number-serialization/A5-009.json",
+      "sha256": "a6581ef2e7516f37b2ee9dde0d834dc343adbe3dd97547e0e07e0eba513704cb"
+    },
+    {
+      "path": "a5-number-serialization/A5-010.json",
+      "sha256": "330205c2d7368bda95452cf4275412fd8bb3a7c10e0aa4e98087b02e1fd18ec5"
+    },
+    {
+      "path": "a5-number-serialization/A5-011.json",
+      "sha256": "c1517860e8baab8427bf3d804c7419d7fc2c93d9caa3def38fd18707359d5527"
+    },
+    {
+      "path": "a5-number-serialization/A5-012.json",
+      "sha256": "c9b06bb6da03e94273c96e46bfe998d1a965dc723d3f0bb3f2e5c02246e65b3a"
+    },
+    {
+      "path": "a5-number-serialization/A5-013.json",
+      "sha256": "7639b7d7afeb9d711934d443c0eafdd16fc41e75fc7b87e7ef13219daa40dd4c"
+    },
+    {
+      "path": "a5-number-serialization/A5-014.json",
+      "sha256": "69fa3aeb0c559942c52482dd884d932a5ed054d81c01d0d0d1ce292150fa6d90"
+    },
+    {
+      "path": "a5-number-serialization/A5-015.json",
+      "sha256": "03ff8bf1a88b92f188af50179a0b2199e42b5ccef17aa84b8cb28083de29ac1a"
+    },
+    {
+      "path": "a5-number-serialization/A5-REJECT-016.json",
+      "sha256": "787ba4711aa90490526470f381da062b8cb450f10e52dbba384f27f151387da8"
+    },
+    {
+      "path": "a5-number-serialization/A5-REJECT-017.json",
+      "sha256": "547d8d2d0cc7557b01f18a8541c93b05b6730cb17bb3e1320019dc80122daa9b"
+    },
+    {
+      "path": "a5-number-serialization/A5-REJECT-018.json",
+      "sha256": "97533a28720c36a5045c24350171e73d0667a7850da4967da3e7e8bd328d7026"
+    },
+    {
+      "path": "a6-arrays-nesting-literals/A6-001.json",
+      "sha256": "fe95eb701df0a6f8252a2c24f2fbf2c01fc132123aa67b8851a0002a8febba8d"
+    },
+    {
+      "path": "a6-arrays-nesting-literals/A6-002.json",
+      "sha256": "05659c09f6c0b1ec3324790634928a336b55fa04431fd74ce133bc500c1e34f9"
+    },
+    {
+      "path": "a6-arrays-nesting-literals/A6-003.json",
+      "sha256": "652f8b567937b3463689c7361c98ccc75e43e43267828148dbb587c3004f887b"
+    },
+    {
+      "path": "a6-arrays-nesting-literals/A6-004.json",
+      "sha256": "e34ccf4bbb90fe690f052d88f251071c5537ac5797c5e68eefe63149d824baa9"
+    },
+    {
+      "path": "a6-arrays-nesting-literals/A6-005.json",
+      "sha256": "307951b8c139bb632a6fbb249c880fcd3d7c2c43ba43ed51d734ad4639a35f4d"
+    },
+    {
+      "path": "a6-arrays-nesting-literals/A6-006.json",
+      "sha256": "8e6f0bdaa7113f325d77f7eab308edcfc15834a9ee7b5db2ce8f88804f9b2172"
+    },
+    {
+      "path": "a6-arrays-nesting-literals/A6-007.json",
+      "sha256": "892589ed9d22344473270c56984ca80f282aa8eda3ebfd571582b28e6e044ea7"
+    },
+    {
+      "path": "a6-arrays-nesting-literals/A6-008.json",
+      "sha256": "b43026c697e087b2fb62f11d21e6fe624fa1289c2778ff2efac155cf2b6250f9"
+    }
+  ],
+  "corpusDigest": "2ec93667b1436537a7f46cf882bae37977dc10face4bb27a2120e2d7aa824da4"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "A4-009",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A combining diacritic (U+0301 COMBINING ACUTE ACCENT) immediately following its base character is ordinary non-ASCII text with no special JSON-string handling; it is emitted as literal UTF-8 like any other codepoint outside the escape set.",
+  "input": {
+    "combining": "éclair"
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22636f6d62696e696e67223a2265cc81636c616972227d"
+  }
+}
