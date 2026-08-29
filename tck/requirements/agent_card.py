@@ -139,7 +139,10 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Agent Card canonicalized per RFC 8785 before signing",
         spec_url=f"{SPEC_BASE}841-canonicalization-requirements",
-        tags=[AGENT_CARD, SIGNING, JCS, NOT_AUTOMATABLE],
+        # Covered by the a2a-jcs-v01 conformance corpus (groups A3 to A6) in
+        # tests/unit/canonicalization/test_jcs_vectors.py, and against a live
+        # server in tests/compatibility/agent_card/test_agent_card_signing.py.
+        tags=[AGENT_CARD, SIGNING, JCS],
     ),
     RequirementSpec(
         id="CARD-SIGN-002",
@@ -152,7 +155,10 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Signatures field excluded from signing payload",
         spec_url=f"{SPEC_BASE}841-canonicalization-requirements",
-        tags=[AGENT_CARD, SIGNING, NOT_AUTOMATABLE],
+        # Covered by the a2a-jcs-v01 conformance corpus (group A2) in
+        # tests/unit/canonicalization/test_jcs_vectors.py, and against a live
+        # server in tests/compatibility/agent_card/test_agent_card_signing.py.
+        tags=[AGENT_CARD, SIGNING],
     ),
     RequirementSpec(
         id="CARD-SIGN-003",
@@ -165,6 +171,8 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Protected header contains alg and kid",
         spec_url=f"{SPEC_BASE}842-signature-format",
+        # JWS construction (Section 8.4.2), not canonicalization: the
+        # a2a-jcs-v01 corpus carries no vectors for protected headers.
         tags=[AGENT_CARD, SIGNING, JWS, NOT_AUTOMATABLE],
     ),
     RequirementSpec(
@@ -178,6 +186,8 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Expired/revoked keys rejected during verification",
         spec_url=f"{SPEC_BASE}843-signature-verification",
+        # Constrains a verifying client's key handling over time (Section
+        # 8.4.3), which no canonicalization vector can decide.
         tags=[AGENT_CARD, SIGNING, SECURITY, NOT_AUTOMATABLE],
     ),
     # --- Agent Card Caching (Section 8.6) ---
