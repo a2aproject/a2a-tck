@@ -114,6 +114,7 @@ class HttpJsonClient(BaseTransportClient):
             base_url=base_url,
             timeout=httpx.Timeout(5.0, read=30.0),
             headers={A2A_VERSION_HEADER: A2A_VERSION},
+            follow_redirects=True,
         )
 
     def close(self) -> None:
