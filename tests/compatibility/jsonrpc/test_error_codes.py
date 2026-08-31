@@ -9,6 +9,8 @@ Requirements tested:
 
 from __future__ import annotations
 
+import json
+
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -218,7 +220,12 @@ class TestJsonRpcErrorCodeMappings:
         }
         response = httpx.post(
             client.base_url,
-            content=str(payload).encode(),
+            # json.dumps, not str(): a bare str(dict) is Python repr (single
+            # quotes), not valid JSON — that made the body itself unparseable
+            # independent of the deliberately-wrong Content-Type header below,
+            # so a server correctly returned ParseError (-32700) for reasons
+            # unrelated to what this test means to exercise (GH-216).
+            content=json.dumps(payload).encode(),
             headers={"Content-Type": "text/plain", A2A_VERSION_HEADER: A2A_VERSION},
         )
 
