@@ -15,8 +15,20 @@ import pytest
 
 
 if TYPE_CHECKING:
-    from tck.requirements.base import RequirementSpec
+    from tck.requirements.base import ErrorBinding, RequirementSpec
     from tck.transport.base import BaseTransportClient
+
+
+def expected_error_of(req: RequirementSpec) -> ErrorBinding:
+    """Return a requirement's declared ``expected_error``, asserting it is set.
+
+    The registry invariant (``test_expected_error_declared``) guarantees that
+    any requirement whose text mandates a specific error declares it here, so a
+    missing binding is a registry bug, not a runtime condition.
+    """
+    if req.expected_error is None:
+        raise AssertionError(f"{req.id} does not declare an expected_error")
+    return req.expected_error
 
 
 def fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
