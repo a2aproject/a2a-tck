@@ -6,6 +6,7 @@ using RESTful URLs, standard HTTP verbs, and SSE for streaming.
 
 from __future__ import annotations
 
+import contextlib
 import json
 
 from dataclasses import dataclass
@@ -47,7 +48,10 @@ def _extract_error(response: httpx.Response) -> str:
             error = body["error"]
             message = error.get("message", "")
             return f"[{response.status_code}] {message}" if message else f"[{response.status_code}]"
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError, httpx.StreamError):
+        # httpx.StreamError (e.g. ResponseNotRead) is raised when the body of a
+        # streamed response has not been read; fall through to .text below,
+        # which the caller is expected to have made readable via response.read().
         pass
     return f"[{response.status_code}] {response.text}"
 
@@ -185,6 +189,11 @@ class HttpJsonClient(BaseTransportClient):
             response = self._client.send(request, stream=True)
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
+                # Read the body before closing so callers reaching ``.error`` ->
+                # ``_extract_error`` can access ``.json()``/``.text`` instead of
+                # hitting httpx.ResponseNotRead on this streamed response.
+                with contextlib.suppress(httpx.StreamError):
+                    response.read()
                 response.close()
                 return HttpJsonStreamingResponse(
                     transport=self.transport,
