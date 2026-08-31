@@ -28,7 +28,12 @@ from tck.validators.error_binding import validate_expected_error
 from tck.validators.error_info import validate_error_info
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
-from tests.compatibility._test_helpers import assert_and_record, get_client, record
+from tests.compatibility._test_helpers import (
+    assert_and_record,
+    expected_error_of,
+    get_client,
+    record,
+)
 from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must
 
 
@@ -229,8 +234,7 @@ class TestCapabilityPushNotifications:
             task_id="t",
             config={"url": "https://example.com"},
         )
-        passed = not response.success
-        errors = [] if passed else ["Expected error for unsupported push notifications"]
+        errors = validate_expected_error(response, transport, expected_error_of(req))
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_push_not_supported_rest(
@@ -251,8 +255,7 @@ class TestCapabilityPushNotifications:
             task_id="t",
             config={"url": "https://example.com"},
         )
-        passed = not response.success
-        errors = [] if passed else ["Expected error for unsupported push notifications"]
+        errors = validate_expected_error(response, transport, expected_error_of(req))
         assert_and_record(compatibility_collector, req, transport, errors)
 
 
@@ -286,8 +289,8 @@ class TestCapabilityStreaming:
             client.base_url, "SendStreamingMessage", {"message": msg}
         )
         body = response.json()
-        passed = "error" in body
-        errors = [] if passed else ["Expected error for unsupported streaming"]
+        result = validate_jsonrpc_error(body, expected_error_of(req).name)
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
 
@@ -327,7 +330,7 @@ class TestCapabilityExtensionRequired:
         }
         response = _jsonrpc_call(client.base_url, "SendMessage", {"message": msg})
         body = response.json()
-        result = validate_jsonrpc_error(body, "ExtensionSupportRequiredError")
+        result = validate_jsonrpc_error(body, expected_error_of(req).name)
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
@@ -352,7 +355,7 @@ class TestCapabilityExtensionRequired:
         response = _rest_call(
             client.base_url, "POST", "/message:send", json_body={"message": msg},
         )
-        result = validate_http_json_error(response, "ExtensionSupportRequiredError")
+        result = validate_http_json_error(response, expected_error_of(req).name)
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
@@ -378,8 +381,7 @@ class TestCapabilityExtendedCard:
             pytest.skip("Agent supports extended agent card")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = client.get_extended_agent_card()
-        passed = not response.success
-        errors = [] if passed else ["Expected error for unsupported extended card"]
+        errors = validate_expected_error(response, transport, expected_error_of(req))
         assert_and_record(compatibility_collector, req, transport, errors)
 
 
@@ -490,8 +492,8 @@ class TestVersionErrors:
             headers={A2A_VERSION_HEADER: "99.0"},
         )
         body = response.json()
-        passed = "error" in body
-        errors = [] if passed else ["Expected VersionNotSupportedError for A2A-Version: 99.0"]
+        result = validate_jsonrpc_error(body, expected_error_of(req).name)
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_unsupported_version_returns_error_rest(
@@ -516,8 +518,8 @@ class TestVersionErrors:
             json_body={"message": msg},
             headers={A2A_VERSION_HEADER: "99.0"},
         )
-        passed = response.status_code >= _HTTP_ERROR_STATUS
-        errors = [] if passed else [f"Expected error for unsupported version, got {response.status_code}"]
+        result = validate_http_json_error(response, expected_error_of(req).name)
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_empty_version_treated_as_default_jsonrpc(

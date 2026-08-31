@@ -10,6 +10,7 @@ from tck.requirements.base import (
     SPEC_BASE,
     SUBSCRIBE_TO_TASK_BINDING,
     TASK_NOT_FOUND_ERROR,
+    UNSUPPORTED_OPERATION_ERROR,
     OperationType,
     RequirementLevel,
     RequirementSpec,
@@ -126,9 +127,9 @@ STREAMING_REQUIREMENTS: list[RequirementSpec] = [
         binding=SUBSCRIBE_TO_TASK_BINDING,
         proto_request_type="SubscribeToTaskRequest",
         expected_behavior="UnsupportedOperationError returned for terminal task",
+        expected_error=UNSUPPORTED_OPERATION_ERROR,
         spec_url=f"{SPEC_BASE}316-subscribe-to-task",
         tags=[STREAMING, SUBSCRIBE, ERROR, MULTI_OPERATION],
-
     ),
     RequirementSpec(
         id="STREAM-SUB-004",

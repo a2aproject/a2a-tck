@@ -10,11 +10,14 @@ from __future__ import annotations
 from tck.requirements.base import (
     CANCEL_TASK_BINDING,
     CONTENT_TYPE_NOT_SUPPORTED_ERROR,
+    EXTENSION_SUPPORT_REQUIRED_ERROR,
     GET_TASK_BINDING,
     LIST_TASKS_BINDING,
+    PUSH_NOTIFICATION_NOT_SUPPORTED_ERROR,
     SEND_MESSAGE_BINDING,
     SEND_STREAMING_MESSAGE_BINDING,
     SPEC_BASE,
+    TASK_NOT_CANCELABLE_ERROR,
     TASK_NOT_FOUND_ERROR,
     UNSUPPORTED_OPERATION_ERROR,
     OperationType,
@@ -364,9 +367,9 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         binding=CANCEL_TASK_BINDING,
         proto_request_type="CancelTaskRequest",
         expected_behavior="TaskNotCancelableError returned",
+        expected_error=TASK_NOT_CANCELABLE_ERROR,
         spec_url=f"{SPEC_BASE}315-cancel-task",
         tags=[CORE, CANCEL_TASK, ERROR, MULTI_OPERATION],
-
     ),
     RequirementSpec(
         id="CORE-CANCEL-003",
@@ -477,6 +480,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "PushNotificationNotSupportedError."
         ),
         expected_behavior="PushNotificationNotSupportedError returned",
+        expected_error=PUSH_NOTIFICATION_NOT_SUPPORTED_ERROR,
         spec_url=f"{SPEC_BASE}334-capability-validation",
         tags=[CORE, CAPABILITY, PUSH_NOTIFICATION],
     ),
@@ -491,6 +495,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "UnsupportedOperationError."
         ),
         expected_behavior="UnsupportedOperationError returned",
+        expected_error=UNSUPPORTED_OPERATION_ERROR,
         spec_url=f"{SPEC_BASE}334-capability-validation",
         tags=[CORE, CAPABILITY, STREAMING],
     ),
@@ -504,6 +509,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "GetExtendedAgentCard MUST return UnsupportedOperationError."
         ),
         expected_behavior="UnsupportedOperationError returned",
+        expected_error=UNSUPPORTED_OPERATION_ERROR,
         spec_url=f"{SPEC_BASE}334-capability-validation",
         tags=[CORE, CAPABILITY, AGENT_CARD],
     ),
@@ -518,6 +524,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
             "ExtensionSupportRequiredError."
         ),
         expected_behavior="ExtensionSupportRequiredError returned",
+        expected_error=EXTENSION_SUPPORT_REQUIRED_ERROR,
         spec_url=f"{SPEC_BASE}334-capability-validation",
         tags=[CORE, CAPABILITY, EXTENSION],
     ),
