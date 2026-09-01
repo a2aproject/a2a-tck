@@ -24,6 +24,7 @@ import pytest
 from tck.requirements.base import EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
+from tck.validators.error_binding import validate_expected_error
 from tck.validators.error_info import validate_error_info
 from tck.validators.extended_card import (
     ExtendedCardProbe,
