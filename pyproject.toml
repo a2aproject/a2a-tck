@@ -38,6 +38,13 @@ dev = [
     "ruff>=0.3",
     "mypy>=1.8",
 ]
+# Agent Card signature verification (CARD-SIGN-* conformance tests).
+# Optional so the base kit stays dependency-minimal; the signing tests
+# skip when this extra is not installed.
+signing = [
+    "jwcrypto>=1.5",
+    "rfc8785>=0.1.4",
+]
 
 [project.scripts]
 run-tck = "run_tck:main"
