@@ -1,0 +1,15 @@
+{
+  "id": "A3-009",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "The empty string is a valid key and, having zero code units, sorts before every non-empty key.",
+  "input": {
+    "": 1,
+    "a": 2
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22223a312c2261223a327d"
+  }
+}

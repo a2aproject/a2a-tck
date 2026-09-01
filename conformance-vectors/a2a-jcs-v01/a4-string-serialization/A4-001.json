@@ -1,0 +1,15 @@
+{
+  "id": "A4-001",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "The a2aproject/A2A#2122 counterexample verbatim (case C2): a non-ASCII scalar (e with acute, U+00E9) is emitted as literal UTF-8 bytes, never as a \\u00e9 escape. ensure_ascii=True in Python's json.dumps -- a2a-python's actual default -- produces the escaped form and fails this vector.",
+  "input": {
+    "name": "Café Agent",
+    "description": "Planifie des itinéraires."
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226465736372697074696f6e223a22506c616e6966696520646573206974696ec3a97261697265732e222c226e616d65223a22436166c3a9204167656e74227d"
+  }
+}

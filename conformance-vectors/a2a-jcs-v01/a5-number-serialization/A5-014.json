@@ -1,0 +1,14 @@
+{
+  "id": "A5-014",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A round integer must not be printed in exponential form just because it has trailing zeros; 100 stays '100', not '1e2'.",
+  "input": {
+    "n": 100
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a3130307d"
+  }
+}

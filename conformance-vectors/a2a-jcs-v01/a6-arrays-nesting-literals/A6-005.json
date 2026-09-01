@@ -1,0 +1,21 @@
+{
+  "id": "A6-005",
+  "clause": "RFC8785-3.2.2.1",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "An array may mix every JSON primitive type; each element serializes per its own type's rule and array order is preserved regardless of type.",
+  "input": {
+    "mixed": [
+      1,
+      "two",
+      true,
+      false,
+      null,
+      3.5
+    ]
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226d69786564223a5b312c2274776f222c747275652c66616c73652c6e756c6c2c332e355d7d"
+  }
+}

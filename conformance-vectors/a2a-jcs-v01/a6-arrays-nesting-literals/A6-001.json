@@ -1,0 +1,14 @@
+{
+  "id": "A6-001",
+  "clause": "RFC8785-3.2.1",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "An empty array is a valid value and serializes as '[]' with no whitespace.",
+  "input": {
+    "items": []
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226974656d73223a5b5d7d"
+  }
+}

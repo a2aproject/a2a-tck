@@ -1,0 +1,11 @@
+{
+  "id": "A4-REJECT-015",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-REJECT",
+  "rejecting_clause": "RFC8785-3.2.2.2",
+  "rejection_layer": "canonicalization",
+  "rationale": "A high surrogate (U+D800) followed by an ordinary BMP character (a plain letter, not its matching low surrogate) leaves the high surrogate unpaired for exactly the same reason as A4-REJECT-013/014, just constructed a third way. (confirmed refused by both independent oracles: go+py)",
+  "input_raw": "{\"name\": \"\\ud800x\"}"
+}

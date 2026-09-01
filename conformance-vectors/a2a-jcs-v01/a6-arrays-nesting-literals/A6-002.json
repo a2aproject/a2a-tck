@@ -1,0 +1,14 @@
+{
+  "id": "A6-002",
+  "clause": "RFC8785-3.2.1",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "An empty object is a valid value and serializes as '{}' with no whitespace.",
+  "input": {
+    "config": {}
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22636f6e666967223a7b7d7d"
+  }
+}

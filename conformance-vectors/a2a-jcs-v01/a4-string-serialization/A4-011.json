@@ -1,0 +1,14 @@
+{
+  "id": "A4-011",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Forward slash is explicitly NOT in JSON's mandatory escape set (unlike some JSON encoders' optional habit of escaping it as \\/) and must be emitted literally.",
+  "input": {
+    "url": "https://example.com/a2a/v1"
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2275726c223a2268747470733a2f2f6578616d706c652e636f6d2f6132612f7631227d"
+  }
+}

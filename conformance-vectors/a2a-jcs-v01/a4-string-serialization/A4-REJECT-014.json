@@ -1,0 +1,11 @@
+{
+  "id": "A4-REJECT-014",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-REJECT",
+  "rejecting_clause": "RFC8785-3.2.2.2",
+  "rejection_layer": "canonicalization",
+  "rationale": "A lone low surrogate (U+DC00) embedded mid-string, with ordinary text both before and after it, is the string-value counterpart to A3-REJECT-012's key-position case: unpaired, not valid Unicode, no well-formed UTF-8 encoding, and unlike A4-REJECT-013's simpler isolated case this confirms the defect is caught with real surrounding content rather than only in a minimal reproduction. (confirmed refused by both independent oracles: go+py)",
+  "input_raw": "{\"name\": \"before\\udc00after\"}"
+}
