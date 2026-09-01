@@ -100,6 +100,10 @@ def _validate_response(
     if requirement.expected_error is not None:
         return validate_expected_error(response, transport, requirement.expected_error)
 
+    # Conditional requirements may allow rejection or validate a successful response.
+    if requirement.allows_error and not response.success:
+        return []
+
     # For streaming responses, just verify at least one event arrives
     if isinstance(response, StreamingResponse):
         if not response.success:
