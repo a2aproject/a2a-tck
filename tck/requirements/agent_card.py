@@ -165,7 +165,7 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Protected header contains alg and kid",
         spec_url=f"{SPEC_BASE}842-signature-format",
-        tags=[AGENT_CARD, SIGNING, JWS, NOT_AUTOMATABLE],
+        tags=[AGENT_CARD, SIGNING, JWS],
     ),
     RequirementSpec(
         id="CARD-SIGN-004",

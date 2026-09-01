@@ -1,0 +1,127 @@
+{
+  "description": "Reference vectors for CARD-SIGN-003: JWS protected header structure validation. Each case gives an AgentCard with signatures and the expected validation result. The protected header MUST decode to JSON containing alg and kid (non-empty strings), per A2A spec section 8.4.2.",
+  "source": "Vectors use standard JWS protected header encoding (base64url, no padding). alg values from RFC 7518 §3.1. Kid values are arbitrary key identifiers. Apache-2.0.",
+  "cases": [
+    {
+      "id": "cardsign-hdr-001",
+      "requirement": "CARD-SIGN-003",
+      "agent_card": {
+        "name": "Signed Agent",
+        "description": "Agent with valid ES256 signature",
+        "capabilities": {"streaming": false, "pushNotifications": false},
+        "skills": [],
+        "signatures": [
+          {
+            "protected": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImtleS0xIn0",
+            "signature": "MEUCIQDfakefakefakefakefakefakefakefakeAIgIhAKfakefakefakefakefakefakefakefake"
+          }
+        ]
+      },
+      "expected_valid": true,
+      "decoded_alg": "ES256",
+      "decoded_kid": "key-1",
+      "note": "valid protected header with alg=ES256, kid=key-1"
+    },
+    {
+      "id": "cardsign-hdr-002",
+      "requirement": "CARD-SIGN-003",
+      "agent_card": {
+        "name": "RSA Agent",
+        "description": "Agent with RS256 signature",
+        "capabilities": {"streaming": true},
+        "skills": [{"id": "search", "name": "Search"}],
+        "signatures": [
+          {
+            "protected": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwMjUtMDQtMDEifQ",
+            "signature": "fake"
+          }
+        ]
+      },
+      "expected_valid": true,
+      "decoded_alg": "RS256",
+      "decoded_kid": "2025-04-01",
+      "note": "valid protected header with alg=RS256, kid=2025-04-01"
+    },
+    {
+      "id": "cardsign-hdr-003",
+      "requirement": "CARD-SIGN-003",
+      "agent_card": {
+        "name": "Missing Kid Agent",
+        "description": "Agent with signature missing kid in protected header",
+        "capabilities": {"streaming": false},
+        "skills": [],
+        "signatures": [
+          {
+            "protected": "eyJhbGciOiJFUzI1NiJ9",
+            "signature": "fake"
+          }
+        ]
+      },
+      "expected_valid": false,
+      "expected_error": "kid missing or empty",
+      "note": "protected header has alg but no kid — violates CARD-SIGN-003"
+    },
+    {
+      "id": "cardsign-hdr-004",
+      "requirement": "CARD-SIGN-003",
+      "agent_card": {
+        "name": "Missing Alg Agent",
+        "description": "Agent with signature missing alg in protected header",
+        "capabilities": {"streaming": false},
+        "skills": [],
+        "signatures": [
+          {
+            "protected": "eyJraWQiOiJvcnBoYW4ta2V5In0",
+            "signature": "fake"
+          }
+        ]
+      },
+      "expected_valid": false,
+      "expected_error": "alg missing or empty",
+      "note": "protected header has kid but no alg — violates CARD-SIGN-003"
+    },
+    {
+      "id": "cardsign-hdr-005",
+      "requirement": "CARD-SIGN-003",
+      "agent_card": {
+        "name": "Empty Alg Agent",
+        "description": "Agent with empty alg in protected header",
+        "capabilities": {"streaming": false},
+        "skills": [],
+        "signatures": [
+          {
+            "protected": "eyJhbGciOiIiLCJraWQiOiJlbXB0eS1hbGcifQ",
+            "signature": "fake"
+          }
+        ]
+      },
+      "expected_valid": false,
+      "expected_error": "alg missing or empty",
+      "note": "protected header has alg=\"\" — empty string violates CARD-SIGN-003"
+    },
+    {
+      "id": "cardsign-hdr-006",
+      "requirement": "CARD-SIGN-003",
+      "agent_card": {
+        "name": "Multi-Sig Agent",
+        "description": "Agent with two signatures in signatures array",
+        "capabilities": {"streaming": false, "pushNotifications": true},
+        "skills": [{"id": "translate", "name": "Translate"}],
+        "signatures": [
+          {
+            "protected": "eyJhbGciOiJFUzM4NCIsImtpZCI6InYyLWtleSJ9",
+            "signature": "fake1"
+          },
+          {
+            "protected": "eyJhbGciOiJFZERTQSIsImtpZCI6ImFnZW50LXNpZ25pbmcta2V5In0",
+            "signature": "fake2"
+          }
+        ]
+      },
+      "expected_valid": true,
+      "decoded_alg": "ES384",
+      "decoded_kid": "v2-key",
+      "note": "multiple signatures, each with valid alg and kid"
+    }
+  ]
+}
