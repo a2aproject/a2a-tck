@@ -28,7 +28,7 @@ from tck.requirements.base import (
     SEND_MESSAGE_BINDING,
     SUBSCRIBE_TO_TASK_BINDING,
 )
-from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER, _build_params, _stream_sse
+from tck.transport._helpers import A2A_EXTENSIONS_HEADER, A2A_VERSION, A2A_VERSION_HEADER, _build_params, _stream_sse
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
@@ -112,12 +112,16 @@ class HttpJsonStreamingResponse(_HttpJsonResponseMixin, StreamingResponse):
 class HttpJsonClient(BaseTransportClient):
     """HTTP+JSON (REST) transport client for A2A protocol."""
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, *, required_extensions: list[str] | None = None) -> None:
         super().__init__(base_url, TRANSPORT)
+        self._required_extensions: list[str] = required_extensions or []
+        default_headers: dict[str, str] = {A2A_VERSION_HEADER: A2A_VERSION}
+        if self._required_extensions:
+            default_headers[A2A_EXTENSIONS_HEADER] = ",".join(self._required_extensions)
         self._client = httpx.Client(
             base_url=base_url,
             timeout=httpx.Timeout(5.0, read=30.0),
-            headers={A2A_VERSION_HEADER: A2A_VERSION},
+            headers=default_headers,
             follow_redirects=True,
         )
 
