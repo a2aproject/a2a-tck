@@ -124,13 +124,13 @@ class TestGrpcStatusCodes:
         )
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_unsupported_operation_returns_unimplemented(
+    def test_unsupported_operation_returns_failed_precondition(
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
     ) -> None:
-        """UnsupportedOperationError: streaming when unsupported returns UNIMPLEMENTED."""
+        """UnsupportedOperationError: streaming when unsupported returns FAILED_PRECONDITION."""
         req = GRPC_ERR_002
 
         caps = agent_card.get("capabilities", {})
@@ -153,13 +153,13 @@ class TestGrpcStatusCodes:
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_push_not_supported_returns_unimplemented(
+    def test_push_not_supported_returns_failed_precondition(
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
     ) -> None:
-        """PushNotificationNotSupportedError: push config when unsupported returns UNIMPLEMENTED."""
+        """PushNotificationNotSupportedError: push config when unsupported returns FAILED_PRECONDITION."""
         req = GRPC_ERR_002
 
         caps = agent_card.get("capabilities", {})
@@ -180,12 +180,12 @@ class TestGrpcStatusCodes:
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_version_not_supported_returns_unimplemented(
+    def test_version_not_supported_returns_failed_precondition(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """VersionNotSupportedError: unsupported A2A-Version via gRPC metadata returns UNIMPLEMENTED."""
+        """VersionNotSupportedError: unsupported A2A-Version via gRPC metadata returns FAILED_PRECONDITION."""
         req = GRPC_ERR_002
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
@@ -210,7 +210,7 @@ class TestGrpcStatusCodes:
             )
             # If the call succeeds, the server did not enforce version checking.
             detail = (
-                "Server MUST return VersionNotSupportedError (UNIMPLEMENTED) for "
+                "Server MUST return VersionNotSupportedError (FAILED_PRECONDITION) for "
                 "unsupported A2A-Version, but processed the request normally"
             )
             record(

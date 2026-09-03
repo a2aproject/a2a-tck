@@ -130,7 +130,7 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
         description=(
             "Each A2A error type MUST map to the HTTP status code specified "
             "in the error code mappings table (e.g., TaskNotFoundError to "
-            "404, ContentTypeNotSupportedError to 415)."
+            "404, ContentTypeNotSupportedError to 400)."
         ),
         expected_behavior="HTTP status code matches the spec-defined mapping for each error",
         spec_url=f"{SPEC_BASE}54-error-code-mappings",
