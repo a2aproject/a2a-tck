@@ -14,14 +14,26 @@ Feature: Core Operations
   # ---------------------------------------------------------------------------
 
   # Default behavior: complete the task with a message.
-  # Used by: CORE-SEND-001, CORE-SEND-002 (setup), CORE-EXECUTION-MODE-001,
-  # CORE-EXECUTION-MODE-002, CORE-MULTI-001/001a/002/002a/003,
+  # Used by: CORE-SEND-001, CORE-SEND-002 (setup),
+  # CORE-MULTI-001/001a/002/002a/003,
   # CORE-GET-001 (setup), CORE-CANCEL-002 (setup), CORE-MULTI-005/006 (setup),
   # STREAM-SUB-002/003 (setup),
   # CORE-HIST-001/002/003/004 (setup — history tests use completed task).
   Scenario: Complete the task
     When a message is received with prefix "tck-complete-task"
     Then complete the task with the message "Hello from TCK"
+
+  # Used by: CORE-EXECUTION-MODE-001, CORE-EXECUTION-MODE-002.
+  # The task stays in a non-terminal (working) state for a bounded delay
+  # before completing.  A blocking send must wait for the terminal state,
+  # while a non-blocking send must return while the task is still working,
+  # so the two produce observably different responses.  A server that
+  # ignores the returnImmediately flag cannot satisfy both.
+  Scenario: Work before completing the task
+    When a message is received with prefix "tck-delayed-complete"
+    Then update the task status to "working"
+    And wait for 1x streaming timeout
+    And complete the task with the message "Done after delay"
 
   # CORE-SEND-003: ContentTypeNotSupportedError is detected by the SDK framework
   # based on the agent card's supported input content types. No executor scenario needed.

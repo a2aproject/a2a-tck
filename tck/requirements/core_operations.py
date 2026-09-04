@@ -399,12 +399,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         proto_response_type="SendMessageResponse",
         expected_behavior="Response delayed until terminal or interrupted state",
         spec_url=f"{SPEC_BASE}322-sendmessageconfiguration",
-        tags=[CORE, EXECUTION_MODE],
+        # Covered by the dedicated behavioural test in test_execution_mode.py
+        # (MULTI_OPERATION excludes it from the schema-only generic runner).
+        tags=[CORE, EXECUTION_MODE, MULTI_OPERATION],
         sample_input={
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Blocking request"}],
-                "messageId": tck_id("complete-task"),
+                "messageId": tck_id("delayed-complete"),
             },
             "configuration": {"returnImmediately": False},
         },
@@ -424,12 +426,14 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         proto_response_type="SendMessageResponse",
         expected_behavior="Response returned immediately with in-progress state",
         spec_url=f"{SPEC_BASE}322-sendmessageconfiguration",
-        tags=[CORE, EXECUTION_MODE],
+        # Covered by the dedicated behavioural test in test_execution_mode.py
+        # (MULTI_OPERATION excludes it from the schema-only generic runner).
+        tags=[CORE, EXECUTION_MODE, MULTI_OPERATION],
         sample_input={
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "Non-blocking request"}],
-                "messageId": tck_id("complete-task"),
+                "messageId": tck_id("delayed-complete"),
             },
             "configuration": {"returnImmediately": True},
         },

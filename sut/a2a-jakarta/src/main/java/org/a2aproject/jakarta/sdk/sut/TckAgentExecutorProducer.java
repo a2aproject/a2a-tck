@@ -75,6 +75,13 @@ public class TckAgentExecutorProducer {
                     return;
                 }
 
+                if (messageId.startsWith("tck-delayed-complete")) {
+                    emitter.startWork();
+                    try { Thread.sleep(2000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                    emitter.complete(A2A.toAgentMessage("Done after delay"));
+                    return;
+                }
+
                 if (messageId.startsWith("tck-message-response")) {
                     emitter.sendMessage(List.of(new TextPart("Direct message response")));
                     return;
