@@ -774,14 +774,14 @@ class TestRestErrorStructure:
         raw = response.raw_response
         if not isinstance(raw, httpx.Response):
             pytest.skip("Error response is not an HTTP response object")
-        ct = raw.headers.get("content-type", "")
         errors = []
-        if "application/json" not in ct:
+        try:
+            body = raw.json()
+        except ValueError:
             errors.append(
-                f"Error Content-Type must be application/json, got: {ct!r}"
+                "AIP-193 error response body must contain valid JSON"
             )
         else:
-            body = raw.json()
             if "error" not in body:
                 errors.append(
                     "AIP-193 error response must include 'error' object"

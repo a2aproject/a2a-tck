@@ -15,7 +15,9 @@ import re
 from tck.requirements.registry import ALL_REQUIREMENTS
 
 
-_MUST_RETURN_ERROR = re.compile(r"MUST return (?:a |an )?(\w*Error)\b")
+_MUST_RETURN_ERROR = re.compile(
+    r"MUST (?:return|result in) (?:a |an )?(\w*Error)\b"
+)
 
 
 def test_named_error_requirements_declare_expected_error() -> None:
