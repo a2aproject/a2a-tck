@@ -81,40 +81,6 @@ def _get_error_body(response: Any) -> dict[str, Any] | None:
 class TestAIP193ErrorFormat:
     """HTTP_JSON-ERR-001: Error responses use AIP-193 format."""
 
-    def test_error_content_type(
-        self,
-        transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
-    ) -> None:
-        """Error response has Content-Type: application/json."""
-        req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        response = _get_error_response(client)
-
-        headers = response.headers or {}
-        ct = ""
-        for key, value in headers.items():
-            if key.lower() == "content-type":
-                ct = value
-                break
-
-        valid = "application/json" in ct.lower()
-        errors = (
-            []
-            if valid
-            else [
-                f"Error Content-Type must be application/json, got: {ct!r}"
-            ]
-        )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, TRANSPORT, errors[0])
-
     def test_error_object_present(
         self,
         transport_clients: dict[str, BaseTransportClient],

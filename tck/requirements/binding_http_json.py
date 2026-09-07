@@ -58,13 +58,13 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
         id="HTTP_JSON-SVC-001",
         section="11.1",
-        title="Content-Type is application/json",
-        level=RequirementLevel.MUST,
+        title="Content-Type is application/a2a+json",
+        level=RequirementLevel.SHOULD,
         description=(
-            "HTTP+JSON/REST binding MUST use Content-Type application/json "
-            "for requests and responses."
+            "HTTP+JSON/REST requests and responses SHOULD use Content-Type "
+            "application/a2a+json."
         ),
-        expected_behavior="Content-Type header is application/json",
+        expected_behavior="Content-Type header is application/a2a+json",
         spec_url=f"{SPEC_BASE}111-protocol-requirements",
         tags=[REST, CONTENT_TYPE],
     ),
@@ -101,8 +101,7 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
         level=RequirementLevel.MUST,
         description=(
             "HTTP error responses MUST use the AIP-193 representation with "
-            "Content-Type application/json containing an error object with "
-            "code, status, message, and details fields."
+            "an error object containing code, status, message, and details fields."
         ),
         expected_behavior="Error responses conform to AIP-193 structure",
         spec_url=f"{SPEC_BASE}116-error-handling",
