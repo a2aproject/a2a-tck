@@ -51,6 +51,9 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
         m_expr = LEVEL_FILTERS[args.level]
         cmd.extend(["-m", m_expr])
 
+    if args.message_parts_file:
+        cmd.append(f"--message-parts-file={args.message_parts_file}")
+
     # Verbosity
     if args.verbose_log:
         cmd.extend(["-v", "-s", "--log-cli-level=INFO"])
@@ -119,6 +122,14 @@ Requirement levels:
         choices=["must", "should", "may"],
         default=None,
         help="Run only requirements at this RFC 2119 level",
+    )
+    parser.add_argument(
+        "--message-parts-file",
+        default=None,
+        help=(
+            "JSON file containing an A2A Message.parts array for generic, "
+            "non-error requirement scenarios"
+        ),
     )
     parser.add_argument(
         "-v", "--verbose",
