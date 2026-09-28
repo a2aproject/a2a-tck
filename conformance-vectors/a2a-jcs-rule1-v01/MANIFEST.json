@@ -1,0 +1,67 @@
+{
+  "corpus": "a2a-jcs-rule1-v01",
+  "suite": "a2a-agent-card-field-presence-conformance",
+  "specRef": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "field-presence",
+  "scope": "Layer B only (spec section 8.4.1 rule 1: field presence and default-value handling). Layer A (RFC 8785 canonicalization + a2a signatures-exclusion) lives in a2a-jcs-v01. Rule 1 is under-determined as written on one point - what to do when a REQUIRED field is absent from the input - so these vectors are organised as one expectation per candidate resolution rather than as a single answer.",
+  "companion_corpus": "conformance-vectors/a2a-jcs-v01",
+  "open_question": "https://github.com/a2aproject/A2A/issues/2122",
+  "resolutions": {
+    "presence-preserving": "Fields the input carries are kept (REQUIRED always; optional when explicitly set, even at the default value), a non-REQUIRED empty repeated field is dropped by rule 1, and absent REQUIRED fields are NOT materialised.",
+    "inject-required-defaults": "The REQUIRED set is materialised before canonicalization unconditionally, so absent REQUIRED fields appear at their type defaults (string values as \"\", repeated fields as []).",
+    "strict-presence-validation": "An input lacking REQUIRED fields is refused rather than canonicalised."
+  },
+  "oracles": [
+    "rfc8785 (PyPI, 0.1.4)",
+    "gowebpki/jcs (Go, v1.0.1)"
+  ],
+  "counts": {
+    "accept": 4,
+    "reject": 1,
+    "total": 5
+  },
+  "groups": [
+    "r1-field-presence"
+  ],
+  "spec_provenance": {
+    "text": "a2aproject/A2A docs/specification.md at f63dbb482719",
+    "required_set": "a2aproject/A2A specification/a2a.proto, AgentCard: name, description, supported_interfaces, version, capabilities, default_input_modes, default_output_modes, skills",
+    "note": "The REQUIRED set above is transcribed from the proto annotations, not from prose."
+  },
+  "targets": {
+    "agent-card-canonicalization-input": {
+      "function": "the bytes a card signature covers, after rule 1 presence/default processing and RFC 8785 canonicalization",
+      "clauses": [
+        "a2a-spec-8.4.1-rule-1",
+        "RFC8785-3.2.1",
+        "RFC8785-3.2.2.1",
+        "RFC8785-3.2.2.2",
+        "RFC8785-3.2.2.3",
+        "RFC8785-3.2.3"
+      ],
+      "vectors": 5
+    }
+  },
+  "vectors": [
+    {
+      "path": "r1-field-presence/R1-001.json",
+      "sha256": "bfc955f9e700eec599047325ea7972034135ee836a0d6c350ef5adecbc51c430"
+    },
+    {
+      "path": "r1-field-presence/R1-002.json",
+      "sha256": "fb029155c38f12dd2b8c879fb01b495838d3c293a72c5d74d1b5510606a1103c"
+    },
+    {
+      "path": "r1-field-presence/R1-003.json",
+      "sha256": "1b1e691ac645f34e3f297053eb5cdd5cff440d7dd9d68bd032edf15e10d402f2"
+    },
+    {
+      "path": "r1-field-presence/R1-004.json",
+      "sha256": "b156a38c79377ed09b2927192439ab4a51a03e42d6c89ff0205215732fe7f7e3"
+    },
+    {
+      "path": "r1-field-presence/R1-REJECT-005.json",
+      "sha256": "7ba704565ed1f6040fa4fd41a2ae3ef39138d48bc2abcd08753959c5552cfff0"
+    }
+  ]
+}
