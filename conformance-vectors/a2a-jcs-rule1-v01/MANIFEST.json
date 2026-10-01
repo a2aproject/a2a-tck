@@ -11,6 +11,17 @@
     "inject-required-defaults": "The REQUIRED set is materialised before canonicalization unconditionally, so absent REQUIRED fields appear at their type defaults (string values as \"\", repeated fields as []).",
     "strict-presence-validation": "An input lacking REQUIRED fields is refused rather than canonicalised."
   },
+  "settled_reading": {
+    "issue": "https://github.com/a2aproject/A2A/issues/2122",
+    "as_of": "2026-10-01",
+    "note": "a2aproject/A2A#2122 now names the two rule-1 readings directly. This maps the resolution names used here onto those names. The vectors are unchanged: each pins the bytes its resolution implies, and those bytes do not depend on the vocabulary.",
+    "names": {
+      "presence-preserving": "rule-1-served-scope",
+      "inject-required-defaults": "rule-1-descriptor-scope",
+      "strict-presence-validation": "not-adopted"
+    },
+    "served_scope_wording": "The rules apply to the fields present in the JSON being signed or verified. A field absent from that JSON MUST NOT be added."
+  },
   "oracles": [
     "rfc8785 (PyPI, 0.1.4)",
     "gowebpki/jcs (Go, v1.0.1)"

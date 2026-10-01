@@ -37,6 +37,27 @@ applies once the wording is settled. `R1-REJECT-005` carries the third reading.
 fragment and its expected bytes are, byte for byte, the canonical form the
 specification prints for that fragment.
 
+## Settled names
+
+The two resolutions above are the two rule-1 readings under discussion in
+a2aproject/A2A#2122, which now names them directly. The mapping is recorded here so the
+corpus and that discussion share one vocabulary:
+
+| this corpus | a2aproject/A2A#2122 | wording |
+|---|---|---|
+| `presence-preserving` | `rule-1-served-scope` | "The rules apply to the fields present in the JSON being signed or verified. A field absent from that JSON MUST NOT be added." |
+| `inject-required-defaults` | `rule-1-descriptor-scope` | The REQUIRED set is applied against the descriptor, so an absent REQUIRED field is materialised at its type default. |
+| `strict-presence-validation` | not adopted | An input lacking REQUIRED fields is refused. |
+
+The vectors are unchanged, and so are their digests: they pin bytes, and the bytes of
+each resolution are the same under either vocabulary. `MANIFEST.json` carries the same
+mapping in `settled_reading.names` for machine use.
+
+Where every card carries every REQUIRED field — the `s0` and `s1` groups of the Layer C
+corpus (a2aproject/a2a-tck#246) — the two rule-1 readings coincide. The divergence is
+confined to inputs with an absent REQUIRED field, which is `R1-003`/`R1-004` here and
+the `s2` group there.
+
 ## Two stages, not one
 
 `expected.canonical_utf8_hex` is the result of **rule 1 processing followed by RFC
