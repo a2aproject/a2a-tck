@@ -14,7 +14,7 @@ rfc8785 on PyPI. To test another implementation, point the runner at it rather
 than editing this file, so the record comes from an unmodified runner at a
 known commit::
 
-    python3 run_python.py --canonicalize mypkg.jcs:canonicalize
+    python3 run_python.py --canonicalize mypkg.jcs:canonicalize --refusal mypkg.jcs:JCSError
     python3 run_python.py --signing-bytes mypkg.card:signing_bytes --refusal mypkg.jcs:JCSError
 
 A target whose function is not given is reported under ``targetsNotRun``, never
@@ -27,7 +27,8 @@ expected ones, which is the failure that breaks signatures between
 implementations without raising anything, and ``refused`` means it raised one of
 its declared refusal exceptions. On a MUST-REJECT vector, ``accepted`` means it
 returned bytes for input that has none. ``errored`` means it raised something
-that is not a declared refusal, so a crash is never read as a refusal.
+that is not a declared refusal. Refusal types match exactly; declaring ValueError
+does not also declare UnicodeEncodeError or another subclass.
 
 Exit status: 0 when at least one target ran and every vector in it passed, 1 when
 any vector failed, 2 when the corpus or an option could not be used.
@@ -82,11 +83,11 @@ def load_attr(spec: str) -> Any:
 
 
 def reference_functions() -> tuple[Callable[[Any], bytes], Callable[[dict], bytes], tuple[type[BaseException], ...]]:
-    """Return the reference primitive, signing path and refusal class, from rfc8785.
+    """Return the reference primitive, signing path and explicit refusal types.
 
-    The refusal class is ValueError rather than rfc8785.CanonicalizationError:
     rfc8785 0.1.4 refuses an object key holding a lone surrogate by letting the
-    codec's UnicodeEncodeError through, and both are ValueError subclasses.
+    codec's UnicodeEncodeError through. That type is listed explicitly rather
+    than accepted through a broad ValueError declaration.
     """
     import rfc8785  # only the reference run needs it
 
@@ -94,7 +95,25 @@ def reference_functions() -> tuple[Callable[[Any], bytes], Callable[[dict], byte
         """Drop the top-level ``signatures`` field (rule 3), then RFC 8785."""
         return rfc8785.dumps({k: val for k, val in card.items() if k != "signatures"})
 
-    return rfc8785.dumps, signing_bytes, (ValueError,)
+    refusals = (rfc8785.CanonicalizationError, rfc8785.FloatDomainError, rfc8785.IntegerDomainError, UnicodeEncodeError)
+    return rfc8785.dumps, signing_bytes, refusals
+
+
+def load_refusals(specs: list[str]) -> tuple[type[Exception], ...]:
+    """Load the exact exception types an external adapter promises to raise.
+
+    Raises:
+        CorpusError: If no types are declared or a declaration is invalid.
+    """
+    if not specs:
+        raise CorpusError("--refusal is required for an external implementation; name each expected exception type")
+    refusals = []
+    for spec in specs:
+        cls = load_attr(spec)
+        if not isinstance(cls, type) or not issubclass(cls, Exception) or cls is Exception:
+            raise CorpusError(f"refusal must name a specific Exception subclass, got {spec!r}")
+        refusals.append(cls)
+    return tuple(refusals)
 
 
 def run_function(fn: Callable[[Any], bytes], value: Any, refusals: tuple[type[BaseException], ...]) -> tuple[str, Any]:
@@ -105,10 +124,8 @@ def run_function(fn: Callable[[Any], bytes], value: Any, refusals: tuple[type[Ba
     """
     try:
         out = fn(value)
-    except refusals as exc:
-        return "refused", exc
     except Exception as exc:  # classified as errored, never swallowed
-        return "errored", exc
+        return ("refused" if type(exc) in refusals else "errored"), exc
     if not isinstance(out, (bytes, bytearray)):
         return "errored", TypeError(f"returned {type(out).__name__}, not bytes")
     return "bytes", bytes(out)
@@ -180,7 +197,12 @@ def run(vroot: Path, functions: dict[str, Callable[[Any], bytes]], refusals: tup
             outcome, detail = check_vector(v, fn, refusals)
             tally[outcome] += 1
             results.append({"target": target, "id": v["id"], "outcome": outcome, "detail": detail})
-        targets[target] = {"vectors": len(owned), "passed": tally["pass"], "failed": len(owned) - tally["pass"], "outcomes": tally}
+        targets[target] = {
+            "vectors": len(owned),
+            "passed": tally["pass"],
+            "failed": len(owned) - tally["pass"],
+            "outcomes": tally,
+        }
 
     return {
         "corpusDigest": manifest["corpusDigest"],
@@ -198,8 +220,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--canonicalize", metavar="MODULE:FUNC", help="RFC 8785 primitive: JSON value -> bytes")
     parser.add_argument("--signing-bytes", metavar="MODULE:FUNC", help="Agent Card -> the bytes its signature covers")
     parser.add_argument(
-        "--refusal", metavar="MODULE:CLASS", action="append", default=[],
-        help="exception the implementation raises to refuse input (repeatable; default ValueError)",
+        "--refusal",
+        metavar="MODULE:CLASS",
+        action="append",
+        default=[],
+        help="exact refusal exception type (repeatable; required for external implementations)",
     )
     args = parser.parse_args(argv)
     sys.path.insert(0, str(Path.cwd()))
@@ -213,15 +238,22 @@ def main(argv: list[str] | None = None) -> int:
             implementation = {"rfc8785": "rfc8785:dumps", "card-signing-input": "reference: drop signatures, then rfc8785:dumps"}
             runner = "python/rfc8785"
         else:
+            refusals = load_refusals(args.refusal)
             functions, implementation = {}, {}
             for target, spec in (("rfc8785", args.canonicalize), ("card-signing-input", args.signing_bytes)):
                 if spec is not None:
-                    functions[target] = load_attr(spec)
+                    fn = load_attr(spec)
+                    if not callable(fn):
+                        raise CorpusError(f"implementation must be callable, got {spec!r}")
+                    functions[target] = fn
                     implementation[target] = spec
-            refusals = tuple(load_attr(s) for s in args.refusal) or (ValueError,)
             runner = "python/run_python.py"
-        record = {"runner": runner, "implementation": implementation,
-                  "refusal": [f"{c.__module__}:{c.__qualname__}" for c in refusals]}
+        record = {
+            "runner": runner,
+            "implementation": implementation,
+            "refusal": [f"{c.__module__}:{c.__qualname__}" for c in refusals],
+            "refusalMatch": "exact",
+        }
         record.update(run(args.vroot, functions, refusals))
     except CorpusError as exc:
         print(f"run_python.py: {exc}", file=sys.stderr)

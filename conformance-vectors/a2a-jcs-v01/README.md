@@ -78,14 +78,22 @@ Run the Python reference runner from the repository root:
 To test another Python implementation, name its functions instead of editing the runner, so the
 record comes from an unmodified runner at a known commit:
 
-    python3 conformance-vectors/a2a-jcs-v01/run_python.py --canonicalize mypkg.jcs:canonicalize
+    python3 conformance-vectors/a2a-jcs-v01/run_python.py --canonicalize mypkg.jcs:canonicalize \
+        --refusal mypkg.jcs:JCSError
     python3 conformance-vectors/a2a-jcs-v01/run_python.py --signing-bytes mypkg.card:signing_bytes \
         --refusal mypkg.jcs:JCSError
 
 A target whose function is not given is listed under `targetsNotRun` with its vector count. It is
 never run through the reference, because a signing path assembled from someone else's primitive
-would test this runner's rule-3 handling rather than theirs. `--refusal` names the exception an
-implementation raises to refuse input (repeatable, default `ValueError`).
+would test this runner's rule-3 handling rather than theirs. External implementations must name
+their refusal exceptions with `--refusal` (repeatable). Types match exactly: `builtins:ValueError`
+does not include `UnicodeEncodeError` or a custom subclass. Name each type the implementation
+promises to raise. An omitted, invalid or catch-all declaration stops the run with exit status 2.
+
+The Python record includes `refusal` and `refusalMatch: "exact"`. Keep those fields alongside
+each reported score. The reference run explicitly lists rfc8785's error types and
+`UnicodeEncodeError`, which rfc8785 0.1.4 raises for lone surrogates in object keys. That known
+oracle behavior does not become an external adapter's default error contract.
 
 Run the Go reference runner:
 
@@ -142,3 +150,15 @@ After commit 5cf977d made the rule-3 rejects run the implementation, giskard09 r
 new harness refuses when the recomputed signing bytes differ from the presented ones. It reported
 57 of 57 again against argentum-core at f8c28c9, and all four A2 vectors fail when the signing path
 keeps the signatures field: https://github.com/a2aproject/a2a-tck/pull/228#issuecomment-5794700728.
+
+MolTrust merged recurring CI for all three of its canonicalization paths at
+https://github.com/MoltyCel/moltrust-api/pull/505. On 2026-10-01, MoltyCel corrected its earlier
+57/57 verify result: five lone-surrogate cases had raised `UnicodeEncodeError` rather than the
+declared `CardVerificationError`. The implementation was fixed, and the latest runs reported
+53/53 for the raw primitive and 57/57 for both card paths. Its rule-3 negative control failed
+all four A2 vectors. The correction and pins are at
+https://github.com/a2aproject/A2A/pull/1882#issuecomment-5932794122.
+
+The runner now requires explicit, exact refusal types. Regression tests cover those five
+surrogate cases and prove that unexpected exceptions produce `errored` results and a nonzero
+exit status. No vector bytes, dispositions or corpus digest changed.
