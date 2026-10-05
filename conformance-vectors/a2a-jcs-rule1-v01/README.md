@@ -33,6 +33,13 @@ Vectors are grouped in **pairs with the same input** (`R1-001`/`R1-002`,
 `R1-003`/`R1-004`) whose expectations are mutually exclusive: exactly one of each pair
 applies once the wording is settled. `R1-REJECT-005` carries the third reading.
 
+Because of that, **this tree is not consumable by a runner that requires every vector to
+pass**: a pair's two expectations cannot both hold, and which one holds is a decision
+about the wording, not about the bytes. A consumer selects the resolution in force and
+enrols the vectors carrying it (plus `R1-REJECT-005` when the wording is
+`strict-presence-validation`), which is why no corpus-wide digest over all five vectors is
+published here.
+
 `R1-001` is a control on the corpus setup itself: its input is the section's own
 fragment and its expected bytes are, byte for byte, the canonical form the
 specification prints for that fragment.
@@ -72,6 +79,14 @@ agree exactly:
 
 - `rfc8785` (PyPI, 0.1.4)
 - `gowebpki/jcs` (Go, v1.0.1)
+
+Cross-checks independent of those oracles:
+
+- The Layer A author (a2aproject/a2a-tck#228) re-canonicalized all four expected outputs
+  under that corpus's canonicalizer on 2026-10-05; each re-canonicalizes to itself.
+- `R1-001`'s expected bytes are, byte for byte, the canonical form the specification
+  prints for its own worked example (section 8.4.1), so the corpus setup is checkable
+  against the spec text and not only against implementations.
 
 Provenance of the spec facts used here: `docs/specification.md` at commit
 `f63dbb482719`; the REQUIRED set is transcribed from the proto annotations in
