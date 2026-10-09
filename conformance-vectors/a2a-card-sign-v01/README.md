@@ -56,9 +56,19 @@ signature per distinct canonical form. Under any one reading exactly one vector 
 | | S1-006 | prune-empty |
 | `capabilities.extensions = []` (not REQUIRED) | S1-007 | rule-1-as-written, prune-empty |
 | | S1-008 | served-as-is |
+| `securityRequirements = [{}]` (not REQUIRED, an element that becomes empty) | S1-009 | rule-1-as-written, served-as-is, field-level-prune |
+| | S1-010 | prune-empty, rule-1-element-collapse |
 
-A nested empty value (`securityRequirements: [{}]`) is left out on purpose: whether an element that becomes empty
-collapses is itself part of the #2122 question, and a vector would have to assume the answer.
+S1-009 and S1-010 (added 2026-10-10) carry an array element that becomes empty under recursive removal. Whether such an
+element collapses is part of the #2122 question, so the pair names its accepting readings explicitly instead of assuming
+an answer: `field-level-prune` removes empty field values but never an array element, `rule-1-element-collapse` applies
+rule 1 (served scope) after removing elements that become empty, and under `refuse-empty-element`, the strict verifier reading of the
+signer sentence widened on #2122 (issuecomment-6077328276), both vectors are rejected. The pair sits next to the
+field-level cases, so a reader that only checks for empty fields agrees with `prune-empty` on S1-003 to S1-008 and
+disagrees on S1-009/S1-010, and the set fails it rather than one vector. On every other vector `field-level-prune`
+equals `prune-empty` and `rule-1-element-collapse` equals `rule-1-served-scope`; the generator (`vectors_s1e.py`) checks
+the first over all 42 earlier cards. Observed 2026-10-10: a2a-sdk 1.2.1 and @a2a-js/sdk 1.3.0 accept S1-010, a2a-go
+accepts S1-009.
 
 ## Group s2: a REQUIRED field absent from the served JSON
 

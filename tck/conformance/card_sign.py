@@ -44,12 +44,29 @@ from pathlib import Path
 CORPUS = Path(__file__).resolve().parents[2] / "conformance-vectors" / "a2a-card-sign-v01"
 
 TABLES: list[tuple[str, str | None, list[str]]] = [
-    ("s0 to s2", None, ["rule-1-served-scope", "rule-1-descriptor-scope", "prune-empty", "served-as-is"]),
+    (
+        "s0 to s2",
+        None,
+        [
+            "rule-1-served-scope",
+            "rule-1-descriptor-scope",
+            "prune-empty",
+            "served-as-is",
+            "field-level-prune",
+            "rule-1-element-collapse",
+        ],
+    ),
     ("s3 unknown fields", "unknown-fields", ["unknown-retain", "unknown-exclude", "unknown-reject"]),
     ("s4 dual names (labelled against a proposal)", "dual-name", ["dual-name-tolerate", "dual-name-refuse"]),
 ]
 PROPOSAL_READINGS = {"dual-name-refuse"}
-KNOWN_READINGS = {r for _, _, rs in TABLES for r in rs} | {"rule-1-as-written"}
+# S1-009 and S1-010 carry an array element that becomes empty (securityRequirements: [{}]). Two readings differ only there,
+# and the corpus names them on that pair alone: field-level-prune removes empty field values but never an element, and
+# rule-1-element-collapse applies rule 1 (served scope) after removing elements that become empty. On every other vector
+# they read as the reading they refine. refuse-empty-element (the strict verifier reading of the signer sentence widened on
+# a2aproject/A2A#2122) rejects both vectors of the pair and is not a column: it says nothing about other cards.
+ELEMENT_ALIASES = {"field-level-prune": "prune-empty", "rule-1-element-collapse": "rule-1-served-scope"}
+KNOWN_READINGS = {r for _, _, rs in TABLES for r in rs} | {"rule-1-as-written", "refuse-empty-element"}
 
 # --- ES256 (ECDSA P-256 with SHA-256), verification only -------------------------------------------------------------
 
@@ -169,8 +186,13 @@ def check_corpus(corpus: Path = CORPUS) -> list[str]:
 
 
 def expected(doc: dict, reading: str) -> bool:
-    """True if ``reading`` accepts the vector; rule-1-as-written stands for both rule 1 scopes."""
+    """True if ``reading`` accepts the vector; rule-1-as-written stands for both rule 1 scopes.
+
+    An element reading the vector does not name reads as the reading it refines (``ELEMENT_ALIASES``).
+    """
     accept = set(doc["accept_under"])
+    if reading in ELEMENT_ALIASES and reading not in accept | set(doc["reject_under"]):
+        reading = ELEMENT_ALIASES[reading]
     if "rule-1-as-written" in accept:
         accept |= {"rule-1-served-scope", "rule-1-descriptor-scope"}
     return reading in accept

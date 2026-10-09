@@ -203,3 +203,32 @@ def test_a_verifier_that_rejects_everything_fails_a_gated_run(docs: list[dict], 
     src.write_text(json.dumps({"verdicts": dict.fromkeys((d["id"] for d in docs), False)}), encoding="utf-8")
     assert card_sign.main(["--verdicts", str(src)]) == 0
     assert card_sign.main(["--verdicts", str(src), "--no-false-accepts", "dual-name-refuse"]) == 1
+
+
+def test_element_pair_names_its_readings(docs: list[dict]) -> None:
+    """S1-009 keeps the empty element, S1-010 collapses it; refuse-empty-element rejects both; every reading accepts one."""
+    by_id = {d["id"]: d for d in docs}
+    s9, s10 = by_id["S1-009"], by_id["S1-010"]
+    assert s9["served_card"]["securityRequirements"] == [{}] == s10["served_card"]["securityRequirements"]
+    assert "refuse-empty-element" in s9["reject_under"] and "refuse-empty-element" in s10["reject_under"]
+    for _, axis, readings in card_sign.TABLES:
+        if axis is None:
+            for r in readings:
+                assert card_sign.expected(s9, r) != card_sign.expected(s10, r), r
+
+
+def test_field_level_prune_agrees_with_prune_empty_except_on_the_element_pair(docs: list[dict]) -> None:
+    """A reader that only checks empty fields scores like prune-empty everywhere but S1-009 and S1-010."""
+    differ = [
+        d["id"]
+        for d in docs
+        if d.get("axis") is None and card_sign.expected(d, "field-level-prune") != card_sign.expected(d, "prune-empty")
+    ]
+    assert differ == ["S1-009", "S1-010"]
+    differ = [
+        d["id"]
+        for d in docs
+        if d.get("axis") is None
+        and card_sign.expected(d, "rule-1-element-collapse") != card_sign.expected(d, "rule-1-served-scope")
+    ]
+    assert differ == ["S1-009", "S1-010"]

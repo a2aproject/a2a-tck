@@ -47,8 +47,8 @@
   "counts": {
     "accept_any": 4,
     "reject_any": 1,
-    "reading_dependent": 8,
-    "total": 42,
+    "reading_dependent": 10,
+    "total": 44,
     "absent_required": 11,
     "unknown_fields": 13,
     "dual_name": 5
@@ -418,6 +418,21 @@
           "aeoess/a2a-python@2491248": false
         }
       }
+    },
+    "s1e": {
+      "note": "Same meaning as observed.results.",
+      "results": {
+        "S1-009": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true
+        },
+        "S1-010": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false
+        }
+      }
     }
   },
   "vectors": [
@@ -472,6 +487,14 @@
     {
       "path": "s1-default-valued/S1-008.json",
       "sha256": "9ae36fbeb5f79800a00cdc642d9227ba5d1586bb01275735f193792a7fd7e679"
+    },
+    {
+      "path": "s1-default-valued/S1-009.json",
+      "sha256": "898e93e273dd62f1c6f8bdcc659707f18addd8b8a0817ce320acaccb3ccdde57"
+    },
+    {
+      "path": "s1-default-valued/S1-010.json",
+      "sha256": "7f69d267f75f877cadf6449c1cf9cd6d51499c9bd648a9728719be8304f32362"
     },
     {
       "path": "s2-absent-required/S2-001.json",
@@ -929,5 +952,14 @@
       }
     }
   },
-  "generator_s4": "vectors_s4.py"
+  "generator_s4": "vectors_s4.py",
+  "s1e_readings": {
+    "field-level-prune": "Empty strings, arrays and objects removed where they are field values, but an element of an array is never removed for being empty. A reader that checks only for empty fields.",
+    "rule-1-element-collapse": "Section 8.4.1 rule 1 (served scope) after removing every array element that becomes empty under recursive removal; a repeated field left with no element is then at its default and dropped.",
+    "refuse-empty-element": "The strict verifier reading of the sentence widened on #2122: a card carrying an element that becomes empty under recursive empty-value removal is refused, signed or not.",
+    "asked_on": "https://github.com/a2aproject/A2A/issues/2122#issuecomment-6083665390",
+    "sentence": "https://github.com/a2aproject/A2A/issues/2122#issuecomment-6077328276",
+    "note": "Readings named only for S1-009 and S1-010. On every other vector field-level-prune equals prune-empty and rule-1-element-collapse equals rule-1-served-scope (rule-1-as-written on s0 and s1), because no other card carries an empty element."
+  },
+  "generator_s1e": "vectors_s1e.py"
 }
