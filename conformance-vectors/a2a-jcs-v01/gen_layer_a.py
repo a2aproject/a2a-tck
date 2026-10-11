@@ -14,10 +14,12 @@ refusal alone is a hard error, not a vector.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 
 from pathlib import Path
+from typing import Any, Self
 
 import rfc8785
 
@@ -30,9 +32,57 @@ SPEC_REF_BASE = (
     "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements"
 )
 
+#: The RFC 8259 number grammar, which a JSONNumberToken must match in full.
+_JSON_NUMBER = re.compile(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?")
+
 
 class OracleDisagreementError(Exception):
     """Raised when the two independent RFC 8785 oracles disagree on a MUST-ACCEPT vector."""
+
+
+class JSONNumberToken(str):
+    """A JSON number that a vector file must carry exactly as spelled.
+
+    Python's json module cannot write some number tokens a canonicalizer has
+    to handle. The integer ``-0`` parses to the int 0 and is written back as
+    ``0``, which would make the vector test a different input. A value wrapped
+    in this class is written into the vector file, and into the bytes the Go
+    oracle reads, as this exact token.
+    """
+
+    def __new__(cls, token: str) -> Self:
+        """Accept only a complete RFC 8259 number token."""
+        if not _JSON_NUMBER.fullmatch(token):
+            raise ValueError(f"{token!r} is not an RFC 8259 number token")
+        return super().__new__(cls, token)
+
+
+def dumps_with_tokens(obj: object, **kwargs: Any) -> str:
+    """Serialize obj like json.dumps, writing each JSONNumberToken verbatim.
+
+    Each token is swapped for a placeholder string, the value is serialized,
+    and the quoted placeholder is replaced by the bare token, so the token sits
+    exactly where json.dumps would have put the value.
+    """
+    tokens: list[JSONNumberToken] = []
+
+    def swap(value: object) -> object:
+        if isinstance(value, JSONNumberToken):
+            tokens.append(value)
+            return f"\x00json-number-token-{len(tokens) - 1}\x00"
+        if isinstance(value, dict):
+            return {k: swap(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [swap(v) for v in value]
+        return value
+
+    text = json.dumps(swap(obj), **kwargs)
+    for index, token in enumerate(tokens):
+        quoted = json.dumps(f"\x00json-number-token-{index}\x00")
+        if text.count(quoted) != 1:
+            raise RuntimeError(f"placeholder for {token!r} did not appear exactly once")
+        text = text.replace(quoted, token)
+    return text
 
 
 def py_canonical(obj: object) -> bytes:
@@ -97,7 +147,7 @@ def make_accept(
     raw = (
         raw_override
         if raw_override is not None
-        else json.dumps(input_obj, ensure_ascii=False).encode("utf-8")
+        else dumps_with_tokens(input_obj, ensure_ascii=False).encode("utf-8")
     )
     py_out = py_canonical(json.loads(raw.decode("utf-8")))
     go_out = go_canonical(raw)
@@ -167,7 +217,7 @@ def _write(group_dir: str, vid: str, vector: dict) -> None:
     d.mkdir(parents=True, exist_ok=True)
     p = d / f"{vid}.json"
     p.write_text(
-        json.dumps(vector, indent=2, ensure_ascii=False, sort_keys=False) + "\n",
+        dumps_with_tokens(vector, indent=2, ensure_ascii=False, sort_keys=False) + "\n",
         encoding="utf-8",
     )
     print(f"wrote {p.relative_to(HERE)}")
