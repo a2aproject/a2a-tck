@@ -2,8 +2,12 @@
 
 RFC 8785 sect. 3.2.2.3: numbers are serialized using the ECMAScript
 Number::toString algorithm, never a language's default float formatter.
-18 vectors per the design doc's count table; re-derive the live count
-from MANIFEST.json.
+19 vectors: the 18 in the design doc's count table, plus A5-019, added after
+the corpus shipped. Re-derive the live count from MANIFEST.json.
+
+Vector ids are never reused or renumbered. A5-019 takes the next free
+number instead of shifting the three rejects, which outside runs already
+cite by id.
 
 Every expected byte string here is computed by the two independent
 oracles, never hand-derived from a mental model of the ECMA-262 boundary
@@ -19,14 +23,14 @@ fourth legitimate canonicalization-layer number rejection to manufacture
 without inventing one. Shipping 3 solid vectors beats forcing a 4th.
 """
 
-from gen_layer_a import make_accept, make_reject
+from gen_layer_a import JSONNumberToken, make_accept, make_reject
 
 
 GROUP = "a5-number-serialization"
 
 
 def generate() -> None:
-    """Emit all eighteen A5 (number serialization) vectors."""
+    """Emit all nineteen A5 (number serialization) vectors."""
     make_accept(
         "A5-001",
         GROUP,
@@ -177,6 +181,19 @@ def generate() -> None:
         ),
         input_obj={"exp_upper": 1e1, "trailing_zero": 1.0},
         raw_override=b'{"exp_upper": 1E1, "trailing_zero": 1.0}',
+    )
+    make_accept(
+        "A5-019",
+        GROUP,
+        clause="RFC8785-3.2.2.3",
+        rationale=(
+            "The integer spelling of negative zero: '-0', with no fraction and no exponent, is a "
+            "valid RFC 8259 number. RFC 8785 treats every number as an IEEE 754 double, so it is "
+            "the same value as A5-006's '-0.0' and serializes as '0'. An implementation that "
+            "copies integer tokens through unchanged emits '-0' instead, and a digest over the "
+            "same document then depends on which implementation computed it."
+        ),
+        input_obj={"n": JSONNumberToken("-0")},
     )
     make_reject(
         "A5-REJECT-016",

@@ -21,7 +21,7 @@ CORPUS_ROOT = Path(__file__).resolve().parents[3] / "conformance-vectors" / "a2a
 RUNNER = runpy.run_path(str(CORPUS_ROOT / "run_python.py"))
 REFUSAL_SPEC = "tck.canonicalization.jcs:CanonicalizationError"
 CONFIGURATION_ERROR = 2
-RFC8785_VECTOR_COUNT = 53
+RFC8785_VECTOR_COUNT = json.loads((CORPUS_ROOT / "MANIFEST.json").read_text(encoding="utf-8"))["targets"]["rfc8785"]["vectors"]
 SURROGATE_VECTOR_IDS = ("A3-REJECT-011", "A3-REJECT-012", "A4-REJECT-013", "A4-REJECT-014", "A4-REJECT-015")
 
 

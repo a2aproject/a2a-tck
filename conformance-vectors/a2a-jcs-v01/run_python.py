@@ -4,7 +4,7 @@
 The corpus tests two functions, and MANIFEST.json names them under ``targets``:
 
 * ``rfc8785``, an RFC 8785 primitive that turns one JSON value into canonical
-  bytes. The RFC 8785 vectors apply to it, 53 of the 57.
+  bytes. The RFC 8785 vectors apply to it: every group except A2.
 * ``card-signing-input``, the bytes an Agent Card signature covers: the card
   without its top-level ``signatures`` field, canonicalized. Every vector
   applies to it, the four rule-3 vectors included.

@@ -9,9 +9,9 @@
     "gowebpki/jcs (Go, v1.0.1)"
   ],
   "counts": {
-    "accept": 47,
+    "accept": 48,
     "reject": 10,
-    "total": 57
+    "total": 58
   },
   "groups": [
     "a2-signatures-exclusion",
@@ -30,7 +30,7 @@
         "RFC8785-3.2.2.3",
         "RFC8785-3.2.3"
       ],
-      "vectors": 53
+      "vectors": 54
     },
     "card-signing-input": {
       "function": "the bytes an Agent Card signature covers: the card without its top-level signatures field, canonicalized per RFC 8785 (a2a spec 8.4.1 rules 2 and 3)",
@@ -42,7 +42,7 @@
         "RFC8785-3.2.3",
         "a2a-spec-8.4.1-rule-3"
       ],
-      "vectors": 57
+      "vectors": 58
     }
   },
   "vectors": [
@@ -231,6 +231,10 @@
       "sha256": "03ff8bf1a88b92f188af50179a0b2199e42b5ccef17aa84b8cb28083de29ac1a"
     },
     {
+      "path": "a5-number-serialization/A5-019.json",
+      "sha256": "f5b21867a160bb19a04f3ecbdcaa3565ac247f51a408fa778c3a42abf46792f7"
+    },
+    {
       "path": "a5-number-serialization/A5-REJECT-016.json",
       "sha256": "787ba4711aa90490526470f381da062b8cb450f10e52dbba384f27f151387da8"
     },
@@ -275,5 +279,5 @@
       "sha256": "b43026c697e087b2fb62f11d21e6fe624fa1289c2778ff2efac155cf2b6250f9"
     }
   ],
-  "corpusDigest": "29b3f2c5a9c2e6b07dc7e925b13c81563e2efd407a62ce05df513fca04e9361c"
+  "corpusDigest": "6b6aea57482c9ae13990284ddc25ed171a050e5379df4b3c3e03d6d3faa2a74f"
 }

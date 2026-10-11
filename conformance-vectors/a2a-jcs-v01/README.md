@@ -26,9 +26,9 @@ resolves the other way. Every vector below is independent of that question and s
 | A2 signatures exclusion | a2a spec 8.4.1 rule 3 | 4 | 2 |
 | A3 object key ordering | RFC 8785 3.2.3 | 12 | 2 |
 | A4 string serialization | RFC 8785 3.2.2.2 | 15 | 3 |
-| A5 number serialization | RFC 8785 3.2.2.3 | 18 | 3 |
+| A5 number serialization | RFC 8785 3.2.2.3 | 19 | 3 |
 | A6 arrays, nesting, literals | RFC 8785 3.2.1, 3.2.2.1 | 8 | 0 |
-| Total | | 57 | 10 |
+| Total | | 58 | 10 |
 
 The design doc estimated 56 vectors and 11 rejects for these five groups; the table above and
 MANIFEST.json carry the live count. Real oracle runs against real inputs changed two of the
@@ -36,7 +36,8 @@ estimated numbers. A4 has 15 accept vectors, not 14. A second astral-plane
 character next to the first turned out to be a distinct, useful case, so it stayed. A5 has 3 rejects,
 not 4. NaN and positive or negative infinity are the only JSON number values with no ECMAScript
 Number toString form at all. Every finite double has one, so a fourth legitimate reject case for
-numbers does not exist.
+numbers does not exist. A5 later gained one accept vector the design doc did not list, A5-019 (see
+Status).
 
 ## How each expected byte was produced
 
@@ -62,8 +63,8 @@ implementation against the function it provides:
 
 | Target | Function | Vectors |
 |---|---|---:|
-| `rfc8785` | an RFC 8785 primitive: one JSON value to canonical bytes | 53 (A3 to A6) |
-| `card-signing-input` | the bytes a card signature covers: the card without its top-level `signatures` field, canonicalized | 57 (all) |
+| `rfc8785` | an RFC 8785 primitive: one JSON value to canonical bytes | 54 (A3 to A6) |
+| `card-signing-input` | the bytes a card signature covers: the card without its top-level `signatures` field, canonicalized | 58 (all) |
 
 The four A2 vectors test rule 3, which RFC 8785 has no notion of, so a primitive that is correct
 fails them by design. A card with no `signatures` field signs as its canonical form, so the
@@ -162,3 +163,13 @@ https://github.com/a2aproject/A2A/pull/1882#issuecomment-5932794122.
 The runner now requires explicit, exact refusal types. Regression tests cover those five
 surrogate cases and prove that unexpected exceptions produce `errored` results and a nonzero
 exit status. No vector bytes, dispositions or corpus digest changed.
+
+On 2026-10-11 the corpus gained A5-019, the integer spelling of negative zero, `{"n": -0}`. Its
+expected bytes are `{"n":0}`, the same as for A5-006, and both oracles agree. A5-006 spells
+negative zero as `-0.0`, which parsers read as a double. `-0` is an integer token, and an
+implementation that keeps integer tokens as written emits `-0` instead. Two JSON digest readers
+measured on the W3C public-agent-conformance list split on exactly this input, one writing `0`
+and the other `-0`: https://lists.w3.org/Archives/Public/public-agent-conformance/2026Oct/0038.html.
+The 57 earlier vectors are unchanged, byte for byte. The counts and the corpus digest changed, so
+the runs above scored 57 vectors, and a run against this revision scores 58 (54 for the `rfc8785`
+target).
