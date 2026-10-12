@@ -70,6 +70,12 @@ equals `prune-empty` and `rule-1-element-collapse` equals `rule-1-served-scope`;
 the first over all 42 earlier cards. Observed 2026-10-10: a2a-sdk 1.2.1 and @a2a-js/sdk 1.3.0 accept S1-010, a2a-go
 accepts S1-009.
 
+`refuse-empty-element` rejects both members of the pair, so it fails the MUST-ACCEPT side whichever way 8.4.1 settles.
+It is listed to be measured, not adopted as the cautious option. A `field-level-prune` verifier written from the
+readings table and importing no SDK (@kuangmi-bit, `tck/conformance/verifiers/field_level_prune.py`, merged in
+33a310b) scores 26/26 on s0 to s2 under `field-level-prune` with no false accept, and runs as its own job in the
+self-test workflow.
+
 ## Group s2: a REQUIRED field absent from the served JSON
 
 Added after the first sweep. The s0 and s1 files are unchanged byte for byte, so a sweep over those 13 vectors stays
