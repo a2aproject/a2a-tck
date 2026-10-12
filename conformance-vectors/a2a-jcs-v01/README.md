@@ -123,10 +123,23 @@ corpus digest from the vector files.
 
 ## Manifest and digest
 
-MANIFEST.json lists every vector file with its own sha256 hash, sorted by path. The manifest also
-carries a corpus digest. That digest is the sha256 hash of the manifest body, taken without the
-digest field itself. A digest cannot include its own value. To reproduce it, strip that one field,
-re-serialize the file with the same key order, then hash what remains.
+MANIFEST.json lists every vector file with its own sha256 hash, sorted by path. Its last member,
+`corpusDigest`, is the sha256 of the manifest without that member, over the exact bytes
+gen_manifest.py hashes: Python's `json.dumps(body, indent=2)` encoded as UTF-8, where `body` is the
+manifest without `corpusDigest` and its other members keep the order the file lists them. That is
+two spaces of indentation per level, `": "` between a member name and its value, non-ASCII
+characters escaped as `\uXXXX`, and no newline after the closing brace. Those bytes are the file's
+own bytes with the `corpusDigest` line, the comma before it and the final newline removed, so the
+digest can be recomputed with or without a JSON library. From the repository root, either line
+prints it:
+
+    python3 -c 'import json,hashlib; m=json.load(open("conformance-vectors/a2a-jcs-v01/MANIFEST.json")); m.pop("corpusDigest"); print(hashlib.sha256(json.dumps(m, indent=2).encode()).hexdigest())'
+
+    sed '$d' conformance-vectors/a2a-jcs-v01/MANIFEST.json | sed '$d' | sed '$ s/,$//' | { cat; printf '}'; } | sha256sum
+
+(`shasum -a 256` in place of `sha256sum` on macOS.) The digest is not RFC 8785 applied to the
+manifest: a canonical form, sorted keys, a compact dump or a trailing newline each gives a
+different value.
 
 ## Signing
 
