@@ -274,6 +274,14 @@ Canonical bytes were produced by two independent RFC 8785 implementations, which
 - `rfc8785` (PyPI, 0.1.4)
 - `gowebpki/jcs` (Go, v1.0.1)
 
+A third, run blind from outside: @giskard09 ran `jcs.py`, a pure RFC 8785 canonicalizer with no AgentCard-aware
+pruning, required-field injection or unknown-field exclusion, over all 44 vectors at `8aa795b`
+(a2aproject/a2a-tck#246, issuecomment-6133531509). On the 26 vectors governed by the `served-as-is`, `unknown-retain`
+and `dual-name-tolerate` readings it reproduces the covered bytes exactly, S3-D-012 included through its
+retained-form signature. Those 26 are the 24 vectors accepted under one of those readings plus S0-REJECT-005 and
+S4-REJECT-005, whose covered bytes are the served JSON. The other 18 need a reading-aware step that a pure canonicalizer
+does not have. So the disagreement in 8.4.1 is about which bytes are covered, not about RFC 8785.
+
 Spec text: a2aproject/A2A `specification/specification.md` at `173695755607` (v1.0.0). REQUIRED set: the
 `field_behavior` annotations of `a2a.proto` (details in `MANIFEST.json` under `spec_provenance`).
 
