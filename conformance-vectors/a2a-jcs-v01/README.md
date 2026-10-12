@@ -4,11 +4,28 @@ This corpus is an offer to a2aproject/a2a-tck#227. It gives the CARD-SIGN requir
 language-neutral conformance corpus. That project currently tags those requirements
 not-automatable.
 
-The corpus exists because a2a-python and a2a-js canonicalize the same Agent Card into different
-bytes. A card signed by one SDK then fails verification under the other. Two independent RFC 8785
-implementations adjudicated the difference and agree that a2a-js is conformant on every axis tested
-while a2a-python is not. The report, the reproduction steps, and the specification issue this corpus follows from are
-at a2aproject/A2A#2122, a2aproject/a2a-python#1174, and a2aproject/a2a-js#627.
+The corpus exists because a2a-python and a2a-js canonicalized the same Agent Card into different
+bytes, so a card signed by one SDK failed verification under the other. Two independent RFC 8785
+implementations adjudicated the difference and agreed that a2a-js was conformant on every axis
+tested while a2a-python was not. The report, the reproduction steps, and the specification issue
+this corpus follows from are at a2aproject/A2A#2122, a2aproject/a2a-python#1174, and
+a2aproject/a2a-js#627.
+
+a2a-python fixed the serializer in a2a-sdk 1.1.4 (a2aproject/a2a-python#1193, which closed #1174).
+The fix replaced `json.dumps(..., sort_keys=True)` with an RFC 8785 serializer,
+`a2a.utils._jcs.canonicalize`, and its test suite carries the 57 vectors of the previous revision
+of this corpus. On 2026-10-12, a2a-sdk 1.1.4 and 1.2.2, the latest release, were run through the
+unmodified run_python.py at this revision. Both give the same results:
+
+| a2a-sdk | `rfc8785` (54) | `card-signing-input` (58) |
+|---|---:|---:|
+| 1.1.3, before the fix | 30 | 28 |
+| 1.1.4 and 1.2.2 | 54 | 52 |
+
+The signing path was `_canonicalize_agent_card`, given the card as a dict in place of the
+AgentCard message. Before it serializes, it removes empty strings, empty arrays, empty objects and
+null values, null array elements included. That step accounts for the six it misses: A4-005,
+A6-001, A6-002, A6-005, A6-006 and A6-008. With the step taken out, it passes all 58.
 
 ## Scope
 
