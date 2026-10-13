@@ -203,3 +203,9 @@ and the other `-0`: https://lists.w3.org/Archives/Public/public-agent-conformanc
 The 57 earlier vectors are unchanged, byte for byte. The counts and the corpus digest changed, so
 the runs above scored 57 vectors, and a run against this revision scores 58 (54 for the `rfc8785`
 target).
+
+Of the 16 A5 accept vectors, six tell a canonicalizer that writes each number by its value from
+one that passes number tokens through as written: A5-001 (`1e-06`), A5-006 (`-0.0`), A5-011
+(`1e-07`), A5-012 (`1e+20`), A5-015 (`10.0` and `1.0`) and A5-019 (`-0`). The other ten are
+already spelled in the input the way RFC 8785 writes them, so a pass-through implementation also
+passes them; they are controls for the number group, not cases of it.
