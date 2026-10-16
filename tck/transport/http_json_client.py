@@ -112,8 +112,8 @@ class HttpJsonStreamingResponse(_HttpJsonResponseMixin, StreamingResponse):
 class HttpJsonClient(BaseTransportClient):
     """HTTP+JSON (REST) transport client for A2A protocol."""
 
-    def __init__(self, base_url: str) -> None:
-        super().__init__(base_url, TRANSPORT)
+    def __init__(self, base_url: str, tenant: str | None = None) -> None:
+        super().__init__(base_url, TRANSPORT, tenant)
         self._client = httpx.Client(
             base_url=base_url,
             timeout=httpx.Timeout(5.0, read=30.0),
@@ -124,6 +124,10 @@ class HttpJsonClient(BaseTransportClient):
     def close(self) -> None:
         """Close the HTTP client."""
         self._client.close()
+
+    def _tenant_path(self, path: str) -> str:
+        """Prefix *path* with the interface's tenant, as ``/{tenant}/message:send``."""
+        return f"/{self.tenant}{path}" if self.tenant else path
 
     def _request(
         self,
@@ -137,7 +141,7 @@ class HttpJsonClient(BaseTransportClient):
         try:
             response = self._client.request(
                 method,
-                path,
+                self._tenant_path(path),
                 json=json_body,
                 params=params,
                 headers={"Content-Type": "application/json"} if method.upper() == "POST" else None,
@@ -179,7 +183,7 @@ class HttpJsonClient(BaseTransportClient):
         try:
             request = self._client.build_request(
                 method,
-                path,
+                self._tenant_path(path),
                 json=json_body,
                 headers={
                     "Content-Type": "application/json",
