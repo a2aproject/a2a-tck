@@ -150,7 +150,7 @@ def transport_clients(
 
         # First interface per transport wins (preference order)
         if transport_name not in clients:
-            clients[transport_name] = client_class(url)
+            clients[transport_name] = client_class(url, tenant=iface.get("tenant"))
 
     if not clients:
         declared = [iface.get("protocolBinding", "?") for iface in interfaces]
