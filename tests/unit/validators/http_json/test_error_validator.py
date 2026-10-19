@@ -92,6 +92,12 @@ class TestAIP193Error:
         with pytest.raises(ValueError, match="code"):
             AIP193Error.from_dict(data)
 
+    @pytest.mark.parametrize("code", [True, False, None, "wrong", 404.5, "404.5", float("nan"), float("inf"), -2147483649, 2147483648, {}, []])
+    def test_code_rejects_values_outside_the_protojson_int32_contract(self, code: object) -> None:
+        """Validate the actual field independently of a later status comparison."""
+        with pytest.raises(ValueError, match="ProtoJSON int32"):
+            AIP193Error.from_dict({"error": {"code": code}})
+
     def test_from_dict_error_not_object(self) -> None:
         """Test that non-object error field raises ValueError."""
         data = {"error": "not an object"}
@@ -355,9 +361,9 @@ class TestHelperFunctions:
 
 
 @pytest.mark.parametrize("error", [
-    {"code": True}, {"code": "400"}, {"code": []}, {"code": 401},
-    {"code": 400, "message": None}, {"code": 400, "status": 12},
-    {"code": 400, "details": None}, {"code": 400, "details": {}},
+    {"code": True}, {"code": "wrong"}, {"code": []}, {"code": 401},
+    {"code": 400, "message": 12}, {"code": 400, "status": "unknown"},
+    {"code": 400, "details": {}},
     {"code": 400, "details": [{}]}, {"code": 400, "details": [12]},
 ])
 def test_standard_errors_still_require_typed_http_error_objects(error: dict) -> None:
@@ -365,10 +371,30 @@ def test_standard_errors_still_require_typed_http_error_objects(error: dict) -> 
     assert not validate_http_json_error({"status_code": 400, "body": {"error": error}}, "InvalidParamsError").valid
 
 
-def test_standard_error_does_not_require_a2a_specific_details() -> None:
+@pytest.mark.parametrize("code", [400, 400.0, "400", "4e2"])
+def test_standard_error_does_not_require_a2a_specific_details(code: float | str) -> None:
     """Keep the distinction between standard invalid parameters and a named A2A error."""
-    response = {"status_code": 400, "body": {"error": {"code": 400, "message": "invalid parameters"}}}
+    response = {"status_code": 400, "body": {"error": {"code": code, "message": "invalid parameters"}}}
     assert validate_http_json_error(response, "InvalidParamsError").valid
+
+
+@pytest.mark.parametrize("status", [None, "INVALID_ARGUMENT", 3, 3.0, "3"])
+def test_http_error_optional_fields_follow_protojson_presence_and_enum_rules(status: object) -> None:
+    """Null means unset; the AIP-193 status accepts native enum representations."""
+    response = {"status_code": 400, "body": {"error": {"code": 400, "status": status, "message": None, "details": None}}}
+    result = validate_http_json_error(response, "InvalidParamsError")
+    assert result.valid
+    assert result.aip193_error.message == ""
+    assert result.aip193_error.details == []
+
+
+@pytest.mark.parametrize("status", [True, [], {}, "unknown", 3.5, "NOT_FOUND", 5])
+def test_supplied_status_cannot_contradict_the_expected_error(status: object) -> None:
+    """A declared enum cannot disagree with the released A2A error mapping."""
+    response = {"status_code": 400, "body": {"error": {"code": 400, "status": status, "details": [{
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "VERSION_NOT_SUPPORTED", "domain": "a2a-protocol.org",
+    }]}}}
+    assert not validate_http_json_error(response, "VersionNotSupportedError").valid
 
 
 @pytest.mark.parametrize("response", [None, [], True, {"status_code": True}, {"status_code": "400"}])

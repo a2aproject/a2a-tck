@@ -59,6 +59,11 @@ def test_rest_schema_validation_remains_mandatory() -> None:
     assert get_requirement_by_id("HTTP_JSON-FMT-001").level is RequirementLevel.MUST
 
 
+def test_changing_a_custom_binding_requires_a_new_uri() -> None:
+    """A manual obligation retains its normative MUST level."""
+    assert get_requirement_by_id("BIND-CUSTOM-002").level is RequirementLevel.MUST
+
+
 def test_requirement_anchors_match_the_vendored_spec() -> None:
     """Keep every requirement's citation attached to an actual specification heading."""
     headings = re.findall(r"^#{1,6}\s+(.+)", _SPEC.read_text(), re.MULTILINE)

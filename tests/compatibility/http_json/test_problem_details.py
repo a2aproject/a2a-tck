@@ -16,7 +16,7 @@ import pytest
 from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, TASK_NOT_FOUND_ERROR, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
-from tck.validators.error_info import find_error_info, validate_error_details, validate_error_info
+from tck.validators.error_info import find_error_info, validate_error_info
 from tck.validators.http_json.content_type import uses_a2a_media_type
 from tck.validators.http_json.error_validator import AIP193Error
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
@@ -73,6 +73,15 @@ def _get_error_body(response: Any) -> dict[str, Any] | None:
     return body
 
 
+def _error_format_errors(body: Any) -> list[str]:
+    """All HTTP error-shape probes use the same ProtoJSON interpretation."""
+    try:
+        AIP193Error.from_dict(body)
+    except ValueError as error:
+        return [str(error)]
+    return []
+
+
 @should
 @http_json
 class TestHttpJsonErrorMediaType:
@@ -112,13 +121,7 @@ class TestAIP193ErrorFormat:
         response = _get_error_response(client)
         body = _get_error_body(response)
 
-        errors: list[str] = []
-        try:
-            AIP193Error.from_dict(body)
-        except ValueError as exc:
-            errors.append(str(exc))
-
-        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
+        assert_and_record(compatibility_collector, req, TRANSPORT, _error_format_errors(body))
 
     def test_present_details_are_typed_objects(
         self,
@@ -128,9 +131,8 @@ class TestAIP193ErrorFormat:
         """Require a type identifier on every present error detail."""
         req = HTTP_JSON_ERR_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        error = _get_error_body(_get_error_response(client))["error"]
-        errors = validate_error_details(error["details"]) if "details" in error else []
-        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
+        body = _get_error_body(_get_error_response(client))
+        assert_and_record(compatibility_collector, req, TRANSPORT, _error_format_errors(body))
 
     def test_code_field_matches_http_status(
         self,
@@ -177,14 +179,7 @@ class TestAIP193ErrorFormat:
         response = _get_error_response(client)
         body = _get_error_body(response)
 
-        error_obj = body.get("error", {})
-        errors: list[str] = []
-        if "message" in error_obj and not isinstance(error_obj["message"], str):
-            errors.append(
-                f"'message' field must be a string, got {type(error_obj['message']).__name__}"
-            )
-
-        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
+        assert_and_record(compatibility_collector, req, TRANSPORT, _error_format_errors(body))
 
 
 # ---------------------------------------------------------------------------

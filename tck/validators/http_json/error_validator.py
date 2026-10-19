@@ -9,6 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
+from google.protobuf.json_format import ParseDict, ParseError
+from google.protobuf.wrappers_pb2 import Int32Value
+from google.rpc.code_pb2 import Code
+
 from tck.requirements.base import ERROR_BINDINGS
 from tck.validators.error_info import validate_error_details, validate_error_info
 
@@ -25,6 +29,27 @@ HTTP_JSON_ERROR_STATUS: dict[str, int] = {
 STATUS_TO_ERRORS: dict[int, list[str]] = {}
 for _name, _status in HTTP_JSON_ERROR_STATUS.items():
     STATUS_TO_ERRORS.setdefault(_status, []).append(_name)
+
+
+def _protojson_int32(value: Any, field_name: str) -> int:
+    """Use ProtoJSON's scalar grammar without truncating fractional values."""
+    try:
+        return ParseDict(value, Int32Value()).value
+    except (ParseError, TypeError, ValueError) as error:
+        raise ValueError(f"Error {field_name} must be a ProtoJSON int32 value") from error
+
+
+def _grpc_status_name(value: Any) -> str:
+    """The optional AIP-193 status is a google.rpc.Code enum, not a string field."""
+    if value is None:
+        return ""
+    names = Code.keys()
+    if isinstance(value, str) and value in names:
+        return value
+    try:
+        return Code.Name(_protojson_int32(value, "status"))
+    except ValueError as error:
+        raise ValueError("Error status must be a google.rpc.Code value") from error
 
 
 @dataclass
@@ -55,7 +80,7 @@ class AIP193Error:
         Raises:
             ValueError: If the required structure is missing.
         """
-        if "error" not in data:
+        if not isinstance(data, dict) or "error" not in data:
             raise ValueError("Response body missing required 'error' field")
         error = data["error"]
         if not isinstance(error, dict):
@@ -63,20 +88,28 @@ class AIP193Error:
         if "code" not in error:
             raise ValueError("Error object missing required 'code' field")
 
-        code = error["code"]
-        if not isinstance(code, int) or isinstance(code, bool):
-            raise ValueError("Error code must be an integer")
-        for name in ("status", "message"):
-            if name in error and not isinstance(error[name], str):
-                raise ValueError(f"Error {name} must be a string")
-        details = error.get("details", [])
+        # AIP-193's int32 uses ProtoJSON's accepted numeric/string forms,
+        # including exponent notation. Use the official parser for numeric
+        # conversion and bounds instead of imposing Python's scalar types.
+        code = _protojson_int32(error["code"], "code")
+        status = _grpc_status_name(error.get("status"))
+        message = error.get("message")
+        if message is None:
+            message = ""
+        elif not isinstance(message, str):
+            raise ValueError("Error message must be a string")
+        # ProtoJSON null denotes an unset optional/repeated field. JSON-RPC's
+        # envelope data rule is separate and keeps its explicit array check.
+        details = error.get("details")
+        if details is None:
+            details = []
         errors = validate_error_details(details)
         if errors:
             raise ValueError("; ".join(errors))
         return cls(
             code=code,
-            status=error.get("status", ""),
-            message=error.get("message", ""),
+            status=status,
+            message=message,
             details=details,
         )
 
@@ -169,6 +202,10 @@ def validate_http_json_error(
     result.aip193_error = parsed
     if parsed.code != actual_status:
         result.message = "AIP-193 error.code must equal the HTTP status code"
+        return result
+    expected_grpc_status = ERROR_BINDINGS[expected_error].grpc_status
+    if parsed.status and expected_grpc_status and parsed.status != expected_grpc_status:
+        result.message = f"AIP-193 status does not match {expected_error}"
         return result
     reason = ERROR_BINDINGS[expected_error].reason
     if reason is not None:

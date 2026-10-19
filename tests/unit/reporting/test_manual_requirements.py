@@ -20,6 +20,15 @@ from tck.requirements.tags import NOT_AUTOMATABLE
 
 _FULL = 100.0
 
+
+def _level_counts(console: str, level: str) -> dict[str, str]:
+    header = next(line for line in console.splitlines() if line.startswith("│ Level"))
+    row = next(line for line in console.splitlines() if line.startswith(f"│ {level}"))
+    headings = [value.strip() for value in header.split("│")[1:-1]]
+    values = [value.strip() for value in row.split("│")[1:-1]]
+    return dict(zip(headings, values, strict=True))
+
+
 def automated_results(*, omit: str = "") -> CompatibilityCollector:
     """Exercise the actual registry, without replacing its manual tags."""
     collector = CompatibilityCollector()
@@ -45,10 +54,9 @@ def test_manual_requirements_do_not_become_phantom_failures_or_passes() -> None:
     data = json.loads(JSONFormatter().format(report))
     assert "automated checks" in console
     assert "Manual" in console
-    must_row = next(line for line in console.splitlines() if line.startswith("│ MUST"))
-    columns = [value.strip() for value in must_row.split("│")[1:-1]]
-    assert int(columns[2]) == 0
-    assert int(columns[4]) == sum(requirement.level == "MUST" for requirement in report.pending_manual.values())
+    counts = _level_counts(console, "MUST")
+    assert int(counts["Failed"]) == 0
+    assert int(counts["Manual"]) == sum(requirement.level == "MUST" for requirement in report.pending_manual.values())
     assert "PENDING MANUAL VERIFICATION" in console
     assert "Automated checks" in html
     assert '<td class="manual">MANUAL</td>' in html
@@ -66,6 +74,30 @@ def test_missing_automatable_requirement_still_lowers_the_score() -> None:
     assert report.per_requirement[requirement.id].status == "NOT TESTED"
     assert report.must_compatibility < _FULL
     assert report.overall_compatibility < _FULL
+
+    console = ConsoleFormatter(color=False).format(report)
+    counts = _level_counts(console, "MUST")
+    assert counts["Failed"] == "0"
+    assert counts["Not tested"] == "1"
+
+
+def test_console_counts_each_outcome_without_merging_missing_checks_into_failures() -> None:
+    """Use the real registry to exercise all five status buckets together."""
+    automated = [req for req in ALL_REQUIREMENTS if req.level is RequirementLevel.MUST and NOT_AUTOMATABLE not in req.tags]
+    failed, skipped, missing = [req.id for req in automated[:3]]
+    collector = CompatibilityCollector()
+    for req in ALL_REQUIREMENTS:
+        if NOT_AUTOMATABLE in req.tags or req.id == missing:
+            continue
+        collector.record(requirement_id=req.id, transport="control", level=req.level.value,
+                         passed=req.id not in {failed, skipped}, skipped=req.id == skipped,
+                         errors=["deliberate failure"] if req.id == failed else [])
+    report = CompatibilityAggregator(collector).aggregate()
+    counts = _level_counts(ConsoleFormatter(color=False).format(report), "MUST")
+    assert counts["Passed"] == str(len(automated) - 3)
+    assert counts["Failed"] == counts["Skipped"] == counts["Not tested"] == "1"
+    assert int(counts["Manual"]) == sum(req.level == "MUST" for req in report.pending_manual.values())
+    assert sum(int(value) for key, value in counts.items() if key not in {"Level", "Total"}) == int(counts["Total"])
 
 
 @pytest.mark.parametrize("outcomes", list(permutations(["PASS", "FAIL", "SKIPPED"])))

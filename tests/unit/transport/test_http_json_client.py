@@ -23,13 +23,14 @@ import httpx
 import pytest
 
 from tck.reporting.collector import CompatibilityCollector
-from tck.requirements.base import VERSION_NOT_SUPPORTED_ERROR
+from tck.requirements.base import TASK_NOT_FOUND_ERROR, VERSION_NOT_SUPPORTED_ERROR
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import HttpJsonClient, _extract_error
 from tck.transport.jsonrpc_client import JsonRpcClient
 from tck.validators.error_binding import validate_expected_error
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tck.validators.json_schema import JSONSchemaValidator
+from tests.compatibility.agent_card import test_agent_card_caching as card_cache_checks
 from tests.compatibility.core_operations import test_transport_behavior as transport_checks
 from tests.compatibility.http_json import test_http_status as http_status_checks
 from tests.compatibility.http_json import test_problem_details as http_json_checks
@@ -57,6 +58,7 @@ class _ErrorHandler(BaseHTTPRequestHandler):
 
     status_code = _STATUS_BAD_REQUEST
     response_content_type = "application/a2a+json"
+    response_headers: tuple[tuple[str, str], ...] = ()
 
     def response_body(self) -> bytes:
         """Supply the response payload for this real HTTP control server."""
@@ -75,6 +77,8 @@ class _ErrorHandler(BaseHTTPRequestHandler):
         body = self.response_body()
         self.send_response(self.status_code)
         self.send_header("Content-Type", self.response_content_type)
+        for name, value in self.response_headers:
+            self.send_header(name, value)
         self.send_header("X-TCK-Request-Content-Type", self.headers.get("Content-Type", ""))
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -103,6 +107,83 @@ def error_server() -> Iterator[str]:
     """A stdlib HTTP server that answers every POST with a 400 JSON error."""
     with _running_server(_ErrorHandler) as url:
         yield url
+
+
+@pytest.mark.parametrize("code_json,valid", [("404", True), ("404.0", True), ("4.04e2", True), ('"404"', True), ('"4.04e2"', True),
+                                          ("404.5", False), ('"404.5"', False), ("true", False), ("2147483648", False), ("[]", False), ("{}", False), ("null", False)])
+def test_error_code_accepts_integral_protojson_numbers_on_the_wire(code_json: str, valid: bool) -> None:
+    """JSON exponent notation must not turn a conforming int32 into a failure."""
+    body = json.dumps({"error": {"code": 0, "message": "not found", "details": [{
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "TASK_NOT_FOUND", "domain": "a2a-protocol.org",
+    }]}}).replace('"code": 0', '"code": ' + code_json)
+
+    class NumericCodeHandler(_ErrorHandler):
+        status_code = 404
+
+        def response_body(self) -> bytes:
+            return body.encode()
+
+    with _running_server(NumericCodeHandler) as url:
+        client = HttpJsonClient(url)
+        try:
+            response = client.get_task(id="numeric-code")
+            assert (not validate_expected_error(response, "http_json", TASK_NOT_FOUND_ERROR)) is valid
+        finally:
+            client.close()
+
+
+@pytest.mark.parametrize("present", [False, True])
+def test_last_modified_is_optional_on_a_real_agent_card_response(present: bool) -> None:
+    """An absent MAY header is a recorded skip, never a conformance failure."""
+    class CardHandler(_ErrorHandler):
+        status_code = 200
+        response_headers = (("Last-Modified", "Mon, 19 Oct 2026 12:00:00 GMT"),) if present else ()
+
+        def response_body(self) -> bytes:
+            return json.dumps({"name": "Cache control fixture", "description": "Header control", "version": "1",
+                               "supportedInterfaces": [{"url": "https://example.test/a2a", "protocolBinding": "JSONRPC", "protocolVersion": "1.0"}],
+                               "capabilities": {}, "defaultInputModes": ["text/plain"], "defaultOutputModes": ["text/plain"],
+                               "skills": [{"id": "echo", "name": "Echo", "description": "Echo", "tags": ["test"]}]}).encode()
+
+    with _running_server(CardHandler) as url:
+        collector = CompatibilityCollector()
+        with _probe_outcome(True if present else None):
+            card_cache_checks.TestAgentCardLastModified().test_last_modified_present(url, collector)
+        result, = collector.get_results()
+        assert result.passed is present
+        assert result.skipped is (not present)
+        assert result.level == "MAY"
+
+
+@pytest.mark.parametrize("message,status,format_valid,semantic_valid", [
+    (None, 5, True, True), ("not found", "NOT_FOUND", True, True), (None, None, True, True),
+    (7, 5, False, False), (None, 5.5, False, False), (None, "UNKNOWN", True, False),
+])
+def test_http_error_probes_share_protojson_presence_and_enum_semantics(message: object, status: object, format_valid: bool, semantic_valid: bool) -> None:
+    """Exercise all format producers and error-identity validation on real HTTP."""
+    class ProtoJSONHandler(_ErrorHandler):
+        status_code = 404
+
+        def response_body(self) -> bytes:
+            return json.dumps({"error": {"code": 404, "message": message, "status": status, "details": [{
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "TASK_NOT_FOUND", "domain": "a2a-protocol.org",
+            }]}}).encode()
+
+    probes = http_json_checks.TestAIP193ErrorFormat()
+    with _running_server(ProtoJSONHandler) as url:
+        client = HttpJsonClient(url)
+        try:
+            for probe in (probes.test_error_object_present, probes.test_present_details_are_typed_objects, probes.test_message_field_is_string):
+                collector = CompatibilityCollector()
+                with _probe_outcome(format_valid):
+                    probe({"http_json": client}, collector)
+                result, = collector.get_results()
+                assert result.passed is format_valid
+                assert not result.skipped and result.level == "MUST"
+            response = client.get_task(id="protojson-presence")
+            assert (not validate_expected_error(response, "http_json", TASK_NOT_FOUND_ERROR)) is semantic_valid
+        finally:
+            client.close()
 
 
 def test_streaming_error_does_not_crash_and_returns_message(error_server: str) -> None:
@@ -202,6 +283,10 @@ def test_requests_use_recommended_media_type(error_server: str, streaming: bool)
 )
 def test_compatibility_probes_validate_present_error_details(transport: str, fields: dict, valid: bool, recommended: bool | None) -> None:
     """The actual probes enforce Any structure on real client responses."""
+    # HTTP uses ProtoJSON repeated-field presence; JSON-RPC explicitly requires
+    # an array when its separate envelope's data member is present.
+    if transport == "http_json" and fields == {"value": None}:
+        valid = True
     error = {"code": -32001 if transport == "jsonrpc" else 404, "message": _ERROR_MESSAGE}
     if "value" in fields:
         error["data" if transport == "jsonrpc" else "details"] = fields["value"]
