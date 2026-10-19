@@ -106,7 +106,7 @@ def validate_error_info(
         )
 
     reason = error_info.get("reason", "")
-    if reason not in A2A_ERROR_REASONS:
+    if not isinstance(reason, str) or reason not in A2A_ERROR_REASONS:
         return ErrorInfoResult(
             valid=False,
             message=f"ErrorInfo reason {reason!r} is not a recognised A2A error reason",

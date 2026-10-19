@@ -18,6 +18,7 @@ from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, SEND_MESSAGE_BINDING, 
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION_HEADER
 from tck.transport.http_json_client import TRANSPORT
+from tck.validators.agent_card import supports_input_media_type
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
 from tests.compatibility.markers import http_json, must
@@ -63,9 +64,6 @@ class TestHttpJsonStatusCodes:
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         response = client.get_task(id=tck_id("nonexistent-status-001"))
-        if response.success:
-            pytest.skip("Server did not return an error for non-existent task")
-
         result = validate_http_json_error(
             {"status_code": response.status_code, "headers": response.headers, "body": response.raw_response},
             "TaskNotFoundError",
@@ -110,9 +108,6 @@ class TestHttpJsonStatusCodes:
             "messageId": tck_id("status-unsupported-003"),
         }
         response = client.send_streaming_message(message=msg)
-        if response.success:
-            pytest.skip("Server did not return an error for unsupported streaming")
-
         result = validate_http_json_error(
             {"status_code": response.status_code, "headers": response.headers, "body": response.raw_response},
             "UnsupportedOperationError",
@@ -131,7 +126,7 @@ class TestHttpJsonStatusCodes:
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         message = get_requirement_by_id("CORE-SEND-003").sample_input["message"]
         media_type = message["parts"][0]["mediaType"]
-        if any(mode in (media_type, "*/*", "application/*") for mode in agent_card.get("defaultInputModes", [])):
+        if supports_input_media_type(agent_card, media_type):
             record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
             pytest.skip("Agent declares support for the media type used by this negative probe")
         response = client.send_message(message=message)
@@ -161,9 +156,6 @@ class TestHttpJsonStatusCodes:
             task_id=tck_id("status-push-005"),
             config={"url": "https://example.com"},
         )
-        if response.success:
-            pytest.skip("Server did not return an error for unsupported push")
-
         result = validate_http_json_error(
             {"status_code": response.status_code, "headers": response.headers, "body": response.raw_response},
             "PushNotificationNotSupportedError",

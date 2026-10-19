@@ -7,9 +7,10 @@ Section 11 of the A2A specification, using the AIP-193 error format.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from tck.requirements.base import ERROR_BINDINGS
+from tck.validators.error_info import validate_error_details, validate_error_info
 
 
 # HTTP status code mappings for A2A errors, derived from central ErrorBinding definitions.
@@ -62,11 +63,21 @@ class AIP193Error:
         if "code" not in error:
             raise ValueError("Error object missing required 'code' field")
 
+        code = error["code"]
+        if not isinstance(code, int) or isinstance(code, bool):
+            raise ValueError("Error code must be an integer")
+        for name in ("status", "message"):
+            if name in error and not isinstance(error[name], str):
+                raise ValueError(f"Error {name} must be a string")
+        details = error.get("details", [])
+        errors = validate_error_details(details)
+        if errors:
+            raise ValueError("; ".join(errors))
         return cls(
-            code=int(error["code"]),
-            status=str(error.get("status", "")),
-            message=str(error.get("message", "")),
-            details=error.get("details", []),
+            code=code,
+            status=error.get("status", ""),
+            message=error.get("message", ""),
+            details=details,
         )
 
 
@@ -89,6 +100,7 @@ class ErrorValidationResult:
     message: str = ""
 
 
+@runtime_checkable
 class HTTPResponse(Protocol):
     """Protocol for HTTP response objects."""
 
@@ -120,95 +132,62 @@ def validate_http_json_error(
     Returns:
         An ErrorValidationResult with validation status and details.
     """
-    # Get the expected status code
     if expected_error not in HTTP_JSON_ERROR_STATUS:
         return ErrorValidationResult(
-            valid=False,
-            expected_status=0,
-            actual_status=None,
-            aip193_error=None,
-            message=f"Unknown error type: {expected_error}. "
-            f"Valid types: {', '.join(sorted(HTTP_JSON_ERROR_STATUS.keys()))}",
+            valid=False, expected_status=0, actual_status=None,
+            message=f"Unknown error type: {expected_error}",
         )
-
     expected_status = HTTP_JSON_ERROR_STATUS[expected_error]
-
-    # Extract status code and body from response
-    try:
-        if isinstance(response, dict):
-            actual_status = response.get("status_code")
-            body = response.get("body")
-        else:
-            actual_status = response.status_code
-            try:
-                body = response.json()
-            except Exception:
-                body = None
-    except Exception as e:
+    if isinstance(response, dict):
+        actual_status, body = response.get("status_code"), response.get("body")
+    elif isinstance(response, HTTPResponse):
+        actual_status, body = response.status_code, response
+    else:
         return ErrorValidationResult(
-            valid=False,
-            expected_status=expected_status,
-            actual_status=None,
-            aip193_error=None,
-            message=f"Failed to extract response data: {e}",
-        )
-
-    # Validate status code is present
-    if actual_status is None:
-        return ErrorValidationResult(
-            valid=False,
-            expected_status=expected_status,
-            actual_status=None,
-            aip193_error=None,
+            valid=False, expected_status=expected_status, actual_status=None,
             message="Response does not contain a status code",
         )
 
-    # Validate status code is an integer
-    if not isinstance(actual_status, int):
-        return ErrorValidationResult(
-            valid=False,
-            expected_status=expected_status,
-            actual_status=None,
-            aip193_error=None,
-            message=f"Status code is not an integer: {type(actual_status).__name__}",
+    result = ErrorValidationResult(False, expected_status, None)
+    if not isinstance(actual_status, int) or isinstance(actual_status, bool):
+        result.message = "Response status code must be an integer"
+        return result
+    result.actual_status = actual_status
+    if actual_status != expected_status:
+        possible_errors = STATUS_TO_ERRORS.get(actual_status, [])
+        result.message = (
+            f"Status code mismatch: expected {expected_error} ({expected_status}), "
+            f"got {actual_status} (could be: {', '.join(possible_errors)})"
         )
+        return result
 
-    # Parse AIP-193 error if body is a dict with 'error' key
-    aip193_error = None
-    if isinstance(body, dict) and "error" in body:
-        try:
-            aip193_error = AIP193Error.from_dict(body)
-        except ValueError as e:
-            return ErrorValidationResult(
-                valid=False,
-                expected_status=expected_status,
-                actual_status=actual_status,
-                aip193_error=None,
-                message=f"Invalid AIP-193 error: {e}",
-            )
+    try:
+        parsed = _parse_error_body(body)
+    except ValueError as error:
+        result.message = f"Invalid AIP-193 error: {error}"
+        return result
+    result.aip193_error = parsed
+    if parsed.code != actual_status:
+        result.message = "AIP-193 error.code must equal the HTTP status code"
+        return result
+    reason = ERROR_BINDINGS[expected_error].reason
+    if reason is not None:
+        identity = validate_error_info(parsed.details, expected_reason=reason)
+        if not identity.valid:
+            result.message = identity.message
+            return result
+    result.valid = True
+    result.message = f"HTTP error matches: {expected_error} ({expected_status})"
+    return result
 
-    # Compare status codes
-    if actual_status == expected_status:
-        return ErrorValidationResult(
-            valid=True,
-            expected_status=expected_status,
-            actual_status=actual_status,
-            aip193_error=aip193_error,
-            message=f"Status code matches: {expected_error} ({expected_status})",
-        )
 
-    # Status code mismatch
-    possible_errors = STATUS_TO_ERRORS.get(actual_status, [])
-    actual_error_info = f" (could be: {', '.join(possible_errors)})" if possible_errors else ""
-
-    return ErrorValidationResult(
-        valid=False,
-        expected_status=expected_status,
-        actual_status=actual_status,
-        aip193_error=aip193_error,
-        message=f"Status code mismatch: expected {expected_error} ({expected_status}), "
-        f"got {actual_status}{actual_error_info}",
-    )
+def _parse_error_body(body: Any) -> AIP193Error:
+    """Normalize direct HTTP responses and the actual compatibility-probe wrapper."""
+    if isinstance(body, HTTPResponse):
+        body = body.json()
+    if not isinstance(body, dict):
+        raise ValueError("Response body must be an object")
+    return AIP193Error.from_dict(body)
 
 
 def _get_content_type(headers: dict[str, str]) -> str | None:

@@ -10,6 +10,7 @@ from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,
     RequirementSpec,
+    describe_error_mappings,
 )
 from tck.requirements.tags import (
     AIP193,
@@ -127,17 +128,14 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
         section="5.4",
         title="A2A errors map to correct HTTP status codes",
         level=RequirementLevel.MUST,
-        description=(
-            "Each A2A error type MUST map to the HTTP status code specified "
-            "in the error code mappings table (e.g., TaskNotFoundError to "
-            "404, ContentTypeNotSupportedError to 400)."
-        ),
+        description=('Each A2A error type MUST map to its specified HTTP status code: ' + describe_error_mappings("http_json") + "."),
         expected_behavior="HTTP status code matches the spec-defined mapping for each error",
         spec_url=f"{SPEC_BASE}54-error-code-mappings",
         tags=[REST, ERROR, STATUS, MAPPING],
     ),
     RequirementSpec(
         id="HTTP_JSON-FMT-001",
+        # Section 11.4 categorically defines response bodies by the shared schema.
         section="11.4",
         title="Request and response JSON follows the protobuf schema",
         level=RequirementLevel.MUST,

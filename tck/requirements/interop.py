@@ -25,12 +25,14 @@ from tck.requirements.tags import (
 INTEROP_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
         id="BIND-CUSTOM-001",
-        section="12.7",
-        title="Custom bindings use URI identifiers in the Agent Card",
-        level=RequirementLevel.MUST,
-        description="Custom bindings declared in the Agent Card MUST use a URI to identify the binding.",
+        section="5.8",
+        title="Custom bindings should use URI identifiers in the Agent Card",
+        level=RequirementLevel.SHOULD,
+        # Section 12.7 requires declaration and points back to 5.8, which twice
+        # states SHOULD for URI choice. Declaration is covered by CARD-PROTO.
+        description="Custom bindings declared in the Agent Card SHOULD use a URI to identify the binding.",
         expected_behavior="Every non-standard protocolBinding is a URI",
-        spec_url=f"{SPEC_BASE}127-agent-card-declaration",
+        spec_url=f"{SPEC_BASE}58-custom-binding-identification",
         tags=[INTEROP, DECLARATION],
     ),
     RequirementSpec(

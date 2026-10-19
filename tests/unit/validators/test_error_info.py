@@ -37,3 +37,11 @@ def test_well_known_recommendation_is_not_limited_to_error_info(name: str) -> No
 def test_custom_or_absent_details_do_not_satisfy_recommendation(details: object) -> None:
     """Keep valid custom details distinct from the well-known recommendation."""
     assert not uses_well_known_error_details(details)
+
+
+@pytest.mark.parametrize("reason", [None, [], {}, 12, True, "", "UNKNOWN"])
+def test_malformed_error_info_reason_is_a_validation_failure(reason: object) -> None:
+    """Untrusted JSON types cannot crash a status/error-identity probe."""
+    result = validate_error_info([{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "domain": "a2a-protocol.org", "reason": reason}])
+    assert not result.valid
+    assert "reason" in result.message

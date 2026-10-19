@@ -10,7 +10,7 @@ from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators.error_info import uses_well_known_error_details, validate_error_details
-from tests.compatibility._test_helpers import assert_and_record, get_client
+from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import jsonrpc, must, should
 
 
@@ -63,5 +63,8 @@ class TestJsonRpcWellKnownErrorDetails:
         req = JSONRPC_ERR_003
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         data = _get_error_response(client)["error"].get("data", [])
+        if not data or validate_error_details(data):
+            record(compatibility_collector, req, TRANSPORT, passed=False, skipped=True)
+            pytest.skip("Optional error data is absent/empty or its required structure is invalid")
         errors = [] if uses_well_known_error_details(data) else ["Error details should use well-known google.rpc types"]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)

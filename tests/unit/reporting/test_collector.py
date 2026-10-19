@@ -50,3 +50,11 @@ class TestRecordCount:
         assert collector.record_count == 1
         collector.reset()
         assert collector.record_count == 0
+
+
+def test_empty_status_summary_is_not_a_vacuous_pass() -> None:
+    """A caller must supply actual results rather than report an empty group as PASS."""
+    from tck.reporting.collector import summarize_status
+
+    with pytest.raises(ValueError, match="empty"):
+        summarize_status([])

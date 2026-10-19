@@ -23,10 +23,15 @@ import httpx
 import pytest
 
 from tck.reporting.collector import CompatibilityCollector
+from tck.requirements.base import VERSION_NOT_SUPPORTED_ERROR
+from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import HttpJsonClient, _extract_error
 from tck.transport.jsonrpc_client import JsonRpcClient
+from tck.validators.error_binding import validate_expected_error
+from tck.validators.http_json.error_validator import validate_http_json_error
 from tck.validators.json_schema import JSONSchemaValidator
 from tests.compatibility.core_operations import test_transport_behavior as transport_checks
+from tests.compatibility.http_json import test_http_status as http_status_checks
 from tests.compatibility.http_json import test_problem_details as http_json_checks
 from tests.compatibility.jsonrpc import test_error_info as jsonrpc_checks
 
@@ -34,6 +39,17 @@ from tests.compatibility.jsonrpc import test_error_info as jsonrpc_checks
 _ERROR_MESSAGE = "task not found"
 _ERROR_BODY = json.dumps({"error": {"code": 404, "message": _ERROR_MESSAGE}}).encode()
 _STATUS_BAD_REQUEST = 400
+
+
+@contextmanager
+def _probe_outcome(expected: bool | None) -> Iterator[None]:
+    """Do not let an unexpected probe skip silently skip its regression test."""
+    expectation = pytest.raises(pytest.skip.Exception) if expected is None else nullcontext() if expected else pytest.raises(AssertionError)
+    try:
+        with expectation:
+            yield
+    except pytest.skip.Exception as error:
+        pytest.fail(f"Unexpected compatibility-probe skip: {error}")
 
 
 class _ErrorHandler(BaseHTTPRequestHandler):
@@ -126,6 +142,43 @@ def test_extract_error_on_read_streamed_response(error_server: str) -> None:
     assert _ERROR_MESSAGE in result
 
 
+@pytest.mark.parametrize(
+    ("reason", "domain", "valid"),
+    [("VERSION_NOT_SUPPORTED", "a2a-protocol.org", True),
+     ([], "a2a-protocol.org", False),
+     ("UNSUPPORTED_OPERATION", "a2a-protocol.org", False),
+     ("VERSION_NOT_SUPPORTED", "other.example", False),
+     (None, None, False)],
+)
+def test_http_error_identity_through_actual_client(reason: object, domain: str | None, valid: bool) -> None:
+    """A shared HTTP400 is insufficient, including the real raw-response wrapper."""
+    error = {"code": 400, "message": "identity control"}
+    if reason is not None:
+        error["details"] = [{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": reason, "domain": domain}]
+
+    class IdentityHandler(_ErrorHandler):
+        def response_body(self) -> bytes:
+            return json.dumps({"error": error}).encode()
+
+    with _running_server(IdentityHandler) as url:
+        client = HttpJsonClient(url)
+        try:
+            response = client.get_task(id="identity-control")
+            assert not response.success
+            assert validate_http_json_error(response.raw_response, "VersionNotSupportedError").valid is valid
+            wrapped = {"status_code": response.status_code, "body": response.raw_response}
+            assert validate_http_json_error(wrapped, "VersionNotSupportedError").valid is valid
+            assert (not validate_expected_error(response, "http_json", VERSION_NOT_SUPPORTED_ERROR)) is valid
+            assert validate_expected_error(response, "smtp", VERSION_NOT_SUPPORTED_ERROR) == ["Unknown transport: smtp"]
+            collector = CompatibilityCollector()
+            with _probe_outcome(valid):
+                http_status_checks.TestHttpJsonStatusCodes().test_version_not_supported_returns_400({"http_json": client}, collector)
+            result, = collector.get_results()
+            assert result.passed is valid and not result.skipped
+        finally:
+            client.close()
+
+
 @pytest.mark.parametrize("streaming", [False, True])
 def test_requests_use_recommended_media_type(error_server: str, streaming: bool) -> None:
     """Both real HTTP request paths transmit the released binding's media type."""
@@ -143,11 +196,11 @@ def test_requests_use_recommended_media_type(error_server: str, streaming: bool)
 @pytest.mark.parametrize("transport", ["jsonrpc", "http_json"])
 @pytest.mark.parametrize(
     ("fields", "valid", "recommended"),
-    [({}, True, False), ({"value": []}, True, False), ({"value": [{"@type": "example.org/Custom"}]}, True, False),
+    [({}, True, None), ({"value": []}, True, None), ({"value": [{"@type": "example.org/Custom"}]}, True, False),
      ({"value": [{"@type": "type.googleapis.com/google.rpc.BadRequest"}]}, True, True),
-     ({"value": None}, False, False), ({"value": {}}, False, False), ({"value": [{}]}, False, False)],
+     ({"value": None}, False, None), ({"value": {}}, False, None), ({"value": [{}]}, False, None)],
 )
-def test_compatibility_probes_validate_present_error_details(transport: str, fields: dict, valid: bool, recommended: bool) -> None:
+def test_compatibility_probes_validate_present_error_details(transport: str, fields: dict, valid: bool, recommended: bool | None) -> None:
     """The actual probes enforce Any structure on real client responses."""
     error = {"code": -32001 if transport == "jsonrpc" else 404, "message": _ERROR_MESSAGE}
     if "value" in fields:
@@ -171,17 +224,18 @@ def test_compatibility_probes_validate_present_error_details(transport: str, fie
                 if transport == "jsonrpc"
                 else http_json_checks.TestAIP193ErrorFormat().test_present_details_are_typed_objects
             )
-            with nullcontext() if valid else pytest.raises(AssertionError):
+            with _probe_outcome(valid):
                 check({transport: client}, collector)
             result, = collector.get_results()
             assert result.passed is valid
             assert result.level == "MUST"
             if transport == "jsonrpc":
                 collector = CompatibilityCollector()
-                with nullcontext() if recommended else pytest.raises(AssertionError):
+                with _probe_outcome(recommended):
                     jsonrpc_checks.TestJsonRpcWellKnownErrorDetails().test_error_data_uses_well_known_type({transport: client}, collector)
                 result, = collector.get_results()
-                assert result.passed is recommended
+                assert result.passed is (recommended is True)
+                assert result.skipped is (recommended is None)
                 assert result.level == "SHOULD"
         finally:
             client.close()
@@ -199,13 +253,13 @@ def test_compatibility_media_type_probe_records_recommendation(media_type: str) 
         collector = CompatibilityCollector()
         try:
             response = client.send_message(message={"messageId": "ct-probe", "parts": [{"text": "check"}], "role": "ROLE_USER"})
-            with nullcontext() if valid else pytest.raises(AssertionError):
+            with _probe_outcome(valid):
                 transport_checks.TestRestFormat().test_response_content_type(response, collector)
             result, = collector.get_results()
             assert result.passed is valid
             assert result.level == "SHOULD"
             collector = CompatibilityCollector()
-            with nullcontext() if valid else pytest.raises(AssertionError):
+            with _probe_outcome(valid):
                 http_json_checks.TestHttpJsonErrorMediaType().test_error_content_type({"http_json": client}, collector)
             result, = collector.get_results()
             assert result.passed is valid
@@ -231,7 +285,7 @@ def test_compatibility_schema_probe_remains_mandatory(valid: bool) -> None:
         collector = CompatibilityCollector()
         try:
             response = client.send_message(message={"messageId": "schema-probe", "parts": [{"text": "check"}], "role": "ROLE_USER"})
-            with nullcontext() if valid else pytest.raises(AssertionError):
+            with _probe_outcome(valid):
                 transport_checks.TestRestFormat().test_response_validates_against_schema(response, {"http_json": validator}, collector)
             result, = collector.get_results()
             assert result.passed is valid
@@ -253,3 +307,83 @@ def test_probe_level_filters_match_the_recorded_requirements(test_class: type, m
     """Selecting MUST or SHOULD runs exactly the matching binding probes."""
     marks = [*getattr(test_class, "pytestmark", []), *getattr(getattr(test_class, method), "pytestmark", [])]
     assert {mark.name for mark in marks} & {"must", "should", "may"} == {level}
+
+
+@pytest.mark.parametrize("card,media_type,skip", [
+    ({"defaultInputModes": [], "skills": [{"inputModes": ["application/x-tck-unsupported"]}]}, "application/x-tck-unsupported", True),
+    ({"defaultInputModes": ["APPLICATION/X-TCK-UNSUPPORTED; charset=utf-8"]}, "application/x-tck-unsupported", True),
+    ({"defaultInputModes": ["application/*; version=1"]}, "application/x-tck-unsupported", True),
+    ({"defaultInputModes": ["*/*"]}, "image/x-tck-unsupported", True),
+    ({"skills": [{"inputModes": ["IMAGE/*"]}]}, "image/x-tck-unsupported", True),
+    ({"defaultInputModes": ["application/*"]}, "image/x-tck-unsupported", False),
+    ({"defaultInputModes": ["text/plain"]}, "image/x-tck-unsupported", False),
+])
+def test_unsupported_media_precondition_respects_all_advertised_modes(card: dict, media_type: str, skip: bool, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The actual negative probe sends only a definitely unadvertised part type."""
+    requirement = get_requirement_by_id("CORE-SEND-003")
+    message = {**requirement.sample_input["message"], "parts": [{**requirement.sample_input["message"]["parts"][0], "mediaType": media_type}]}
+    monkeypatch.setattr(requirement, "sample_input", {"message": message})
+    received = []
+
+    class UnsupportedMediaHandler(_ErrorHandler):
+        def response_body(self) -> bytes:
+            received.append(json.loads(self._request_body))
+            return json.dumps({"error": {"code": 400, "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "reason": "CONTENT_TYPE_NOT_SUPPORTED", "domain": "a2a-protocol.org"}]}}).encode()
+
+    with _running_server(UnsupportedMediaHandler) as url:
+        client = HttpJsonClient(url)
+        collector = CompatibilityCollector()
+        try:
+            with _probe_outcome(None if skip else True):
+                http_status_checks.TestHttpJsonStatusCodes().test_content_type_not_supported_returns_400({"http_json": client}, card, collector)
+            result, = collector.get_results()
+            assert result.skipped is skip
+            assert result.passed is (not skip)
+            assert received == ([] if skip else [{"message": message}])
+        finally:
+            client.close()
+
+
+@pytest.mark.parametrize("expected", [True, False])
+def test_unexpected_compatibility_skip_is_not_a_green_unit_test(expected: bool) -> None:
+    """Exercise the unit harness guard using actual pytest skip/fail signals."""
+    with pytest.raises(pytest.fail.Exception, match="Unexpected compatibility-probe skip"), _probe_outcome(expected):
+        pytest.skip("unexpected control")
+
+
+def test_http_missing_task_success_is_a_failure_not_a_skip() -> None:
+    """A mandatory missing-resource error is checked even if a faulty server returns200."""
+    class SuccessHandler(_ErrorHandler):
+        status_code = 200
+
+        def response_body(self) -> bytes:
+            return json.dumps({"id": "invented-task"}).encode()
+
+    with _running_server(SuccessHandler) as url:
+        client = HttpJsonClient(url)
+        collector = CompatibilityCollector()
+        try:
+            with _probe_outcome(False):
+                http_status_checks.TestHttpJsonStatusCodes().test_task_not_found_returns_404({"http_json": client}, collector)
+            result, = collector.get_results()
+            assert not result.passed and not result.skipped
+        finally:
+            client.close()
+
+
+def test_invalid_json_error_body_is_reported_without_crashing() -> None:
+    """The actual HTTP response decoder reports malformed untrusted JSON as a failure."""
+    class InvalidJsonHandler(_ErrorHandler):
+        def response_body(self) -> bytes:
+            return b"{"
+
+    with _running_server(InvalidJsonHandler) as url:
+        client = HttpJsonClient(url)
+        try:
+            response = client.get_task(id="invalid-json-control")
+            result = validate_http_json_error(response.raw_response, "VersionNotSupportedError")
+            assert not result.valid
+            assert "Invalid AIP-193" in result.message
+        finally:
+            client.close()

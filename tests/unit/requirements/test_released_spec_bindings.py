@@ -38,7 +38,10 @@ def test_all_error_bindings_match_released_spec(row: dict[str, str]) -> None:
     assert binding.jsonrpc_code == int(row["jsonrpc"])
     assert binding.grpc_status == row["grpc"]
     assert binding.http_status == int(row["http"])
-    response = {"status_code": int(row["http"]), "body": {"error": {"code": int(row["http"])}}}
+    response = {"status_code": int(row["http"]), "body": {"error": {
+        "code": int(row["http"]), "message": "conformant error",
+        "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": binding.reason, "domain": "a2a-protocol.org"}],
+    }}}
     assert validate_http_json_error(response, row["name"]).valid
 
 
@@ -65,3 +68,22 @@ def test_requirement_anchors_match_the_vendored_spec() -> None:
         assert anchor in anchors, requirement.id
         section = re.match(r"(\d+(?:\.\d+)*)\.?\s", anchors[anchor])
         assert section is not None and section.group(1) == requirement.section, requirement.id
+
+
+@pytest.mark.parametrize("transport,requirement_id,column", [
+    ("grpc", "GRPC-ERR-002", "grpc"), ("jsonrpc", "JSONRPC-SSE-002", "jsonrpc"),
+    ("http_json", "HTTP_JSON-STATUS-001", "http"),
+])
+def test_reported_error_mapping_prose_tracks_the_released_table(transport: str, requirement_id: str, column: str) -> None:
+    """The human report and its executable validators must describe the same mapping."""
+    description = get_requirement_by_id(requirement_id).description
+    for row in _ROWS:
+        assert f"{row['name']}={row[column]}" in description, (transport, row["name"])
+
+
+def test_mapping_description_rejects_an_unknown_transport() -> None:
+    """A bad report producer cannot silently emit an empty mapping table."""
+    from tck.requirements.base import describe_error_mappings
+
+    with pytest.raises(ValueError, match="No smtp mapping"):
+        describe_error_mappings("smtp")

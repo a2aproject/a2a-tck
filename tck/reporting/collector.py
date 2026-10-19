@@ -24,6 +24,15 @@ class TestResult:
     test_id: str = ""
 
 
+def summarize_status(results: list[TestResult]) -> Literal["PASS", "FAIL", "SKIPPED"]:
+    """A failure dominates any later pass or skip for the same obligation."""
+    if not results:
+        raise ValueError("Cannot summarize an empty set of test results")
+    if any(not result.passed and not result.skipped for result in results):
+        return "FAIL"
+    return "SKIPPED" if all(result.skipped for result in results) else "PASS"
+
+
 class CompatibilityCollector:
     """Collects and aggregates compatibility test results.
 
@@ -87,15 +96,8 @@ class CompatibilityCollector:
 
         out: dict[str, dict[str, str]] = {}
         for req_id, results in grouped.items():
-            any_failed = any(not r.passed and not r.skipped for r in results)
-            all_skipped = all(r.skipped for r in results)
             transports = sorted({r.transport for r in results})
-            if any_failed:
-                status = "FAIL"
-            elif all_skipped:
-                status = "SKIPPED"
-            else:
-                status = "PASS"
+            status = summarize_status(results)
             out[req_id] = {
                 "level": results[0].level,
                 "status": status,

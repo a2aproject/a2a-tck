@@ -393,3 +393,15 @@ ERROR_BINDINGS: dict[str, ErrorBinding] = {
 
 # Set of A2A error reasons (excludes standard JSON-RPC errors which have no reason).
 A2A_ERROR_REASONS: set[str] = {e.reason for e in ERROR_BINDINGS.values() if e.reason is not None}
+
+
+def describe_error_mappings(transport: str) -> str:
+    """Render the canonical A2A error table for requirement descriptions."""
+    mappings = []
+    for binding in ERROR_BINDINGS.values():
+        if binding.reason is not None:
+            code = binding.expected_code(transport)
+            if code is None or code == "":
+                raise ValueError(f"No {transport} mapping for {binding.name}")
+            mappings.append(f"{binding.name}={code}")
+    return ", ".join(mappings)

@@ -14,9 +14,10 @@ from typing import TYPE_CHECKING, Any
 import grpc
 import pytest
 
-from tck.requirements.base import VERSION_NOT_SUPPORTED_ERROR, tck_id
+from tck.requirements.base import ERROR_BINDINGS, VERSION_NOT_SUPPORTED_ERROR, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
+from tck.validators.error_binding import validate_expected_error
 from tck.validators.grpc.error_validator import (
     extract_error_info,
     validate_grpc_error,
@@ -52,7 +53,7 @@ _CONNECTIVITY_CODES = frozenset({
 def _get_rpc_error(response: Any) -> grpc.RpcError:
     """Extract the RpcError from a failed transport response.
 
-    Skips the test when the failure is a connectivity issue (UNAVAILABLE,
+    Fails the test when the failure is a connectivity issue (UNAVAILABLE,
     DEADLINE_EXCEEDED) rather than a server-side A2A error.
     """
     rpc_error = response.raw_response
@@ -87,41 +88,20 @@ class TestGrpcStatusCodes:
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         response = client.get_task(id=tck_id("nonexistent-grpc-status-001"))
-        if response.success:
-            pytest.skip("Server did not return an error for non-existent task")
-
-        rpc_error = _get_rpc_error(response)
-        result = validate_grpc_error(rpc_error, "TaskNotFoundError")
-        errors = [] if result.valid else [result.message]
+        errors = validate_expected_error(response, TRANSPORT, ERROR_BINDINGS["TaskNotFoundError"])
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_task_not_cancelable_returns_failed_precondition(
+    def test_cancel_missing_task_returns_not_found(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """TaskNotCancelableError: CancelTask on nonexistent returns NOT_FOUND or FAILED_PRECONDITION."""
+        """CancelTask on a non-existent task must return TaskNotFoundError."""
         req = GRPC_ERR_002
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         response = client.cancel_task(id=tck_id("nonexistent-grpc-status-002"))
-        if response.success:
-            pytest.skip("Server did not return an error for CancelTask")
-
-        rpc_error = _get_rpc_error(response)
-        actual_status = rpc_error.code().name
-        # Server may return NOT_FOUND (TaskNotFoundError) instead of
-        # FAILED_PRECONDITION (TaskNotCancelableError) since the task doesn't exist.
-        valid = actual_status in ("NOT_FOUND", "FAILED_PRECONDITION")
-        errors = (
-            []
-            if valid
-            else [
-                f"CancelTask on non-existent task should return "
-                f"NOT_FOUND (TaskNotFoundError) or FAILED_PRECONDITION "
-                f"(TaskNotCancelableError), got {actual_status}"
-            ]
-        )
+        errors = validate_expected_error(response, TRANSPORT, ERROR_BINDINGS["TaskNotFoundError"])
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_unsupported_operation_returns_failed_precondition(
@@ -145,12 +125,7 @@ class TestGrpcStatusCodes:
             "messageId": tck_id("grpc-status-unsupported-003"),
         }
         response = client.send_streaming_message(message=msg)
-        if response.success:
-            pytest.skip("Server did not return an error for unsupported streaming")
-
-        rpc_error = _get_rpc_error(response)
-        result = validate_grpc_error(rpc_error, "UnsupportedOperationError")
-        errors = [] if result.valid else [result.message]
+        errors = validate_expected_error(response, TRANSPORT, ERROR_BINDINGS["UnsupportedOperationError"])
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_push_not_supported_returns_failed_precondition(
@@ -172,12 +147,7 @@ class TestGrpcStatusCodes:
             task_id=tck_id("grpc-status-push-004"),
             config={"url": "https://example.com"},
         )
-        if response.success:
-            pytest.skip("Server did not return an error for unsupported push")
-
-        rpc_error = _get_rpc_error(response)
-        result = validate_grpc_error(rpc_error, "PushNotificationNotSupportedError")
-        errors = [] if result.valid else [result.message]
+        errors = validate_expected_error(response, TRANSPORT, ERROR_BINDINGS["PushNotificationNotSupportedError"])
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_version_not_supported_returns_failed_precondition(
