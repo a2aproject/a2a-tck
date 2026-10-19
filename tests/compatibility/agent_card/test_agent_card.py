@@ -14,7 +14,9 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import STANDARD_BINDINGS
 from tck.requirements.registry import get_requirement_by_id
+from tck.validators.agent_card import is_protocol_binding
 from tests.compatibility.markers import core, must
 
 
@@ -32,6 +34,7 @@ CARD_STRUCT_001 = get_requirement_by_id("CARD-STRUCT-001")
 CARD_PROTO_001 = get_requirement_by_id("CARD-PROTO-001")
 CARD_PROTO_002 = get_requirement_by_id("CARD-PROTO-002")
 BIND_FIELD_001 = get_requirement_by_id("BIND-FIELD-001")
+BIND_CUSTOM_001 = get_requirement_by_id("BIND-CUSTOM-001")
 
 
 # ---------------------------------------------------------------------------
@@ -49,8 +52,6 @@ _REQUIRED_FIELDS = {
     "defaultInputModes",
     "defaultOutputModes",
 }
-
-_KNOWN_BINDINGS = {"JSONRPC", "GRPC", "HTTP+JSON"}
 
 
 def _fail_msg(req: RequirementSpec, detail: str) -> str:
@@ -143,6 +144,21 @@ class TestAgentCardStructure:
 class TestAgentCardProtocol:
     """CARD-PROTO-001 / CARD-PROTO-002: Protocol declaration."""
 
+    def test_custom_binding_identifiers_are_uris(
+        self,
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """BIND-CUSTOM-001: Custom bindings use URI identifiers."""
+        req = BIND_CUSTOM_001
+        errors = [
+            f"Interface [{index}] has an invalid protocolBinding: {interface.get('protocolBinding')!r}"
+            for index, interface in enumerate(agent_card.get("supportedInterfaces", []))
+            if not is_protocol_binding(interface.get("protocolBinding"))
+        ]
+        _record(collector=compatibility_collector, req=req, passed=not errors, errors=errors)
+        assert not errors, _fail_msg(req, "; ".join(errors))
+
     def test_supported_interfaces_non_empty(
         self,
         agent_card: dict[str, Any],
@@ -194,7 +210,7 @@ class TestBindingFieldDeclaration:
         req = BIND_FIELD_001
         interfaces = agent_card.get("supportedInterfaces", [])
         bindings = {iface.get("protocolBinding") for iface in interfaces}
-        unknown = bindings - _KNOWN_BINDINGS
+        unknown = bindings - STANDARD_BINDINGS
         if unknown:
             pytest.skip(
                 f"Agent card declares unknown protocol bindings: {unknown}"

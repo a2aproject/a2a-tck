@@ -60,6 +60,10 @@ HTTP_GET = "GET"
 HTTP_POST = "POST"
 HTTP_DELETE = "DELETE"
 
+# Preferred media type for the HTTP+JSON binding (spec Section 11.1).
+HTTP_JSON_CONTENT_TYPE = "application/a2a+json"
+STANDARD_BINDINGS = frozenset({"JSONRPC", "GRPC", "HTTP+JSON"})
+
 # REST URL path constants.
 PATH_MESSAGE_SEND = "/message:send"
 PATH_MESSAGE_STREAM = "/message:stream"
@@ -269,7 +273,7 @@ TASK_NOT_FOUND_ERROR = ErrorBinding(
 TASK_NOT_CANCELABLE_ERROR = ErrorBinding(
     name="TaskNotCancelableError",
     jsonrpc_code=-32002,
-    http_status=409,
+    http_status=400,
     grpc_status="FAILED_PRECONDITION",
     reason="TASK_NOT_CANCELABLE",
 )
@@ -278,7 +282,7 @@ PUSH_NOTIFICATION_NOT_SUPPORTED_ERROR = ErrorBinding(
     name="PushNotificationNotSupportedError",
     jsonrpc_code=-32003,
     http_status=400,
-    grpc_status="UNIMPLEMENTED",
+    grpc_status="FAILED_PRECONDITION",
     reason="PUSH_NOTIFICATION_NOT_SUPPORTED",
 )
 
@@ -286,14 +290,14 @@ UNSUPPORTED_OPERATION_ERROR = ErrorBinding(
     name="UnsupportedOperationError",
     jsonrpc_code=-32004,
     http_status=400,
-    grpc_status="UNIMPLEMENTED",
+    grpc_status="FAILED_PRECONDITION",
     reason="UNSUPPORTED_OPERATION",
 )
 
 CONTENT_TYPE_NOT_SUPPORTED_ERROR = ErrorBinding(
     name="ContentTypeNotSupportedError",
     jsonrpc_code=-32005,
-    http_status=415,
+    http_status=400,
     grpc_status="INVALID_ARGUMENT",
     reason="CONTENT_TYPE_NOT_SUPPORTED",
 )
@@ -301,7 +305,7 @@ CONTENT_TYPE_NOT_SUPPORTED_ERROR = ErrorBinding(
 INVALID_AGENT_RESPONSE_ERROR = ErrorBinding(
     name="InvalidAgentResponseError",
     jsonrpc_code=-32006,
-    http_status=502,
+    http_status=500,
     grpc_status="INTERNAL",
     reason="INVALID_AGENT_RESPONSE",
 )
@@ -326,7 +330,7 @@ VERSION_NOT_SUPPORTED_ERROR = ErrorBinding(
     name="VersionNotSupportedError",
     jsonrpc_code=-32009,
     http_status=400,
-    grpc_status="UNIMPLEMENTED",
+    grpc_status="FAILED_PRECONDITION",
     reason="VERSION_NOT_SUPPORTED",
 )
 

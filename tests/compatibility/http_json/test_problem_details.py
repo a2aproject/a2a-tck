@@ -13,13 +13,14 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import TASK_NOT_FOUND_ERROR, tck_id
+from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, TASK_NOT_FOUND_ERROR, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
-from tck.validators.error_info import find_error_info, validate_error_info
+from tck.validators.error_info import find_error_info, validate_error_details, validate_error_info
+from tck.validators.http_json.content_type import uses_a2a_media_type
 from tck.validators.http_json.error_validator import AIP193Error
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
-from tests.compatibility.markers import http_json, must
+from tests.compatibility.markers import http_json, must, should
 
 
 if TYPE_CHECKING:
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 
 HTTP_JSON_ERR_001 = get_requirement_by_id("HTTP_JSON-ERR-001")
 HTTP_JSON_ERR_002 = get_requirement_by_id("HTTP_JSON-ERR-002")
+HTTP_JSON_SVC_001 = get_requirement_by_id("HTTP_JSON-SVC-001")
 
 
 # ---------------------------------------------------------------------------
@@ -71,6 +73,24 @@ def _get_error_body(response: Any) -> dict[str, Any] | None:
     return body
 
 
+@should
+@http_json
+class TestHttpJsonErrorMediaType:
+    """HTTP_JSON-SVC-001: error responses use the recommended media type."""
+
+    def test_error_content_type(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """Check the media type independently of mandatory error structure."""
+        req = HTTP_JSON_SVC_001
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
+        response = _get_error_response(client)
+        errors = [] if uses_a2a_media_type(response.headers) else [f"Error Content-Type should be {HTTP_JSON_CONTENT_TYPE}"]
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
+
+
 # ---------------------------------------------------------------------------
 # AIP-193 error format tests (HTTP_JSON-ERR-001)
 # ---------------------------------------------------------------------------
@@ -80,40 +100,6 @@ def _get_error_body(response: Any) -> dict[str, Any] | None:
 @http_json
 class TestAIP193ErrorFormat:
     """HTTP_JSON-ERR-001: Error responses use AIP-193 format."""
-
-    def test_error_content_type(
-        self,
-        transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
-    ) -> None:
-        """Error response has Content-Type: application/json."""
-        req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        response = _get_error_response(client)
-
-        headers = response.headers or {}
-        ct = ""
-        for key, value in headers.items():
-            if key.lower() == "content-type":
-                ct = value
-                break
-
-        valid = "application/json" in ct.lower()
-        errors = (
-            []
-            if valid
-            else [
-                f"Error Content-Type must be application/json, got: {ct!r}"
-            ]
-        )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, TRANSPORT, errors[0])
 
     def test_error_object_present(
         self,
@@ -132,6 +118,18 @@ class TestAIP193ErrorFormat:
         except ValueError as exc:
             errors.append(str(exc))
 
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
+
+    def test_present_details_are_typed_objects(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        compatibility_collector: Any,
+    ) -> None:
+        """Require a type identifier on every present error detail."""
+        req = HTTP_JSON_ERR_001
+        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
+        error = _get_error_body(_get_error_response(client))["error"]
+        errors = validate_error_details(error["details"]) if "details" in error else []
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_code_field_matches_http_status(

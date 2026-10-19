@@ -17,6 +17,7 @@ from tck.requirements.tags import (
     AGENT_CARD,
     AUTH,
     CACHING,
+    CLIENT,
     DISCOVERY,
     ERROR,
     EXTENDED,
@@ -75,6 +76,21 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         tags=[AGENT_CARD, PROTOCOL, INTERFACE],
     ),
     # --- AgentCard Required Fields (Section 4.4.1) ---
+    RequirementSpec(
+        id="CARD-CLIENT-001",
+        section="8.3.2",
+        title="Clients use the selected interface tenant in every request",
+        level=RequirementLevel.MUST,
+        description=(
+            "Clients MUST set the tenant field in every request to exactly "
+            "the selected AgentInterface tenant, omitting it when unset. "
+            "This client behavior requires observing the client's outbound requests; "
+            "it cannot be established by this server-only conformance probe."
+        ),
+        expected_behavior="Every client request carries the selected interface's exact tenant",
+        spec_url=f"{SPEC_BASE}832-client-protocol-selection",
+        tags=[AGENT_CARD, CLIENT, INTERFACE, NOT_AUTOMATABLE],
+    ),
     RequirementSpec(
         id="CARD-STRUCT-001",
         section="4.4.1",
