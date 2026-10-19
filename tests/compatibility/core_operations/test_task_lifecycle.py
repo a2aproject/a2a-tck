@@ -275,12 +275,7 @@ class TestMultiTurn:
         }
         response = client.send_message(message=msg)
 
-        errors: list[str] = []
-        if response.success:
-            errors.append(
-                "SendMessage to a terminal task should return an error, "
-                "but succeeded"
-            )
+        errors = validate_expected_error(response, transport, expected_error_of(req))
 
         assert_and_record(compatibility_collector, req, transport, errors)
 
