@@ -75,12 +75,12 @@ class TestHttpJsonStatusCodes:
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_task_not_cancelable_returns_409(
+    def test_task_not_cancelable_returns_400(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """TaskNotCancelableError: POST /tasks/{id}:cancel on non-existent returns 409 (or 404)."""
+        """TaskNotCancelableError: POST /tasks/{id}:cancel on non-existent returns 400 (or 404)."""
         req = HTTP_JSON_STATUS_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
@@ -89,15 +89,15 @@ class TestHttpJsonStatusCodes:
             pytest.skip("Server did not return an error for CancelTask")
 
         status = response.status_code
-        # Server may return 404 (TaskNotFoundError) instead of 409
+        # Server may return 404 (TaskNotFoundError) instead of 400
         # (TaskNotCancelableError) since the task doesn't exist.
-        valid = status in (404, 409)
+        valid = status in (404, 400)
         errors = (
             []
             if valid
             else [
                 f"CancelTask on non-existent task should return "
-                f"404 (TaskNotFoundError) or 409 (TaskNotCancelableError), "
+                f"404 (TaskNotFoundError) or 400 (TaskNotCancelableError), "
                 f"got {status}"
             ]
         )
@@ -134,12 +134,12 @@ class TestHttpJsonStatusCodes:
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_content_type_not_supported_returns_415(
+    def test_content_type_not_supported_returns_400(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """ContentTypeNotSupportedError: wrong Content-Type returns 415."""
+        """ContentTypeNotSupportedError: wrong Content-Type returns 400."""
         req = HTTP_JSON_STATUS_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 

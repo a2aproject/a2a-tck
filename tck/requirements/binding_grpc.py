@@ -104,13 +104,13 @@ BINDING_GRPC_REQUIREMENTS: list[RequirementSpec] = [
             "All A2A-specific error types MUST be mapped to their specified "
             "gRPC status codes: TaskNotFoundError=NOT_FOUND, "
             "TaskNotCancelableError=FAILED_PRECONDITION, "
-            "PushNotificationNotSupportedError=UNIMPLEMENTED, "
-            "UnsupportedOperationError=UNIMPLEMENTED, "
+            "PushNotificationNotSupportedError=FAILED_PRECONDITION, "
+            "UnsupportedOperationError=FAILED_PRECONDITION, "
             "ContentTypeNotSupportedError=INVALID_ARGUMENT, "
             "InvalidAgentResponseError=INTERNAL, "
             "ExtendedAgentCardNotConfiguredError=FAILED_PRECONDITION, "
             "ExtensionSupportRequiredError=FAILED_PRECONDITION, "
-            "VersionNotSupportedError=UNIMPLEMENTED."
+            "VersionNotSupportedError=FAILED_PRECONDITION."
         ),
         expected_behavior="Each A2A error mapped to correct gRPC status",
         spec_url=f"{SPEC_BASE}54-error-code-mappings",
