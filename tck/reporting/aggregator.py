@@ -11,6 +11,9 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
+from tck.reporting.collector import summarize_status
+from tck.requirements.tags import NOT_AUTOMATABLE
+
 
 if TYPE_CHECKING:
     from tck.reporting.collector import CompatibilityCollector, TestResult
@@ -55,7 +58,15 @@ class CompatibilityReport:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to a plain dict suitable for JSON serialisation."""
-        return asdict(self)
+        data = asdict(self)
+        data["score_scope"] = "automated"
+        data["manual_verification_required"] = list(self.pending_manual)
+        return data
+
+    @property
+    def pending_manual(self) -> dict[str, RequirementResult]:
+        """Manual obligations with no recorded verification, never automatic passes."""
+        return {req_id: req for req_id, req in self.per_requirement.items() if req.status == "MANUAL"}
 
 
 class CompatibilityAggregator:
@@ -69,9 +80,11 @@ class CompatibilityAggregator:
     A requirement that was registered but never exercised (``NOT TESTED`` —
     e.g. the SUT never responded, or crashed before the test ran) counts
     against compatibility the same as a failure would: it is *not* excluded
-    from the denominator.  Only ``SKIPPED`` requirements (legitimately
+    from the automated denominator. ``MANUAL`` obligations are reported
+    separately and require manual verification; they are never automatic passes.
+    ``SKIPPED`` requirements (legitimately
     inapplicable to this SUT, e.g. an optional capability it doesn't
-    implement) are excluded.  Otherwise an unreachable SUT that answers zero
+    implement) are also excluded. Otherwise an unreachable SUT that answers zero
     requests can report 100% compatibility on the handful of requirements
     that happened to produce a result before every other one silently
     dropped out of the denominator as "not tested".
@@ -109,30 +122,17 @@ class CompatibilityAggregator:
 
         out: dict[str, RequirementResult] = {}
         for req_id, results in grouped.items():
-            transports: dict[str, str] = {}
+            by_transport: dict[str, list[TestResult]] = defaultdict(list)
             errors: list[str] = []
             transport_errors: dict[str, list[str]] = {}
-            for r in results:
-                if r.skipped:
-                    transports[r.transport] = "SKIPPED"
-                elif r.passed:
-                    transports[r.transport] = "PASS"
-                else:
-                    transports[r.transport] = "FAIL"
-                    errors.extend(r.errors)
-                    if r.errors:
-                        transport_errors.setdefault(r.transport, []).extend(
-                            r.errors
-                        )
-
-            any_failed = any(not r.passed and not r.skipped for r in results)
-            all_skipped = all(r.skipped for r in results)
-            if any_failed:
-                status = "FAIL"
-            elif all_skipped:
-                status = "SKIPPED"
-            else:
-                status = "PASS"
+            for result in results:
+                by_transport[result.transport].append(result)
+                if not result.passed and not result.skipped:
+                    errors.extend(result.errors)
+                    if result.errors:
+                        transport_errors.setdefault(result.transport, []).extend(result.errors)
+            transports = {transport: summarize_status(values) for transport, values in by_transport.items()}
+            status = summarize_status(results)
 
             description = ""
             spec_url = ""
@@ -142,7 +142,7 @@ class CompatibilityAggregator:
                 spec = get_requirement_by_id(req_id)
                 description = spec.description
                 spec_url = spec.spec_url
-            except (KeyError, ImportError):
+            except KeyError:
                 pass
 
             test_ids = sorted({r.test_id for r in results if r.test_id})
@@ -164,20 +164,17 @@ class CompatibilityAggregator:
     @staticmethod
     def _add_untested_requirements(out: dict[str, RequirementResult]) -> None:
         """Add registry requirements that were never tested."""
-        try:
-            from tck.requirements.registry import ALL_REQUIREMENTS
+        from tck.requirements.registry import ALL_REQUIREMENTS
 
-            for spec in ALL_REQUIREMENTS:
-                if spec.id not in out:
-                    out[spec.id] = RequirementResult(
-                        level=spec.level.value,
-                        status="NOT TESTED",
-                        transports={},
-                        description=spec.description,
-                        spec_url=spec.spec_url,
-                    )
-        except ImportError:
-            pass
+        for spec in ALL_REQUIREMENTS:
+            if spec.id not in out:
+                out[spec.id] = RequirementResult(
+                    level=spec.level.value,
+                    status="MANUAL" if NOT_AUTOMATABLE in spec.tags else "NOT TESTED",
+                    transports={},
+                    description=spec.description,
+                    spec_url=spec.spec_url,
+                )
 
     def _compute_per_transport(self) -> dict[str, TransportResult]:
         grouped: dict[str, list[TestResult]] = defaultdict(list)
@@ -207,7 +204,7 @@ class CompatibilityAggregator:
             if level is None
             else [r for r in per_requirement.values() if r.level == level]
         )
-        reqs = [r for r in reqs if r.status != "SKIPPED"]
+        reqs = [r for r in reqs if r.status not in {"SKIPPED", "MANUAL"}]
         if not reqs:
             return 100.0
         passing = sum(1 for r in reqs if r.status == "PASS")

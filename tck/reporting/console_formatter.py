@@ -53,6 +53,7 @@ class ConsoleFormatter:
         lines.append(self._level_table(report))
         lines.append(self._transport_summary(report))
         lines.append(self._failed_requirements(report))
+        lines.append(self._manual_requirements(report))
         lines.append(self._rule())
         return "\n".join(lines) + "\n"
 
@@ -79,30 +80,37 @@ class ConsoleFormatter:
                 value = f"{_YELLOW}{_BOLD}{value}{_RESET}"
             else:
                 value = f"{_RED}{_BOLD}{value}{_RESET}"
-        return f"\nOVERALL COMPATIBILITY: {value}"
+        return f"\nOVERALL COMPATIBILITY: {value} (automated checks)"
 
     def _level_table(self, report: CompatibilityReport) -> str:
-        rows: list[tuple[str, int, int, int, int]] = []
+        rows = [("Level", "Passed", "Failed", "Skipped", "Manual", "Not tested", "Total")]
         for level in ("MUST", "SHOULD", "MAY"):
             reqs = [r for r in report.per_requirement.values() if r.level == level]
             passed = sum(1 for r in reqs if r.status == "PASS")
             skipped = sum(1 for r in reqs if r.status == "SKIPPED")
-            failed = len(reqs) - passed - skipped
-            rows.append((level, passed, failed, skipped, len(reqs)))
+            manual = sum(1 for r in reqs if r.status == "MANUAL")
+            failed = sum(1 for r in reqs if r.status == "FAIL")
+            not_tested = sum(1 for r in reqs if r.status == "NOT TESTED")
+            rows.append(tuple(str(value) for value in (level, passed, failed, skipped, manual, not_tested, len(reqs))))
+        widths = [max(len(row[index]) for row in rows) + 2 for index in range(len(rows[0]))]
 
-        lines = [
-            "",
-            "\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-            "\u2502 Level       \u2502 Passed \u2502 Failed \u2502 Skipped \u2502 Total \u2502",
-            "\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524",
-        ]
-        for level, passed, failed, skipped, total in rows:
-            lines.append(
-                f"\u2502 {level:<11} \u2502 {passed:>6} \u2502 {failed:>6} \u2502 {skipped:>7} \u2502 {total:>5} \u2502"
-            )
-        lines.append(
-            "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
-        )
+        def border(left: str, middle: str, right: str) -> str:
+            return left + middle.join("─" * width for width in widths) + right
+
+        lines = ["", border("┌", "┬", "┐")]
+        for index, row in enumerate(rows):
+            lines.append("│" + "│".join(f" {value:<{width - 2}} " for value, width in zip(row, widths, strict=True)) + "│")
+            if index == 0:
+                lines.append(border("├", "┼", "┤"))
+        lines.append(border("└", "┴", "┘"))
+        return "\n".join(lines)
+
+    @staticmethod
+    def _manual_requirements(report: CompatibilityReport) -> str:
+        if not report.pending_manual:
+            return ""
+        lines = ["\nPENDING MANUAL VERIFICATION (excluded from automated scores):"]
+        lines.extend(f"  {req_id} [{req.level}]: {req.description}" for req_id, req in report.pending_manual.items())
         return "\n".join(lines)
 
     def _transport_summary(self, report: CompatibilityReport) -> str:

@@ -14,8 +14,10 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import STANDARD_BINDINGS
 from tck.requirements.registry import get_requirement_by_id
-from tests.compatibility.markers import core, must
+from tck.validators.agent_card import uses_recommended_binding_identifier
+from tests.compatibility.markers import core, must, should
 
 
 if TYPE_CHECKING:
@@ -32,6 +34,7 @@ CARD_STRUCT_001 = get_requirement_by_id("CARD-STRUCT-001")
 CARD_PROTO_001 = get_requirement_by_id("CARD-PROTO-001")
 CARD_PROTO_002 = get_requirement_by_id("CARD-PROTO-002")
 BIND_FIELD_001 = get_requirement_by_id("BIND-FIELD-001")
+BIND_CUSTOM_001 = get_requirement_by_id("BIND-CUSTOM-001")
 
 
 # ---------------------------------------------------------------------------
@@ -50,8 +53,6 @@ _REQUIRED_FIELDS = {
     "defaultOutputModes",
 }
 
-_KNOWN_BINDINGS = {"JSONRPC", "GRPC", "HTTP+JSON"}
-
 
 def _fail_msg(req: RequirementSpec, detail: str) -> str:
     return (
@@ -64,6 +65,8 @@ def _record(
     req: RequirementSpec,
     passed: bool,
     errors: list[str] | None = None,
+    *,
+    skipped: bool = False,
 ) -> None:
     collector.record(
         requirement_id=req.id,
@@ -71,6 +74,7 @@ def _record(
         level=req.level.value,
         passed=passed,
         errors=errors or [],
+        skipped=skipped,
     )
 
 
@@ -194,7 +198,7 @@ class TestBindingFieldDeclaration:
         req = BIND_FIELD_001
         interfaces = agent_card.get("supportedInterfaces", [])
         bindings = {iface.get("protocolBinding") for iface in interfaces}
-        unknown = bindings - _KNOWN_BINDINGS
+        unknown = bindings - STANDARD_BINDINGS
         if unknown:
             pytest.skip(
                 f"Agent card declares unknown protocol bindings: {unknown}"
@@ -204,4 +208,33 @@ class TestBindingFieldDeclaration:
             errors.append("At least one protocol binding must be declared")
         _record(collector=compatibility_collector, req=req,
                 passed=not errors, errors=errors)
+        assert not errors, _fail_msg(req, "; ".join(errors))
+
+
+@should
+@core
+class TestCustomBindingIdentifiers:
+    """BIND-CUSTOM-001: Section 5.8 recommends URI identifiers."""
+
+    def test_custom_binding_identifiers_are_uris(
+        self,
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """BIND-CUSTOM-001: Custom bindings use URI identifiers."""
+        req = BIND_CUSTOM_001
+        interfaces = agent_card.get("supportedInterfaces", [])
+        custom = [
+            (index, interface.get("protocolBinding")) for index, interface in enumerate(interfaces)
+            if not isinstance(interface.get("protocolBinding"), str) or interface["protocolBinding"] not in STANDARD_BINDINGS
+        ]
+        if not custom:
+            _record(compatibility_collector, req, passed=False, skipped=True)
+            pytest.skip("Agent Card declares no custom binding")
+        errors = [
+            f"Interface [{index}] should use a URI protocolBinding: {binding!r}"
+            for index, binding in custom
+            if not uses_recommended_binding_identifier(binding)
+        ]
+        _record(collector=compatibility_collector, req=req, passed=not errors, errors=errors)
         assert not errors, _fail_msg(req, "; ".join(errors))

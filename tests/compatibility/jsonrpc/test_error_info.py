@@ -1,12 +1,4 @@
-"""JSON-RPC ErrorInfo validation tests.
-
-Validates that A2A-specific JSON-RPC error responses include a
-google.rpc.ErrorInfo entry in the error.data array as required
-by Section 9.5 of the A2A specification.
-
-Requirements tested:
-    JSONRPC-ERR-003
-"""
+"""Required Any structure and recommended well-known JSON-RPC error details."""
 
 from __future__ import annotations
 
@@ -14,164 +6,65 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import TASK_NOT_FOUND_ERROR, tck_id
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
-from tck.validators.error_info import find_error_info, validate_error_info
-from tests.compatibility._test_helpers import fail_msg, get_client, record
-from tests.compatibility.markers import jsonrpc, must
+from tck.validators.error_info import uses_well_known_error_details, validate_error_details
+from tests.compatibility._test_helpers import assert_and_record, get_client, record
+from tests.compatibility.markers import jsonrpc, must, should
 
 
 if TYPE_CHECKING:
     from tck.transport.base import BaseTransportClient
 
 
-# ---------------------------------------------------------------------------
-# Requirement lookups
-# ---------------------------------------------------------------------------
-
+JSONRPC_ERR_001 = get_requirement_by_id("JSONRPC-ERR-001")
 JSONRPC_ERR_003 = get_requirement_by_id("JSONRPC-ERR-003")
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _get_error_response(
-    client: BaseTransportClient,
-) -> dict[str, Any]:
-    """Request a non-existent task to trigger an A2A error.
-
-    Returns the raw JSON-RPC response dict, or skips if no error.
-    """
+def _get_error_response(client: BaseTransportClient) -> dict[str, Any]:
+    """Request a missing task to obtain an actual A2A-specific error."""
     response = client.get_task(id=tck_id("nonexistent-errinfo-001"))
     body = response.raw_response
     if not isinstance(body, dict) or "error" not in body:
-        pytest.skip("Server did not return a JSON-RPC error for non-existent task")
+        pytest.fail("Server did not return a JSON-RPC error for a non-existent task")
     return body
-
-
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
 
 
 @must
 @jsonrpc
-class TestJsonRpcErrorInfo:
-    """JSONRPC-ERR-003: A2A errors include ErrorInfo in data array."""
+class TestJsonRpcErrorDetails:
+    """JSONRPC-ERR-001: error data is optional; present details are typed objects."""
 
-    def test_error_data_is_array(
+    def test_present_error_data_is_any_array(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """JSONRPC-ERR-003: error.data must be an array for A2A errors."""
-        req = JSONRPC_ERR_003
+        """Validate present error data without requiring optional data."""
+        req = JSONRPC_ERR_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        body = _get_error_response(client)
+        error = _get_error_response(client)["error"]
+        errors = validate_error_details(error["data"]) if "data" in error else []
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-        data = body["error"].get("data")
-        valid = isinstance(data, list)
-        errors = (
-            []
-            if valid
-            else [
-                "error.data is absent — A2A errors MUST include ErrorInfo in data array"
-                if data is None
-                else f"error.data must be an array, got {type(data).__name__}"
-            ]
-        )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, TRANSPORT, errors[0])
 
-    def test_data_contains_error_info(
+@should
+@jsonrpc
+class TestJsonRpcWellKnownErrorDetails:
+    """JSONRPC-ERR-003: well-known error types are recommended."""
+
+    def test_error_data_uses_well_known_type(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """JSONRPC-ERR-003: data array contains a google.rpc.ErrorInfo entry."""
+        """Check the recommendation separately from required Any structure."""
         req = JSONRPC_ERR_003
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        body = _get_error_response(client)
-
-        data = body["error"].get("data")
-        if not isinstance(data, list):
-            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
-            pytest.skip("error.data is not an array")
-
-        valid = find_error_info(data) is not None
-        errors = (
-            []
-            if valid
-            else [
-                "data array must contain a google.rpc.ErrorInfo entry"
-            ]
-        )
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=valid,
-            errors=errors,
-        )
-        assert valid, fail_msg(req, TRANSPORT, errors[0])
-
-    def test_error_info_valid(
-        self,
-        transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
-    ) -> None:
-        """JSONRPC-ERR-003: ErrorInfo has correct domain and valid reason."""
-        req = JSONRPC_ERR_003
-        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        body = _get_error_response(client)
-
-        data = body["error"].get("data")
-        if not isinstance(data, list):
-            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
-            pytest.skip("error.data is not an array")
-
-        result = validate_error_info(data)
-        errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
-
-    def test_error_info_reason_matches_condition(
-        self,
-        transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
-    ) -> None:
-        """JSONRPC-ERR-003: TaskNotFound trigger produces TASK_NOT_FOUND reason."""
-        req = JSONRPC_ERR_003
-        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        body = _get_error_response(client)
-
-        data = body["error"].get("data")
-        if not isinstance(data, list):
-            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
-            pytest.skip("error.data is not an array")
-
-        result = validate_error_info(data, expected_reason=TASK_NOT_FOUND_ERROR.reason)
-        errors = [] if result.valid else [result.message]
-        record(
-            collector=compatibility_collector,
-            req=req,
-            transport=TRANSPORT,
-            passed=result.valid,
-            errors=errors,
-        )
-        assert result.valid, fail_msg(req, TRANSPORT, result.message)
+        data = _get_error_response(client)["error"].get("data", [])
+        if not data or validate_error_details(data):
+            record(compatibility_collector, req, TRANSPORT, passed=False, skipped=True)
+            pytest.skip("Optional error data is absent/empty or its required structure is invalid")
+        errors = [] if uses_well_known_error_details(data) else ["Error details should use well-known google.rpc types"]
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)

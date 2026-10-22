@@ -21,6 +21,7 @@ from tck.requirements.base import (
     GET_EXTENDED_AGENT_CARD_BINDING,
     GET_PUSH_CONFIG_BINDING,
     GET_TASK_BINDING,
+    HTTP_JSON_CONTENT_TYPE,
     LIST_PUSH_CONFIGS_BINDING,
     LIST_TASKS_BINDING,
     PATH_MESSAGE_SEND,
@@ -140,7 +141,7 @@ class HttpJsonClient(BaseTransportClient):
                 path,
                 json=json_body,
                 params=params,
-                headers={"Content-Type": "application/json"} if method.upper() == "POST" else None,
+                headers={"Content-Type": HTTP_JSON_CONTENT_TYPE} if method.upper() == "POST" else None,
             )
             resp_headers = dict(response.headers)
             if response.status_code >= _HTTP_ERROR_MIN:
@@ -182,7 +183,7 @@ class HttpJsonClient(BaseTransportClient):
                 path,
                 json=json_body,
                 headers={
-                    "Content-Type": "application/json",
+                    "Content-Type": HTTP_JSON_CONTENT_TYPE,
                     "Accept": "text/event-stream",
                 },
             )

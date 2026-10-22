@@ -19,11 +19,12 @@ import grpc as _grpc_mod
 import httpx
 import pytest
 
-from tck.requirements.base import tck_id
+from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
+from tck.validators.http_json.content_type import uses_a2a_media_type
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
-from tests.compatibility.markers import grpc, http_json, jsonrpc, must, streaming
+from tests.compatibility.markers import grpc, http_json, jsonrpc, must, should, streaming
 
 
 if TYPE_CHECKING:
@@ -40,6 +41,7 @@ JSONRPC_SVC_001 = get_requirement_by_id("JSONRPC-SVC-001")
 JSONRPC_SVC_002 = get_requirement_by_id("JSONRPC-SVC-002")
 JSONRPC_SSE_001 = get_requirement_by_id("JSONRPC-SSE-001")
 HTTP_JSON_SVC_001 = get_requirement_by_id("HTTP_JSON-SVC-001")
+HTTP_JSON_FMT_001 = get_requirement_by_id("HTTP_JSON-FMT-001")
 HTTP_JSON_SVC_002 = get_requirement_by_id("HTTP_JSON-SVC-002")
 HTTP_JSON_URL_001 = get_requirement_by_id("HTTP_JSON-URL-001")
 HTTP_JSON_URL_002 = get_requirement_by_id("HTTP_JSON-URL-002")
@@ -231,7 +233,6 @@ class TestJsonRpcStreaming:
 # ---------------------------------------------------------------------------
 
 
-@must
 @http_json
 class TestRestFormat:
     """HTTP_JSON-SVC-001: Content-Type and response schema validation."""
@@ -246,28 +247,30 @@ class TestRestFormat:
             pytest.skip("HTTP+JSON transport not configured")
         return client.send_message(message=_SAMPLE_MESSAGE)
 
+    @should
     def test_response_content_type(
         self,
         rest_response: TransportResponse,
         compatibility_collector: Any,
     ) -> None:
-        """HTTP_JSON-SVC-001: Content-Type must be application/json."""
+        """HTTP_JSON-SVC-001: Content-Type should be application/a2a+json."""
         req = HTTP_JSON_SVC_001
         transport = "http_json"
         ct = rest_response.headers.get("content-type", "")
         errors = []
-        if "application/json" not in ct:
-            errors.append(f"Expected Content-Type application/json, got: {ct!r}")
+        if not uses_a2a_media_type(rest_response.headers):
+            errors.append(f"Expected Content-Type {HTTP_JSON_CONTENT_TYPE}, got: {ct!r}")
         assert_and_record(compatibility_collector, req, transport, errors)
 
+    @must
     def test_response_validates_against_schema(
         self,
         rest_response: TransportResponse,
         validators: dict[str, Any],
         compatibility_collector: Any,
     ) -> None:
-        """HTTP_JSON-SVC-001: Response payload conforms to SendMessageResponse schema."""
-        req = HTTP_JSON_SVC_001
+        """HTTP_JSON-FMT-001: Response payload conforms to SendMessageResponse schema."""
+        req = HTTP_JSON_FMT_001
         transport = "http_json"
         if not rest_response.success:
             pytest.skip(f"SendMessage failed: {rest_response.error}")
@@ -304,7 +307,7 @@ class TestRestServiceParams:
             f"{client.base_url}/message:send",
             json={"message": msg},
             headers={
-                "Content-Type": "application/json",
+                "Content-Type": HTTP_JSON_CONTENT_TYPE,
                 A2A_VERSION_HEADER: A2A_VERSION,
                 "A2A-Extensions": "https://example.com/ext/v1,https://example.com/ext/v2",
             },

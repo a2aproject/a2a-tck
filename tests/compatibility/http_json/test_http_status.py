@@ -9,17 +9,16 @@ Requirements tested:
 
 from __future__ import annotations
 
-import json
-
 from typing import TYPE_CHECKING, Any
 
 import httpx
 import pytest
 
-from tck.requirements.base import SEND_MESSAGE_BINDING, tck_id
+from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, SEND_MESSAGE_BINDING, tck_id
 from tck.requirements.registry import get_requirement_by_id
-from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
+from tck.transport._helpers import A2A_VERSION_HEADER
 from tck.transport.http_json_client import TRANSPORT
+from tck.validators.agent_card import supports_input_media_type
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
 from tests.compatibility.markers import http_json, must
@@ -65,9 +64,6 @@ class TestHttpJsonStatusCodes:
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 
         response = client.get_task(id=tck_id("nonexistent-status-001"))
-        if response.success:
-            pytest.skip("Server did not return an error for non-existent task")
-
         result = validate_http_json_error(
             {"status_code": response.status_code, "headers": response.headers, "body": response.raw_response},
             "TaskNotFoundError",
@@ -75,32 +71,20 @@ class TestHttpJsonStatusCodes:
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_task_not_cancelable_returns_409(
+    def test_cancel_missing_task_returns_404(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """TaskNotCancelableError: POST /tasks/{id}:cancel on non-existent returns 409 (or 404)."""
+        """CancelTask on a missing task returns TaskNotFoundError (404)."""
         req = HTTP_JSON_STATUS_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-
         response = client.cancel_task(id=tck_id("nonexistent-status-002"))
-        if response.success:
-            pytest.skip("Server did not return an error for CancelTask")
-
-        status = response.status_code
-        # Server may return 404 (TaskNotFoundError) instead of 409
-        # (TaskNotCancelableError) since the task doesn't exist.
-        valid = status in (404, 409)
-        errors = (
-            []
-            if valid
-            else [
-                f"CancelTask on non-existent task should return "
-                f"404 (TaskNotFoundError) or 409 (TaskNotCancelableError), "
-                f"got {status}"
-            ]
+        result = validate_http_json_error(
+            {"status_code": response.status_code, "headers": response.headers, "body": response.raw_response},
+            "TaskNotFoundError",
         )
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_unsupported_operation_returns_400(
@@ -124,9 +108,6 @@ class TestHttpJsonStatusCodes:
             "messageId": tck_id("status-unsupported-003"),
         }
         response = client.send_streaming_message(message=msg)
-        if response.success:
-            pytest.skip("Server did not return an error for unsupported streaming")
-
         result = validate_http_json_error(
             {"status_code": response.status_code, "headers": response.headers, "body": response.raw_response},
             "UnsupportedOperationError",
@@ -134,26 +115,25 @@ class TestHttpJsonStatusCodes:
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_content_type_not_supported_returns_415(
+    def test_content_type_not_supported_returns_400(
         self,
         transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
         compatibility_collector: Any,
     ) -> None:
-        """ContentTypeNotSupportedError: wrong Content-Type returns 415."""
+        """ContentTypeNotSupportedError concerns message-part media, not the HTTP envelope."""
         req = HTTP_JSON_STATUS_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-
-        # Send a request with a deliberately wrong Content-Type.
-        response = httpx.post(
-            f"{client.base_url}{SEND_MESSAGE_BINDING.http_json_path}",
-            content=json.dumps({"message": {"role": "ROLE_USER", "parts": [{"text": "ct test"}], "messageId": tck_id("status-ct-004")}}).encode(),
-            headers={"Content-Type": "text/plain", A2A_VERSION_HEADER: A2A_VERSION},
+        message = get_requirement_by_id("CORE-SEND-003").sample_input["message"]
+        media_type = message["parts"][0]["mediaType"]
+        if supports_input_media_type(agent_card, media_type):
+            record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
+            pytest.skip("Agent declares support for the media type used by this negative probe")
+        response = client.send_message(message=message)
+        result = validate_http_json_error(
+            {"status_code": response.status_code, "headers": response.headers, "body": response.raw_response},
+            "ContentTypeNotSupportedError",
         )
-
-        if response.status_code < _HTTP_ERROR_MIN:
-            pytest.skip("Server accepted wrong Content-Type without error")
-
-        result = validate_http_json_error(response, "ContentTypeNotSupportedError")
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
@@ -176,9 +156,6 @@ class TestHttpJsonStatusCodes:
             task_id=tck_id("status-push-005"),
             config={"url": "https://example.com"},
         )
-        if response.success:
-            pytest.skip("Server did not return an error for unsupported push")
-
         result = validate_http_json_error(
             {"status_code": response.status_code, "headers": response.headers, "body": response.raw_response},
             "PushNotificationNotSupportedError",
@@ -205,7 +182,7 @@ class TestHttpJsonStatusCodes:
             f"{client.base_url}{SEND_MESSAGE_BINDING.http_json_path}",
             json={"message": msg},
             headers={
-                "Content-Type": "application/json",
+                "Content-Type": HTTP_JSON_CONTENT_TYPE,
                 A2A_VERSION_HEADER: "99.0",
             },
         )

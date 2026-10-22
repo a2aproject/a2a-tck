@@ -11,10 +11,36 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from google.rpc import error_details_pb2
+
 from tck.requirements.base import A2A_ERROR_DOMAIN, A2A_ERROR_REASONS
 
 
 ERRORINFO_TYPE = "type.googleapis.com/google.rpc.ErrorInfo"
+WELL_KNOWN_ERROR_DETAIL_TYPES = frozenset(
+    f"type.googleapis.com/{descriptor.full_name}"
+    for descriptor in error_details_pb2.DESCRIPTOR.message_types_by_name.values()
+)
+
+
+def validate_error_details(details: Any) -> list[str]:
+    """Validate a present error-details field without requiring a particular Any type."""
+    if not isinstance(details, list):
+        return ["Error details must be an array"]
+    errors = []
+    for index, item in enumerate(details):
+        if not isinstance(item, dict):
+            errors.append(f"Error detail {index} must be an object")
+        elif not isinstance(item.get("@type"), str) or not item["@type"]:
+            errors.append(f"Error detail {index} must include a non-empty @type string")
+    return errors
+
+
+def uses_well_known_error_details(details: Any) -> bool:
+    """Check the recommendation without treating a custom Any type as malformed."""
+    return not validate_error_details(details) and any(
+        item["@type"] in WELL_KNOWN_ERROR_DETAIL_TYPES for item in details
+    )
 
 
 def find_error_info(details: list[Any]) -> dict[str, Any] | None:
@@ -59,6 +85,9 @@ def validate_error_info(
     Returns:
         An :class:`ErrorInfoResult` with validation status and message.
     """
+    errors = validate_error_details(details)
+    if errors:
+        return ErrorInfoResult(valid=False, message="; ".join(errors))
     error_info = find_error_info(details)
     if error_info is None:
         return ErrorInfoResult(
@@ -77,7 +106,7 @@ def validate_error_info(
         )
 
     reason = error_info.get("reason", "")
-    if reason not in A2A_ERROR_REASONS:
+    if not isinstance(reason, str) or reason not in A2A_ERROR_REASONS:
         return ErrorInfoResult(
             valid=False,
             message=f"ErrorInfo reason {reason!r} is not a recognised A2A error reason",

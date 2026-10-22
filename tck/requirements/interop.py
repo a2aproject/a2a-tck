@@ -18,10 +18,37 @@ from tck.requirements.tags import (
     ERROR,
     INTEROP,
     MULTI_OPERATION,
+    NOT_AUTOMATABLE,
 )
 
 
 INTEROP_REQUIREMENTS: list[RequirementSpec] = [
+    RequirementSpec(
+        id="BIND-CUSTOM-001",
+        section="5.8",
+        title="Custom bindings should use URI identifiers in the Agent Card",
+        level=RequirementLevel.SHOULD,
+        # Section 12.7 requires declaration and points back to 5.8, which twice
+        # states SHOULD for URI choice. Declaration is covered by CARD-PROTO.
+        description="Custom bindings declared in the Agent Card SHOULD use a URI to identify the binding.",
+        expected_behavior="Every non-standard protocolBinding is a URI",
+        spec_url=f"{SPEC_BASE}58-custom-binding-identification",
+        tags=[INTEROP, DECLARATION],
+    ),
+    RequirementSpec(
+        id="BIND-CUSTOM-002",
+        section="5.8",
+        title="Breaking custom binding changes use a new URI",
+        level=RequirementLevel.MUST,
+        description=(
+            "A breaking change to a custom binding MUST use a new URI. "
+            "Verifying this requires comparing binding versions and their semantics, "
+            "which cannot be observed from a single server snapshot."
+        ),
+        expected_behavior="Incompatible versions have distinct binding URIs",
+        spec_url=f"{SPEC_BASE}58-custom-binding-identification",
+        tags=[INTEROP, DECLARATION, NOT_AUTOMATABLE],
+    ),
     RequirementSpec(
         id="BIND-EQUIV-001",
         section="5.1",

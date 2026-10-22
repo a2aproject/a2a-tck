@@ -10,6 +10,7 @@ from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,
     RequirementSpec,
+    describe_error_mappings,
 )
 from tck.requirements.tags import (
     AIP193,
@@ -58,13 +59,13 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
         id="HTTP_JSON-SVC-001",
         section="11.1",
-        title="Content-Type is application/json",
-        level=RequirementLevel.MUST,
+        title="Content-Type is application/a2a+json",
+        level=RequirementLevel.SHOULD,
         description=(
-            "HTTP+JSON/REST binding MUST use Content-Type application/json "
+            "HTTP+JSON/REST binding SHOULD use Content-Type application/a2a+json "
             "for requests and responses."
         ),
-        expected_behavior="Content-Type header is application/json",
+        expected_behavior="Content-Type header is application/a2a+json",
         spec_url=f"{SPEC_BASE}111-protocol-requirements",
         tags=[REST, CONTENT_TYPE],
     ),
@@ -97,14 +98,14 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
         id="HTTP_JSON-ERR-001",
         section="11.6",
-        title="Error responses use AIP-193 format",
+        title="Error responses use google.rpc.Status JSON representation",
         level=RequirementLevel.MUST,
         description=(
-            "HTTP error responses MUST use the AIP-193 representation with "
-            "Content-Type application/json containing an error object with "
-            "code, status, message, and details fields."
+            "HTTP error responses MUST use the google.rpc.Status JSON "
+            "representation containing an error object with code, message, "
+            "and optional details. Each detail object MUST include a @type key."
         ),
-        expected_behavior="Error responses conform to AIP-193 structure",
+        expected_behavior="Error responses contain a google.rpc.Status JSON error object",
         spec_url=f"{SPEC_BASE}116-error-handling",
         tags=[REST, ERROR, AIP193],
     ),
@@ -127,14 +128,24 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
         section="5.4",
         title="A2A errors map to correct HTTP status codes",
         level=RequirementLevel.MUST,
-        description=(
-            "Each A2A error type MUST map to the HTTP status code specified "
-            "in the error code mappings table (e.g., TaskNotFoundError to "
-            "404, ContentTypeNotSupportedError to 415)."
-        ),
+        description=('Each A2A error type MUST map to its specified HTTP status code: ' + describe_error_mappings("http_json") + "."),
         expected_behavior="HTTP status code matches the spec-defined mapping for each error",
         spec_url=f"{SPEC_BASE}54-error-code-mappings",
         tags=[REST, ERROR, STATUS, MAPPING],
+    ),
+    RequirementSpec(
+        id="HTTP_JSON-FMT-001",
+        # Section 11.4 categorically defines response bodies by the shared schema.
+        section="11.4",
+        title="Request and response JSON follows the protobuf schema",
+        level=RequirementLevel.MUST,
+        description=(
+            "All HTTP+JSON requests and responses MUST use JSON objects "
+            "structurally equivalent to the Protocol Buffer messages."
+        ),
+        expected_behavior="Response payload conforms to the operation's protobuf JSON schema",
+        spec_url=f"{SPEC_BASE}114-requestresponse-format",
+        tags=[REST],
     ),
     RequirementSpec(
         id="HTTP_JSON-SSE-001",
