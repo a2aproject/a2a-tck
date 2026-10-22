@@ -87,8 +87,8 @@ BINDING_JSONRPC_REQUIREMENTS: list[RequirementSpec] = [
         description=(
             "JSON-RPC error responses MUST use the standard JSON-RPC 2.0 "
             "error object structure with code, message, and optional data. "
-            "The data field, when present, MUST be an array containing "
-            "google.protobuf.Any messages in ProtoJSON representation."
+            "The data field, when present, MUST be an array of objects, "
+            "each containing a @type key, in ProtoJSON Any representation."
         ),
         expected_behavior="Errors include numeric code, message, and data array",
         spec_url=f"{SPEC_BASE}95-error-handling",
@@ -110,12 +110,12 @@ BINDING_JSONRPC_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
         id="JSONRPC-ERR-003",
         section="9.5",
-        title="A2A errors include ErrorInfo in data array",
-        level=RequirementLevel.MUST,
+        title="A2A errors use ErrorInfo in data array",
+        level=RequirementLevel.SHOULD,
         description=(
-            "For A2A-specific errors, implementations MUST include a "
-            "google.rpc.ErrorInfo message in the data array with reason "
-            "(UPPER_SNAKE_CASE), domain (a2a-protocol.org), and optional metadata."
+            "For A2A-specific errors, implementations SHOULD use well-known "
+            "types such as google.rpc.ErrorInfo in the data array, with reason "
+            "(UPPER_SNAKE_CASE) and domain (a2a-protocol.org)."
         ),
         expected_behavior="Error data array contains ErrorInfo with correct reason and domain",
         spec_url=f"{SPEC_BASE}95-error-handling",

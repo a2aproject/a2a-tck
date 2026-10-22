@@ -38,7 +38,7 @@ from tests.compatibility._test_helpers import (
     get_client,
     record,
 )
-from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must
+from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must, should
 
 
 if TYPE_CHECKING:
@@ -648,7 +648,7 @@ _JSONRPC_ERROR_SCHEMA = {
 @must
 @jsonrpc
 class TestJsonRpcErrorStructure:
-    """JSONRPC-ERR-001 / JSONRPC-ERR-002 / JSONRPC-ERR-003: JSON-RPC error object structure."""
+    """JSONRPC-ERR-001 / JSONRPC-ERR-002: JSON-RPC error object structure."""
 
     def test_error_object_structure(
         self,
@@ -723,12 +723,18 @@ class TestJsonRpcErrorStructure:
             )
         assert_and_record(compatibility_collector, req, transport, errors)
 
+
+@should
+@jsonrpc
+class TestJsonRpcErrorInfoUse:
+    """JSONRPC-ERR-003: A2A errors use ErrorInfo in the data array."""
+
     def test_error_data_contains_error_info(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """JSONRPC-ERR-003: A2A errors include ErrorInfo in data array."""
+        """JSONRPC-ERR-003: A2A errors use ErrorInfo in the data array."""
         req = JSONRPC_ERR_003
         transport = "jsonrpc"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
