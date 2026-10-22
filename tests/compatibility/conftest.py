@@ -11,6 +11,7 @@ import httpx
 import pytest
 
 from tck.reporting.collector import CompatibilityCollector
+from tck.transport._helpers import get_required_extensions
 from tck.transport.grpc_client import GrpcClient
 from tck.transport.http_json_client import HttpJsonClient
 from tck.transport.jsonrpc_client import JsonRpcClient
@@ -134,6 +135,7 @@ def transport_clients(
         transport_filter = {t.strip() for t in raw.split(",") if t.strip()}
 
     clients: dict[str, BaseTransportClient] = {}
+    required_extensions = get_required_extensions(agent_card)
     for iface in interfaces:
         binding = iface.get("protocolBinding", "")
         url = iface.get("url", "")
@@ -150,7 +152,7 @@ def transport_clients(
 
         # First interface per transport wins (preference order)
         if transport_name not in clients:
-            clients[transport_name] = client_class(url)
+            clients[transport_name] = client_class(url, required_extensions=required_extensions)
 
     if not clients:
         declared = [iface.get("protocolBinding", "?") for iface in interfaces]

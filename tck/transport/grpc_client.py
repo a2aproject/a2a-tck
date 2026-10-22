@@ -17,7 +17,7 @@ import grpc
 from google.protobuf.json_format import ParseDict
 
 from specification.generated import a2a_pb2, a2a_pb2_grpc
-from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER, _build_params
+from tck.transport._helpers import A2A_EXTENSIONS_HEADER, A2A_VERSION, A2A_VERSION_HEADER, _build_params
 from tck.transport.base import BaseTransportClient, StreamingResponse, TransportResponse
 
 
@@ -98,13 +98,22 @@ class GrpcClient(BaseTransportClient):
         grpc.StatusCode.INTERNAL,
     })
 
-    _METADATA = ((A2A_VERSION_HEADER.lower(), A2A_VERSION),)
-
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, *, required_extensions: list[str] | None = None) -> None:
         super().__init__(base_url, TRANSPORT)
+        self._required_extensions: list[str] = required_extensions or []
         self._channel: grpc.Channel | None = None
         self._stub: a2a_pb2_grpc.A2AServiceStub | None = None
         self._connect()
+
+    @property
+    def _metadata(self) -> tuple[tuple[str, str], ...]:
+        """GRPC metadata including A2A-Version and required extensions."""
+        meta: list[tuple[str, str]] = [(A2A_VERSION_HEADER.lower(), A2A_VERSION)]
+        if self._required_extensions:
+            meta.append(
+                (A2A_EXTENSIONS_HEADER.lower(), ",".join(self._required_extensions))
+            )
+        return tuple(meta)
 
     def _connect(self) -> None:
         """Create a fresh gRPC channel and stub."""
@@ -145,14 +154,14 @@ class GrpcClient(BaseTransportClient):
         """
         rpc = getattr(self._stub, rpc_name)
         try:
-            return make_ok(rpc(request, timeout=timeout, metadata=self._METADATA))
+            return make_ok(rpc(request, timeout=timeout, metadata=self._metadata))
         except grpc.RpcError as e:
             if e.code() not in self._RETRIABLE_CODES:
                 return make_err(e)
             self._connect()
             try:
                 rpc = getattr(self._stub, rpc_name)
-                return make_ok(rpc(request, timeout=timeout, metadata=self._METADATA))
+                return make_ok(rpc(request, timeout=timeout, metadata=self._metadata))
             except grpc.RpcError as e2:
                 return make_err(e2)
 
@@ -192,7 +201,7 @@ class GrpcClient(BaseTransportClient):
         for attempt in range(2):
             rpc = getattr(self._stub, rpc_name)
             try:
-                stream = rpc(request, timeout=self._STREAMING_TIMEOUT_S, metadata=self._METADATA)
+                stream = rpc(request, timeout=self._STREAMING_TIMEOUT_S, metadata=self._metadata)
                 try:
                     first = next(stream)
                 except StopIteration:

@@ -11,7 +11,26 @@ if TYPE_CHECKING:
     import httpx
 
 A2A_VERSION_HEADER = "A2A-Version"
+A2A_EXTENSIONS_HEADER = "A2A-Extensions"
 A2A_VERSION = "1.0"
+
+
+def get_required_extensions(agent_card: dict) -> list[str]:
+    """Extract required extension URIs from an Agent Card.
+
+    Per A2A spec §8.3.3, ``capabilities.extensions[]`` entries with
+    ``required: true`` must be activated on every request via the
+    ``A2A-Extensions`` header (HTTP) or ``a2a-extensions`` metadata (gRPC).
+
+    Returns a list of extension URIs (may be empty).
+    """
+    caps = agent_card.get("capabilities", {})
+    extensions = caps.get("extensions", [])
+    return [
+        ext["uri"]
+        for ext in extensions
+        if isinstance(ext, dict) and ext.get("required") and ext.get("uri")
+    ]
 
 
 def _build_params(**kwargs: Any) -> dict:
