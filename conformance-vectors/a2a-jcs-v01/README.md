@@ -209,3 +209,14 @@ one that passes number tokens through as written: A5-001 (`1e-06`), A5-006 (`-0.
 (`1e-07`), A5-012 (`1e+20`), A5-015 (`10.0` and `1.0`) and A5-019 (`-0`). The other ten are
 already spelled in the input the way RFC 8785 writes them, so a pass-through implementation also
 passes them; they are controls for the number group, not cases of it.
+
+kuangmi-bit replayed the A5 family from the vector files alone, in Node with no dependency. On the
+accept side, 16 of 16 canonicalized byte for byte (branch a5-replay, commit e515ce0, per-case file
+SHA-256 53d328e07dc8a1e29f4a4a7148c94742cbdcf1dcfff0b5ffa49291b2c47d0f9d). On the refusal side
+(commit ab466b7, per-case file SHA-256
+1d1ed5c70625886841ca6ac1c1fb59f7739cd786bdd7305cfd82802ebc917947), A5-REJECT-016 to 018 are each
+refused for the stated cause, a non-JSON number token (`NaN`, `Infinity`, `-Infinity`), and the same
+reader accepts the three controls `{"n": 1.0}`, `{"n": "NaN"}` and `{"n": 1e21}`, so the refusals
+are not a refusal of numbers in general. Both per-case files reproduce byte for byte on Node 24.19.0.
+The replays are at https://github.com/a2aproject/a2a-tck/pull/228#issuecomment-6116063344 and
+https://github.com/a2aproject/a2a-tck/pull/228#issuecomment-6140072571.
