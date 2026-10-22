@@ -1,0 +1,22 @@
+{
+  "id": "R1-001",
+  "clause": "a2a-spec-8.4.1-rule-1",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "field-presence",
+  "resolution": "presence-preserving",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Section 8.4.1's own worked example, read as presence-preserving: fields the input carries stay (REQUIRED always, optional when explicitly set even at their default), and a non-REQUIRED empty repeated field (`capabilities.extensions`) is dropped by rule 1. Absent REQUIRED fields are NOT materialized. Expected bytes are the canonical form the specification itself prints for this fragment.",
+  "input": {
+    "name": "Example Agent",
+    "description": "",
+    "capabilities": {
+      "streaming": false,
+      "pushNotifications": false,
+      "extensions": []
+    },
+    "skills": []
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226361706162696c6974696573223a7b22707573684e6f74696669636174696f6e73223a66616c73652c2273747265616d696e67223a66616c73657d2c226465736372697074696f6e223a22222c226e616d65223a224578616d706c65204167656e74222c22736b696c6c73223a5b5d7d"
+  }
+}

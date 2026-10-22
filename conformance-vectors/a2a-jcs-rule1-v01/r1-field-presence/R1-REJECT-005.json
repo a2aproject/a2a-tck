@@ -1,0 +1,12 @@
+{
+  "id": "R1-REJECT-005",
+  "clause": "a2a-spec-8.4.1-rule-1",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "field-presence",
+  "resolution": "strict-presence-validation",
+  "disposition": "MUST-REJECT",
+  "rationale": "Third candidate reading of rule 1, stated as its own vector so it is not lost in the pair: an implementation that treats a card lacking REQUIRED fields as non-conformant refuses it rather than picking a byte string. This is a serializer/signer-side refusal and cannot be produced by either canonicalization reading above; it is included because the spec sentence \"REQUIRED fields MUST always be present\" can also be read as a validation obligation on the input.",
+  "input_raw": "{\"capabilities\":{},\"defaultInputModes\":[],\"defaultOutputModes\":[],\"name\":\"Example Agent\",\"supportedInterfaces\":[],\"version\":\"1.0.0\"}",
+  "rejecting_clause": "a2a-spec-8.4.1-rule-1",
+  "rejection_layer": "field-presence"
+}
