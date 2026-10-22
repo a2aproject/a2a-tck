@@ -65,6 +65,16 @@ class CompatibilityAggregator:
     where it was tested.  Compatibility for a given level is the percentage
     of requirements at that level which pass.  When no requirements exist
     for a level the compatibility is 100.0 (nothing to fail).
+
+    A requirement that was registered but never exercised (``NOT TESTED`` —
+    e.g. the SUT never responded, or crashed before the test ran) counts
+    against compatibility the same as a failure would: it is *not* excluded
+    from the denominator.  Only ``SKIPPED`` requirements (legitimately
+    inapplicable to this SUT, e.g. an optional capability it doesn't
+    implement) are excluded.  Otherwise an unreachable SUT that answers zero
+    requests can report 100% compatibility on the handful of requirements
+    that happened to produce a result before every other one silently
+    dropped out of the denominator as "not tested".
     """
 
     def __init__(
@@ -197,7 +207,7 @@ class CompatibilityAggregator:
             if level is None
             else [r for r in per_requirement.values() if r.level == level]
         )
-        reqs = [r for r in reqs if r.status not in ("SKIPPED", "NOT TESTED")]
+        reqs = [r for r in reqs if r.status != "SKIPPED"]
         if not reqs:
             return 100.0
         passing = sum(1 for r in reqs if r.status == "PASS")

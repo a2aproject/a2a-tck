@@ -6,7 +6,7 @@ the error responses conform to the A2A specification.
 Requirements tested:
     CORE-ERR-001, CORE-ERR-002,
     CORE-CAP-001, CORE-CAP-002, CORE-CAP-003, CORE-CAP-004,
-    CARD-EXT-002,
+    CARD-EXT-001, CARD-EXT-002,
     VER-SERVER-002, VER-SERVER-003,
     JSONRPC-ERR-001, JSONRPC-ERR-002, JSONRPC-ERR-003,
     HTTP_JSON-ERR-001, HTTP_JSON-ERR-002,
@@ -26,9 +26,18 @@ from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.validators.error_binding import validate_expected_error
 from tck.validators.error_info import validate_error_info
+from tck.validators.extended_card import (
+    ExtendedCardProbe,
+    classify_extended_card_probe,
+)
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
-from tests.compatibility._test_helpers import assert_and_record, get_client, record
+from tests.compatibility._test_helpers import (
+    assert_and_record,
+    expected_error_of,
+    get_client,
+    record,
+)
 from tests.compatibility.markers import core, grpc, http_json, jsonrpc, must
 
 
@@ -46,6 +55,7 @@ CORE_CAP_001 = get_requirement_by_id("CORE-CAP-001")
 CORE_CAP_002 = get_requirement_by_id("CORE-CAP-002")
 CORE_CAP_003 = get_requirement_by_id("CORE-CAP-003")
 CORE_CAP_004 = get_requirement_by_id("CORE-CAP-004")
+CARD_EXT_001 = get_requirement_by_id("CARD-EXT-001")
 CARD_EXT_002 = get_requirement_by_id("CARD-EXT-002")
 VER_SERVER_002 = get_requirement_by_id("VER-SERVER-002")
 VER_SERVER_003 = get_requirement_by_id("VER-SERVER-003")
@@ -229,8 +239,7 @@ class TestCapabilityPushNotifications:
             task_id="t",
             config={"url": "https://example.com"},
         )
-        passed = not response.success
-        errors = [] if passed else ["Expected error for unsupported push notifications"]
+        errors = validate_expected_error(response, transport, expected_error_of(req))
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_push_not_supported_rest(
@@ -251,8 +260,7 @@ class TestCapabilityPushNotifications:
             task_id="t",
             config={"url": "https://example.com"},
         )
-        passed = not response.success
-        errors = [] if passed else ["Expected error for unsupported push notifications"]
+        errors = validate_expected_error(response, transport, expected_error_of(req))
         assert_and_record(compatibility_collector, req, transport, errors)
 
 
@@ -286,8 +294,8 @@ class TestCapabilityStreaming:
             client.base_url, "SendStreamingMessage", {"message": msg}
         )
         body = response.json()
-        passed = "error" in body
-        errors = [] if passed else ["Expected error for unsupported streaming"]
+        result = validate_jsonrpc_error(body, expected_error_of(req).name)
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
 
@@ -327,7 +335,7 @@ class TestCapabilityExtensionRequired:
         }
         response = _jsonrpc_call(client.base_url, "SendMessage", {"message": msg})
         body = response.json()
-        result = validate_jsonrpc_error(body, "ExtensionSupportRequiredError")
+        result = validate_jsonrpc_error(body, expected_error_of(req).name)
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
@@ -352,7 +360,7 @@ class TestCapabilityExtensionRequired:
         response = _rest_call(
             client.base_url, "POST", "/message:send", json_body={"message": msg},
         )
-        result = validate_http_json_error(response, "ExtensionSupportRequiredError")
+        result = validate_http_json_error(response, expected_error_of(req).name)
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
@@ -378,8 +386,7 @@ class TestCapabilityExtendedCard:
             pytest.skip("Agent supports extended agent card")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = client.get_extended_agent_card()
-        passed = not response.success
-        errors = [] if passed else ["Expected error for unsupported extended card"]
+        errors = validate_expected_error(response, transport, expected_error_of(req))
         assert_and_record(compatibility_collector, req, transport, errors)
 
 
@@ -388,17 +395,15 @@ class TestCapabilityExtendedCard:
 class TestExtendedCardNotConfigured:
     """CARD-EXT-002: Extended card not configured returns ExtendedAgentCardNotConfiguredError.
 
-    This test probes the GetExtendedAgentCard endpoint to determine whether
-    the test precondition holds (the server declares support but has not
-    configured an extended card).  When the server returns a successful
-    response or a non-matching error (e.g. an authentication error) the card
-    IS configured and the test is skipped.
-
-    By design this test can only pass or skip — it never fails.  The
-    precondition (card not configured) is not observable from the agent card
-    alone, so we infer it from the response: if the server returns the
-    expected ExtendedAgentCardNotConfiguredError the test passes; any other
-    outcome means the precondition does not hold and the test is skipped.
+    The precondition (server declares support but has not configured a card)
+    is not observable from the agent card, so the test probes the
+    GetExtendedAgentCard endpoint and routes on the response.  A successful
+    response or an auth challenge (HTTP 401/403, or the gRPC
+    UNAUTHENTICATED/PERMISSION_DENIED statuses) means the card IS configured,
+    so the test is skipped.  The expected ExtendedAgentCardNotConfiguredError
+    passes.  Any *other* error is a conformance violation — the server
+    declared support but returned neither the card, an auth challenge, nor
+    the specified error — and fails rather than silently skipping.
     """
 
     @staticmethod
@@ -415,16 +420,19 @@ class TestExtendedCardNotConfigured:
             pytest.skip("Agent does not declare extendedAgentCard capability")
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = client.get_extended_agent_card()
-        if response.success:
+        probe = classify_extended_card_probe(response, transport)
+        if probe in (ExtendedCardProbe.CONFIGURED, ExtendedCardProbe.AUTH_REQUIRED):
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
-            pytest.skip("Extended card is configured (returned successfully); test does not apply")
-        errors = validate_expected_error(response, transport, EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR)
-        if errors:
-            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
-            pytest.skip(
-                "Extended card appears configured (server returned a different error); "
-                "test does not apply"
-            )
+            pytest.skip("Extended card is configured (test precondition does not hold)")
+        errors = (
+            []
+            if probe is ExtendedCardProbe.NOT_CONFIGURED
+            else [
+                "Server declares extendedAgentCard support but returned "
+                f"{response.error_code!r} instead of "
+                f"{EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR.name}"
+            ]
+        )
         assert_and_record(compatibility_collector, req, transport, errors)
 
     @jsonrpc
@@ -455,6 +463,78 @@ class TestExtendedCardNotConfigured:
         compatibility_collector: Any,
     ) -> None:
         """CARD-EXT-002: Not-configured extended card returns correct error (gRPC)."""
+        self._run("grpc", transport_clients, agent_card, compatibility_collector)
+
+
+@must
+@core
+class TestExtendedCardRequiresAuth:
+    """CARD-EXT-001: An authenticated GetExtendedAgentCard request returns the extended card.
+
+    Like CARD-EXT-002, the precondition is not observable from the public
+    card, so the endpoint is probed and the result routed.  A configured card
+    returned to the TCK's authenticated client passes.  When no card is
+    configured, or the transport returns an auth challenge (the TCK's own
+    credentials were not accepted), the precondition does not hold and the
+    test is skipped.  Any other error is a conformance violation and fails.
+    """
+
+    @staticmethod
+    def _run(
+        transport: str,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        req = CARD_EXT_001
+        caps = agent_card.get("capabilities", {})
+        if not caps.get("extendedAgentCard"):
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("Agent does not declare extendedAgentCard capability")
+        client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
+        response = client.get_extended_agent_card()
+        probe = classify_extended_card_probe(response, transport)
+        if probe in (ExtendedCardProbe.NOT_CONFIGURED, ExtendedCardProbe.AUTH_REQUIRED):
+            record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
+            pytest.skip("No authenticated extended card available (test precondition does not hold)")
+        errors = (
+            []
+            if probe is ExtendedCardProbe.CONFIGURED
+            else [
+                "Authenticated GetExtendedAgentCard returned "
+                f"{response.error_code!r}; expected the extended card"
+            ]
+        )
+        assert_and_record(compatibility_collector, req, transport, errors)
+
+    @jsonrpc
+    def test_extended_card_requires_auth_jsonrpc(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """CARD-EXT-001: Authenticated request returns extended card (JSON-RPC)."""
+        self._run("jsonrpc", transport_clients, agent_card, compatibility_collector)
+
+    @http_json
+    def test_extended_card_requires_auth_http_json(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """CARD-EXT-001: Authenticated request returns extended card (HTTP+JSON)."""
+        self._run("http_json", transport_clients, agent_card, compatibility_collector)
+
+    @grpc
+    def test_extended_card_requires_auth_grpc(
+        self,
+        transport_clients: dict[str, BaseTransportClient],
+        agent_card: dict[str, Any],
+        compatibility_collector: Any,
+    ) -> None:
+        """CARD-EXT-001: Authenticated request returns extended card (gRPC)."""
         self._run("grpc", transport_clients, agent_card, compatibility_collector)
 
 
@@ -490,8 +570,8 @@ class TestVersionErrors:
             headers={A2A_VERSION_HEADER: "99.0"},
         )
         body = response.json()
-        passed = "error" in body
-        errors = [] if passed else ["Expected VersionNotSupportedError for A2A-Version: 99.0"]
+        result = validate_jsonrpc_error(body, expected_error_of(req).name)
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_unsupported_version_returns_error_rest(
@@ -516,8 +596,8 @@ class TestVersionErrors:
             json_body={"message": msg},
             headers={A2A_VERSION_HEADER: "99.0"},
         )
-        passed = response.status_code >= _HTTP_ERROR_STATUS
-        errors = [] if passed else [f"Expected error for unsupported version, got {response.status_code}"]
+        result = validate_http_json_error(response, expected_error_of(req).name)
+        errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_empty_version_treated_as_default_jsonrpc(

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from tck.requirements.base import (
     SPEC_BASE,
+    VERSION_NOT_SUPPORTED_ERROR,
     RequirementLevel,
     RequirementSpec,
 )
@@ -57,6 +58,7 @@ VERSIONING_REQUIREMENTS: list[RequirementSpec] = [
             "return a VersionNotSupportedError."
         ),
         expected_behavior="VersionNotSupportedError returned",
+        expected_error=VERSION_NOT_SUPPORTED_ERROR,
         spec_url=f"{SPEC_BASE}362-server-responsibilities",
         tags=[VERSIONING, SERVER, ERROR],
     ),

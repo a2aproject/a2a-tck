@@ -10,7 +10,6 @@ from tck.requirements.base import (
     EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR,
     GET_EXTENDED_AGENT_CARD_BINDING,
     SPEC_BASE,
-    OperationType,
     RequirementLevel,
     RequirementSpec,
 )
@@ -100,7 +99,10 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
             "The client MUST authenticate the GetExtendedAgentCard request "
             "using one of the schemes declared in the public AgentCard."
         ),
-        operation=OperationType.GET_EXTENDED_AGENT_CARD,
+        # No ``operation``: the extended-card precondition is not observable
+        # from the card, so this is driven by a dedicated probe-and-skip test
+        # (TestExtendedCardRequiresAuth) instead of the generic requirement
+        # runner, which would false-fail when no extended card is configured.
         binding=GET_EXTENDED_AGENT_CARD_BINDING,
         proto_request_type="GetExtendedAgentCardRequest",
         proto_response_type="AgentCard",

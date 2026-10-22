@@ -26,10 +26,12 @@ import pytest
 from tck.requirements.base import TERMINAL_STATES, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
+from tck.validators.error_binding import validate_expected_error
 from tests.compatibility._task_helpers import create_completed_task, create_working_task
 from tests.compatibility._test_helpers import (
     assert_and_record,
     collect_events_with_timeout,
+    expected_error_of,
     get_client,
     record,
 )
@@ -231,12 +233,7 @@ class TestCancelTask:
 
         response = client.cancel_task(id=info.task_id)
 
-        errors: list[str] = []
-        if response.success:
-            errors.append(
-                "CancelTask on a terminal task should return an error, "
-                "but succeeded"
-            )
+        errors = validate_expected_error(response, transport, expected_error_of(req))
 
         assert_and_record(compatibility_collector, req, transport, errors)
 
@@ -444,18 +441,22 @@ class TestSubscribeLifecycle:
             pytest.skip("Task did not reach a terminal state; cannot test subscribe-after-terminal")
 
         sub_response = client.subscribe_to_task(id=info.task_id)
-
         errors: list[str] = []
-        if sub_response.success:
-            # Some servers may return success but deliver an error on iteration
-            try:
-                collect_events_with_timeout(sub_response.events)[0]
-                errors.append(
-                    "SubscribeToTask on a terminal task should return an error, "
-                    "but succeeded"
-                )
-            except Exception:
-                pass  # Error during iteration is acceptable
-        # else: server returned error immediately — correct behavior
+
+        if not sub_response.success:
+            # Immediate error: must be the specific UnsupportedOperationError.
+            errors = validate_expected_error(sub_response, transport, expected_error_of(req))
+            assert_and_record(compatibility_collector, req, transport, errors)
+            return
+
+        # Some servers open the stream and deliver the error on iteration; the
+        # error code is not observable from the stream, so any iteration error
+        # is accepted and only a successfully-yielded event is a failure.
+        events, _ = collect_events_with_timeout(sub_response.events, stop_after_first=True)
+        if events:
+            errors.append(
+                "SubscribeToTask on a terminal task should return an error, "
+                "but yielded an event"
+            )
 
         assert_and_record(compatibility_collector, req, transport, errors)

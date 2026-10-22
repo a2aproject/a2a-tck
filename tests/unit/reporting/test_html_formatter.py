@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -12,6 +13,7 @@ from tck.reporting.html_formatter import HTMLFormatter
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from pathlib import Path
 
 
@@ -19,6 +21,18 @@ if TYPE_CHECKING:
 def collector() -> CompatibilityCollector:
     """Return a fresh CompatibilityCollector."""
     return CompatibilityCollector()
+
+
+@pytest.fixture(autouse=True)
+def _empty_registry() -> Iterator[None]:
+    """Keep formatter tests hermetic against the real ~129-requirement registry.
+
+    Since GH-214, NOT TESTED requirements count against compatibility, so an
+    unpatched test would get diluted by every real requirement the collector
+    didn't record a result for.
+    """
+    with patch("tck.requirements.registry.ALL_REQUIREMENTS", []):
+        yield
 
 
 @pytest.fixture
@@ -84,6 +98,20 @@ class TestExecutiveSummary:
         report = CompatibilityAggregator(collector, agent_card=agent_card).aggregate()
         html = formatter.format(report)
         assert "http://localhost:9999" in html
+
+    def test_missing_version_does_not_crash(
+        self, collector: CompatibilityCollector, formatter: HTMLFormatter
+    ) -> None:
+        """A report with no agent_card (e.g. an unreachable SUT) doesn't raise KeyError.
+
+        Regression test: CompatibilityAggregator defaults agent_card to {}
+        when none is available, and report.agent_card['version'] used to
+        raise KeyError formatting that report instead of rendering it.
+        """
+        report = CompatibilityAggregator(collector, agent_card={}).aggregate()
+        html = formatter.format(report)
+        assert "SUT Version: ?" in html
+
 
 class TestPerRequirementTable:
     """Per-requirement table contents."""

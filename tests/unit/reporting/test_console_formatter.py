@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+from unittest.mock import patch
+
 import pytest
 
 from tck.reporting.aggregator import CompatibilityAggregator
@@ -9,10 +12,26 @@ from tck.reporting.collector import CompatibilityCollector
 from tck.reporting.console_formatter import ConsoleFormatter
 
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+
 @pytest.fixture
 def collector() -> CompatibilityCollector:
     """Return a fresh CompatibilityCollector."""
     return CompatibilityCollector()
+
+
+@pytest.fixture(autouse=True)
+def _empty_registry() -> Iterator[None]:
+    """Keep formatter tests hermetic against the real ~129-requirement registry.
+
+    Since GH-214, NOT TESTED requirements count against compatibility, so an
+    unpatched test would get diluted by every real requirement the collector
+    didn't record a result for.
+    """
+    with patch("tck.requirements.registry.ALL_REQUIREMENTS", []):
+        yield
 
 
 @pytest.fixture
