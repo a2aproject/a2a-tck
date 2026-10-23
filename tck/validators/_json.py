@@ -146,3 +146,19 @@ def validate_message_response_contains_field(
     if inner.get(field) is None:
         return [f"{error_prefix} must include '{field}'"]
     return []
+
+
+def validate_message_response_field_equals(
+    result: dict[str, Any],
+    field: str,
+    expected: Any,
+) -> list[str]:
+    """Validate a field value in an unwrapped SendMessageResponse dict."""
+    inner = result.get("task") or result.get("message") or result
+    actual = inner.get(field) if isinstance(inner, dict) else None
+    if actual != expected:
+        return [
+            f"Expected response field '{field}' to equal "
+            f"'{expected}', got '{actual}'"
+        ]
+    return []
