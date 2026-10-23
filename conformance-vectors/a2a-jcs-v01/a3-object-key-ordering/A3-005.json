@@ -1,0 +1,15 @@
+{
+  "id": "A3-005",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A BMP character above the ASCII range (U+00E9 'e with acute') sorts after every ASCII key.",
+  "input": {
+    "cafe": 1,
+    "café": 2
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2263616665223a312c22636166c3a9223a327d"
+  }
+}

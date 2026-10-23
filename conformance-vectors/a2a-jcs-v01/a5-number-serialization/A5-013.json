@@ -1,0 +1,14 @@
+{
+  "id": "A5-013",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "0.1 + 0.2 in IEEE 754 double arithmetic does not equal 0.3; this is the resulting value (0.30000000000000004), a classic case requiring the full shortest-round-trip digit count rather than a short 'looks clean' rounding.",
+  "input": {
+    "n": 0.30000000000000004
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a302e33303030303030303030303030303030347d"
+  }
+}

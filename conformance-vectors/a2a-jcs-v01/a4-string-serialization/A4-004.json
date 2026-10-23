@@ -1,0 +1,14 @@
+{
+  "id": "A4-004",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "The mandatory escape set is exactly quote, backslash, and control characters below U+0020: this string exercises all three (a literal quote, a literal backslash, and a literal newline), each of which MUST still be escaped even though non-ASCII text is emitted literally.",
+  "input": {
+    "raw": "a \"quoted\" \\ path\nwith a newline"
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22726177223a2261205c2271756f7465645c22205c5c20706174685c6e776974682061206e65776c696e65227d"
+  }
+}

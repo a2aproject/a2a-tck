@@ -1,0 +1,14 @@
+{
+  "id": "A5-001",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "The a2aproject/A2A#2122 counterexample verbatim (case C4): 0.000001 must serialize as the literal '0.000001', not as '1e-06' (Python's repr threshold, which is what a2a-python's json.dumps produces and what makes this a real cross-SDK break).",
+  "input": {
+    "tolerance": 1e-06
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22746f6c6572616e6365223a302e3030303030317d"
+  }
+}

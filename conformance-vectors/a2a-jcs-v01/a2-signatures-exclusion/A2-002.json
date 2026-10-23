@@ -1,0 +1,19 @@
+{
+  "id": "A2-002",
+  "clause": "a2a-spec-8.4.1-rule-3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A card carrying an EMPTY `signatures` array ([]) is excluded the same way as a populated one (A2-001): exclusion is by key presence, not by whether the value is 'interesting'. Compare directly against A6-001, which established that an empty array is otherwise a perfectly normal RFC 8785 value elsewhere in a document -- the only thing special about `signatures` is the key name.",
+  "input": {
+    "name": "Example Agent",
+    "capabilities": {
+      "streaming": true,
+      "pushNotifications": false
+    },
+    "signatures": []
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226361706162696c6974696573223a7b22707573684e6f74696669636174696f6e73223a66616c73652c2273747265616d696e67223a747275657d2c226e616d65223a224578616d706c65204167656e74227d"
+  }
+}

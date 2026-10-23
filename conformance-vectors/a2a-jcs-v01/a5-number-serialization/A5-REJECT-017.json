@@ -1,0 +1,11 @@
+{
+  "id": "A5-REJECT-017",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-REJECT",
+  "rejecting_clause": "RFC8785-3.2.2.3",
+  "rejection_layer": "canonicalization",
+  "rationale": "Infinity is the positive-magnitude sibling of A5-REJECT-016: not valid JSON, no canonical representation, must be refused rather than passed through by any parser lenient enough to accept the bare word. (confirmed refused by both independent oracles: go+py)",
+  "input_raw": "{\"n\": Infinity}"
+}

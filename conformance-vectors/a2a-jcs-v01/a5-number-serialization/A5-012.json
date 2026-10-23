@@ -1,0 +1,14 @@
+{
+  "id": "A5-012",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "One order of magnitude below the C4 'big' value (A5-002): 1e20 probes the large-magnitude side of the same boundary that 1e21 sits just past.",
+  "input": {
+    "n": 1e+20
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a3130303030303030303030303030303030303030307d"
+  }
+}

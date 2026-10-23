@@ -1,0 +1,11 @@
+{
+  "id": "A5-REJECT-016",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-REJECT",
+  "rejecting_clause": "RFC8785-3.2.2.3",
+  "rejection_layer": "canonicalization",
+  "rationale": "NaN is not a valid RFC 8259 JSON number and has no ECMAScript Number::toString representation as a JSON token; some lenient parsers accept the bare word NaN as a non-standard extension, but a conformant canonicalizer must refuse to emit it rather than pass the extension through. (confirmed refused by both independent oracles: go+py)",
+  "input_raw": "{\"n\": NaN}"
+}

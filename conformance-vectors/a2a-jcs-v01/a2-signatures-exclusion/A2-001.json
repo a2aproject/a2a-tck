@@ -1,0 +1,24 @@
+{
+  "id": "A2-001",
+  "clause": "a2a-spec-8.4.1-rule-3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A card carrying a populated `signatures` array canonicalizes as if that key were absent entirely; the exclusion is unconditional, not conditional on the array being empty.",
+  "input": {
+    "name": "Example Agent",
+    "capabilities": {
+      "streaming": true,
+      "pushNotifications": false
+    },
+    "signatures": [
+      {
+        "protected": "eyJhbGciOiJFUzI1NiJ9",
+        "signature": "abc123"
+      }
+    ]
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226361706162696c6974696573223a7b22707573684e6f74696669636174696f6e73223a66616c73652c2273747265616d696e67223a747275657d2c226e616d65223a224578616d706c65204167656e74227d"
+  }
+}

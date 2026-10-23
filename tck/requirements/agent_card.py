@@ -141,7 +141,12 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Agent Card canonicalized per RFC 8785 before signing",
         spec_url=f"{SPEC_BASE}841-canonicalization-requirements",
-        tags=[AGENT_CARD, SIGNING, JCS, NOT_AUTOMATABLE],
+        # The TCK's canonicalizer is held to the a2a-jcs-v01 corpus in
+        # tests/unit/canonicalization/test_jcs_vectors.py. Against a live
+        # server, tests/compatibility/agent_card/test_agent_card_signing.py
+        # checks that the served card has a canonical form at all; whether the
+        # server signed those bytes needs the JWS verified (CARD-SIGN-003).
+        tags=[AGENT_CARD, SIGNING, JCS],
     ),
     RequirementSpec(
         id="CARD-SIGN-002",
@@ -154,7 +159,12 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Signatures field excluded from signing payload",
         spec_url=f"{SPEC_BASE}841-canonicalization-requirements",
-        tags=[AGENT_CARD, SIGNING, NOT_AUTOMATABLE],
+        # The TCK's signing-bytes computation is held to the a2a-jcs-v01 corpus
+        # (group A2, with a negative control) in
+        # tests/unit/canonicalization/test_jcs_vectors.py. Against a live
+        # server this is decided only by verifying the JWS over those bytes,
+        # so no live test records it yet.
+        tags=[AGENT_CARD, SIGNING],
     ),
     RequirementSpec(
         id="CARD-SIGN-003",
@@ -167,6 +177,8 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Protected header contains alg and kid",
         spec_url=f"{SPEC_BASE}842-signature-format",
+        # JWS construction (Section 8.4.2), not canonicalization: the
+        # a2a-jcs-v01 corpus carries no vectors for protected headers.
         tags=[AGENT_CARD, SIGNING, JWS, NOT_AUTOMATABLE],
     ),
     RequirementSpec(
@@ -180,6 +192,8 @@ AGENT_CARD_REQUIREMENTS: list[RequirementSpec] = [
         ),
         expected_behavior="Expired/revoked keys rejected during verification",
         spec_url=f"{SPEC_BASE}843-signature-verification",
+        # Constrains a verifying client's key handling over time (Section
+        # 8.4.3), which no canonicalization vector can decide.
         tags=[AGENT_CARD, SIGNING, SECURITY, NOT_AUTOMATABLE],
     ),
     # --- Agent Card Caching (Section 8.6) ---

@@ -1,0 +1,15 @@
+{
+  "id": "A6-007",
+  "clause": "RFC8785-3.2.2.1",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Boolean literals serialize as the bare tokens 'true'/'false', and sibling keys still sort (RFC8785-3.2.3) regardless of value type.",
+  "input": {
+    "flag_true": true,
+    "flag_false": false
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22666c61675f66616c7365223a66616c73652c22666c61675f74727565223a747275657d"
+  }
+}
