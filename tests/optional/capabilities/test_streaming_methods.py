@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 import uuid
 
 import pytest
@@ -43,6 +44,17 @@ def has_streaming_support(agent_card_data) -> bool:
         return False
 
     return agent_card_utils.get_capability_streaming(agent_card_data)
+
+
+def is_not_implemented_error(error: Exception) -> bool:
+    """
+    Check if an exception indicates a 501 / Not Implemented response.
+
+    Uses word boundary check for '501' to prevent false positive matches
+    when a random UUID or task ID happens to contain the substring '501'.
+    """
+    msg = str(error).lower()
+    return bool(re.search(r"\b501\b|not implemented", msg))
 
 
 @optional_capability
@@ -145,9 +157,7 @@ async def test_message_stream_basic(sut_client, agent_card_data):
             # Otherwise it might be another valid type
 
     except Exception as e:
-        # Check for transport-specific error handling
-        error_msg = str(e).lower()
-        if "501" in error_msg or "not implemented" in error_msg:
+        if is_not_implemented_error(e):
             # This is a FAILURE because streaming was declared but not implemented
             pytest.fail(
                 "Streaming capability declared in Agent Card but SUT returned error indicating not implemented. "
@@ -371,8 +381,7 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
             
         # Check for errors from the background tasks
         if stream_error:
-            error_msg = str(stream_error).lower()
-            if "501" in error_msg or "not implemented" in error_msg:
+            if is_not_implemented_error(stream_error):
                 pytest.fail(
                     "Streaming capability declared in Agent Card but SUT returned error indicating not implemented. "
                     "This is a specification violation - declared capabilities MUST be implemented."
@@ -381,8 +390,7 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
                 raise stream_error
 
     except Exception as e:
-        error_msg = str(e).lower()
-        if "501" in error_msg or "not implemented" in error_msg:
+        if is_not_implemented_error(e):
             pytest.fail(
                 "Streaming capability declared in Agent Card but SUT returned error indicating not implemented. "
                 "This is a specification violation - declared capabilities MUST be implemented."
@@ -396,16 +404,17 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
 
     # Check for resubscribe errors
     if resubscribe_error:
-        error_msg = str(resubscribe_error).lower()
-        if "501" in error_msg or "not implemented" in error_msg:
+        if is_not_implemented_error(resubscribe_error):
             pytest.fail(
                 "Streaming capability declared but tasks/resubscribe returned error indicating not implemented. "
                 "This violates the A2A specification - declared capabilities MUST be implemented."
             )
-        elif "not found" in error_msg or "404" in error_msg:
-            pytest.skip("Task expired before resubscribe test - this is implementation-dependent behavior")
         else:
-            raise resubscribe_error
+            error_msg = str(resubscribe_error).lower()
+            if "not found" in error_msg or "404" in error_msg:
+                pytest.skip("Task expired before resubscribe test - this is implementation-dependent behavior")
+            else:
+                raise resubscribe_error
 
     # Validate that we got at least some events from resubscribe
     assert len(resubscribe_events) > 0, "Streaming capability declared but no events received from resubscribe stream"
@@ -514,15 +523,15 @@ async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
 
     except Exception as e:
         error_msg = str(e).lower()
-        if "501" in error_msg or "not implemented" in error_msg:
+        if ("not found" in error_msg or "404" in error_msg or "invalid" in error_msg or 
+              "event loop is closed" in error_msg):
+            # These are expected behaviors for non-existent task ID
+            logger.info(f"Properly rejected non-existent task with: {e}")
+        elif is_not_implemented_error(e):
             pytest.fail(
                 "Streaming capability declared but tasks/resubscribe returned error indicating not implemented. "
                 "This violates the A2A specification - declared capabilities MUST be implemented."
             )
-        elif ("not found" in error_msg or "404" in error_msg or "invalid" in error_msg or 
-              "event loop is closed" in error_msg):
-            # These are expected behaviors for non-existent task ID
-            logger.info(f"Properly rejected non-existent task with: {e}")
         else:
             raise
 
@@ -588,8 +597,7 @@ async def test_sse_header_compliance(sut_client, agent_card_data):
             pytest.skip("Cannot access raw HTTP response for header validation with this transport client")
             
     except Exception as e:
-        error_msg = str(e).lower()
-        if "501" in error_msg or "not implemented" in error_msg:
+        if is_not_implemented_error(e):
             pytest.fail(
                 "Streaming capability declared but SUT returned error indicating not implemented. "
                 "This is a specification violation - declared capabilities MUST be implemented."
@@ -667,8 +675,7 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
         assert events_processed > 0, "Streaming should produce at least one event"
 
     except Exception as e:
-        error_msg = str(e).lower()
-        if "501" in error_msg or "not implemented" in error_msg:
+        if is_not_implemented_error(e):
             pytest.fail(
                 "Streaming capability declared but SUT returned error indicating not implemented. "
                 "This is a specification violation - declared capabilities MUST be implemented."
