@@ -46,6 +46,7 @@ Compatibility reports are generated in the `reports/` directory after every run.
 | `--sut-host URL` | **(required)** Base URL of the System Under Test |
 | `--transport LIST` | Comma-separated transport filter (e.g. `grpc`, `jsonrpc,http_json`). Default: all transports declared in the agent card |
 | `--level LEVEL` | Run only requirements at a specific RFC 2119 level: `must`, `should`, or `may` |
+| `--message-parts-file PATH` | Replace generic message parts in parametrized, non-error requirement scenarios with a non-empty JSON array from `PATH` |
 | `-v, --verbose` | Verbose pytest output |
 | `--verbose-log` | Verbose output with log capture (`-v -s --log-cli-level=INFO`) |
 | `-- pytest_args...` | Additional arguments passed through to pytest (e.g. `-- -x --pdb`) |
@@ -58,6 +59,9 @@ Compatibility reports are generated in the `reports/` directory after every run.
 
 # Run gRPC and JSON-RPC transports with verbose output
 ./run_tck.py --sut-host http://localhost:9999 --transport grpc,jsonrpc -v
+
+# Exercise a structured-data agent with domain-valid input parts
+./run_tck.py --sut-host http://localhost:9999 --message-parts-file fixtures/parts.json
 
 # Pass extra pytest flags
 ./run_tck.py --sut-host http://localhost:9999 -- -x --pdb

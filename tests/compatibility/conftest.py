@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 import pytest
 
+from tck.message_parts import MessagePartsError, load_message_parts
 from tck.reporting.collector import CompatibilityCollector
 from tck.transport.grpc_client import GrpcClient
 from tck.transport.http_json_client import HttpJsonClient
@@ -76,6 +77,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
             "(default: localhost)."
         ),
     )
+    group.addoption(
+        "--message-parts-file",
+        dest="message_parts_file",
+        default=None,
+        help=(
+            "JSON file containing a non-empty A2A Message.parts array used by "
+            "generic, non-error requirement scenarios."
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -87,6 +97,18 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def sut_host(request: pytest.FixtureRequest) -> str:
     """Return the SUT hostname."""
     return request.config.getoption("--sut-host")
+
+
+@pytest.fixture(scope="session")
+def message_parts(request: pytest.FixtureRequest) -> list[dict[str, Any]] | None:
+    """Load optional operator-supplied parts before any SUT operation runs."""
+    path = request.config.getoption("--message-parts-file")
+    if path is None:
+        return None
+    try:
+        return load_message_parts(path)
+    except MessagePartsError as exc:
+        raise pytest.UsageError(str(exc)) from exc
 
 
 @pytest.fixture(scope="session")
