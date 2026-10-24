@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import TERMINAL_STATES
+
 
 if TYPE_CHECKING:
     from tck.requirements.base import ErrorBinding, RequirementSpec
@@ -29,6 +31,48 @@ def expected_error_of(req: RequirementSpec) -> ErrorBinding:
     if req.expected_error is None:
         raise AssertionError(f"{req.id} does not declare an expected_error")
     return req.expected_error
+
+
+_GRPC_TERMINAL_STATES = frozenset(s.grpc_value for s in TERMINAL_STATES)
+
+_JSON_TERMINAL_STATES = frozenset(s.json_value for s in TERMINAL_STATES)
+
+
+def is_terminal_status(response: Any, transport: str) -> bool:
+    """Return True if *response* carries a task in a terminal state.
+
+    Handles both the ``SendMessageResponse`` payload oneof (gRPC) or
+    ``result`` envelope (JSON-RPC) and a bare ``Task`` returned by
+    GetTask/CancelTask.
+    """
+    raw = response.raw_response
+    if transport == "grpc":
+        # SendMessageResponse has a "payload" oneof; Task proto does not.
+        try:
+            payload = raw.WhichOneof("payload")
+            if payload == "task":
+                return raw.task.status.state in _GRPC_TERMINAL_STATES
+        except (ValueError, AttributeError):
+            pass
+        # Task proto returned directly (GetTask, CancelTask)
+        if hasattr(raw, "status"):
+            return raw.status.state in _GRPC_TERMINAL_STATES
+        return False
+
+    # JSON-RPC or HTTP+JSON
+    if not isinstance(raw, dict):
+        return False
+    if transport == "jsonrpc":
+        result = raw.get("result", {})
+        task = result.get("task", result) if isinstance(result, dict) else {}
+    else:
+        task = raw.get("task", raw)
+
+    if isinstance(task, dict):
+        status = task.get("status", {})
+        state = status.get("state", "") if isinstance(status, dict) else ""
+        return state in _JSON_TERMINAL_STATES
+    return False
 
 
 def fail_msg(req: RequirementSpec, transport: str, detail: str) -> str:
