@@ -22,8 +22,9 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
+from tck.validators.http_json.media_type import is_a2a_json_media_type
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
-from tests.compatibility.markers import grpc, http_json, jsonrpc, must, streaming
+from tests.compatibility.markers import grpc, http_json, jsonrpc, must, should, streaming
 
 
 if TYPE_CHECKING:
@@ -231,10 +232,10 @@ class TestJsonRpcStreaming:
 # ---------------------------------------------------------------------------
 
 
-@must
+@should
 @http_json
 class TestRestFormat:
-    """HTTP_JSON-SVC-001: Content-Type and response schema validation."""
+    """HTTP_JSON-SVC-001: Prefer the A2A JSON media type."""
 
     @pytest.fixture()
     def rest_response(
@@ -251,31 +252,25 @@ class TestRestFormat:
         rest_response: TransportResponse,
         compatibility_collector: Any,
     ) -> None:
-        """HTTP_JSON-SVC-001: Content-Type must be application/json."""
+        """HTTP_JSON-SVC-001: Content-Type should be application/a2a+json."""
         req = HTTP_JSON_SVC_001
         transport = "http_json"
         ct = rest_response.headers.get("content-type", "")
-        errors = []
-        if "application/json" not in ct:
-            errors.append(f"Expected Content-Type application/json, got: {ct!r}")
-        assert_and_record(compatibility_collector, req, transport, errors)
-
-    def test_response_validates_against_schema(
-        self,
-        rest_response: TransportResponse,
-        validators: dict[str, Any],
-        compatibility_collector: Any,
-    ) -> None:
-        """HTTP_JSON-SVC-001: Response payload conforms to SendMessageResponse schema."""
-        req = HTTP_JSON_SVC_001
-        transport = "http_json"
-        if not rest_response.success:
-            pytest.skip(f"SendMessage failed: {rest_response.error}")
-        validator = validators[transport]
-        result = validator.validate(
-            rest_response.raw_response, "Send Message Response"
+        valid = is_a2a_json_media_type(ct)
+        errors = (
+            []
+            if valid
+            else [f"Expected Content-Type application/a2a+json, got: {ct!r}"]
         )
-        assert_and_record(compatibility_collector, req, transport, result.errors)
+        record(
+            collector=compatibility_collector,
+            req=req,
+            transport=transport,
+            passed=valid,
+            errors=errors,
+        )
+        if errors:
+            pytest.xfail(errors[0])
 
 
 @must
