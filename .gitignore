@@ -195,5 +195,10 @@ spec_tracker/cache
 
 # Reports
 reports/*.json
+reports/*.html
+reports/junitreport.xml
+
+# Local agent state
+.serena/
 
 .DS_Store
