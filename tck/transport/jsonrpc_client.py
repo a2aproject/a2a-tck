@@ -75,8 +75,8 @@ class JsonRpcStreamingResponse(_JsonRpcResponseMixin, StreamingResponse):
 class JsonRpcClient(BaseTransportClient):
     """JSON-RPC 2.0 over HTTP transport client for A2A protocol."""
 
-    def __init__(self, base_url: str) -> None:
-        super().__init__(base_url, TRANSPORT)
+    def __init__(self, base_url: str, tenant: str | None = None) -> None:
+        super().__init__(base_url, TRANSPORT, tenant)
         self._id_counter = itertools.count(1)
         self._client = httpx.Client(
             base_url=base_url,
@@ -93,13 +93,17 @@ class JsonRpcClient(BaseTransportClient):
         """Generate the next unique request ID."""
         return next(self._id_counter)
 
+    def _with_tenant(self, params: dict) -> dict:
+        """Return *params* carrying the interface's tenant, when one is declared."""
+        return {"tenant": self.tenant, **params} if self.tenant else params
+
     def _call(self, method: str, params: dict) -> TransportResponse:
         """Make a JSON-RPC 2.0 call and return a TransportResponse."""
         payload = {
             "jsonrpc": "2.0",
             "id": self._next_id(),
             "method": method,
-            "params": params,
+            "params": self._with_tenant(params),
         }
         try:
             response = self._client.post(
@@ -133,7 +137,7 @@ class JsonRpcClient(BaseTransportClient):
             "jsonrpc": "2.0",
             "id": self._next_id(),
             "method": method,
-            "params": params,
+            "params": self._with_tenant(params),
         }
         try:
             request = self._client.build_request(
