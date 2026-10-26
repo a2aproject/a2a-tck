@@ -209,7 +209,7 @@ class JsonRpcClient(BaseTransportClient):
         history_length: int | None = None,
     ) -> TransportResponse:
         """Get a task by ID."""
-        params = _build_params(id=id, history_length=history_length)
+        params = _build_params(id=id, historyLength=history_length)
         return self._call(OperationType.GET_TASK.value, params)
 
     def list_tasks(
