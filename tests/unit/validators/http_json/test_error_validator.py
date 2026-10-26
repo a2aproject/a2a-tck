@@ -20,7 +20,6 @@ from tck.validators.http_json.error_validator import (
 HTTP_NOT_FOUND = HTTPStatus.NOT_FOUND
 HTTP_BAD_REQUEST = HTTPStatus.BAD_REQUEST
 HTTP_CONFLICT = HTTPStatus.CONFLICT
-HTTP_UNSUPPORTED_MEDIA_TYPE = HTTPStatus.UNSUPPORTED_MEDIA_TYPE
 HTTP_INTERNAL_SERVER_ERROR = HTTPStatus.INTERNAL_SERVER_ERROR
 
 
@@ -150,14 +149,14 @@ class TestHTTPJSONErrorStatus:
         assert HTTP_JSON_ERROR_STATUS["TaskNotFoundError"] == HTTP_NOT_FOUND
 
     def test_contains_task_not_cancelable(self) -> None:
-        """Test TaskNotCancelableError maps to 409."""
+        """Test TaskNotCancelableError maps to 400."""
         assert "TaskNotCancelableError" in HTTP_JSON_ERROR_STATUS
-        assert HTTP_JSON_ERROR_STATUS["TaskNotCancelableError"] == HTTP_CONFLICT
+        assert HTTP_JSON_ERROR_STATUS["TaskNotCancelableError"] == HTTP_BAD_REQUEST
 
     def test_contains_content_type_not_supported(self) -> None:
-        """Test ContentTypeNotSupportedError maps to 415."""
+        """Test ContentTypeNotSupportedError maps to 400."""
         assert "ContentTypeNotSupportedError" in HTTP_JSON_ERROR_STATUS
-        assert HTTP_JSON_ERROR_STATUS["ContentTypeNotSupportedError"] == HTTP_UNSUPPORTED_MEDIA_TYPE
+        assert HTTP_JSON_ERROR_STATUS["ContentTypeNotSupportedError"] == HTTP_BAD_REQUEST
 
     def test_contains_internal_error(self) -> None:
         """Test InternalError maps to 500."""
@@ -346,6 +345,6 @@ class TestHelperFunctions:
         assert "InvalidRequestError" in errors
 
     def test_get_possible_errors_conflict(self) -> None:
-        """Test that 409 maps to TaskNotCancelableError."""
+        """Test that 409 is no longer assigned to TaskNotCancelableError."""
         errors = get_possible_errors(HTTP_CONFLICT)
-        assert "TaskNotCancelableError" in errors
+        assert "TaskNotCancelableError" not in errors

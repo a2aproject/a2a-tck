@@ -230,7 +230,7 @@ class TestJsonRpcErrorCodeMappings:
         )
 
         # The server may reject the wrong Content-Type at the HTTP level
-        # (e.g. 415 with an empty body) instead of returning a JSON-RPC error.
+        # (e.g. 400 with an empty body) instead of returning a JSON-RPC error.
         try:
             body = response.json()
         except Exception:
