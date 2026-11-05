@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import httpx
+import pytest
 
 from tck.requirements.registry import get_requirement_by_id
 from tests.compatibility.markers import core, may, should
@@ -46,6 +47,8 @@ def _record(
     req: RequirementSpec,
     passed: bool,
     errors: list[str] | None = None,
+    *,
+    skipped: bool = False,
 ) -> None:
     collector.record(
         requirement_id=req.id,
@@ -53,6 +56,7 @@ def _record(
         level=req.level.value,
         passed=passed,
         errors=errors or [],
+        skipped=skipped,
     )
 
 
@@ -174,14 +178,7 @@ class TestAgentCardLastModified:
         response = _fetch_agent_card(sut_host)
 
         last_modified = response.headers.get("last-modified")
-        valid = last_modified is not None
-        errors = (
-            []
-            if valid
-            else [
-                "Agent Card response may include a Last-Modified header"
-            ]
-        )
-        _record(collector=compatibility_collector, req=req,
-                passed=valid, errors=errors)
-        assert valid, _fail_msg(req, errors[0])
+        if last_modified is None:
+            _record(compatibility_collector, req, passed=False, skipped=True)
+            pytest.skip("Optional Last-Modified header is not provided")
+        _record(compatibility_collector, req, passed=True)

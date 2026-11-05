@@ -71,6 +71,9 @@ class HTMLFormatter:
         return (
             '<div class="section">\n'
             "<h1>Executive Summary</h1>\n"
+            "<p>Automated checks only. Pending manual obligations require separate verification.</p>\n"
+            f"<p>Pending manual verification: {len(report.pending_manual)} "
+            f"({escape(', '.join(report.pending_manual))})</p>\n"
             f'<div class="overall">{_format_compatibility(report.overall_compatibility)}</div>\n'
             '<table class="summary-table">\n'
             "<tr><th>Level</th><th>Compatibility</th></tr>\n"
@@ -132,6 +135,8 @@ class HTMLFormatter:
             status_class = "pass"
         elif req.status == "SKIPPED":
             status_class = "skipped"
+        elif req.status == "MANUAL":
+            status_class = "manual"
         elif req.status == "NOT TESTED":
             status_class = "not-tested"
         else:
@@ -309,6 +314,7 @@ th { background: #f5f5f5; }
 .pass { background: #d4edda; color: #155724; }
 .fail { background: #f8d7da; color: #721c24; }
 .skipped { background: #e2e3e5; color: #383d41; }
+.manual { background: #fff3cd; color: #664d03; }
 .not-tested { background: #cce5ff; color: #004085; }
 .bar { background: #e9ecef; border-radius: 4px; height: 18px; width: 100%; }
 .bar-fill { background: #28a745; height: 100%; border-radius: 4px; }

@@ -10,6 +10,7 @@ from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,
     RequirementSpec,
+    describe_error_mappings,
 )
 from tck.requirements.tags import (
     ERROR,
@@ -100,18 +101,7 @@ BINDING_GRPC_REQUIREMENTS: list[RequirementSpec] = [
         section="5.4",
         title="A2A error types mapped to correct gRPC status codes",
         level=RequirementLevel.MUST,
-        description=(
-            "All A2A-specific error types MUST be mapped to their specified "
-            "gRPC status codes: TaskNotFoundError=NOT_FOUND, "
-            "TaskNotCancelableError=FAILED_PRECONDITION, "
-            "PushNotificationNotSupportedError=UNIMPLEMENTED, "
-            "UnsupportedOperationError=UNIMPLEMENTED, "
-            "ContentTypeNotSupportedError=INVALID_ARGUMENT, "
-            "InvalidAgentResponseError=INTERNAL, "
-            "ExtendedAgentCardNotConfiguredError=FAILED_PRECONDITION, "
-            "ExtensionSupportRequiredError=FAILED_PRECONDITION, "
-            "VersionNotSupportedError=UNIMPLEMENTED."
-        ),
+        description=('All A2A-specific error types MUST be mapped to their specified gRPC status codes: ' + describe_error_mappings("grpc") + "."),
         expected_behavior="Each A2A error mapped to correct gRPC status",
         spec_url=f"{SPEC_BASE}54-error-code-mappings",
         tags=[GRPC, ERROR, MAPPING],

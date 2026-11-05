@@ -104,6 +104,14 @@ Reports are always generated in the `reports/` directory after every run:
 | pytest HTML | `reports/tck_report.html` | Standard pytest-html report |
 | JUnit XML | `reports/junitreport.xml` | JUnit XML for CI integration |
 
+Scores describe **automated checks**. Requirements tagged `not-automatable`
+(such as signed-card verification and client tenant propagation) appear as
+`MANUAL`, with a pending-verification list in console, HTML and JSON reports.
+They are excluded from automated percentages and never count as passes.
+`NOT TESTED` automated requirements still lower the score, including when the
+SUT was unreachable. A 100% automated score does not establish full conformance
+while manual obligations remain pending.
+
 ## SUT Code Generation
 
 The TCK includes a code generator that produces System Under Test (SUT) implementations from Gherkin scenario files in `scenarios/`. The generator supports a `--target` flag to select the SUT type.

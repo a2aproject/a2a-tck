@@ -10,6 +10,7 @@ from tck.requirements.base import (
     SPEC_BASE,
     RequirementLevel,
     RequirementSpec,
+    describe_error_mappings,
 )
 from tck.requirements.tags import (
     CODE,
@@ -110,14 +111,14 @@ BINDING_JSONRPC_REQUIREMENTS: list[RequirementSpec] = [
     RequirementSpec(
         id="JSONRPC-ERR-003",
         section="9.5",
-        title="A2A errors include ErrorInfo in data array",
-        level=RequirementLevel.MUST,
+        title="Well-known error detail types refine error reporting",
+        level=RequirementLevel.SHOULD,
         description=(
-            "For A2A-specific errors, implementations MUST include a "
-            "google.rpc.ErrorInfo message in the data array with reason "
-            "(UPPER_SNAKE_CASE), domain (a2a-protocol.org), and optional metadata."
+            "Implementations SHOULD use well-known detail types such as "
+            "google.rpc.ErrorInfo to refine error reporting or "
+            "google.rpc.BadRequest for validation errors."
         ),
-        expected_behavior="Error data array contains ErrorInfo with correct reason and domain",
+        expected_behavior="Error data uses well-known detail types where applicable",
         spec_url=f"{SPEC_BASE}95-error-handling",
         tags=[JSONRPC, ERROR, ERRORINFO, MAPPING],
     ),
@@ -140,18 +141,7 @@ BINDING_JSONRPC_REQUIREMENTS: list[RequirementSpec] = [
         section="5.4",
         title="A2A error types mapped to correct JSON-RPC error codes",
         level=RequirementLevel.MUST,
-        description=(
-            "All A2A-specific error types MUST be mapped to their specified "
-            "JSON-RPC error codes: TaskNotFoundError=-32001, "
-            "TaskNotCancelableError=-32002, "
-            "PushNotificationNotSupportedError=-32003, "
-            "UnsupportedOperationError=-32004, "
-            "ContentTypeNotSupportedError=-32005, "
-            "InvalidAgentResponseError=-32006, "
-            "ExtendedAgentCardNotConfiguredError=-32007, "
-            "ExtensionSupportRequiredError=-32008, "
-            "VersionNotSupportedError=-32009."
-        ),
+        description=('All A2A-specific error types MUST be mapped to their specified JSON-RPC error codes: ' + describe_error_mappings("jsonrpc") + "."),
         expected_behavior="Each A2A error mapped to correct numeric code",
         spec_url=f"{SPEC_BASE}54-error-code-mappings",
         tags=[JSONRPC, ERROR, MAPPING],

@@ -37,6 +37,8 @@ class JSONFormatter:
     def _build_dict(self, report: CompatibilityReport) -> dict[str, Any]:
         data: dict[str, Any] = {
             "summary": {
+                "score_scope": "automated",
+                "manual_verification_required": list(report.pending_manual),
                 "timestamp": report.timestamp,
                 "sut_url": self._sut_url,
                 "spec_version": self._spec_version,

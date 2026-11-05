@@ -10,9 +10,11 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from google.protobuf.message import DecodeError
 from google.rpc import error_details_pb2, status_pb2
 
 from tck.requirements.base import ERROR_BINDINGS
+from tck.validators.error_info import ERRORINFO_TYPE, validate_error_info
 
 
 if TYPE_CHECKING:
@@ -77,6 +79,18 @@ def validate_grpc_error(
     actual_status = rpc_error.code().name
 
     if actual_status == expected_status:
+        try:
+            status = _parse_status_details(rpc_error)
+            info = _error_info_from_status(status) if status is not None else None
+        except DecodeError as error:
+            return ErrorValidationResult(False, expected_status, actual_status, f"Malformed gRPC status details: {error}")
+        if status is not None and status.code != rpc_error.code().value[0]:
+            return ErrorValidationResult(False, expected_status, actual_status, "Binary status code must equal the gRPC status code")
+        reason = ERROR_BINDINGS[expected_error].reason
+        if reason is not None:
+            identity = validate_error_info([{"@type": ERRORINFO_TYPE, **info}] if info is not None else [], expected_reason=reason)
+            if not identity.valid:
+                return ErrorValidationResult(False, expected_status, actual_status, identity.message)
         return ErrorValidationResult(
             valid=True,
             expected_status=expected_status,
@@ -109,26 +123,26 @@ def extract_error_info(rpc_error: grpc.RpcError) -> dict[str, Any] | None:
         A dict with ``reason``, ``domain``, and ``metadata`` keys if ErrorInfo
         is found, or None otherwise.
     """
-    trailing_metadata = rpc_error.trailing_metadata()
-    if trailing_metadata is None:
+    try:
+        status = _parse_status_details(rpc_error)
+        return _error_info_from_status(status) if status is not None else None
+    except DecodeError:
         return None
 
-    # Look for the binary status details key.
-    status_bin = None
-    for key, value in trailing_metadata:
+
+def _parse_status_details(rpc_error: grpc.RpcError) -> status_pb2.Status | None:
+    """Decode the standard binary trailer once for identity and status checks."""
+    for key, value in rpc_error.trailing_metadata() or ():
         if key == "grpc-status-details-bin":
-            status_bin = value
-            break
+            status = status_pb2.Status()
+            status.ParseFromString(value)
+            return status
+    return None
 
-    if status_bin is None:
-        return None
 
-    # Parse as google.rpc.Status
-    status_proto = status_pb2.Status()
-    status_proto.ParseFromString(status_bin)
-
-    # Search for ErrorInfo in the details
-    for detail in status_proto.details:
+def _error_info_from_status(status: status_pb2.Status) -> dict[str, Any] | None:
+    """Extract the typed ErrorInfo without inventing a parallel domain validator."""
+    for detail in status.details:
         if detail.Is(error_details_pb2.ErrorInfo.DESCRIPTOR):
             error_info = error_details_pb2.ErrorInfo()
             detail.Unpack(error_info)
@@ -137,5 +151,4 @@ def extract_error_info(rpc_error: grpc.RpcError) -> dict[str, Any] | None:
                 "domain": error_info.domain,
                 "metadata": dict(error_info.metadata),
             }
-
     return None

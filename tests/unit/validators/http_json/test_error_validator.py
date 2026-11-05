@@ -6,6 +6,7 @@ from http import HTTPStatus
 
 import pytest
 
+from tck.requirements.base import ERROR_BINDINGS
 from tck.validators.http_json.error_validator import (
     HTTP_JSON_ERROR_STATUS,
     STATUS_TO_ERRORS,
@@ -19,8 +20,6 @@ from tck.validators.http_json.error_validator import (
 
 HTTP_NOT_FOUND = HTTPStatus.NOT_FOUND
 HTTP_BAD_REQUEST = HTTPStatus.BAD_REQUEST
-HTTP_CONFLICT = HTTPStatus.CONFLICT
-HTTP_UNSUPPORTED_MEDIA_TYPE = HTTPStatus.UNSUPPORTED_MEDIA_TYPE
 HTTP_INTERNAL_SERVER_ERROR = HTTPStatus.INTERNAL_SERVER_ERROR
 
 
@@ -93,6 +92,12 @@ class TestAIP193Error:
         with pytest.raises(ValueError, match="code"):
             AIP193Error.from_dict(data)
 
+    @pytest.mark.parametrize("code", [True, False, None, "wrong", 404.5, "404.5", float("nan"), float("inf"), -2147483649, 2147483648, {}, []])
+    def test_code_rejects_values_outside_the_protojson_int32_contract(self, code: object) -> None:
+        """Validate the actual field independently of a later status comparison."""
+        with pytest.raises(ValueError, match="ProtoJSON int32"):
+            AIP193Error.from_dict({"error": {"code": code}})
+
     def test_from_dict_error_not_object(self) -> None:
         """Test that non-object error field raises ValueError."""
         data = {"error": "not an object"}
@@ -150,14 +155,14 @@ class TestHTTPJSONErrorStatus:
         assert HTTP_JSON_ERROR_STATUS["TaskNotFoundError"] == HTTP_NOT_FOUND
 
     def test_contains_task_not_cancelable(self) -> None:
-        """Test TaskNotCancelableError maps to 409."""
+        """Test TaskNotCancelableError maps to 400 (spec 1.0.1)."""
         assert "TaskNotCancelableError" in HTTP_JSON_ERROR_STATUS
-        assert HTTP_JSON_ERROR_STATUS["TaskNotCancelableError"] == HTTP_CONFLICT
+        assert HTTP_JSON_ERROR_STATUS["TaskNotCancelableError"] == HTTP_BAD_REQUEST
 
     def test_contains_content_type_not_supported(self) -> None:
-        """Test ContentTypeNotSupportedError maps to 415."""
+        """Test ContentTypeNotSupportedError maps to 400 (spec 1.0.1)."""
         assert "ContentTypeNotSupportedError" in HTTP_JSON_ERROR_STATUS
-        assert HTTP_JSON_ERROR_STATUS["ContentTypeNotSupportedError"] == HTTP_UNSUPPORTED_MEDIA_TYPE
+        assert HTTP_JSON_ERROR_STATUS["ContentTypeNotSupportedError"] == HTTP_BAD_REQUEST
 
     def test_contains_internal_error(self) -> None:
         """Test InternalError maps to 500."""
@@ -193,7 +198,10 @@ class TestValidateHTTPJSONError:
         response = {
             "status_code": HTTP_NOT_FOUND,
             "headers": {},
-            "body": None,
+            "body": {"error": {"code": HTTP_NOT_FOUND, "details": [{
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "reason": "TASK_NOT_FOUND", "domain": "a2a-protocol.org",
+            }]}},
         }
         result = validate_http_json_error(response, "TaskNotFoundError")
         assert result.valid is True
@@ -263,8 +271,8 @@ class TestValidateHTTPJSONError:
         assert result.aip193_error.message == "Task 'xyz' does not exist"
         assert len(result.aip193_error.details) == 1
 
-    def test_aip193_error_not_parsed_without_error_key(self) -> None:
-        """Test that AIP-193 error is not parsed when body has no 'error' key."""
+    def test_aip193_error_without_error_key_is_rejected(self) -> None:
+        """A bare status-code-shaped object is not an AIP-193 response."""
         response = {
             "status_code": HTTP_NOT_FOUND,
             "headers": {"Content-Type": "application/json"},
@@ -274,7 +282,7 @@ class TestValidateHTTPJSONError:
             },
         }
         result = validate_http_json_error(response, "TaskNotFoundError")
-        assert result.valid is True
+        assert result.valid is False
         assert result.aip193_error is None
 
     def test_invalid_aip193_error(self) -> None:
@@ -293,11 +301,12 @@ class TestValidateHTTPJSONError:
     def test_all_error_types(self) -> None:
         """Test that all defined error types can be validated."""
         for error_name, status_code in HTTP_JSON_ERROR_STATUS.items():
-            response = {
-                "status_code": status_code,
-                "headers": {},
-                "body": None,
-            }
+            reason = ERROR_BINDINGS[error_name].reason
+            details = [] if reason is None else [{
+                "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                "reason": reason, "domain": "a2a-protocol.org",
+            }]
+            response = {"status_code": status_code, "body": {"error": {"code": status_code, "details": details}}}
             result = validate_http_json_error(response, error_name)
             assert result.valid is True, f"Failed for {error_name}"
             assert result.expected_status == status_code
@@ -345,7 +354,50 @@ class TestHelperFunctions:
         assert len(errors) > 1
         assert "InvalidRequestError" in errors
 
-    def test_get_possible_errors_conflict(self) -> None:
-        """Test that 409 maps to TaskNotCancelableError."""
-        errors = get_possible_errors(HTTP_CONFLICT)
+    def test_get_possible_errors_cancel(self) -> None:
+        """Test that 400 maps to TaskNotCancelableError."""
+        errors = get_possible_errors(HTTP_BAD_REQUEST)
         assert "TaskNotCancelableError" in errors
+
+
+@pytest.mark.parametrize("error", [
+    {"code": True}, {"code": "wrong"}, {"code": []}, {"code": 401},
+    {"code": 400, "message": 12}, {"code": 400, "status": "unknown"},
+    {"code": 400, "details": {}},
+    {"code": 400, "details": [{}]}, {"code": 400, "details": [12]},
+])
+def test_standard_errors_still_require_typed_http_error_objects(error: dict) -> None:
+    """A standard error need not carry A2A ErrorInfo, but cannot carry malformed fields."""
+    assert not validate_http_json_error({"status_code": 400, "body": {"error": error}}, "InvalidParamsError").valid
+
+
+@pytest.mark.parametrize("code", [400, 400.0, "400", "4e2"])
+def test_standard_error_does_not_require_a2a_specific_details(code: float | str) -> None:
+    """Keep the distinction between standard invalid parameters and a named A2A error."""
+    response = {"status_code": 400, "body": {"error": {"code": code, "message": "invalid parameters"}}}
+    assert validate_http_json_error(response, "InvalidParamsError").valid
+
+
+@pytest.mark.parametrize("status", [None, "INVALID_ARGUMENT", 3, 3.0, "3"])
+def test_http_error_optional_fields_follow_protojson_presence_and_enum_rules(status: object) -> None:
+    """Null means unset; the AIP-193 status accepts native enum representations."""
+    response = {"status_code": 400, "body": {"error": {"code": 400, "status": status, "message": None, "details": None}}}
+    result = validate_http_json_error(response, "InvalidParamsError")
+    assert result.valid
+    assert result.aip193_error.message == ""
+    assert result.aip193_error.details == []
+
+
+@pytest.mark.parametrize("status", [True, [], {}, "unknown", 3.5, "NOT_FOUND", 5])
+def test_supplied_status_cannot_contradict_the_expected_error(status: object) -> None:
+    """A declared enum cannot disagree with the released A2A error mapping."""
+    response = {"status_code": 400, "body": {"error": {"code": 400, "status": status, "details": [{
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "VERSION_NOT_SUPPORTED", "domain": "a2a-protocol.org",
+    }]}}}
+    assert not validate_http_json_error(response, "VersionNotSupportedError").valid
+
+
+@pytest.mark.parametrize("response", [None, [], True, {"status_code": True}, {"status_code": "400"}])
+def test_invalid_transport_status_is_not_an_http_error_match(response: object) -> None:
+    """Transport metadata cannot bypass the required integer HTTP status."""
+    assert not validate_http_json_error(response, "VersionNotSupportedError").valid
