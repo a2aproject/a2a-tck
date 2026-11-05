@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tck.requirements.base import HTTP_JSON_CONTENT_TYPE
+
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-
-from tck.requirements.base import HTTP_JSON_CONTENT_TYPE
 
 
 def uses_a2a_media_type(headers: Mapping[str, str]) -> bool:

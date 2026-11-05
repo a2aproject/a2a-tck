@@ -73,15 +73,6 @@ def _get_error_body(response: Any) -> dict[str, Any] | None:
     return body
 
 
-def _error_format_errors(body: Any) -> list[str]:
-    """All HTTP error-shape probes use the same ProtoJSON interpretation."""
-    try:
-        AIP193Error.from_dict(body)
-    except ValueError as error:
-        return [str(error)]
-    return []
-
-
 @should
 @http_json
 class TestHttpJsonErrorMediaType:
@@ -115,24 +106,19 @@ class TestAIP193ErrorFormat:
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """Body contains an 'error' object with required 'code' field."""
+        """Body is an AIP-193 error: a 'code', a string 'message' and typed 'details'."""
         req = HTTP_JSON_ERR_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
         body = _get_error_body(response)
 
-        assert_and_record(compatibility_collector, req, TRANSPORT, _error_format_errors(body))
+        errors: list[str] = []
+        try:
+            AIP193Error.from_dict(body)
+        except ValueError as exc:
+            errors.append(str(exc))
 
-    def test_present_details_are_typed_objects(
-        self,
-        transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
-    ) -> None:
-        """Require a type identifier on every present error detail."""
-        req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        body = _get_error_body(_get_error_response(client))
-        assert_and_record(compatibility_collector, req, TRANSPORT, _error_format_errors(body))
+        assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
     def test_code_field_matches_http_status(
         self,
@@ -167,19 +153,6 @@ class TestAIP193ErrorFormat:
             errors=errors,
         )
         assert valid, fail_msg(req, TRANSPORT, errors[0])
-
-    def test_message_field_is_string(
-        self,
-        transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
-    ) -> None:
-        """If error.message is present, it must be a string."""
-        req = HTTP_JSON_ERR_001
-        client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
-        response = _get_error_response(client)
-        body = _get_error_body(response)
-
-        assert_and_record(compatibility_collector, req, TRANSPORT, _error_format_errors(body))
 
 
 # ---------------------------------------------------------------------------

@@ -173,13 +173,12 @@ def test_http_error_probes_share_protojson_presence_and_enum_semantics(message: 
     with _running_server(ProtoJSONHandler) as url:
         client = HttpJsonClient(url)
         try:
-            for probe in (probes.test_error_object_present, probes.test_present_details_are_typed_objects, probes.test_message_field_is_string):
-                collector = CompatibilityCollector()
-                with _probe_outcome(format_valid):
-                    probe({"http_json": client}, collector)
-                result, = collector.get_results()
-                assert result.passed is format_valid
-                assert not result.skipped and result.level == "MUST"
+            collector = CompatibilityCollector()
+            with _probe_outcome(format_valid):
+                probes.test_error_object_present({"http_json": client}, collector)
+            result, = collector.get_results()
+            assert result.passed is format_valid
+            assert not result.skipped and result.level == "MUST"
             response = client.get_task(id="protojson-presence")
             assert (not validate_expected_error(response, "http_json", TASK_NOT_FOUND_ERROR)) is semantic_valid
         finally:
@@ -307,7 +306,7 @@ def test_compatibility_probes_validate_present_error_details(transport: str, fie
             check = (
                 jsonrpc_checks.TestJsonRpcErrorDetails().test_present_error_data_is_any_array
                 if transport == "jsonrpc"
-                else http_json_checks.TestAIP193ErrorFormat().test_present_details_are_typed_objects
+                else http_json_checks.TestAIP193ErrorFormat().test_error_object_present
             )
             with _probe_outcome(valid):
                 check({transport: client}, collector)
@@ -384,7 +383,7 @@ def test_compatibility_schema_probe_remains_mandatory(valid: bool) -> None:
     [(transport_checks.TestRestFormat, "test_response_content_type", "should"),
      (transport_checks.TestRestFormat, "test_response_validates_against_schema", "must"),
      (http_json_checks.TestHttpJsonErrorMediaType, "test_error_content_type", "should"),
-     (http_json_checks.TestAIP193ErrorFormat, "test_present_details_are_typed_objects", "must"),
+     (http_json_checks.TestAIP193ErrorFormat, "test_error_object_present", "must"),
      (jsonrpc_checks.TestJsonRpcErrorDetails, "test_present_error_data_is_any_array", "must"),
      (jsonrpc_checks.TestJsonRpcWellKnownErrorDetails, "test_error_data_uses_well_known_type", "should")],
 )
