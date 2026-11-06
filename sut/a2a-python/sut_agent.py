@@ -109,6 +109,12 @@ class TckAgentExecutor(AgentExecutor):
             await updater.complete()
             return
 
+        if message_id.startswith('tck-delayed-complete'):
+            await updater.start_work()
+            await asyncio.sleep(2)
+            await updater.complete(updater.new_agent_message([Part(text="Done after delay")]))
+            return
+
         if message_id.startswith('tck-message-response'):
             await event_queue.enqueue_event(updater.new_agent_message([Part(text="Direct message response")]))
             return
