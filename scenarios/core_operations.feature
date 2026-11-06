@@ -70,6 +70,12 @@ Feature: Core Operations
     When a message is received with prefix "tck-input-required"
     Then update the task status to "input_required"
 
+  # Used by: AUTH-INTASK-001/002, CORE-EXECUTION-MODE-001 (setup — task
+  # interrupted pending out-of-band authorization).
+  Scenario: Task requiring authorization
+    When a message is received with prefix "tck-auth-required"
+    Then update the task status to "auth_required"
+
   Scenario: Task rejected by executor
     When a message is received with prefix "tck-reject-task"
     Then reject with error "rejected"

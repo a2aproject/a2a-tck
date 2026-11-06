@@ -136,6 +136,10 @@ class TckAgentExecutor(AgentExecutor):
             await updater.complete()
             return
 
+        if message_id.startswith('tck-auth-required'):
+            await updater.requires_auth()
+            return
+
         if message_id.startswith('tck-reject-task'):
             raise A2AError('rejected')
 
