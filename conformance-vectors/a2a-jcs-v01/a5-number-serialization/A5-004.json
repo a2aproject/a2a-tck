@@ -1,0 +1,14 @@
+{
+  "id": "A5-004",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Negative integers keep the sign and otherwise follow the same integer rule.",
+  "input": {
+    "n": -17
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a2d31377d"
+  }
+}

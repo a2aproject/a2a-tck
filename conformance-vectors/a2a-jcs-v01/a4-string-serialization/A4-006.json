@@ -1,0 +1,14 @@
+{
+  "id": "A4-006",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Every remaining C0 control character (U+0001 through U+001F, excluding the ones with short escapes like \\n and \\t) must still be escaped as \\u00XX -- control-character escaping is required regardless of the literal-UTF-8 rule for ordinary text, since control characters are never literal in a JSON string.",
+  "input": {
+    "ctrl": "a\u0001b\u001fc"
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226374726c223a22615c7530303031625c753030316663227d"
+  }
+}

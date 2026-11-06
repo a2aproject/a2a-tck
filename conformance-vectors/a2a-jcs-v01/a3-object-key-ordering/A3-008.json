@@ -1,0 +1,15 @@
+{
+  "id": "A3-008",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Two byte-distinct keys that render identically to a human (precomposed U+00E9 vs the combining-character sequence 'e' + U+0301) are different code-unit sequences with no normalization applied by RFC 8785; they sort as the distinct sequences they are, and the combining form (starts with plain ASCII 'e', U+0065) sorts before the precomposed form (starts with U+00E9).",
+  "input": {
+    "café": 1,
+    "café": 2
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2263616665cc81223a322c22636166c3a9223a317d"
+  }
+}

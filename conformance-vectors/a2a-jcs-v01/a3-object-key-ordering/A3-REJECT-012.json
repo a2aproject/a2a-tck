@@ -1,0 +1,11 @@
+{
+  "id": "A3-REJECT-012",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-REJECT",
+  "rejecting_clause": "RFC8785-3.2.2.2",
+  "rejection_layer": "canonicalization",
+  "rationale": "A key containing a lone (unpaired) LOW surrogate U+DC00 with no preceding high surrogate completes A3-REJECT-011's high-surrogate case with the low-surrogate half of the pair: equally invalid Unicode, equally unencodable as well-formed UTF-8, for the same reason. (confirmed refused by both independent oracles: go+py)",
+  "input_raw": "{\"b\\udc00key\": 1, \"a\": 2}"
+}

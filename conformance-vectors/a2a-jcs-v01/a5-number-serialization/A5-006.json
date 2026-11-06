@@ -1,0 +1,14 @@
+{
+  "id": "A5-006",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Negative zero is a distinct IEEE 754 bit pattern from positive zero, but ECMAScript's Number::toString collapses both to the same string '0' -- there is no '-0' output form.",
+  "input": {
+    "n": -0.0
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a307d"
+  }
+}

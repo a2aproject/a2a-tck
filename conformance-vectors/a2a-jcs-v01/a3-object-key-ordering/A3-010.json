@@ -1,0 +1,24 @@
+{
+  "id": "A3-010",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Stress case: eleven keys spanning ASCII, digits and mixed case sorted together, confirming the ordering rule is stable across more than a handful of keys at once.",
+  "input": {
+    "Zulu": 1,
+    "alpha": 2,
+    "Bravo": 3,
+    "charlie": 4,
+    "Delta": 5,
+    "9key": 6,
+    "echo": 7,
+    "Foxtrot": 8,
+    "1key": 9,
+    "golf": 10,
+    "Hotel": 11
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22316b6579223a392c22396b6579223a362c22427261766f223a332c2244656c7461223a352c22466f7874726f74223a382c22486f74656c223a31312c225a756c75223a312c22616c706861223a322c22636861726c6965223a342c226563686f223a372c22676f6c66223a31307d"
+  }
+}

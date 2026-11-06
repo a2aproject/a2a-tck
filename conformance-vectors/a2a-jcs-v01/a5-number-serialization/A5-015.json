@@ -1,0 +1,15 @@
+{
+  "id": "A5-015",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Input syntax is not preserved verbatim: '1E1' (uppercase E, RFC 8259 permits both cases) and a trailing '.0' both parse to the double values 10 and 1 respectively, and the canonical form is the ECMAScript string for that VALUE, not a copy of the input digit sequence -- this vector's input intentionally does not look like its output.",
+  "input": {
+    "exp_upper": 10.0,
+    "trailing_zero": 1.0
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226578705f7570706572223a31302c22747261696c696e675f7a65726f223a317d"
+  }
+}

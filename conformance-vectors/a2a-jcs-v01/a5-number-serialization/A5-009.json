@@ -1,0 +1,14 @@
+{
+  "id": "A5-009",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Number.MAX_SAFE_INTEGER (2^53 - 1): the largest integer every JS engine represents exactly, a natural boundary value for integer serialization.",
+  "input": {
+    "n": 9007199254740991
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a393030373139393235343734303939317d"
+  }
+}

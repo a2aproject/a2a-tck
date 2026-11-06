@@ -1,0 +1,23 @@
+{
+  "id": "A6-003",
+  "clause": "RFC8785-3.2.1",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Arrays preserve input order; RFC 8785 orders object keys, never array elements.",
+  "input": {
+    "matrix": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ]
+    ]
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226d6174726978223a5b5b312c325d2c5b332c345d5d7d"
+  }
+}

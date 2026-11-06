@@ -1,0 +1,212 @@
+{
+  "description": "Reference canonicalization and signing vectors for A2A AgentCard signing (CARD-SIGN-001/002), spec sections 8.4.1-8.4.3. canonicalization_cases pin the RFC 8785 (JCS) signing payload after excluding the signatures field. signing_cases add the full JWS worked example: protected header, JWS signing input, and an EdDSA signature verifiable against the published public JWK.",
+  "source": "Derived from card_ref (github.com/chopmob-cloud/AlgoVoi-A2A-Card) and the algovoi-jcs-conformance-vectors corpus. Apache-2.0.",
+  "signing_key_note": "public_jwk/private_jwk below are a fixed, throwaway Ed25519 test key derived from SHA-256(\"a2a-tck CARD-SIGN reference vectors key-1\"). TEST USE ONLY.",
+  "public_jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "kid": "key-1",
+    "x": "HPZl5kjLaWKcAp5QBiOWueZa0MyB5U6CGj0M6xZN4W4"
+  },
+  "private_jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "kid": "key-1",
+    "x": "HPZl5kjLaWKcAp5QBiOWueZa0MyB5U6CGj0M6xZN4W4",
+    "d": "hIlmpP1rHqmhwvudczLBJDeMpXcmNMwwFIt2lzmpXys"
+  },
+  "canonicalization_cases": [
+    {
+      "id": "cardsign-canon-001",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "Example Agent",
+        "description": "",
+        "capabilities": {
+          "streaming": false,
+          "pushNotifications": false
+        },
+        "skills": []
+      },
+      "note": "Post-rule-1 canonical form of the spec 8.4.1 example. Rule-1 default-stripping (e.g. dropping capabilities.extensions:[]) is a producer/kit step performed before these vectors apply; here every field is REQUIRED or an explicitly-set optional, so JCS alone is exact.",
+      "expected_jcs_payload": "{\"capabilities\":{\"pushNotifications\":false,\"streaming\":false},\"description\":\"\",\"name\":\"Example Agent\",\"skills\":[]}"
+    },
+    {
+      "id": "cardsign-canon-002",
+      "requirement": "CARD-SIGN-002",
+      "agent_card": {
+        "name": "Example Agent",
+        "description": "",
+        "capabilities": {
+          "streaming": false,
+          "pushNotifications": false
+        },
+        "skills": [],
+        "signatures": [
+          {
+            "protected": "eyJ...",
+            "signature": "MEUC..."
+          }
+        ]
+      },
+      "note": "Same card with a signatures field; per 8.4.1 rule 3 it is excluded, so the payload equals cardsign-canon-001.",
+      "expected_jcs_payload": "{\"capabilities\":{\"pushNotifications\":false,\"streaming\":false},\"description\":\"\",\"name\":\"Example Agent\",\"skills\":[]}"
+    },
+    {
+      "id": "cardsign-canon-003",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "Pay Agent",
+        "version": "1.0.0",
+        "url": "https://pay.example/a2a",
+        "capabilities": {
+          "streaming": true
+        },
+        "securitySchemes": {
+          "oauth": {
+            "type": "oauth2"
+          }
+        },
+        "skills": [
+          {
+            "id": "quote",
+            "name": "Quote"
+          }
+        ]
+      },
+      "note": "Richer card: nested securityScheme object and a skill.",
+      "expected_jcs_payload": "{\"capabilities\":{\"streaming\":true},\"name\":\"Pay Agent\",\"securitySchemes\":{\"oauth\":{\"type\":\"oauth2\"}},\"skills\":[{\"id\":\"quote\",\"name\":\"Quote\"}],\"url\":\"https://pay.example/a2a\",\"version\":\"1.0.0\"}"
+    },
+    {
+      "id": "cardsign-jcs-numbers",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "Ext Agent",
+        "description": "",
+        "capabilities": {
+          "streaming": true,
+          "extensions": [
+            {
+              "uri": "https://ex/ext",
+              "params": {
+                "ratio": 0.1,
+                "count": 100.0,
+                "neg": -0.0
+              }
+            }
+          ]
+        },
+        "skills": []
+      },
+      "note": "Number serialization: JCS renders 1e2 as 100 and -0.0 as 0; naive json.dumps emits 100.0 and -0.0. Discriminates RFC 8785 number handling.",
+      "expected_jcs_payload": "{\"capabilities\":{\"extensions\":[{\"params\":{\"count\":100,\"neg\":0,\"ratio\":0.1},\"uri\":\"https://ex/ext\"}],\"streaming\":true},\"description\":\"\",\"name\":\"Ext Agent\",\"skills\":[]}"
+    },
+    {
+      "id": "cardsign-jcs-nonascii",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "Cafe Agent",
+        "description": "Prix 5 euro é 😀",
+        "capabilities": {
+          "streaming": true
+        },
+        "skills": [
+          {
+            "id": "devis",
+            "name": "Devis é"
+          }
+        ]
+      },
+      "note": "String escaping: JCS emits literal UTF-8 bytes for e-acute and the emoji; naive json.dumps at ensure_ascii=True emits \\u00e9 and a surrogate pair. Discriminates.",
+      "expected_jcs_payload": "{\"capabilities\":{\"streaming\":true},\"description\":\"Prix 5 euro é 😀\",\"name\":\"Cafe Agent\",\"skills\":[{\"id\":\"devis\",\"name\":\"Devis é\"}]}"
+    },
+    {
+      "id": "cardsign-jcs-keyorder",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "KeyOrder Agent",
+        "description": "",
+        "capabilities": {
+          "streaming": true
+        },
+        "securitySchemes": {
+          "😀": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "A"
+          },
+          "דּ": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "B"
+          }
+        },
+        "skills": []
+      },
+      "note": "Key ordering: JCS sorts by UTF-16 code unit, so the emoji (lead surrogate 0xD83D) precedes U+FB33; naive sort_keys sorts by code point, putting U+FB33 first. Discriminates the single most common canonicalizer bug.",
+      "expected_jcs_payload": "{\"capabilities\":{\"streaming\":true},\"description\":\"\",\"name\":\"KeyOrder Agent\",\"securitySchemes\":{\"😀\":{\"in\":\"header\",\"name\":\"A\",\"type\":\"apiKey\"},\"דּ\":{\"in\":\"header\",\"name\":\"B\",\"type\":\"apiKey\"}},\"skills\":[]}"
+    }
+  ],
+  "signing_cases": [
+    {
+      "id": "cardsign-sign-001",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "Example Agent",
+        "description": "",
+        "capabilities": {
+          "streaming": false,
+          "pushNotifications": false
+        },
+        "skills": []
+      },
+      "alg": "EdDSA",
+      "kid": "key-1",
+      "protected_header": {
+        "alg": "EdDSA",
+        "typ": "JOSE",
+        "kid": "key-1"
+      },
+      "expected_protected_b64": "eyJhbGciOiJFZERTQSIsImtpZCI6ImtleS0xIiwidHlwIjoiSk9TRSJ9",
+      "expected_jcs_payload": "{\"capabilities\":{\"pushNotifications\":false,\"streaming\":false},\"description\":\"\",\"name\":\"Example Agent\",\"skills\":[]}",
+      "expected_signing_input": "eyJhbGciOiJFZERTQSIsImtpZCI6ImtleS0xIiwidHlwIjoiSk9TRSJ9.eyJjYXBhYmlsaXRpZXMiOnsicHVzaE5vdGlmaWNhdGlvbnMiOmZhbHNlLCJzdHJlYW1pbmciOmZhbHNlfSwiZGVzY3JpcHRpb24iOiIiLCJuYW1lIjoiRXhhbXBsZSBBZ2VudCIsInNraWxscyI6W119",
+      "signature": "olG34aQUzhOSXDUMp3m6zcOwX0zuPSH2wbcx3uY5d4CxjHTJNk_esMFDC379Tv780LltfYD9EZ9HDmKUKSe0BQ",
+      "note": "Full JWS signing of the minimal card: canonical payload -> protected header -> signing input -> EdDSA signature. EdDSA chosen so the signature is byte-reproducible."
+    },
+    {
+      "id": "cardsign-sign-002",
+      "requirement": "CARD-SIGN-001",
+      "agent_card": {
+        "name": "Pay Agent",
+        "version": "1.0.0",
+        "url": "https://pay.example/a2a",
+        "capabilities": {
+          "streaming": true
+        },
+        "securitySchemes": {
+          "oauth": {
+            "type": "oauth2"
+          }
+        },
+        "skills": [
+          {
+            "id": "quote",
+            "name": "Quote"
+          }
+        ]
+      },
+      "alg": "EdDSA",
+      "kid": "key-1",
+      "protected_header": {
+        "alg": "EdDSA",
+        "typ": "JOSE",
+        "kid": "key-1"
+      },
+      "expected_protected_b64": "eyJhbGciOiJFZERTQSIsImtpZCI6ImtleS0xIiwidHlwIjoiSk9TRSJ9",
+      "expected_jcs_payload": "{\"capabilities\":{\"streaming\":true},\"name\":\"Pay Agent\",\"securitySchemes\":{\"oauth\":{\"type\":\"oauth2\"}},\"skills\":[{\"id\":\"quote\",\"name\":\"Quote\"}],\"url\":\"https://pay.example/a2a\",\"version\":\"1.0.0\"}",
+      "expected_signing_input": "eyJhbGciOiJFZERTQSIsImtpZCI6ImtleS0xIiwidHlwIjoiSk9TRSJ9.eyJjYXBhYmlsaXRpZXMiOnsic3RyZWFtaW5nIjp0cnVlfSwibmFtZSI6IlBheSBBZ2VudCIsInNlY3VyaXR5U2NoZW1lcyI6eyJvYXV0aCI6eyJ0eXBlIjoib2F1dGgyIn19LCJza2lsbHMiOlt7ImlkIjoicXVvdGUiLCJuYW1lIjoiUXVvdGUifV0sInVybCI6Imh0dHBzOi8vcGF5LmV4YW1wbGUvYTJhIiwidmVyc2lvbiI6IjEuMC4wIn0",
+      "signature": "Hwm5j4jzkRaIYuDIMAGfkpOw0kcp6VT5i2ziXy-d-Yz-jj97tPqrMqNkndWxvpUP4W8U7qMQViIQR1lDL5c5Cw",
+      "note": "Signing generalises to a richer card."
+    }
+  ]
+}

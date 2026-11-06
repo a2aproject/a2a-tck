@@ -1,0 +1,14 @@
+{
+  "id": "A5-002",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "The a2aproject/A2A#2122 'big' companion value from the same case C4: 1e21 crosses the ECMAScript fixed/exponential boundary on the large-magnitude side and must serialize in exponential form.",
+  "input": {
+    "big": 1e+21
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22626967223a31652b32317d"
+  }
+}

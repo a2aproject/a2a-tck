@@ -1,0 +1,14 @@
+{
+  "id": "A4-002",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Pure ASCII content is the trivial control case: no escaping needed, output equals input.",
+  "input": {
+    "name": "Example Agent"
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e616d65223a224578616d706c65204167656e74227d"
+  }
+}
