@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from tck.requirements.base import (
     CANCEL_TASK_BINDING,
+    CONTENT_TYPE_NOT_SUPPORTED_ERROR,
     EXTENSION_SUPPORT_REQUIRED_ERROR,
     GET_TASK_BINDING,
     LIST_TASKS_BINDING,
@@ -46,7 +47,13 @@ from tck.requirements.tags import (
     TASK_ID,
     VALIDATION,
 )
-from tck.validators.payload import validate_message_response_contains_field
+from tck.validators.payload import (
+    validate_message_response_contains_field,
+    validate_message_response_field_equals,
+)
+
+
+_REJECTED_CLIENT_CONTEXT_ID = tck_id("client-context-rejected")
 
 
 CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
@@ -108,6 +115,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         binding=SEND_MESSAGE_BINDING,
         proto_request_type="SendMessageRequest",
         expected_behavior="ContentTypeNotSupportedError returned",
+        expected_error=CONTENT_TYPE_NOT_SUPPORTED_ERROR,
         spec_url=f"{SPEC_BASE}311-send-message",
         tags=[CORE, SEND_MESSAGE, ERROR],
         sample_input={
@@ -601,6 +609,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         operation=OperationType.SEND_MESSAGE,
         binding=SEND_MESSAGE_BINDING,
         expected_behavior="Error returned when client contextId not accepted",
+        allows_error=True,
         spec_url=f"{SPEC_BASE}341-context-identifier-semantics",
         tags=[CORE, MULTI_TURN, CONTEXT, ERROR],
         sample_input={
@@ -608,9 +617,15 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
                 "role": "ROLE_USER",
                 "parts": [{"text": "Message with client contextId"}],
                 "messageId": tck_id("complete-task"),
-                "contextId": tck_id("client-context-rejected"),
+                "contextId": _REJECTED_CLIENT_CONTEXT_ID,
             },
         },
+        validators=[
+            validate_message_response_field_equals(
+                "contextId",
+                _REJECTED_CLIENT_CONTEXT_ID,
+            ),
+        ],
     ),
     RequirementSpec(
         id="CORE-MULTI-003",

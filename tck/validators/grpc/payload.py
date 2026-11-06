@@ -155,3 +155,20 @@ def validate_message_response_contains_field(
     if value is None:
         return [f"Response must include '{field}'"]
     return []
+
+
+def validate_message_response_field_equals(
+    response: Any,
+    field: str,
+    expected: Any,
+) -> list[str]:
+    """Validate a field value in a SendMessageResponse."""
+    msg = response.raw_response
+    inner = getattr(msg, "task", None) or getattr(msg, "message", None) or msg
+    actual = getattr(inner, field, None)
+    if actual != expected:
+        return [
+            f"Expected response field '{field}' to equal '{expected}', "
+            f"got '{actual}'"
+        ]
+    return []
