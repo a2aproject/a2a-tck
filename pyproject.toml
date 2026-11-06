@@ -7,7 +7,7 @@ name = "a2a-tck"
 version = "1.0.0"
 description = "A2A Protocol Technology Compatibility Kit"
 readme = "README.md"
-requires-python = ">=3.11, <3.15"
+requires-python = ">=3.15"
 authors = [
     {name = "A2A Protocol Developers"}
 ]
@@ -15,10 +15,7 @@ license = {file = "LICENSE"}
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
     "pytest>=8.0",
@@ -66,6 +63,6 @@ markers = [
 line-length = 130
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.15"
 warn_return_any = true
 warn_unused_configs = true
