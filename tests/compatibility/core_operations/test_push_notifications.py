@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import tck_id
+from tck.requirements.base import tck_id, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tck.validators import STREAM_RESPONSE
@@ -384,7 +384,7 @@ def _setup_push_and_trigger(
     message: dict[str, Any] = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK prerequisite task creation"}],
-        "messageId": tck_id("input-required"),
+        "messageId": tck_message_id("input-required"),
     }
     configuration = {"taskPushNotificationConfig": config}
     response = client.send_message(message=message, configuration=configuration)
@@ -398,7 +398,7 @@ def _setup_push_and_trigger(
     followup: dict[str, Any] = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK trigger push notification delivery"}],
-        "messageId": tck_id("complete-task"),
+        "messageId": tck_message_id("complete-task"),
         "taskId": task_id,
     }
     response = client.send_message(message=followup)

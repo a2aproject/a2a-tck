@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import OperationType
+from tck.requirements.base import OperationType, unique_message_id
 
 
 if TYPE_CHECKING:
@@ -165,6 +165,9 @@ def execute_operation(
         for key in _TRANSPORT_UNIQUE_KEYS:
             if key in msg:
                 msg[key] = f"{msg[key]}-{transport}"
+        # Samples are built once at import time and several share an ID.
+        if "messageId" in msg:
+            msg["messageId"] = unique_message_id(msg["messageId"])
 
     # Check that all required keys are present
     missing = [k for k in descriptor.required_keys if k not in sample]

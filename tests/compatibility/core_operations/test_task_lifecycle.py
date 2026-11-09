@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import TERMINAL_STATES, tck_id
+from tck.requirements.base import TERMINAL_STATES, tck_id, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tck.validators.error_binding import validate_expected_error
@@ -270,7 +270,7 @@ class TestMultiTurn:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Follow-up to terminal task"}],
-            "messageId": tck_id("terminal"),
+            "messageId": tck_message_id("terminal"),
             "taskId": info.task_id,
         }
         response = client.send_message(message=msg)
@@ -302,7 +302,7 @@ class TestMultiTurn:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Follow-up message"}],
-            "messageId": tck_id("infer-ctx"),
+            "messageId": tck_message_id("infer-ctx"),
             "taskId": info.task_id,
         }
         response = client.send_message(message=msg)
@@ -330,7 +330,7 @@ class TestMultiTurn:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Mismatched context test"}],
-            "messageId": tck_id("mismatch"),
+            "messageId": tck_message_id("mismatch"),
             "taskId": info.task_id,
             "contextId": tck_id("wrong-context"),
         }
@@ -387,7 +387,7 @@ class TestSubscribeLifecycle:
             client.send_message(message={
                 "role": "ROLE_USER",
                 "parts": [{"text": "Complete"}],
-                "messageId": tck_id("complete-task"),
+                "messageId": tck_message_id("complete-task"),
                 "taskId": info.task_id,
             })
 

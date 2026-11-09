@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 import grpc
 import pytest
 
-from tck.requirements.base import ERROR_BINDINGS, VERSION_NOT_SUPPORTED_ERROR, tck_id
+from tck.requirements.base import ERROR_BINDINGS, VERSION_NOT_SUPPORTED_ERROR, tck_id, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
 from tck.validators.error_binding import validate_expected_error
@@ -122,7 +122,7 @@ class TestGrpcStatusCodes:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "grpc status code test"}],
-            "messageId": tck_id("grpc-status-unsupported-003"),
+            "messageId": tck_message_id("grpc-status-unsupported-003"),
         }
         response = client.send_streaming_message(message=msg)
         errors = validate_expected_error(response, TRANSPORT, ERROR_BINDINGS["UnsupportedOperationError"])
@@ -168,7 +168,7 @@ class TestGrpcStatusCodes:
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "grpc version status test"}],
-                "messageId": tck_id("grpc-status-ver-005"),
+                "messageId": tck_message_id("grpc-status-ver-005"),
             }
         }
         proto_request = ParseDict(msg, a2a_pb2.SendMessageRequest())

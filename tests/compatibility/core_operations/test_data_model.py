@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 import pytest
 
-from tck.requirements.base import tck_id
+from tck.requirements.base import tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, record
@@ -57,11 +57,14 @@ _ISO_8601_Z_PATTERN = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$"
 )
 
-_SAMPLE_MESSAGE = {
-    "role": "ROLE_USER",
-    "parts": [{"text": "Hello from TCK data model test"}],
-    "messageId": tck_id("dm-test-001"),
-}
+
+def _sample_message() -> dict[str, Any]:
+    """Build the sample message with a fresh ``messageId``."""
+    return {
+        "role": "ROLE_USER",
+        "parts": [{"text": "Hello from TCK data model test"}],
+        "messageId": tck_message_id("dm-test-001"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +119,7 @@ def send_message_responses(
         # gRPC handles serialization differently; skip for JSON-level tests
         if transport_name == "grpc":
             continue
-        response = client.send_message(message=_SAMPLE_MESSAGE)
+        response = client.send_message(message=_sample_message())
         if response.success and response.raw_response is not None:
             responses[transport_name] = response.raw_response
     return responses
@@ -315,7 +318,7 @@ class TestIgnoreUnrecognizedFields:
                 "message": {
                     "role": "ROLE_USER",
                     "parts": [{"text": "unrecognized field test"}],
-                    "messageId": tck_id("dm-serial-005-jsonrpc"),
+                    "messageId": tck_message_id("dm-serial-005-jsonrpc"),
                     "tckUnknownField": "should-be-ignored",
                 },
                 "tckExtraParam": 42,
@@ -356,7 +359,7 @@ class TestIgnoreUnrecognizedFields:
             "message": {
                 "role": "ROLE_USER",
                 "parts": [{"text": "unrecognized field test"}],
-                "messageId": tck_id("dm-serial-005-rest"),
+                "messageId": tck_message_id("dm-serial-005-rest"),
                 "tckUnknownField": "should-be-ignored",
             },
             "tckExtraParam": 42,
