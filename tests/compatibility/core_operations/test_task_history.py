@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import tck_id
+from tck.requirements.base import tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tck.validators.payload import extract_history, get_message_parts, get_part_text
@@ -146,7 +146,7 @@ class TestHistoryLengthZeroSendMessage:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Follow-up with no history"}],
-            "messageId": tck_id("complete-task"),
+            "messageId": tck_message_id("complete-task"),
             "taskId": info.task_id,
         }
         response = client.send_message(

@@ -19,7 +19,7 @@ import grpc as _grpc_mod
 import httpx
 import pytest
 
-from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, tck_id
+from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.validators.http_json.content_type import uses_a2a_media_type
@@ -57,11 +57,14 @@ GRPC_ERR_003 = get_requirement_by_id("GRPC-ERR-003")
 # Helpers
 # ---------------------------------------------------------------------------
 
-_SAMPLE_MESSAGE = {
-    "role": "ROLE_USER",
-    "parts": [{"text": "Hello from TCK transport test"}],
-    "messageId": tck_id("transport-test-001"),
-}
+
+def _sample_message() -> dict[str, Any]:
+    """Build the sample message with a fresh ``messageId``."""
+    return {
+        "role": "ROLE_USER",
+        "parts": [{"text": "Hello from TCK transport test"}],
+        "messageId": tck_message_id("transport-test-001"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +85,7 @@ class TestJsonRpcFormat:
         client = transport_clients.get("jsonrpc")
         if client is None:
             pytest.skip("JSON-RPC transport not configured")
-        return client.send_message(message=_SAMPLE_MESSAGE)
+        return client.send_message(message=_sample_message())
 
     def test_response_validates_jsonrpc_envelope(
         self,
@@ -173,7 +176,7 @@ class TestJsonRpcServiceParams:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Extensions header test"}],
-            "messageId": tck_id("jsonrpc-svc-002-ext"),
+            "messageId": tck_message_id("jsonrpc-svc-002-ext"),
         }
         payload = {
             "jsonrpc": "2.0",
@@ -218,7 +221,7 @@ class TestJsonRpcStreaming:
         if client is None:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("JSON-RPC transport not configured")
-        response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+        response = client.send_streaming_message(message=_sample_message())
         if not response.success:
             pytest.skip(f"Streaming not supported: {response.error}")
         ct = response.headers.get("content-type", "")
@@ -245,7 +248,7 @@ class TestRestFormat:
         client = transport_clients.get("http_json")
         if client is None:
             pytest.skip("HTTP+JSON transport not configured")
-        return client.send_message(message=_SAMPLE_MESSAGE)
+        return client.send_message(message=_sample_message())
 
     @should
     def test_response_content_type(
@@ -301,7 +304,7 @@ class TestRestServiceParams:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Extensions header test"}],
-            "messageId": tck_id("svc-002-ext"),
+            "messageId": tck_message_id("svc-002-ext"),
         }
         response = httpx.post(
             f"{client.base_url}/message:send",
@@ -417,7 +420,7 @@ class TestRestStreaming:
         if client is None:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("HTTP+JSON transport not configured")
-        response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+        response = client.send_streaming_message(message=_sample_message())
         if not response.success:
             pytest.skip(f"Streaming not supported: {response.error}")
         ct = response.headers.get("content-type", "")
@@ -450,7 +453,7 @@ class TestGrpcService:
         if client is None:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("gRPC transport not configured")
-        response = client.send_message(message=_SAMPLE_MESSAGE)
+        response = client.send_message(message=_sample_message())
         errors = []
         if response is None:
             errors.append("gRPC service returned no response")
@@ -487,7 +490,7 @@ class TestGrpcProto3:
             transport_clients, transport,
             compatibility_collector=compatibility_collector, req=req,
         )
-        response = client.send_message(message=_SAMPLE_MESSAGE)
+        response = client.send_message(message=_sample_message())
         errors = []
         if not response.success:
             errors.append(f"SendMessage failed: {response.error}")
@@ -535,7 +538,7 @@ class TestGrpcServiceParams:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "Extensions metadata test"}],
-            "messageId": tck_id("grpc-meta-001-ext"),
+            "messageId": tck_message_id("grpc-meta-001-ext"),
         }
         proto_request = ParseDict(
             {"message": msg}, a2a_pb2.SendMessageRequest(),
@@ -579,7 +582,7 @@ class TestGrpcStreaming:
         if client is None:
             record(collector=compatibility_collector, req=req, transport=transport, passed=False, skipped=True)
             pytest.skip("gRPC transport not configured")
-        response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+        response = client.send_streaming_message(message=_sample_message())
         if not response.success:
             pytest.skip(f"gRPC streaming not supported: {response.error}")
         errors = []

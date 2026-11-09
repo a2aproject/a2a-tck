@@ -18,7 +18,7 @@ import grpc
 import pytest
 
 from specification.generated import a2a_pb2
-from tck.requirements.base import tck_id
+from tck.requirements.base import tck_id, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.grpc_client import TRANSPORT
 from tck.validators import STREAM_RESPONSE
@@ -56,11 +56,15 @@ _TERMINAL_STATES = frozenset({
     a2a_pb2.TASK_STATE_REJECTED,
 })
 
-_SAMPLE_MESSAGE = {
-    "role": "ROLE_USER",
-    "parts": [{"text": "TCK gRPC streaming test"}],
-    "messageId": tck_id("grpc-streaming-001"),
-}
+
+def _sample_message() -> dict[str, Any]:
+    """Build the sample message with a fresh ``messageId``."""
+    return {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK gRPC streaming test"}],
+        "messageId": tck_message_id("grpc-streaming-001"),
+    }
+
 
 _CONNECTIVITY_CODES = frozenset({
     grpc.StatusCode.UNAVAILABLE,
@@ -90,7 +94,7 @@ def _collect_events(
     """
     _skip_if_no_streaming(agent_card)
 
-    response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+    response = client.send_streaming_message(message=_sample_message())
     if not response.success:
         pytest.skip(f"Streaming call failed: {response.error}")
 
@@ -130,7 +134,7 @@ class TestGrpcStreaming:
             record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
-        response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+        response = client.send_streaming_message(message=_sample_message())
         if not response.success:
             pytest.skip(f"Streaming call failed: {response.error}")
 
@@ -191,7 +195,7 @@ class TestGrpcStreaming:
             record(collector=compatibility_collector, req=req, transport=TRANSPORT, passed=False, skipped=True)
         _skip_if_no_streaming(agent_card)
 
-        response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+        response = client.send_streaming_message(message=_sample_message())
         if not response.success:
             pytest.skip(f"Streaming call failed: {response.error}")
 

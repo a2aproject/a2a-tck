@@ -22,7 +22,7 @@ from tck.requirements.base import (
     TASK_STATE_REJECTED,
     TASK_STATE_SUBMITTED,
     TASK_STATE_WORKING,
-    tck_id,
+    tck_message_id,
 )
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
@@ -48,11 +48,15 @@ STREAM_ORDER_001 = get_requirement_by_id("STREAM-ORDER-001")
 # Constants
 # ---------------------------------------------------------------------------
 
-_SAMPLE_MESSAGE = {
-    "role": "ROLE_USER",
-    "parts": [{"text": "TCK stream ordering test"}],
-    "messageId": tck_id("stream-ordering-001"),
-}
+
+def _sample_message() -> dict[str, Any]:
+    """Build the sample message with a fresh ``messageId``."""
+    return {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK stream ordering test"}],
+        "messageId": tck_message_id("stream-ordering-001"),
+    }
+
 
 # State ordering: 0 = initial, 1 = active, 2 = terminal.
 _ALL_STATES_WITH_ORDER = [
@@ -97,7 +101,7 @@ def _get_streaming_events(
     if not caps.get("streaming"):
         pytest.skip("Agent does not support streaming")
 
-    response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+    response = client.send_streaming_message(message=_sample_message())
     if getattr(response, "timed_out", False):
         pytest.skip("Streaming call timed out")
     if not response.success:
