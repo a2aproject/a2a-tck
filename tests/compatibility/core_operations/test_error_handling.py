@@ -90,13 +90,13 @@ _TASK_NOT_FOUND_ERROR_CODE = -32001
 
 
 def _jsonrpc_call(
-    base_url: str,
+    client: BaseTransportClient,
     method: str,
     params: dict,
     *,
     headers: dict[str, str] | None = None,
 ) -> httpx.Response:
-    """Make a raw JSON-RPC 2.0 call bypassing the client for header control."""
+    """Make a raw JSON-RPC 2.0 call through the client with custom headers."""
     payload = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -106,11 +106,11 @@ def _jsonrpc_call(
     hdrs = {"Content-Type": "application/json", A2A_VERSION_HEADER: A2A_VERSION}
     if headers:
         hdrs.update(headers)
-    return httpx.post(base_url, json=payload, headers=hdrs)
+    return client.raw_request("POST", json=payload, headers=hdrs)
 
 
 def _rest_call(
-    base_url: str,
+    client: BaseTransportClient,
     method: str,
     path: str,
     *,
@@ -123,7 +123,7 @@ def _rest_call(
         hdrs["Content-Type"] = "application/json"
     if headers:
         hdrs.update(headers)
-    return httpx.request(method, f"{base_url}{path}", json=json_body, headers=hdrs)
+    return client.raw_request(method, path, json=json_body, headers=hdrs)
 
 
 
@@ -147,7 +147,7 @@ class TestCoreErrorStructure:
         transport = "jsonrpc"
         # Raw call needed: invoking a non-existent method.
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = _jsonrpc_call(client.base_url, "NonExistentMethod", {})
+        response = _jsonrpc_call(client, "NonExistentMethod", {})
         body = response.json()
         if "error" not in body:
             pytest.skip("Server did not return an error for unknown method")
@@ -189,7 +189,7 @@ class TestCoreInputValidation:
         transport = "jsonrpc"
         # Raw call needed: deliberately malformed params.
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = _jsonrpc_call(client.base_url, "SendMessage", {})
+        response = _jsonrpc_call(client, "SendMessage", {})
         body = response.json()
         passed = "error" in body
         errors = [] if passed else ["Malformed request must return an error"]
@@ -205,7 +205,7 @@ class TestCoreInputValidation:
         transport = "http_json"
         # Raw call needed: deliberately malformed body.
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
-        response = _rest_call(client.base_url, "POST", "/message:send", json_body={})
+        response = _rest_call(client, "POST", "/message:send", json_body={})
         passed = response.status_code >= _HTTP_ERROR_STATUS
         errors = [] if passed else [f"Expected error status, got {response.status_code}"]
         assert_and_record(compatibility_collector, req, transport, errors)
@@ -291,7 +291,7 @@ class TestCapabilityStreaming:
             "messageId": tck_id("cap-stream"),
         }
         response = _jsonrpc_call(
-            client.base_url, "SendStreamingMessage", {"message": msg}
+            client, "SendStreamingMessage", {"message": msg}
         )
         body = response.json()
         result = validate_jsonrpc_error(body, expected_error_of(req).name)
@@ -333,7 +333,7 @@ class TestCapabilityExtensionRequired:
             "parts": [{"text": "extension test"}],
             "messageId": tck_id("cap-ext-004-jsonrpc"),
         }
-        response = _jsonrpc_call(client.base_url, "SendMessage", {"message": msg})
+        response = _jsonrpc_call(client, "SendMessage", {"message": msg})
         body = response.json()
         result = validate_jsonrpc_error(body, expected_error_of(req).name)
         errors = [] if result.valid else [result.message]
@@ -358,7 +358,7 @@ class TestCapabilityExtensionRequired:
             "messageId": tck_id("cap-ext-004-http-json"),
         }
         response = _rest_call(
-            client.base_url, "POST", "/message:send", json_body={"message": msg},
+            client, "POST", "/message:send", json_body={"message": msg},
         )
         result = validate_http_json_error(response, expected_error_of(req).name)
         errors = [] if result.valid else [result.message]
@@ -564,7 +564,7 @@ class TestVersionErrors:
             "messageId": tck_id("ver-002"),
         }
         response = _jsonrpc_call(
-            client.base_url,
+            client,
             "SendMessage",
             {"message": msg},
             headers={A2A_VERSION_HEADER: "99.0"},
@@ -590,7 +590,7 @@ class TestVersionErrors:
             "messageId": tck_id("ver-002-rest"),
         }
         response = _rest_call(
-            client.base_url,
+            client,
             "POST",
             "/message:send",
             json_body={"message": msg},
@@ -616,7 +616,7 @@ class TestVersionErrors:
             "messageId": tck_id("ver-003"),
         }
         response = _jsonrpc_call(
-            client.base_url,
+            client,
             "SendMessage",
             {"message": msg},
             headers={A2A_VERSION_HEADER: ""},

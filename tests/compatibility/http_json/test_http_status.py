@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import httpx
 import pytest
 
 from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, SEND_MESSAGE_BINDING, tck_id
@@ -178,8 +177,9 @@ class TestHttpJsonStatusCodes:
             "parts": [{"text": "version status test"}],
             "messageId": tck_id("status-ver-006"),
         }
-        response = httpx.post(
-            f"{client.base_url}{SEND_MESSAGE_BINDING.http_json_path}",
+        response = client.raw_request(
+            "POST",
+            SEND_MESSAGE_BINDING.http_json_path,
             json={"message": msg},
             headers={
                 "Content-Type": HTTP_JSON_CONTENT_TYPE,

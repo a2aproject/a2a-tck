@@ -9,7 +9,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Iterator
+from typing import TYPE_CHECKING, Any, Iterator
+
+
+if TYPE_CHECKING:
+    import httpx
 
 
 @dataclass
@@ -78,6 +82,11 @@ class BaseTransportClient(ABC):
     def __init__(self, base_url: str, transport: str) -> None:
         self.base_url = base_url
         self.transport = transport
+
+    def raw_request(self, method: str, path: str = "", **kwargs: Any) -> httpx.Response:
+        """Send a hand-built probe; only HTTP-based transports support this."""
+        msg = f"Transport {self.transport!r} does not send raw HTTP requests"
+        raise NotImplementedError(msg)
 
     @abstractmethod
     def send_message(

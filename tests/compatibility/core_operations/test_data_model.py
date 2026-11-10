@@ -15,7 +15,6 @@ import re
 
 from typing import TYPE_CHECKING, Any
 
-import httpx
 import pytest
 
 from tck.requirements.base import tck_id
@@ -321,8 +320,8 @@ class TestIgnoreUnrecognizedFields:
                 "tckExtraParam": 42,
             },
         }
-        response = httpx.post(
-            client.base_url,
+        response = client.raw_request(
+            "POST",
             json=payload,
             headers={"Content-Type": "application/json", A2A_VERSION_HEADER: A2A_VERSION},
             timeout=30.0,
@@ -361,8 +360,9 @@ class TestIgnoreUnrecognizedFields:
             },
             "tckExtraParam": 42,
         }
-        response = httpx.post(
-            f"{client.base_url}/message:send",
+        response = client.raw_request(
+            "POST",
+            "/message:send",
             json=body,
             headers={"Content-Type": "application/json", A2A_VERSION_HEADER: A2A_VERSION},
             timeout=30.0,

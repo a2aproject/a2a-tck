@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import grpc as _grpc_mod
-import httpx
 import pytest
 
 from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, tck_id
@@ -181,8 +180,8 @@ class TestJsonRpcServiceParams:
             "method": "SendMessage",
             "params": {"message": msg},
         }
-        response = httpx.post(
-            client.base_url,
+        response = client.raw_request(
+            "POST",
             json=payload,
             headers={
                 "Content-Type": "application/json",
@@ -303,8 +302,9 @@ class TestRestServiceParams:
             "parts": [{"text": "Extensions header test"}],
             "messageId": tck_id("svc-002-ext"),
         }
-        response = httpx.post(
-            f"{client.base_url}/message:send",
+        response = client.raw_request(
+            "POST",
+            "/message:send",
             json={"message": msg},
             headers={
                 "Content-Type": HTTP_JSON_CONTENT_TYPE,

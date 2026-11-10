@@ -126,6 +126,14 @@ class HttpJsonClient(BaseTransportClient):
         """Close the HTTP client."""
         self._client.close()
 
+    def raw_request(self, method: str, path: str = "", **kwargs: Any) -> httpx.Response:
+        """Send a hand-built probe through this client's HTTP session.
+
+        The path is joined to the interface URL the same way as for regular
+        operations, so probes keep its path prefix and the session's settings.
+        """
+        return self._client.request(method, path, **kwargs)
+
     def _request(
         self,
         method: str,
