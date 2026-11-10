@@ -162,6 +162,7 @@ def test_must_requirement(
     validators: dict[str, Any],
     compatibility_collector: Any,
     agent_card: dict[str, Any],
+    message_parts: list[dict[str, Any]] | None,
 ) -> None:
     """Verify a MUST-level requirement — hard failure on validation error."""
     _skip_if_capability_not_declared(requirement, transport, agent_card, compatibility_collector)
@@ -176,7 +177,11 @@ def test_must_requirement(
         )
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
-    response = execute_operation(client, requirement)
+    response = execute_operation(
+        client,
+        requirement,
+        message_parts=message_parts,
+    )
     errors = _validate_response(response, transport, requirement, validators)
 
     compatibility_collector.record(
@@ -210,6 +215,7 @@ def test_should_requirement(
     validators: dict[str, Any],
     compatibility_collector: Any,
     agent_card: dict[str, Any],
+    message_parts: list[dict[str, Any]] | None,
 ) -> None:
     """Verify a SHOULD-level requirement — xfail on validation error."""
     _skip_if_capability_not_declared(requirement, transport, agent_card, compatibility_collector)
@@ -224,7 +230,11 @@ def test_should_requirement(
         )
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
-    response = execute_operation(client, requirement)
+    response = execute_operation(
+        client,
+        requirement,
+        message_parts=message_parts,
+    )
     errors = _validate_response(response, transport, requirement, validators)
 
     compatibility_collector.record(
@@ -259,6 +269,7 @@ def test_may_requirement(
     validators: dict[str, Any],
     compatibility_collector: Any,
     agent_card: dict[str, Any],
+    message_parts: list[dict[str, Any]] | None,
 ) -> None:
     """Verify a MAY-level requirement — skip if capability not declared."""
     _skip_if_capability_not_declared(requirement, transport, agent_card, compatibility_collector)
@@ -273,7 +284,11 @@ def test_may_requirement(
         )
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
-    response = execute_operation(client, requirement)
+    response = execute_operation(
+        client,
+        requirement,
+        message_parts=message_parts,
+    )
     errors = _validate_response(response, transport, requirement, validators)
 
     compatibility_collector.record(

@@ -113,6 +113,8 @@ OPERATION_DESCRIPTORS: dict[OperationType, _OperationDescriptor] = {
 def execute_operation(
     client: BaseTransportClient,
     requirement: RequirementSpec,
+    *,
+    message_parts: list[dict[str, Any]] | None = None,
 ) -> TransportResponse | StreamingResponse:
     """Execute the operation associated with a requirement on the given client.
 
@@ -124,6 +126,8 @@ def execute_operation(
     Args:
         client: The transport client to use.
         requirement: The requirement whose operation to execute.
+        message_parts: Optional replacement for the generic sample message's
+            parts. Deliberate error cases always retain their original parts.
 
     Returns:
         The transport response.
@@ -155,6 +159,11 @@ def execute_operation(
         )
 
     sample = copy.deepcopy(requirement.sample_input)
+
+    if message_parts is not None and requirement.expected_error is None:
+        message = sample.get("message")
+        if isinstance(message, dict):
+            message["parts"] = copy.deepcopy(message_parts)
 
     # Append the transport name to message IDs so that each transport gets
     # its own task/message on the SUT, preventing cross-transport state
