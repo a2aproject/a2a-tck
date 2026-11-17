@@ -73,6 +73,30 @@ Tests are organized by [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) requir
 | **SHOULD** | Expected unless there is a valid reason to differ | Expected failure (`xfail`), does not block compatibility |
 | **MAY** | Truly optional | Skipped if the agent doesn't declare the capability |
 
+The exact reference responses to `TCK artifact test` are optional **fixture
+contracts**, not A2A MUSTs. A media type in an Agent Card does not promise
+a particular filename, text, data value, or direct Message for that input.
+Declare these contracts explicitly, for example:
+
+```sh
+python run_tck.py --sut-host http://localhost:9999 -- --reference-scenario=artifact-text=run --reference-scenario=artifact-file=unsupported
+```
+
+The stable fixture IDs are `artifact-text`, `artifact-file`, `artifact-file-url`,
+`artifact-data`, and `message-response`. Repeat the option for each desired ID.
+Omitted fixtures are skipped without sending the reference probe; explicit
+`unsupported` is a distinct skip reason. An unknown ID, invalid mode, or
+contradiction is a configuration error. Use pytest/JUnit for individual fixture
+results; they do not contribute to the protocol score. If a fixture is opted in,
+a valid `INPUT_REQUIRED` can fail its expected output without becoming a protocol
+violation. Schema and transport conformance tests still run independently.
+Requesting a fixture that a filter (for example `--level must`) deselects
+is a configuration error, not a successful fixture run. A response without
+an artifact does not earn credit for having validated artifact fields.
+If a selected fixture cannot execute (for example, its transport is unavailable),
+pytest/JUnit retains the skip as `NOT_RUN` with the reason. A successful pytest
+exit with skips is not proof that those contracts were satisfied.
+
 Use `--level` to run only a specific level:
 
 ```bash

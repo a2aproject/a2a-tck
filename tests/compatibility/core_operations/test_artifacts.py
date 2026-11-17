@@ -1,12 +1,9 @@
-"""Artifact and Part content validation tests.
+"""Opt-in reference-SUT fixture contracts, not RFC 2119 requirements.
 
-Sends messages that trigger specific artifact/part types in the SUT
-and validates the response contains the expected content.
-
-Requirements tested:
-    DM-PART-001 — Part uses oneof semantics (text, file, or data)
-    DM-ART-001  — Artifact contains required fields (artifactId, parts)
-    DM-MSG-001  — Message contains required fields (role, parts, messageId)
+Protocol shape is independently exercised by test_data_model.py. When an
+operator opts into a fixture, validate the actual response before checking its
+reference-specific content. Fixture results belong to pytest/JUnit, not the
+protocol compatibility score.
 """
 
 from __future__ import annotations
@@ -15,9 +12,10 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import tck_id
-from tck.requirements.registry import get_requirement_by_id
+from tck.requirements.base import TASK_STATE_INPUT_REQUIRED, tck_id
 from tck.transport import ALL_TRANSPORTS
+from tck.validators import SEND_MESSAGE_RESPONSE
+from tck.validators.observed_response import observed_checks
 from tck.validators.payload import (
     extract_artifacts,
     extract_message,
@@ -29,22 +27,13 @@ from tck.validators.payload import (
     get_part_text,
     get_part_type,
     validate_artifact_structure,
+    validate_task_state,
 )
-from tests.compatibility._test_helpers import assert_and_record, get_client
-from tests.compatibility.markers import core, must
+from tests.compatibility._test_helpers import get_client
 
 
 if TYPE_CHECKING:
     from tck.transport.base import BaseTransportClient
-
-
-# ---------------------------------------------------------------------------
-# Requirement lookups
-# ---------------------------------------------------------------------------
-
-DM_PART_001 = get_requirement_by_id("DM-PART-001")
-DM_ART_001 = get_requirement_by_id("DM-ART-001")
-DM_MSG_001 = get_requirement_by_id("DM-MSG-001")
 
 
 # ---------------------------------------------------------------------------
@@ -55,11 +44,10 @@ DM_MSG_001 = get_requirement_by_id("DM-MSG-001")
 def _send_and_get_response(
     client: BaseTransportClient,
     prefix: str,
+    transport: str,
+    validators: dict[str, Any],
 ) -> Any:
-    """Send a message with the given prefix and return the response.
-
-    Calls ``pytest.skip`` if the message fails.
-    """
+    """Require a valid successful reply to the declared reference input."""
     message: dict[str, Any] = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK artifact test"}],
@@ -67,7 +55,13 @@ def _send_and_get_response(
     }
     response = client.send_message(message=message)
     if not response.success:
-        pytest.skip(f"send_message failed: {response.error}")
+        pytest.fail(f"{prefix}: send_message failed: {response.error}")
+    shape = validators[transport].validate(response.raw_response, SEND_MESSAGE_RESPONSE)
+    assert shape.valid, f"{prefix}: invalid response: {shape.errors}"
+    errors = [e for findings in observed_checks(response.raw_response, transport).values() for e in findings]
+    assert not errors, f"{prefix}: invalid response: {errors}"
+    if not validate_task_state(response, transport, TASK_STATE_INPUT_REQUIRED):
+        pytest.fail(f"{prefix}: INPUT_REQUIRED is a protocol state, not the promised fixture output")
     return response
 
 
@@ -76,8 +70,7 @@ def _send_and_get_response(
 # ---------------------------------------------------------------------------
 
 
-@must
-@core
+@pytest.mark.reference_scenario("artifact-text")
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestTextArtifact:
     """DM-ART-001 / DM-PART-001: Task with a text artifact."""
@@ -86,15 +79,11 @@ class TestTextArtifact:
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """Response contains an artifact with a TextPart."""
-        req = DM_ART_001
-        client = get_client(
-            transport_clients, transport,
-            compatibility_collector=compatibility_collector, req=req,
-        )
-        response = _send_and_get_response(client, "artifact-text")
+        client = get_client(transport_clients, transport)
+        response = _send_and_get_response(client, "artifact-text", transport, validators)
 
         errors, part = validate_artifact_structure(response, transport, "text")
         if part is not None:
@@ -104,11 +93,10 @@ class TestTextArtifact:
                     f"Expected text 'Generated text content', got {text!r}"
                 )
 
-        assert_and_record(compatibility_collector, req, transport, errors)
+        assert not errors, "; ".join(errors)
 
 
-@must
-@core
+@pytest.mark.reference_scenario("artifact-file")
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestFileArtifact:
     """DM-ART-001 / DM-PART-001: Task with a file artifact."""
@@ -117,15 +105,11 @@ class TestFileArtifact:
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """Response contains an artifact with a FilePart."""
-        req = DM_ART_001
-        client = get_client(
-            transport_clients, transport,
-            compatibility_collector=compatibility_collector, req=req,
-        )
-        response = _send_and_get_response(client, "artifact-file")
+        client = get_client(transport_clients, transport)
+        response = _send_and_get_response(client, "artifact-file", transport, validators)
 
         # File parts use "raw" (bytes) or "url" (string) content variant
         errors: list[str] = []
@@ -159,11 +143,10 @@ class TestFileArtifact:
                         f"Expected mediaType 'text/plain', got {media_type!r}"
                     )
 
-        assert_and_record(compatibility_collector, req, transport, errors)
+        assert not errors, "; ".join(errors)
 
 
-@must
-@core
+@pytest.mark.reference_scenario("artifact-file-url")
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestFileUrlArtifact:
     """DM-ART-001 / DM-PART-001: Task with a file URL artifact."""
@@ -172,15 +155,11 @@ class TestFileUrlArtifact:
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """Response contains an artifact with a FilePart using a URL."""
-        req = DM_ART_001
-        client = get_client(
-            transport_clients, transport,
-            compatibility_collector=compatibility_collector, req=req,
-        )
-        response = _send_and_get_response(client, "artifact-file-url")
+        client = get_client(transport_clients, transport)
+        response = _send_and_get_response(client, "artifact-file-url", transport, validators)
 
         errors: list[str] = []
         artifacts = extract_artifacts(response, transport)
@@ -213,11 +192,10 @@ class TestFileUrlArtifact:
                         f"Expected mediaType 'text/plain', got {media_type!r}"
                     )
 
-        assert_and_record(compatibility_collector, req, transport, errors)
+        assert not errors, "; ".join(errors)
 
 
-@must
-@core
+@pytest.mark.reference_scenario("artifact-data")
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestDataArtifact:
     """DM-ART-001 / DM-PART-001: Task with a data artifact."""
@@ -226,15 +204,11 @@ class TestDataArtifact:
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """Response contains an artifact with a DataPart."""
-        req = DM_ART_001
-        client = get_client(
-            transport_clients, transport,
-            compatibility_collector=compatibility_collector, req=req,
-        )
-        response = _send_and_get_response(client, "artifact-data")
+        client = get_client(transport_clients, transport)
+        response = _send_and_get_response(client, "artifact-data", transport, validators)
 
         errors, part = validate_artifact_structure(response, transport, "data")
         if part is not None:
@@ -245,11 +219,10 @@ class TestDataArtifact:
                     f"Expected data {expected!r}, got {data!r}"
                 )
 
-        assert_and_record(compatibility_collector, req, transport, errors)
+        assert not errors, "; ".join(errors)
 
 
-@must
-@core
+@pytest.mark.reference_scenario("message-response")
 @pytest.mark.parametrize("transport", ALL_TRANSPORTS)
 class TestMessageResponse:
     """DM-MSG-001: SendMessage returns a Message (not a Task)."""
@@ -258,15 +231,11 @@ class TestMessageResponse:
         self,
         transport: str,
         transport_clients: dict[str, BaseTransportClient],
-        compatibility_collector: Any,
+        validators: dict[str, Any],
     ) -> None:
         """Response is a Message with a TextPart."""
-        req = DM_MSG_001
-        client = get_client(
-            transport_clients, transport,
-            compatibility_collector=compatibility_collector, req=req,
-        )
-        response = _send_and_get_response(client, "message-response")
+        client = get_client(transport_clients, transport)
+        response = _send_and_get_response(client, "message-response", transport, validators)
 
         errors: list[str] = []
         message = extract_message(response, transport)
@@ -292,4 +261,4 @@ class TestMessageResponse:
                         f"Expected text 'Direct message response', got {text!r}"
                     )
 
-        assert_and_record(compatibility_collector, req, transport, errors)
+        assert not errors, "; ".join(errors)

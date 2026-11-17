@@ -21,6 +21,7 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
+from tck.validators.observed_response import observed_checks
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, record
 from tests.compatibility.markers import core, must, should
 
@@ -171,19 +172,25 @@ class TestSendMessageResponseSchema:
                 continue
 
             result = validator.validate(raw, "Send Message Response")
+            observations = observed_checks(raw, transport) if result.valid else {}
+            failures: list[str] = []
 
             for req, _schema_ref in self._REQ_SCHEMA_PAIRS:
+                if result.valid and req.id not in observations:
+                    continue  # No witness in this reply; do not award a pass.
+                errors = observations[req.id] if result.valid else result.errors
+                failures.extend(errors)
                 record(
                     collector=compatibility_collector,
                     req=req,
                     transport=transport,
-                    passed=result.valid,
-                    errors=result.errors if not result.valid else [],
+                    passed=not errors,
+                    errors=errors,
                 )
 
-            assert result.valid, fail_msg(
+            assert not failures, fail_msg(
                 DM_TASK_001, transport,
-                f"Schema validation failed: {'; '.join(result.errors)}",
+                f"Response validation failed: {'; '.join(dict.fromkeys(failures))}",
             )
 
 

@@ -41,11 +41,18 @@ _REQUIREMENT_ID_RE = re.compile(r"([A-Z][A-Z0-9_]+-[A-Z]+-\d+)")
 _collector_key = pytest.StashKey[CompatibilityCollector]()
 _agent_card_key = pytest.StashKey[dict]()
 _record_count_key = pytest.StashKey[int]()
+_reference_declarations = pytest.StashKey[dict[str, str]]()
+_reference_ids = ("artifact-text", "artifact-file", "artifact-file-url", "artifact-data", "message-response")
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     """Register A2A TCK CLI options."""
     group = parser.getgroup("a2a-tck", "A2A TCK options")
+    group.addoption(
+        "--reference-scenario", action="append", default=[],
+        choices=[f"{name}={mode}" for name in _reference_ids for mode in ("run", "unsupported")],
+        help="Declare an optional reference fixture (ID=run or ID=unsupported); repeat per fixture.",
+    )
     group.addoption(
         "--sut-host",
         dest="sut_host",
@@ -81,6 +88,43 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Reject contradictory fixture contracts before making any SUT requests."""
+    declarations: dict[str, str] = {}
+    for entry in config.getoption("--reference-scenario"):
+        name, mode = entry.split("=")
+        if name in declarations and declarations[name] != mode:
+            raise pytest.UsageError(f"Conflicting reference scenario declarations: {name}")
+        declarations[name] = mode
+    config.stash[_reference_declarations] = declarations
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Skip only undeclared or unsupported reference cases, before fixture setup."""
+    for item in items:
+        marker = item.get_closest_marker("reference_scenario")
+        if marker is None:
+            continue
+        name, = marker.args
+        if name not in _reference_ids:
+            raise pytest.UsageError(f"Unknown reference scenario marker: {name}")
+        mode = config.stash[_reference_declarations].get(name)
+        if mode != "run":
+            reason = "UNSUPPORTED (declared)" if mode == "unsupported" else "NOT_APPLICABLE (no fixture contract)"
+            item.add_marker(pytest.mark.skip(reason=f"{name}: {reason}"))
+
+
+def pytest_collection_finish(session: pytest.Session) -> None:
+    """Do not silently accept a run contract deselected by -m, -k or a node filter."""
+    requested = {name for name, mode in session.config.stash[_reference_declarations].items() if mode == "run"}
+    selected = {
+        marker.args[0] for item in session.items
+        if (marker := item.get_closest_marker("reference_scenario")) is not None
+    }
+    if missing := requested - selected:
+        raise pytest.UsageError(f"Reference scenario NOT_RUN (not selected): {', '.join(sorted(missing))}")
 
 
 @pytest.fixture(scope="session")
@@ -293,6 +337,17 @@ def pytest_runtest_makereport(
     """Auto-record a compatibility failure when a test crashes without calling ``record()``."""
     outcome = yield
     report: pytest.TestReport = outcome.get_result()
+
+    reference = item.get_closest_marker("reference_scenario")
+    if reference is not None:
+        name, = reference.args
+        if (report.skipped and item.config.stash[_reference_declarations].get(name) == "run"
+                and isinstance(report.longrepr, tuple)):
+            path, line, reason = report.longrepr
+            report.longrepr = (path, line, f"Skipped: {name}: NOT_RUN ({reason.removeprefix('Skipped: ')})")
+        # A fixture outcome belongs to pytest/JUnit, even if the docstring
+        # mentions a protocol requirement that a crash fallback could match.
+        return
 
     collector: CompatibilityCollector | None = item.config.stash.get(
         _collector_key, None
