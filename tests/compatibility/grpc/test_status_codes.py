@@ -104,13 +104,13 @@ class TestGrpcStatusCodes:
         errors = validate_expected_error(response, TRANSPORT, ERROR_BINDINGS["TaskNotFoundError"])
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_unsupported_operation_returns_failed_precondition(
+    def test_unsupported_operation_returns_unimplemented(
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
     ) -> None:
-        """UnsupportedOperationError: streaming when unsupported returns FAILED_PRECONDITION."""
+        """UnsupportedOperationError: streaming when unsupported returns UNIMPLEMENTED."""
         req = GRPC_ERR_002
 
         caps = agent_card.get("capabilities", {})
@@ -128,13 +128,13 @@ class TestGrpcStatusCodes:
         errors = validate_expected_error(response, TRANSPORT, ERROR_BINDINGS["UnsupportedOperationError"])
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_push_not_supported_returns_failed_precondition(
+    def test_push_not_supported_returns_unimplemented(
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],
         compatibility_collector: Any,
     ) -> None:
-        """PushNotificationNotSupportedError: push config when unsupported returns FAILED_PRECONDITION."""
+        """PushNotificationNotSupportedError: push config when unsupported returns UNIMPLEMENTED."""
         req = GRPC_ERR_002
 
         caps = agent_card.get("capabilities", {})
@@ -150,12 +150,12 @@ class TestGrpcStatusCodes:
         errors = validate_expected_error(response, TRANSPORT, ERROR_BINDINGS["PushNotificationNotSupportedError"])
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_version_not_supported_returns_failed_precondition(
+    def test_version_not_supported_returns_unimplemented(
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
     ) -> None:
-        """VersionNotSupportedError: unsupported version metadata returns FAILED_PRECONDITION."""
+        """VersionNotSupportedError: unsupported version metadata returns UNIMPLEMENTED."""
         req = GRPC_ERR_002
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
 

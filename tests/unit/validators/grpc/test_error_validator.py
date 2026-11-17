@@ -83,14 +83,14 @@ def test_grpc_error_identity_round_trip(binding: ErrorBinding) -> None:
 
 @pytest.mark.parametrize(
     "details",
-    [None, b"\xff", status_details(grpc.StatusCode.FAILED_PRECONDITION, "UNSUPPORTED_OPERATION"),
-     status_details(grpc.StatusCode.FAILED_PRECONDITION, "VERSION_NOT_SUPPORTED", "other.example"),
+    [None, b"\xff", status_details(grpc.StatusCode.UNIMPLEMENTED, "UNSUPPORTED_OPERATION"),
+     status_details(grpc.StatusCode.UNIMPLEMENTED, "VERSION_NOT_SUPPORTED", "other.example"),
      status_details(grpc.StatusCode.NOT_FOUND, "VERSION_NOT_SUPPORTED")],
     ids=["missing", "malformed", "wrong-reason-same-code", "wrong-domain", "binary-code-mismatch"],
 )
 def test_grpc_shared_status_cannot_impersonate_an_a2a_error(details: bytes | None) -> None:
     """Both the binding probe and cross-transport producer must reject impostors."""
-    with grpc_error_client(grpc.StatusCode.FAILED_PRECONDITION, details) as client:
+    with grpc_error_client(grpc.StatusCode.UNIMPLEMENTED, details) as client:
         response = client.get_task(id="identity-control")
         assert not validate_grpc_error(response.raw_response, "VersionNotSupportedError").valid
         assert validate_expected_error(response, "grpc", VERSION_NOT_SUPPORTED_ERROR)
@@ -100,12 +100,12 @@ def test_grpc_shared_status_cannot_impersonate_an_a2a_error(details: bytes | Non
 @pytest.mark.parametrize("reason,valid", [("VERSION_NOT_SUPPORTED", True), ("UNSUPPORTED_OPERATION", False)])
 def test_grpc_compatibility_probe_uses_the_exact_error_identity(reason: str, valid: bool) -> None:
     """The real binding probe must not record a wrong shared-code error as PASS."""
-    code = grpc.StatusCode.FAILED_PRECONDITION
+    code = grpc.StatusCode.UNIMPLEMENTED
     with grpc_error_client(code, status_details(code, reason)) as client:
         collector = CompatibilityCollector()
         try:
             with nullcontext() if valid else pytest.raises(AssertionError):
-                grpc_checks.TestGrpcStatusCodes().test_version_not_supported_returns_failed_precondition({"grpc": client}, collector)
+                grpc_checks.TestGrpcStatusCodes().test_version_not_supported_returns_unimplemented({"grpc": client}, collector)
         except pytest.skip.Exception as error:
             pytest.fail(f"Unexpected gRPC compatibility-probe skip: {error}")
         result, = collector.get_results()

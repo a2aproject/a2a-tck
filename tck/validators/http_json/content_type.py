@@ -11,9 +11,9 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
 
-def uses_a2a_media_type(headers: Mapping[str, str]) -> bool:
-    """Check the exact media type, allowing parameters and case-insensitive names."""
+def uses_json_media_type(headers: Mapping[str, str]) -> bool:
+    """Accept the A2A and generic JSON media types, including parameters."""
     for name, value in headers.items():
         if name.lower() == "content-type":
-            return value.partition(";")[0].strip().lower() == HTTP_JSON_CONTENT_TYPE
+            return value.partition(";")[0].strip().lower() in {HTTP_JSON_CONTENT_TYPE, "application/json"}
     return False

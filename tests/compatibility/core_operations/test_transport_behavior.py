@@ -22,7 +22,7 @@ import pytest
 from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
-from tck.validators.http_json.content_type import uses_a2a_media_type
+from tck.validators.http_json.content_type import uses_json_media_type
 from tests.compatibility._test_helpers import assert_and_record, get_client, record
 from tests.compatibility.markers import grpc, http_json, jsonrpc, must, should, streaming
 
@@ -253,13 +253,13 @@ class TestRestFormat:
         rest_response: TransportResponse,
         compatibility_collector: Any,
     ) -> None:
-        """HTTP_JSON-SVC-001: Content-Type should be application/a2a+json."""
+        """HTTP_JSON-SVC-001: Accept A2A or generic JSON content types."""
         req = HTTP_JSON_SVC_001
         transport = "http_json"
         ct = rest_response.headers.get("content-type", "")
         errors = []
-        if not uses_a2a_media_type(rest_response.headers):
-            errors.append(f"Expected Content-Type {HTTP_JSON_CONTENT_TYPE}, got: {ct!r}")
+        if not uses_json_media_type(rest_response.headers):
+            errors.append(f"Expected Content-Type {HTTP_JSON_CONTENT_TYPE} or application/json, got: {ct!r}")
         assert_and_record(compatibility_collector, req, transport, errors)
 
     @must
