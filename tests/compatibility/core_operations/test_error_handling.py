@@ -21,7 +21,11 @@ import httpx
 import jsonschema
 import pytest
 
-from tck.requirements.base import EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR, tck_id
+from tck.requirements.base import (
+    EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR,
+    HTTP_JSON_CONTENT_TYPE,
+    tck_id,
+)
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.validators.error_binding import validate_expected_error
@@ -30,7 +34,7 @@ from tck.validators.extended_card import (
     ExtendedCardProbe,
     classify_extended_card_probe,
 )
-from tck.validators.http_json.error_validator import validate_http_json_error
+from tck.validators.http_json.error_validator import AIP193Error, validate_http_json_error
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
 from tests.compatibility._test_helpers import (
     assert_and_record,
@@ -769,27 +773,25 @@ class TestRestErrorStructure:
         transport = "http_json"
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         response = client.get_task(id=tck_id("nonexistent-pd-test"))
-        if response.success:
-            pytest.skip("Server did not return an error for non-existent task")
         raw = response.raw_response
-        if not isinstance(raw, httpx.Response):
-            pytest.skip("Error response is not an HTTP response object")
-        ct = raw.headers.get("content-type", "")
         errors = []
-        if "application/json" not in ct:
-            errors.append(
-                f"Error Content-Type must be application/json, got: {ct!r}"
-            )
+        if response.success:
+            errors.append("Expected an HTTP error for a non-existent task")
+        elif not isinstance(raw, httpx.Response):
+            errors.append("Error response is not an HTTP response object")
         else:
-            body = raw.json()
-            if "error" not in body:
-                errors.append(
-                    "AIP-193 error response must include 'error' object"
-                )
-            elif "code" not in body.get("error", {}):
-                errors.append(
-                    "AIP-193 error.code field is required"
-                )
+            content_type = raw.headers.get("content-type", "")
+            media_type = content_type.partition(";")[0].strip().lower()
+            if media_type not in {HTTP_JSON_CONTENT_TYPE, "application/json"}:
+                errors.append(f"Expected an A2A JSON error Content-Type, got: {content_type!r}")
+            else:
+                try:
+                    body = AIP193Error.from_dict(raw.json())
+                except ValueError as error:
+                    errors.append(f"Invalid AIP-193 error: {error}")
+                else:
+                    if body.code != raw.status_code:
+                        errors.append("AIP-193 error.code must equal the HTTP status code")
         assert_and_record(compatibility_collector, req, transport, errors)
 
     def test_a2a_error_info_in_details(
