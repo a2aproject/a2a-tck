@@ -35,6 +35,11 @@ Run a specific transport:
 
 Compatibility reports are generated in the `reports/` directory after every run.
 
+The HTTP+JSON media-type recommendation defaults to the vendored 1.0.1 release.
+To check the 1.0.0 media type (`application/json`) instead, use
+`--media-type-spec-version 1.0.0`. This option only changes the media-type
+check; it does not select a different specification for the rest of the TCK.
+
 ## CLI Reference
 
 ```

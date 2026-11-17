@@ -327,25 +327,26 @@ def test_compatibility_probes_validate_present_error_details(transport: str, fie
 
 
 @pytest.mark.parametrize("media_type", ["application/a2a+json", "application/json", "application/a2a+json-invalid"])
-def test_compatibility_media_type_probe_records_recommendation(media_type: str) -> None:
+@pytest.mark.parametrize("spec_version", ["1.0.0", "1.0.1"])
+def test_compatibility_media_type_probe_records_recommendation(media_type: str, spec_version: str) -> None:
     """The response-header probe applies exact matching and records SHOULD."""
     class MediaHandler(_ErrorHandler):
         response_content_type = media_type
 
-    valid = media_type in {"application/a2a+json", "application/json"}
+    valid = media_type == ("application/json" if spec_version == "1.0.0" else "application/a2a+json")
     with _running_server(MediaHandler) as url:
         client = HttpJsonClient(url)
         collector = CompatibilityCollector()
         try:
             response = client.send_message(message={"messageId": "ct-probe", "parts": [{"text": "check"}], "role": "ROLE_USER"})
             with _probe_outcome(valid):
-                transport_checks.TestRestFormat().test_response_content_type(response, collector)
+                transport_checks.TestRestFormat().test_response_content_type(response, collector, spec_version)
             result, = collector.get_results()
             assert result.passed is valid
             assert result.level == "SHOULD"
             collector = CompatibilityCollector()
             with _probe_outcome(valid):
-                http_json_checks.TestHttpJsonErrorMediaType().test_error_content_type({"http_json": client}, collector)
+                http_json_checks.TestHttpJsonErrorMediaType().test_error_content_type({"http_json": client}, collector, spec_version)
             result, = collector.get_results()
             assert result.passed is valid
             assert result.level == "SHOULD"

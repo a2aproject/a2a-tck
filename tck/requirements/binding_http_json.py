@@ -62,10 +62,10 @@ BINDING_HTTP_JSON_REQUIREMENTS: list[RequirementSpec] = [
         title="Content-Type is an accepted JSON media type",
         level=RequirementLevel.SHOULD,
         description=(
-            "HTTP+JSON/REST binding SHOULD use Content-Type application/a2a+json "
-            "for requests and responses."
+            "HTTP+JSON/REST uses application/json in 1.0.0; "
+            "1.0.1 recommends application/a2a+json for requests and responses."
         ),
-        expected_behavior="Content-Type header is application/a2a+json or application/json",
+        expected_behavior="Content-Type matches the selected release's recommendation",
         spec_url=f"{SPEC_BASE}111-protocol-requirements",
         tags=[REST, CONTENT_TYPE],
     ),

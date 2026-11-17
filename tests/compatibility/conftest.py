@@ -68,6 +68,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Output path for the compatibility report.",
     )
     group.addoption(
+        "--media-type-spec-version",
+        choices=("1.0.0", "1.0.1"),
+        default="1.0.1",
+        help="Specification release for the HTTP+JSON media-type check (default: 1.0.1).",
+    )
+    group.addoption(
         "--webhook-host",
         dest="webhook_host",
         default="localhost",
@@ -81,6 +87,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def media_type_spec_version(request: pytest.FixtureRequest) -> str:
+    """Return the release selected for HTTP+JSON media-type checks."""
+    return request.config.getoption("--media-type-spec-version")
 
 
 @pytest.fixture(scope="session")
