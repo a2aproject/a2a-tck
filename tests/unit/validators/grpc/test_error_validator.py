@@ -70,10 +70,13 @@ def status_details(code: grpc.StatusCode, reason: str, domain: str = "a2a-protoc
     return status_pb2.Status(code=code.value[0], message="control", details=[detail]).SerializeToString()
 
 
-@pytest.mark.parametrize("binding", [value for value in ERROR_BINDINGS.values() if value.reason])
-def test_grpc_error_identity_round_trip(binding: ErrorBinding) -> None:
-    """All released mappings require their own reason, including shared codes."""
-    code = grpc.StatusCode[binding.grpc_status]
+@pytest.mark.parametrize("binding,code_name", [
+    (binding, code) for binding in ERROR_BINDINGS.values() if binding.reason
+    for code in binding.accepted_grpc_statuses()
+])
+def test_grpc_error_identity_round_trip(binding: ErrorBinding, code_name: str) -> None:
+    """Both versions require the correct reason, including shared codes."""
+    code = grpc.StatusCode[code_name]
     with grpc_error_client(code, status_details(code, binding.reason)) as client:
         response = client.get_task(id="identity-control")
         assert validate_grpc_error(response.raw_response, binding.name).valid
@@ -105,7 +108,7 @@ def test_grpc_compatibility_probe_uses_the_exact_error_identity(reason: str, val
         collector = CompatibilityCollector()
         try:
             with nullcontext() if valid else pytest.raises(AssertionError):
-                grpc_checks.TestGrpcStatusCodes().test_version_not_supported_returns_unimplemented({"grpc": client}, collector)
+                grpc_checks.TestGrpcStatusCodes().test_version_not_supported_returns_expected_error({"grpc": client}, collector)
         except pytest.skip.Exception as error:
             pytest.fail(f"Unexpected gRPC compatibility-probe skip: {error}")
         result, = collector.get_results()

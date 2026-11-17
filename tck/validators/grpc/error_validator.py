@@ -32,8 +32,9 @@ GRPC_ERROR_STATUS: dict[str, str] = {
 # Reverse mapping from gRPC status to possible error names.
 # Note: Multiple errors can map to the same status code.
 STATUS_TO_ERRORS: dict[str, list[str]] = defaultdict(list)
-for _name, _status in GRPC_ERROR_STATUS.items():
-    STATUS_TO_ERRORS[_status].append(_name)
+for _name in GRPC_ERROR_STATUS:
+    for _status in ERROR_BINDINGS[_name].accepted_grpc_statuses():
+        STATUS_TO_ERRORS[_status].append(_name)
 STATUS_TO_ERRORS = dict(STATUS_TO_ERRORS)
 
 
@@ -78,7 +79,7 @@ def validate_grpc_error(
     expected_status = GRPC_ERROR_STATUS[expected_error]
     actual_status = rpc_error.code().name
 
-    if actual_status == expected_status:
+    if actual_status in ERROR_BINDINGS[expected_error].accepted_grpc_statuses():
         try:
             status = _parse_status_details(rpc_error)
             info = _error_info_from_status(status) if status is not None else None
@@ -95,7 +96,7 @@ def validate_grpc_error(
             valid=True,
             expected_status=expected_status,
             actual_status=actual_status,
-            message=f"gRPC status matches: {expected_error} ({expected_status})",
+            message=f"gRPC status matches: {expected_error} ({actual_status})",
         )
 
     possible_errors = STATUS_TO_ERRORS.get(actual_status, [])
@@ -105,7 +106,8 @@ def validate_grpc_error(
         valid=False,
         expected_status=expected_status,
         actual_status=actual_status,
-        message=f"gRPC status mismatch: expected {expected_error} ({expected_status}), "
+        message=f"gRPC status mismatch: expected {expected_error} "
+        f"({', '.join(ERROR_BINDINGS[expected_error].accepted_grpc_statuses())}), "
         f"got {actual_status}{actual_info}",
     )
 

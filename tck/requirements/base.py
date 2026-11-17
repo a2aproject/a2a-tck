@@ -249,6 +249,16 @@ class ErrorBinding:
     http_status: int
     grpc_status: str
     reason: str | None = None
+    alternate_http_statuses: tuple[int, ...] = ()
+    alternate_grpc_statuses: tuple[str, ...] = ()
+
+    def accepted_http_statuses(self) -> tuple[int, ...]:
+        """Return the 1.0.1 and compatible 1.0.0 HTTP mappings."""
+        return (self.http_status, *self.alternate_http_statuses)
+
+    def accepted_grpc_statuses(self) -> tuple[str, ...]:
+        """Return the 1.0.1 and compatible 1.0.0 gRPC mappings."""
+        return (self.grpc_status, *self.alternate_grpc_statuses)
 
     def expected_code(self, transport: str) -> int | str | None:
         """Return the expected error code for the given transport."""
@@ -276,6 +286,7 @@ TASK_NOT_CANCELABLE_ERROR = ErrorBinding(
     http_status=400,
     grpc_status="FAILED_PRECONDITION",
     reason="TASK_NOT_CANCELABLE",
+    alternate_http_statuses=(409,),
 )
 
 PUSH_NOTIFICATION_NOT_SUPPORTED_ERROR = ErrorBinding(
@@ -284,6 +295,7 @@ PUSH_NOTIFICATION_NOT_SUPPORTED_ERROR = ErrorBinding(
     http_status=400,
     grpc_status="FAILED_PRECONDITION",
     reason="PUSH_NOTIFICATION_NOT_SUPPORTED",
+    alternate_grpc_statuses=("UNIMPLEMENTED",),
 )
 
 UNSUPPORTED_OPERATION_ERROR = ErrorBinding(
@@ -292,6 +304,7 @@ UNSUPPORTED_OPERATION_ERROR = ErrorBinding(
     http_status=400,
     grpc_status="FAILED_PRECONDITION",
     reason="UNSUPPORTED_OPERATION",
+    alternate_grpc_statuses=("UNIMPLEMENTED",),
 )
 
 CONTENT_TYPE_NOT_SUPPORTED_ERROR = ErrorBinding(
@@ -300,6 +313,7 @@ CONTENT_TYPE_NOT_SUPPORTED_ERROR = ErrorBinding(
     http_status=400,
     grpc_status="INVALID_ARGUMENT",
     reason="CONTENT_TYPE_NOT_SUPPORTED",
+    alternate_http_statuses=(415,),
 )
 
 INVALID_AGENT_RESPONSE_ERROR = ErrorBinding(
@@ -308,6 +322,7 @@ INVALID_AGENT_RESPONSE_ERROR = ErrorBinding(
     http_status=500,
     grpc_status="INTERNAL",
     reason="INVALID_AGENT_RESPONSE",
+    alternate_http_statuses=(502,),
 )
 
 EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR = ErrorBinding(
@@ -332,6 +347,7 @@ VERSION_NOT_SUPPORTED_ERROR = ErrorBinding(
     http_status=400,
     grpc_status="FAILED_PRECONDITION",
     reason="VERSION_NOT_SUPPORTED",
+    alternate_grpc_statuses=("UNIMPLEMENTED",),
 )
 
 # Standard JSON-RPC errors (no ErrorInfo reason or gRPC mapping)
@@ -396,12 +412,17 @@ A2A_ERROR_REASONS: set[str] = {e.reason for e in ERROR_BINDINGS.values() if e.re
 
 
 def describe_error_mappings(transport: str) -> str:
-    """Render the canonical A2A error table for requirement descriptions."""
+    """Render accepted A2A error mappings for requirement descriptions."""
     mappings = []
     for binding in ERROR_BINDINGS.values():
         if binding.reason is not None:
             code = binding.expected_code(transport)
             if code is None or code == "":
                 raise ValueError(f"No {transport} mapping for {binding.name}")
-            mappings.append(f"{binding.name}={code}")
+            codes = (code,)
+            if transport == "grpc":
+                codes = binding.accepted_grpc_statuses()
+            elif transport == "http_json":
+                codes = binding.accepted_http_statuses()
+            mappings.extend(f"{binding.name}={value}" for value in codes)
     return ", ".join(mappings)

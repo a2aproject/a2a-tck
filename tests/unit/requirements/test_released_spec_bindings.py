@@ -41,15 +41,15 @@ def test_released_spec_error_table_is_complete() -> None:
     }
 
 
-@pytest.mark.parametrize("row", _V1_0_0_ROWS, ids=lambda row: row["name"])
-def test_all_error_bindings_match_v1_0_0(row: dict[str, str]) -> None:
-    """Check all transport expectations against the 1.0.0 error table."""
+@pytest.mark.parametrize("row", _ROWS + _V1_0_0_ROWS, ids=lambda row: row["name"])
+def test_all_error_bindings_match_both_versions(row: dict[str, str]) -> None:
+    """Check transport expectations against both released error tables."""
     binding = ERROR_BINDINGS[row["name"]]
     assert binding.jsonrpc_code == int(row["jsonrpc"])
-    assert binding.grpc_status == row["grpc"]
-    assert binding.http_status == int(row["http"])
+    assert row["grpc"] in binding.accepted_grpc_statuses()
+    assert int(row["http"]) in binding.accepted_http_statuses()
     response = {"status_code": int(row["http"]), "body": {"error": {
-        "code": int(row["http"]), "message": "conformant error",
+        "code": int(row["http"]), "status": row["grpc"], "message": "conformant error",
         "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": binding.reason, "domain": "a2a-protocol.org"}],
     }}}
     assert validate_http_json_error(response, row["name"]).valid

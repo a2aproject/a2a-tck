@@ -157,12 +157,12 @@ class TestHTTPJSONErrorStatus:
     def test_contains_task_not_cancelable(self) -> None:
         """Test TaskNotCancelableError maps to 409 (spec 1.0.0)."""
         assert "TaskNotCancelableError" in HTTP_JSON_ERROR_STATUS
-        assert HTTP_JSON_ERROR_STATUS["TaskNotCancelableError"] == HTTPStatus.CONFLICT
+        assert HTTPStatus.CONFLICT in ERROR_BINDINGS["TaskNotCancelableError"].accepted_http_statuses()
 
     def test_contains_content_type_not_supported(self) -> None:
         """Test ContentTypeNotSupportedError maps to 415 (spec 1.0.0)."""
         assert "ContentTypeNotSupportedError" in HTTP_JSON_ERROR_STATUS
-        assert HTTP_JSON_ERROR_STATUS["ContentTypeNotSupportedError"] == HTTPStatus.UNSUPPORTED_MEDIA_TYPE
+        assert HTTPStatus.UNSUPPORTED_MEDIA_TYPE in ERROR_BINDINGS["ContentTypeNotSupportedError"].accepted_http_statuses()
 
     def test_contains_internal_error(self) -> None:
         """Test InternalError maps to 500."""

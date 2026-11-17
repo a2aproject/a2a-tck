@@ -445,7 +445,7 @@ def test_unsupported_media_precondition_respects_all_advertised_modes(card: dict
         collector = CompatibilityCollector()
         try:
             with _probe_outcome(None if skip else True):
-                http_status_checks.TestHttpJsonStatusCodes().test_content_type_not_supported_returns_415({"http_json": client}, card, collector)
+                http_status_checks.TestHttpJsonStatusCodes().test_content_type_not_supported_returns_expected_error({"http_json": client}, card, collector)
             result, = collector.get_results()
             assert result.skipped is skip
             assert result.passed is (not skip)
