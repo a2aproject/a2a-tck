@@ -48,6 +48,7 @@ minversion = "8.0"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
+    "reference_scenario(id): optional reference-SUT fixture contract, not part of the protocol score",
     "core: Core A2A protocol requirements",
     "must: MUST-level requirements (hard failure)",
     "should: SHOULD-level requirements (expected failure)",
