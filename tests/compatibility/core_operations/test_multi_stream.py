@@ -15,11 +15,13 @@ from __future__ import annotations
 import contextlib
 import json
 import threading
+import time
 
 from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tests.compatibility._task_helpers import create_working_task
@@ -46,6 +48,7 @@ STREAM_ORDER_004 = get_requirement_by_id("STREAM-ORDER-004")
 
 
 _SUBSCRIBE_TIMEOUT_S = 10
+_MIN_EVENTS_WITH_BROADCAST = 2
 
 
 # ---------------------------------------------------------------------------
@@ -77,22 +80,24 @@ def _subscribe_parallel(
     n: int = 2,
     *,
     stop_first_early: bool = False,
-) -> list[list[Any]]:
+) -> tuple[list[list[Any]], list[bool]]:
     """Open *n* concurrent ``subscribe_to_task`` streams and collect events.
 
     When *stop_first_early* is ``True``, the first stream is closed after
     receiving its first event while the remaining streams run to completion.
 
-    Returns a list of event lists, one per stream.  Raises ``pytest.skip``
-    if any subscription call fails.
+    Returns event lists and timeout flags for each stream. Raises
+    ``pytest.skip`` if setup fails.
     """
     results: list[list[Any]] = [[] for _ in range(n)]
+    timed_out: list[bool] = [False] * n
     errors: list[str] = []
     threads: list[threading.Thread] = []
 
     # We need to open subscriptions concurrently.  Use a barrier so all
     # threads start consuming events roughly at the same time.
-    barrier = threading.Barrier(n)
+    barrier = threading.Barrier(n + 1)
+    first_stream_closed = threading.Event()
 
     def _consume(index: int) -> None:
         sub = client.subscribe_to_task(id=task_id)
@@ -104,15 +109,43 @@ def _subscribe_parallel(
         with contextlib.suppress(threading.BrokenBarrierError):
             barrier.wait(timeout=5)
         early = stop_first_early and index == 0
-        results[index], _ = collect_events_with_timeout(
+        results[index], timed_out[index] = collect_events_with_timeout(
             sub.events,
             stop_after_first=early,
         )
+        if early:
+            close = getattr(sub.raw_response, "close", None)
+            if close is None:
+                close = getattr(sub.raw_response, "cancel", None)
+            if callable(close):
+                close()
+            first_stream_closed.set()
 
     for i in range(n):
         t = threading.Thread(target=_consume, args=(i,), daemon=True)
         threads.append(t)
         t.start()
+
+    try:
+        barrier.wait(timeout=5)
+    except threading.BrokenBarrierError:
+        errors.append("Not all streams became active")
+    if stop_first_early:
+        if not first_stream_closed.wait(timeout=5):
+            errors.append("Stream 0 did not close after its initial event")
+    else:
+        time.sleep(0.5)
+
+    response = client.send_message(
+        message={
+            "role": "ROLE_USER",
+            "parts": [{"text": "Complete multi-stream task"}],
+            "messageId": tck_id("complete-task"),
+            "taskId": task_id,
+        }
+    )
+    if not response.success:
+        errors.append(f"Task completion failed: {response.error}")
 
     for t in threads:
         t.join(timeout=_SUBSCRIBE_TIMEOUT_S + 5)
@@ -120,7 +153,7 @@ def _subscribe_parallel(
     if errors:
         pytest.skip("; ".join(errors))
 
-    return results
+    return results, timed_out
 
 
 # ---------------------------------------------------------------------------
@@ -157,12 +190,15 @@ class TestMultiStreamOrdering:
         # (subscribing to a terminal task should be rejected per STREAM-SUB-003)
         info = create_working_task(client)
 
-        event_lists = _subscribe_parallel(client, info.task_id, n=2)
+        event_lists, timed_out = _subscribe_parallel(client, info.task_id, n=2)
 
         errors: list[str] = []
+        for i, did_time_out in enumerate(timed_out):
+            if did_time_out:
+                errors.append(f"Stream {i} timed out waiting for a broadcast event")
         for i, events in enumerate(event_lists):
-            if not events:
-                errors.append(f"Stream {i} received no events")
+            if len(events) < _MIN_EVENTS_WITH_BROADCAST:
+                errors.append(f"Stream {i} received only the initial Task event; no later event was broadcast")
 
         assert_and_record(compatibility_collector, req, transport, errors)
 
@@ -183,16 +219,17 @@ class TestMultiStreamOrdering:
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_working_task(client)
 
-        event_lists = _subscribe_parallel(client, info.task_id, n=2)
+        event_lists, timed_out = _subscribe_parallel(client, info.task_id, n=2)
 
         errors: list[str] = []
-        if not event_lists[0] and not event_lists[1]:
-            errors.append("Both streams received no events")
-        elif not event_lists[0] or not event_lists[1]:
+        for i, did_time_out in enumerate(timed_out):
+            if did_time_out:
+                errors.append(f"Stream {i} timed out waiting for a broadcast event")
+        if len(event_lists[0]) < _MIN_EVENTS_WITH_BROADCAST or len(event_lists[1]) < _MIN_EVENTS_WITH_BROADCAST:
             errors.append(
                 f"Stream 0 got {len(event_lists[0])} events, "
                 f"stream 1 got {len(event_lists[1])} events — "
-                "one stream received nothing"
+                "each stream must receive the initial Task and a later event"
             )
         else:
             normalized_0 = [_normalize_event(e) for e in event_lists[0]]
@@ -223,19 +260,20 @@ class TestMultiStreamOrdering:
         client = get_client(transport_clients, transport, compatibility_collector=compatibility_collector, req=req)
         info = create_working_task(client)
 
-        event_lists = _subscribe_parallel(
-            client, info.task_id, n=2, stop_first_early=True,
+        event_lists, timed_out = _subscribe_parallel(
+            client,
+            info.task_id,
+            n=2,
+            stop_first_early=True,
         )
 
         errors: list[str] = []
+        if timed_out[1]:
+            errors.append("Stream 1 timed out after stream 0 was closed")
         # Stream 0 was closed early — it should have at most 1 event
         if len(event_lists[0]) > 1:
-            errors.append(
-                f"Stream 0 should have stopped after 1 event, "
-                f"got {len(event_lists[0])}"
-            )
-        # Stream 1 should have continued and received at least 1 event
-        if not event_lists[1]:
-            errors.append("Stream 1 received no events after stream 0 was closed")
+            errors.append(f"Stream 0 should have stopped after 1 event, got {len(event_lists[0])}")
+        if len(event_lists[1]) < _MIN_EVENTS_WITH_BROADCAST:
+            errors.append("Stream 1 did not receive a later event after stream 0 was closed")
 
         assert_and_record(compatibility_collector, req, transport, errors)
