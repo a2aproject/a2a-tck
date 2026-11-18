@@ -1,0 +1,15 @@
+{
+  "id": "A3-003",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Case sensitivity: uppercase ASCII (U+0041 'A') sorts before lowercase ASCII (U+0061 'a') as a raw code unit.",
+  "input": {
+    "apple": 1,
+    "Apple": 2
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b224170706c65223a322c226170706c65223a317d"
+  }
+}

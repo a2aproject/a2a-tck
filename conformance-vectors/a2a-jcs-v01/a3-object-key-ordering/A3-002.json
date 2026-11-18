@@ -1,0 +1,16 @@
+{
+  "id": "A3-002",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Keys given out of order must be reordered to UTF-16 code-unit order.",
+  "input": {
+    "zebra": 1,
+    "apple": 2,
+    "mango": 3
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226170706c65223a322c226d616e676f223a332c227a65627261223a317d"
+  }
+}

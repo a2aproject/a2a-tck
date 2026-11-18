@@ -1,0 +1,14 @@
+{
+  "id": "A4-003",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "An astral-plane character (U+1F600 GRINNING FACE, outside the Basic Multilingual Plane, requiring a UTF-16 surrogate pair to represent but a single 4-byte UTF-8 sequence) is emitted as literal UTF-8, not as a \\ud83d\\ude00 surrogate-pair escape.",
+  "input": {
+    "note": "hello 😀 world"
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e6f7465223a2268656c6c6f20f09f988020776f726c64227d"
+  }
+}

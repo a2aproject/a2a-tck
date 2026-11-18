@@ -1,0 +1,15 @@
+{
+  "id": "A3-006",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "The a2aproject/A2A#2122 counterexample verbatim (case C3): a key containing U+1F600 (surrogate pair D83D DE00) sorts BEFORE a key containing U+FF01 (single unit FF01), because D83D < FF01 as raw UTF-16 code units, even though the code POINT 1F600 is numerically greater than FF01. Sorting by code point instead of UTF-16 code unit -- what a2a-python's sort_keys=True does -- gets this pair backwards.",
+  "input": {
+    "b😀key": 1,
+    "b！key": 2
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2262f09f98806b6579223a312c2262efbc816b6579223a327d"
+  }
+}

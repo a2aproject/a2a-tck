@@ -1,0 +1,14 @@
+{
+  "id": "A5-008",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "A five-significant-digit decimal exercises the shortest-round-trip rule on a value with more precision than 0.1.",
+  "input": {
+    "n": 3.14159
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a332e31343135397d"
+  }
+}

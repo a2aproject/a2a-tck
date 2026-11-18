@@ -1,0 +1,16 @@
+{
+  "id": "A3-004",
+  "clause": "RFC8785-3.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Numeric-looking keys sort as UTF-16 code-unit sequences, not as numbers: '1' < '10' < '2'.",
+  "input": {
+    "10": 1,
+    "2": 2,
+    "1": 3
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2231223a332c223130223a312c2232223a327d"
+  }
+}

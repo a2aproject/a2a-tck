@@ -1,0 +1,14 @@
+{
+  "id": "A5-011",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "One order of magnitude below the a2aproject/A2A#2122 case C4 value (A5-001): 0.0000001 (1e-7) probes the small-magnitude side of the fixed/exponential boundary that 0.000001 sits just on the fixed side of.",
+  "input": {
+    "n": 1e-07
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a31652d377d"
+  }
+}

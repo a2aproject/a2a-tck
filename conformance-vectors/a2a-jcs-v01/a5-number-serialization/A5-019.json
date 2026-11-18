@@ -1,0 +1,14 @@
+{
+  "id": "A5-019",
+  "clause": "RFC8785-3.2.2.3",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "The integer spelling of negative zero: '-0', with no fraction and no exponent, is a valid RFC 8259 number. RFC 8785 treats every number as an IEEE 754 double, so it is the same value as A5-006's '-0.0' and serializes as '0'. An implementation that copies integer tokens through unchanged emits '-0' instead, and a digest over the same document then depends on which implementation computed it.",
+  "input": {
+    "n": -0
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b226e223a307d"
+  }
+}

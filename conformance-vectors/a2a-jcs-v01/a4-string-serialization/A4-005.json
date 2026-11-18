@@ -1,0 +1,14 @@
+{
+  "id": "A4-005",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "The empty string is a valid scalar value and serializes as a pair of quote characters with nothing between them.",
+  "input": {
+    "empty": ""
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b22656d707479223a22227d"
+  }
+}

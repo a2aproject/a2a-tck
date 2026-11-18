@@ -1,0 +1,14 @@
+{
+  "id": "A4-010",
+  "clause": "RFC8785-3.2.2.2",
+  "spec_ref": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "canonicalization",
+  "disposition": "MUST-ACCEPT",
+  "rationale": "Right-to-left script content (Arabic, U+0627 ALEF through U+0629 TEH MARBUTA) is emitted as literal UTF-8 bytes; RFC 8785 has no bidi-aware transform, only byte identity.",
+  "input": {
+    "rtl": "السلام"
+  },
+  "expected": {
+    "canonical_utf8_hex": "7b2272746c223a22d8a7d984d8b3d984d8a7d985227d"
+  }
+}
