@@ -115,7 +115,7 @@ class TestHttpJsonStatusCodes:
         errors = [] if result.valid else [result.message]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
-    def test_content_type_not_supported_returns_400(
+    def test_content_type_not_supported_returns_expected_error(
         self,
         transport_clients: dict[str, BaseTransportClient],
         agent_card: dict[str, Any],

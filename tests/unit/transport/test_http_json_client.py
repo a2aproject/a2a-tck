@@ -31,6 +31,7 @@ from tck.validators.error_binding import validate_expected_error
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tck.validators.json_schema import JSONSchemaValidator
 from tests.compatibility.agent_card import test_agent_card_caching as card_cache_checks
+from tests.compatibility.core_operations import test_error_handling as error_checks
 from tests.compatibility.core_operations import test_transport_behavior as transport_checks
 from tests.compatibility.http_json import test_http_status as http_status_checks
 from tests.compatibility.http_json import test_problem_details as http_json_checks
@@ -326,28 +327,51 @@ def test_compatibility_probes_validate_present_error_details(transport: str, fie
 
 
 @pytest.mark.parametrize("media_type", ["application/a2a+json", "application/json", "application/a2a+json-invalid"])
-def test_compatibility_media_type_probe_records_recommendation(media_type: str) -> None:
+@pytest.mark.parametrize("spec_version", ["1.0.0", "1.0.1"])
+def test_compatibility_media_type_probe_records_recommendation(media_type: str, spec_version: str) -> None:
     """The response-header probe applies exact matching and records SHOULD."""
     class MediaHandler(_ErrorHandler):
         response_content_type = media_type
 
-    valid = media_type == "application/a2a+json"
+    valid = media_type == ("application/json" if spec_version == "1.0.0" else "application/a2a+json")
     with _running_server(MediaHandler) as url:
         client = HttpJsonClient(url)
         collector = CompatibilityCollector()
         try:
             response = client.send_message(message={"messageId": "ct-probe", "parts": [{"text": "check"}], "role": "ROLE_USER"})
             with _probe_outcome(valid):
-                transport_checks.TestRestFormat().test_response_content_type(response, collector)
+                transport_checks.TestRestFormat().test_response_content_type(response, collector, spec_version)
             result, = collector.get_results()
             assert result.passed is valid
             assert result.level == "SHOULD"
             collector = CompatibilityCollector()
             with _probe_outcome(valid):
-                http_json_checks.TestHttpJsonErrorMediaType().test_error_content_type({"http_json": client}, collector)
+                http_json_checks.TestHttpJsonErrorMediaType().test_error_content_type({"http_json": client}, collector, spec_version)
             result, = collector.get_results()
             assert result.passed is valid
             assert result.level == "SHOULD"
+        finally:
+            client.close()
+
+
+@pytest.mark.parametrize(
+    ("media_type", "valid"),
+    [("application/a2a+json; charset=utf-8", True), ("application/json", True), ("text/plain", False)],
+)
+def test_error_structure_accepts_json_media_types(media_type: str, valid: bool) -> None:
+    """Mandatory error validation accepts both A2A and legacy JSON media types."""
+    class MediaHandler(_ErrorHandler):
+        response_content_type = media_type
+
+    with _running_server(MediaHandler) as url:
+        client = HttpJsonClient(url)
+        collector = CompatibilityCollector()
+        try:
+            with _probe_outcome(valid):
+                error_checks.TestRestErrorStructure().test_error_uses_aip193_format({"http_json": client}, collector)
+            result, = collector.get_results()
+            assert result.passed is valid
+            assert result.level == "MUST"
         finally:
             client.close()
 
@@ -410,9 +434,11 @@ def test_unsupported_media_precondition_respects_all_advertised_modes(card: dict
     received = []
 
     class UnsupportedMediaHandler(_ErrorHandler):
+        status_code = 415
+
         def response_body(self) -> bytes:
             received.append(json.loads(self._request_body))
-            return json.dumps({"error": {"code": 400, "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo",
+            return json.dumps({"error": {"code": 415, "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo",
                 "reason": "CONTENT_TYPE_NOT_SUPPORTED", "domain": "a2a-protocol.org"}]}}).encode()
 
     with _running_server(UnsupportedMediaHandler) as url:
@@ -420,7 +446,7 @@ def test_unsupported_media_precondition_respects_all_advertised_modes(card: dict
         collector = CompatibilityCollector()
         try:
             with _probe_outcome(None if skip else True):
-                http_status_checks.TestHttpJsonStatusCodes().test_content_type_not_supported_returns_400({"http_json": client}, card, collector)
+                http_status_checks.TestHttpJsonStatusCodes().test_content_type_not_supported_returns_expected_error({"http_json": client}, card, collector)
             result, = collector.get_results()
             assert result.skipped is skip
             assert result.passed is (not skip)

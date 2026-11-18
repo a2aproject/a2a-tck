@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from tck.requirements.base import (
     CANCEL_TASK_BINDING,
+    CONTENT_TYPE_NOT_SUPPORTED_ERROR,
     EXTENSION_SUPPORT_REQUIRED_ERROR,
     GET_TASK_BINDING,
     LIST_TASKS_BINDING,
@@ -108,6 +109,7 @@ CORE_OPERATIONS_REQUIREMENTS: list[RequirementSpec] = [
         binding=SEND_MESSAGE_BINDING,
         proto_request_type="SendMessageRequest",
         expected_behavior="ContentTypeNotSupportedError returned",
+        expected_error=CONTENT_TYPE_NOT_SUPPORTED_ERROR,
         spec_url=f"{SPEC_BASE}311-send-message",
         tags=[CORE, SEND_MESSAGE, ERROR],
         sample_input={

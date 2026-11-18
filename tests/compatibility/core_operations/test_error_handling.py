@@ -30,6 +30,7 @@ from tck.validators.extended_card import (
     ExtendedCardProbe,
     classify_extended_card_probe,
 )
+from tck.validators.http_json.content_type import uses_json_media_type
 from tck.validators.http_json.error_validator import validate_http_json_error
 from tck.validators.jsonrpc.error_validator import validate_jsonrpc_error
 from tests.compatibility._test_helpers import (
@@ -776,9 +777,9 @@ class TestRestErrorStructure:
             pytest.skip("Error response is not an HTTP response object")
         ct = raw.headers.get("content-type", "")
         errors = []
-        if "application/json" not in ct:
+        if not uses_json_media_type(raw.headers):
             errors.append(
-                f"Error Content-Type must be application/json, got: {ct!r}"
+                f"Error Content-Type must be application/json or application/a2a+json, got: {ct!r}"
             )
         else:
             body = raw.json()

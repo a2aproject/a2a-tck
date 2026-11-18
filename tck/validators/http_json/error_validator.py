@@ -27,8 +27,9 @@ HTTP_JSON_ERROR_STATUS: dict[str, int] = {
 # Reverse mapping from status codes to possible error names
 # Note: Multiple errors can map to the same status code
 STATUS_TO_ERRORS: dict[int, list[str]] = {}
-for _name, _status in HTTP_JSON_ERROR_STATUS.items():
-    STATUS_TO_ERRORS.setdefault(_status, []).append(_name)
+for _name in HTTP_JSON_ERROR_STATUS:
+    for _status in ERROR_BINDINGS[_name].accepted_http_statuses():
+        STATUS_TO_ERRORS.setdefault(_status, []).append(_name)
 
 
 def _protojson_int32(value: Any, field_name: str) -> int:
@@ -186,10 +187,11 @@ def validate_http_json_error(
         result.message = "Response status code must be an integer"
         return result
     result.actual_status = actual_status
-    if actual_status != expected_status:
+    if actual_status not in ERROR_BINDINGS[expected_error].accepted_http_statuses():
         possible_errors = STATUS_TO_ERRORS.get(actual_status, [])
         result.message = (
-            f"Status code mismatch: expected {expected_error} ({expected_status}), "
+            f"Status code mismatch: expected {expected_error} "
+            f"({', '.join(map(str, ERROR_BINDINGS[expected_error].accepted_http_statuses()))}), "
             f"got {actual_status} (could be: {', '.join(possible_errors)})"
         )
         return result
@@ -204,7 +206,7 @@ def validate_http_json_error(
         result.message = "AIP-193 error.code must equal the HTTP status code"
         return result
     expected_grpc_status = ERROR_BINDINGS[expected_error].grpc_status
-    if parsed.status and expected_grpc_status and parsed.status != expected_grpc_status:
+    if parsed.status and expected_grpc_status and parsed.status not in ERROR_BINDINGS[expected_error].accepted_grpc_statuses():
         result.message = f"AIP-193 status does not match {expected_error}"
         return result
     reason = ERROR_BINDINGS[expected_error].reason
@@ -214,7 +216,7 @@ def validate_http_json_error(
             result.message = identity.message
             return result
     result.valid = True
-    result.message = f"HTTP error matches: {expected_error} ({expected_status})"
+    result.message = f"HTTP error matches: {expected_error} ({actual_status})"
     return result
 
 

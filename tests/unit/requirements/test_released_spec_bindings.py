@@ -21,6 +21,16 @@ _ERROR_ROW = re.compile(
 )
 _A2A_ERROR_COUNT = 9
 _ROWS = [match.groupdict() for match in _ERROR_ROW.finditer(_SPEC.read_text())]
+# The vendored specification is 1.0.1; these six mappings are from 1.0.0.
+_V1_0_0_OVERRIDES = {
+    "TaskNotCancelableError": {"http": "409"},
+    "PushNotificationNotSupportedError": {"grpc": "UNIMPLEMENTED"},
+    "UnsupportedOperationError": {"grpc": "UNIMPLEMENTED"},
+    "ContentTypeNotSupportedError": {"http": "415"},
+    "InvalidAgentResponseError": {"http": "502"},
+    "VersionNotSupportedError": {"grpc": "UNIMPLEMENTED"},
+}
+_V1_0_0_ROWS = [{**row, **_V1_0_0_OVERRIDES.get(row["name"], {})} for row in _ROWS]
 
 
 def test_released_spec_error_table_is_complete() -> None:
@@ -31,15 +41,15 @@ def test_released_spec_error_table_is_complete() -> None:
     }
 
 
-@pytest.mark.parametrize("row", _ROWS, ids=lambda row: row["name"])
-def test_all_error_bindings_match_released_spec(row: dict[str, str]) -> None:
-    """Derive all three transport expectations independently from the released table."""
+@pytest.mark.parametrize("row", _ROWS + _V1_0_0_ROWS, ids=lambda row: row["name"])
+def test_all_error_bindings_match_both_versions(row: dict[str, str]) -> None:
+    """Check transport expectations against both released error tables."""
     binding = ERROR_BINDINGS[row["name"]]
     assert binding.jsonrpc_code == int(row["jsonrpc"])
-    assert binding.grpc_status == row["grpc"]
-    assert binding.http_status == int(row["http"])
+    assert row["grpc"] in binding.accepted_grpc_statuses()
+    assert int(row["http"]) in binding.accepted_http_statuses()
     response = {"status_code": int(row["http"]), "body": {"error": {
-        "code": int(row["http"]), "message": "conformant error",
+        "code": int(row["http"]), "status": row["grpc"], "message": "conformant error",
         "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": binding.reason, "domain": "a2a-protocol.org"}],
     }}}
     assert validate_http_json_error(response, row["name"]).valid
@@ -79,10 +89,10 @@ def test_requirement_anchors_match_the_vendored_spec() -> None:
     ("grpc", "GRPC-ERR-002", "grpc"), ("jsonrpc", "JSONRPC-SSE-002", "jsonrpc"),
     ("http_json", "HTTP_JSON-STATUS-001", "http"),
 ])
-def test_reported_error_mapping_prose_tracks_the_released_table(transport: str, requirement_id: str, column: str) -> None:
+def test_reported_error_mapping_prose_tracks_v1_0_0(transport: str, requirement_id: str, column: str) -> None:
     """The human report and its executable validators must describe the same mapping."""
     description = get_requirement_by_id(requirement_id).description
-    for row in _ROWS:
+    for row in _V1_0_0_ROWS:
         assert f"{row['name']}={row[column]}" in description, (transport, row["name"])
 
 

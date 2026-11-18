@@ -46,6 +46,8 @@ def build_pytest_command(args: argparse.Namespace) -> list[str]:
     if args.transport:
         cmd.append(f"--transport={args.transport}")
 
+    cmd.append(f"--media-type-spec-version={args.media_type_spec_version}")
+
     # Requirement level filter
     if args.level:
         m_expr = LEVEL_FILTERS[args.level]
@@ -119,6 +121,12 @@ Requirement levels:
         choices=["must", "should", "may"],
         default=None,
         help="Run only requirements at this RFC 2119 level",
+    )
+    parser.add_argument(
+        "--media-type-spec-version",
+        choices=["1.0.0", "1.0.1"],
+        default="1.0.1",
+        help="Specification release for HTTP+JSON media-type checks (default: 1.0.1).",
     )
     parser.add_argument(
         "-v", "--verbose",

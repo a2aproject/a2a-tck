@@ -13,11 +13,11 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, TASK_NOT_FOUND_ERROR, tck_id
+from tck.requirements.base import TASK_NOT_FOUND_ERROR, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.http_json_client import TRANSPORT
 from tck.validators.error_info import find_error_info, validate_error_info
-from tck.validators.http_json.content_type import uses_a2a_media_type
+from tck.validators.http_json.content_type import recommended_media_type, uses_recommended_media_type
 from tck.validators.http_json.error_validator import AIP193Error
 from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
 from tests.compatibility.markers import http_json, must, should
@@ -82,12 +82,15 @@ class TestHttpJsonErrorMediaType:
         self,
         transport_clients: dict[str, BaseTransportClient],
         compatibility_collector: Any,
+        media_type_spec_version: str,
     ) -> None:
         """Check the media type independently of mandatory error structure."""
         req = HTTP_JSON_SVC_001
         client = get_client(transport_clients, TRANSPORT, compatibility_collector=compatibility_collector, req=req)
         response = _get_error_response(client)
-        errors = [] if uses_a2a_media_type(response.headers) else [f"Error Content-Type should be {HTTP_JSON_CONTENT_TYPE}"]
+        errors = [] if uses_recommended_media_type(response.headers, media_type_spec_version) else [
+            f"Error Content-Type should be {recommended_media_type(media_type_spec_version)} for {media_type_spec_version}"
+        ]
         assert_and_record(compatibility_collector, req, TRANSPORT, errors)
 
 
