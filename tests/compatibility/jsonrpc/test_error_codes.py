@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 import pytest
 
-from tck.requirements.base import tck_id
+from tck.requirements.base import tck_id, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.transport.jsonrpc_client import TRANSPORT
@@ -182,7 +182,7 @@ class TestJsonRpcErrorCodeMappings:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "error code test"}],
-            "messageId": tck_id("error-code-004"),
+            "messageId": tck_message_id("error-code-004"),
         }
         response = _jsonrpc_call(
             client.base_url, "SendStreamingMessage", {"message": msg}
@@ -214,7 +214,7 @@ class TestJsonRpcErrorCodeMappings:
                 "message": {
                     "role": "ROLE_USER",
                     "parts": [{"text": "content type test"}],
-                    "messageId": tck_id("error-code-005"),
+                    "messageId": tck_message_id("error-code-005"),
                 }
             },
         }
@@ -263,7 +263,7 @@ class TestJsonRpcErrorCodeMappings:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version error code test"}],
-            "messageId": tck_id("error-code-009"),
+            "messageId": tck_message_id("error-code-009"),
         }
         response = _jsonrpc_call(
             client.base_url,
@@ -334,7 +334,7 @@ class TestJsonRpcErrorCodeRange:
             msg = {
                 "role": "ROLE_USER",
                 "parts": [{"text": "range test"}],
-                "messageId": tck_id("range-check-003"),
+                "messageId": tck_message_id("range-check-003"),
             }
             raw = _jsonrpc_call(
                 client.base_url,

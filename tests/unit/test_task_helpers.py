@@ -5,11 +5,12 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
+from tck.requirements.base import tck_id
 from tests.compatibility import _task_helpers
 
 
 def test_multiturn_task_with_history_uses_unique_message_ids(monkeypatch: Any) -> None:
-    """History follow-ups need distinct IDs while matching the input-required fixture."""
+    """Every send, across repeated calls, needs a distinct ID that keeps its fixture prefix."""
     monkeypatch.setattr(_task_helpers, "validate_task_state", lambda *_args: [])
 
     class RecordingClient:
@@ -28,8 +29,11 @@ def test_multiturn_task_with_history_uses_unique_message_ids(monkeypatch: Any) -
 
     client = RecordingClient()
     _task_helpers.create_multiturn_task_with_history(client)
+    _task_helpers.create_multiturn_task_with_history(client)
 
     message_ids = [message["messageId"] for message in client.messages]
     assert len(message_ids) == len(set(message_ids))
-    assert client.messages[1]["messageId"].startswith(message_ids[0])
-    assert client.messages[2]["messageId"].startswith(message_ids[0])
+    sends_per_call = len(message_ids) // 2
+    input_required_ids = message_ids[: sends_per_call - 1]
+    assert all(message_id.startswith(tck_id("input-required")) for message_id in input_required_ids)
+    assert message_ids[sends_per_call - 1].startswith(tck_id("complete-task"))

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import tck_id
+from tck.requirements.base import tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
 from tck.validators.payload import (
@@ -63,7 +63,7 @@ def _send_and_get_response(
     message: dict[str, Any] = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK artifact test"}],
-        "messageId": tck_id(prefix),
+        "messageId": tck_message_id(prefix),
     }
     response = client.send_message(message=message)
     if not response.success:

@@ -16,7 +16,7 @@ import pytest
 from tck.requirements.base import (
     TASK_STATE_COMPLETED,
     TASK_STATE_INPUT_REQUIRED,
-    tck_id,
+    tck_message_id,
 )
 from tck.validators.payload import validate_task_state
 
@@ -83,7 +83,7 @@ def _send_and_validate(
     message: dict[str, Any] = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK prerequisite task creation"}],
-        "messageId": tck_id(prefix),
+        "messageId": tck_message_id(prefix),
     }
     response = client.send_message(message=message)
     if not response.success:
@@ -119,7 +119,7 @@ def create_multiturn_task(client: BaseTransportClient) -> TaskInfo:
     followup: dict[str, Any] = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK follow-up for history"}],
-        "messageId": tck_id("complete-task"),
+        "messageId": tck_message_id("complete-task"),
         "taskId": info.task_id,
     }
     response = client.send_message(message=followup)
@@ -155,11 +155,11 @@ def create_multiturn_task_with_history(
     """
     info = create_working_task(client)
 
-    for index, text in enumerate(HISTORY_MESSAGES, start=1):
+    for text in HISTORY_MESSAGES:
         msg: dict[str, Any] = {
             "role": "ROLE_USER",
             "parts": [{"text": text}],
-            "messageId": f"{tck_id('input-required')}-{index}",
+            "messageId": tck_message_id("input-required"),
             "taskId": info.task_id,
         }
         response = client.send_message(message=msg)
@@ -169,7 +169,7 @@ def create_multiturn_task_with_history(
     complete_msg: dict[str, Any] = {
         "role": "ROLE_USER",
         "parts": [{"text": "TCK complete after history"}],
-        "messageId": tck_id("complete-task"),
+        "messageId": tck_message_id("complete-task"),
         "taskId": info.task_id,
     }
     response = client.send_message(message=complete_msg)

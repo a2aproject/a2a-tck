@@ -21,7 +21,7 @@ import httpx
 import jsonschema
 import pytest
 
-from tck.requirements.base import EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR, tck_id
+from tck.requirements.base import EXTENDED_AGENT_CARD_NOT_CONFIGURED_ERROR, tck_id, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.validators.error_binding import validate_expected_error
@@ -289,7 +289,7 @@ class TestCapabilityStreaming:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "stream test"}],
-            "messageId": tck_id("cap-stream"),
+            "messageId": tck_message_id("cap-stream"),
         }
         response = _jsonrpc_call(
             client.base_url, "SendStreamingMessage", {"message": msg}
@@ -332,7 +332,7 @@ class TestCapabilityExtensionRequired:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "extension test"}],
-            "messageId": tck_id("cap-ext-004-jsonrpc"),
+            "messageId": tck_message_id("cap-ext-004-jsonrpc"),
         }
         response = _jsonrpc_call(client.base_url, "SendMessage", {"message": msg})
         body = response.json()
@@ -356,7 +356,7 @@ class TestCapabilityExtensionRequired:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "extension test"}],
-            "messageId": tck_id("cap-ext-004-http-json"),
+            "messageId": tck_message_id("cap-ext-004-http-json"),
         }
         response = _rest_call(
             client.base_url, "POST", "/message:send", json_body={"message": msg},
@@ -562,7 +562,7 @@ class TestVersionErrors:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version test"}],
-            "messageId": tck_id("ver-002"),
+            "messageId": tck_message_id("ver-002"),
         }
         response = _jsonrpc_call(
             client.base_url,
@@ -588,7 +588,7 @@ class TestVersionErrors:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version test"}],
-            "messageId": tck_id("ver-002-rest"),
+            "messageId": tck_message_id("ver-002-rest"),
         }
         response = _rest_call(
             client.base_url,
@@ -614,7 +614,7 @@ class TestVersionErrors:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "empty version test"}],
-            "messageId": tck_id("ver-003"),
+            "messageId": tck_message_id("ver-003"),
         }
         response = _jsonrpc_call(
             client.base_url,

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from tck.requirements.base import tck_id
+from tck.requirements.base import tck_id, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport.jsonrpc_client import TRANSPORT
 from tck.validators import STREAM_RESPONSE
@@ -46,11 +46,14 @@ _TASK_NOT_FOUND_CODE = -32001
 
 _STREAM_RESPONSE_KEYS = {"task", "message", "statusUpdate", "artifactUpdate"}
 
-_SAMPLE_MESSAGE = {
-    "role": "ROLE_USER",
-    "parts": [{"text": "TCK streaming test"}],
-    "messageId": tck_id("sse-streaming-001"),
-}
+
+def _sample_message() -> dict[str, Any]:
+    """Build the sample message with a fresh ``messageId``."""
+    return {
+        "role": "ROLE_USER",
+        "parts": [{"text": "TCK streaming test"}],
+        "messageId": tck_message_id("sse-streaming-001"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -71,7 +74,7 @@ def _get_streaming_events(
     if not caps.get("streaming"):
         pytest.skip("Agent does not support streaming")
 
-    response = client.send_streaming_message(message=_SAMPLE_MESSAGE)
+    response = client.send_streaming_message(message=_sample_message())
     if response.timed_out:
         pytest.skip("Streaming call timed out waiting for server to close the connection")
     if not response.success:

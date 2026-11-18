@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 import pytest
 
-from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, SEND_MESSAGE_BINDING, tck_id
+from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, SEND_MESSAGE_BINDING, tck_id, tck_message_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION_HEADER
 from tck.transport.http_json_client import TRANSPORT
@@ -105,7 +105,7 @@ class TestHttpJsonStatusCodes:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "status code test"}],
-            "messageId": tck_id("status-unsupported-003"),
+            "messageId": tck_message_id("status-unsupported-003"),
         }
         response = client.send_streaming_message(message=msg)
         result = validate_http_json_error(
@@ -176,7 +176,7 @@ class TestHttpJsonStatusCodes:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "version status test"}],
-            "messageId": tck_id("status-ver-006"),
+            "messageId": tck_message_id("status-ver-006"),
         }
         response = httpx.post(
             f"{client.base_url}{SEND_MESSAGE_BINDING.http_json_path}",
@@ -217,7 +217,7 @@ class TestHttpJsonStatusCodes:
         msg = {
             "role": "ROLE_USER",
             "parts": [{"text": "status code success test"}],
-            "messageId": tck_id("status-success-007"),
+            "messageId": tck_message_id("status-success-007"),
         }
         response = client.send_message(message=msg)
         if not response.success:

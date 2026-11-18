@@ -31,6 +31,25 @@ def tck_id(name: str) -> str:
     return f"tck-{name}-{_SESSION}"
 
 
+def unique_message_id(message_id: str) -> str:
+    """Append a per-send suffix to a message ID.
+
+    Agents may use ``messageId`` to detect duplicate messages (spec
+    Section 3.3.1), so every message the TCK sends needs its own ID.
+    The original ID stays a prefix, so SUT dispatch on it still works.
+    """
+    return f"{message_id}-{uuid.uuid4().hex[:8]}"
+
+
+def tck_message_id(name: str) -> str:
+    """Generate a TCK message ID that is unique for every call.
+
+    Use this for ``messageId`` values; ``tck_id`` stays session-stable
+    for IDs that must repeat, such as push notification config IDs.
+    """
+    return unique_message_id(tck_id(name))
+
+
 class RequirementLevel(Enum):
     """RFC 2119 requirement levels."""
 
