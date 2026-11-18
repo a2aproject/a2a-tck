@@ -226,13 +226,13 @@ class JsonRpcClient(BaseTransportClient):
         """List tasks filtered by context ID."""
         params = _build_params(
             status=status,
-            page_size=page_size,
-            page_token=page_token,
-            history_length=history_length,
-            status_timestamp_after=status_timestamp_after,
-            include_artifacts=include_artifacts,
+            pageSize=page_size,
+            pageToken=page_token,
+            historyLength=history_length,
+            statusTimestampAfter=status_timestamp_after,
+            includeArtifacts=include_artifacts,
         )
-        params["context_id"] = context_id
+        params["contextId"] = context_id
         return self._call(OperationType.LIST_TASKS.value, params)
 
     def cancel_task(self, id: str) -> TransportResponse:
@@ -249,12 +249,12 @@ class JsonRpcClient(BaseTransportClient):
         config: dict,
     ) -> TransportResponse:
         """Create a push notification config for a task."""
-        params = {"task_id": task_id, **config}
+        params = {"taskId": task_id, **config}
         return self._call(OperationType.CREATE_PUSH_CONFIG.value, params)
 
     def get_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
         """Get a push notification config by task and config ID."""
-        return self._call(OperationType.GET_PUSH_CONFIG.value, {"task_id": task_id, "id": id})
+        return self._call(OperationType.GET_PUSH_CONFIG.value, {"taskId": task_id, "id": id})
 
     def list_push_notification_configs(
         self,
@@ -264,12 +264,12 @@ class JsonRpcClient(BaseTransportClient):
         page_token: str | None = None,
     ) -> TransportResponse:
         """List push notification configs for a task."""
-        params = _build_params(task_id=task_id, page_size=page_size, page_token=page_token)
+        params = _build_params(taskId=task_id, pageSize=page_size, pageToken=page_token)
         return self._call(OperationType.LIST_PUSH_CONFIGS.value, params)
 
     def delete_push_notification_config(self, task_id: str, id: str) -> TransportResponse:
         """Delete a push notification config by task and config ID."""
-        return self._call(OperationType.DELETE_PUSH_CONFIG.value, {"task_id": task_id, "id": id})
+        return self._call(OperationType.DELETE_PUSH_CONFIG.value, {"taskId": task_id, "id": id})
 
     def get_extended_agent_card(self) -> TransportResponse:
         """Get the extended agent card."""
