@@ -1,0 +1,2747 @@
+{
+  "profile": "a2a-history-boundary-v01",
+  "status": "provisional-application-profile",
+  "transport": "jsonrpc",
+  "records": [
+    {
+      "id": "accepted-retry-00",
+      "sourceCaseSha256": "e1d6858fb0dd0e99a563666319afa043b3ba66174560840f61de09bd612629fc",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "261379f2-873a-443d-8a95-6c6da7acfec2",
+        "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "51ba7176-f29d-44c9-9c36-bd1092b74d21",
+            "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+            "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.229040Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-00",
+            "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+            "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-00",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+            "messageId": "followup-accepted-retry-00",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "261379f2-873a-443d-8a95-6c6da7acfec2",
+            "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "de3f7df9-481a-4f24-bae8-f2d15727f2c4",
+                "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+                "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:48.260984Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-00",
+                "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+                "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "51ba7176-f29d-44c9-9c36-bd1092b74d21",
+                "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+                "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-00",
+                "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+                "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-00",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "261379f2-873a-443d-8a95-6c6da7acfec2",
+        "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "de3f7df9-481a-4f24-bae8-f2d15727f2c4",
+            "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+            "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.260984Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-00",
+            "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+            "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "51ba7176-f29d-44c9-9c36-bd1092b74d21",
+            "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+            "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-00",
+            "contextId": "c897954a-2ced-43f2-b71a-00aee73a6c8e",
+            "taskId": "261379f2-873a-443d-8a95-6c6da7acfec2",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-00",
+      "sourceCaseSha256": "9eb92c99678f57ca17d2aa89a1cb2ff4df86be711774ab4ddf88412c1ff90f7b",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "c90f38df-f4d5-4cd0-a8b9-5b795f8b16f5",
+        "contextId": "c367ebf4-9e7a-4a9b-933f-fc5d21c22d80",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "96227fb3-5771-4c30-82ae-4b04b3456b7e",
+            "contextId": "c367ebf4-9e7a-4a9b-933f-fc5d21c22d80",
+            "taskId": "c90f38df-f4d5-4cd0-a8b9-5b795f8b16f5",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.295661Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-00",
+            "contextId": "c367ebf4-9e7a-4a9b-933f-fc5d21c22d80",
+            "taskId": "c90f38df-f4d5-4cd0-a8b9-5b795f8b16f5",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-00",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "c367ebf4-9e7a-4a9b-933f-fc5d21c22d80",
+            "messageId": "followup-rejected-absent-00",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "c90f38df-f4d5-4cd0-a8b9-5b795f8b16f5"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task c90f38df-f4d5-4cd0-a8b9-5b795f8b16f5 was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-00",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "c90f38df-f4d5-4cd0-a8b9-5b795f8b16f5",
+        "contextId": "c367ebf4-9e7a-4a9b-933f-fc5d21c22d80",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "96227fb3-5771-4c30-82ae-4b04b3456b7e",
+            "contextId": "c367ebf4-9e7a-4a9b-933f-fc5d21c22d80",
+            "taskId": "c90f38df-f4d5-4cd0-a8b9-5b795f8b16f5",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.295661Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-00",
+            "contextId": "c367ebf4-9e7a-4a9b-933f-fc5d21c22d80",
+            "taskId": "c90f38df-f4d5-4cd0-a8b9-5b795f8b16f5",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-01",
+      "sourceCaseSha256": "93c1eac5524bcd17a2f4e46c4a495cfa6f5c54459f01a49b8e8869d534464e86",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+        "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "28a73633-abb8-49f0-a87e-fd04bf0f3193",
+            "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+            "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.373915Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-01",
+            "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+            "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-01",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+            "messageId": "followup-accepted-retry-01",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+            "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "ab97c311-285e-4aa0-9393-b8f701d7cf1c",
+                "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+                "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:48.398384Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-01",
+                "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+                "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "28a73633-abb8-49f0-a87e-fd04bf0f3193",
+                "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+                "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-01",
+                "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+                "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-01",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+        "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "ab97c311-285e-4aa0-9393-b8f701d7cf1c",
+            "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+            "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.398384Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-01",
+            "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+            "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "28a73633-abb8-49f0-a87e-fd04bf0f3193",
+            "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+            "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-01",
+            "contextId": "5ac025cf-0791-4f82-87c9-497e9ae0b1c5",
+            "taskId": "2d7a5b72-6a65-4ad5-98f0-3df50bfe4c60",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-01",
+      "sourceCaseSha256": "22005bf5100bbd778ab49a696aa33d392facd787dbf9a9eb5906f3cba4350329",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "13988c37-ba6d-4a7b-95ef-920f1ae5ac67",
+        "contextId": "080e4229-abff-4ca8-9bff-effb15c76ee5",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "9224f15e-fd51-44c5-85f9-6036a9f04f55",
+            "contextId": "080e4229-abff-4ca8-9bff-effb15c76ee5",
+            "taskId": "13988c37-ba6d-4a7b-95ef-920f1ae5ac67",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.434398Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-01",
+            "contextId": "080e4229-abff-4ca8-9bff-effb15c76ee5",
+            "taskId": "13988c37-ba6d-4a7b-95ef-920f1ae5ac67",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-01",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "080e4229-abff-4ca8-9bff-effb15c76ee5",
+            "messageId": "followup-rejected-absent-01",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "13988c37-ba6d-4a7b-95ef-920f1ae5ac67"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task 13988c37-ba6d-4a7b-95ef-920f1ae5ac67 was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-01",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "13988c37-ba6d-4a7b-95ef-920f1ae5ac67",
+        "contextId": "080e4229-abff-4ca8-9bff-effb15c76ee5",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "9224f15e-fd51-44c5-85f9-6036a9f04f55",
+            "contextId": "080e4229-abff-4ca8-9bff-effb15c76ee5",
+            "taskId": "13988c37-ba6d-4a7b-95ef-920f1ae5ac67",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.434398Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-01",
+            "contextId": "080e4229-abff-4ca8-9bff-effb15c76ee5",
+            "taskId": "13988c37-ba6d-4a7b-95ef-920f1ae5ac67",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-02",
+      "sourceCaseSha256": "c1662ec18d388945952c4f2649b0c81542e5db834738e818f8b9525561426e98",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "450364b0-e94b-470c-bae9-2d83313dadd9",
+        "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "6d7cae76-97dd-492a-8234-6f31c3105ae6",
+            "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+            "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.491544Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-02",
+            "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+            "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-02",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+            "messageId": "followup-accepted-retry-02",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "450364b0-e94b-470c-bae9-2d83313dadd9",
+            "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "b81c6d49-6ec7-4e41-a98f-60e6a816cd57",
+                "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+                "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:48.520451Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-02",
+                "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+                "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "6d7cae76-97dd-492a-8234-6f31c3105ae6",
+                "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+                "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-02",
+                "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+                "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-02",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "450364b0-e94b-470c-bae9-2d83313dadd9",
+        "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "b81c6d49-6ec7-4e41-a98f-60e6a816cd57",
+            "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+            "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.520451Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-02",
+            "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+            "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "6d7cae76-97dd-492a-8234-6f31c3105ae6",
+            "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+            "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-02",
+            "contextId": "b6a92330-14df-4262-94b8-fa50bbf9f30a",
+            "taskId": "450364b0-e94b-470c-bae9-2d83313dadd9",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-02",
+      "sourceCaseSha256": "0960b9f5380729984ab7b9e64541be2c6d471a6a95a80ebf56cba5f54214bbd8",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "31bdcf28-ab5b-41ff-8334-a1804be2aef7",
+        "contextId": "4ae45af8-b963-49ff-83d0-d9baf098216d",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "abb9eb5b-5b2d-47d9-a97d-12e1978b0105",
+            "contextId": "4ae45af8-b963-49ff-83d0-d9baf098216d",
+            "taskId": "31bdcf28-ab5b-41ff-8334-a1804be2aef7",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.555548Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-02",
+            "contextId": "4ae45af8-b963-49ff-83d0-d9baf098216d",
+            "taskId": "31bdcf28-ab5b-41ff-8334-a1804be2aef7",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-02",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "4ae45af8-b963-49ff-83d0-d9baf098216d",
+            "messageId": "followup-rejected-absent-02",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "31bdcf28-ab5b-41ff-8334-a1804be2aef7"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task 31bdcf28-ab5b-41ff-8334-a1804be2aef7 was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-02",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "31bdcf28-ab5b-41ff-8334-a1804be2aef7",
+        "contextId": "4ae45af8-b963-49ff-83d0-d9baf098216d",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "abb9eb5b-5b2d-47d9-a97d-12e1978b0105",
+            "contextId": "4ae45af8-b963-49ff-83d0-d9baf098216d",
+            "taskId": "31bdcf28-ab5b-41ff-8334-a1804be2aef7",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.555548Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-02",
+            "contextId": "4ae45af8-b963-49ff-83d0-d9baf098216d",
+            "taskId": "31bdcf28-ab5b-41ff-8334-a1804be2aef7",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-03",
+      "sourceCaseSha256": "4b897e696e047f3a4fdb98eba8a278eb487359ce0ae064b496f9898d4e69d844",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+        "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "e434f5d3-6668-4750-9479-1e6a6a32f737",
+            "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+            "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.614217Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-03",
+            "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+            "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-03",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+            "messageId": "followup-accepted-retry-03",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+            "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "352a83ba-cae3-437a-b6d5-b5d7786d06e9",
+                "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+                "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:48.640089Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-03",
+                "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+                "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "e434f5d3-6668-4750-9479-1e6a6a32f737",
+                "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+                "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-03",
+                "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+                "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-03",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+        "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "352a83ba-cae3-437a-b6d5-b5d7786d06e9",
+            "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+            "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.640089Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-03",
+            "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+            "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "e434f5d3-6668-4750-9479-1e6a6a32f737",
+            "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+            "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-03",
+            "contextId": "61e3f85f-7657-46fc-a888-33fa7e4c9c66",
+            "taskId": "34508a0e-40eb-4780-a8f6-9a72ad32da17",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-03",
+      "sourceCaseSha256": "8ff6f3e9d8d593255b09a90e8d25feeac6b8a004cef675544aea54cc03e3687d",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "afbb62e7-2e68-4e96-bf7c-8ebe89b1faea",
+        "contextId": "048b52d0-0760-45d8-aa1d-a4a072d28977",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "2eadda64-2302-4819-8c1a-c95e41a4bba3",
+            "contextId": "048b52d0-0760-45d8-aa1d-a4a072d28977",
+            "taskId": "afbb62e7-2e68-4e96-bf7c-8ebe89b1faea",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.679139Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-03",
+            "contextId": "048b52d0-0760-45d8-aa1d-a4a072d28977",
+            "taskId": "afbb62e7-2e68-4e96-bf7c-8ebe89b1faea",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-03",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "048b52d0-0760-45d8-aa1d-a4a072d28977",
+            "messageId": "followup-rejected-absent-03",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "afbb62e7-2e68-4e96-bf7c-8ebe89b1faea"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task afbb62e7-2e68-4e96-bf7c-8ebe89b1faea was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-03",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "afbb62e7-2e68-4e96-bf7c-8ebe89b1faea",
+        "contextId": "048b52d0-0760-45d8-aa1d-a4a072d28977",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "2eadda64-2302-4819-8c1a-c95e41a4bba3",
+            "contextId": "048b52d0-0760-45d8-aa1d-a4a072d28977",
+            "taskId": "afbb62e7-2e68-4e96-bf7c-8ebe89b1faea",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.679139Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-03",
+            "contextId": "048b52d0-0760-45d8-aa1d-a4a072d28977",
+            "taskId": "afbb62e7-2e68-4e96-bf7c-8ebe89b1faea",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-04",
+      "sourceCaseSha256": "79adfc0e405761e7daf27d17a822c59ce5207d3af4a835b352b9ea47ac6ed6f7",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+        "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "255ba54d-1978-4707-9824-72beacb466d8",
+            "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+            "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.739446Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-04",
+            "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+            "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-04",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+            "messageId": "followup-accepted-retry-04",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+            "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "6d45a2dc-792a-465f-95c6-00910408cc4d",
+                "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+                "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:48.762580Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-04",
+                "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+                "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "255ba54d-1978-4707-9824-72beacb466d8",
+                "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+                "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-04",
+                "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+                "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-04",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+        "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "6d45a2dc-792a-465f-95c6-00910408cc4d",
+            "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+            "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.762580Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-04",
+            "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+            "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "255ba54d-1978-4707-9824-72beacb466d8",
+            "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+            "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-04",
+            "contextId": "7faa0008-e01c-472d-81c9-dbb188084cb6",
+            "taskId": "0bd5ccf5-afc8-4ce1-b68e-1055139dde8f",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-04",
+      "sourceCaseSha256": "2fc8b461ed076994d641157aa831c89f21f63a5cab350d350617835b0b24d354",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "7c26d62a-4cb0-439c-ba95-8c37ec602810",
+        "contextId": "1e93ab8e-8f78-4bfa-84db-5b2d454f8f2d",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "c9246e4c-eab3-4219-9172-dd4da55250e9",
+            "contextId": "1e93ab8e-8f78-4bfa-84db-5b2d454f8f2d",
+            "taskId": "7c26d62a-4cb0-439c-ba95-8c37ec602810",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.795204Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-04",
+            "contextId": "1e93ab8e-8f78-4bfa-84db-5b2d454f8f2d",
+            "taskId": "7c26d62a-4cb0-439c-ba95-8c37ec602810",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-04",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "1e93ab8e-8f78-4bfa-84db-5b2d454f8f2d",
+            "messageId": "followup-rejected-absent-04",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "7c26d62a-4cb0-439c-ba95-8c37ec602810"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task 7c26d62a-4cb0-439c-ba95-8c37ec602810 was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-04",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "7c26d62a-4cb0-439c-ba95-8c37ec602810",
+        "contextId": "1e93ab8e-8f78-4bfa-84db-5b2d454f8f2d",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "c9246e4c-eab3-4219-9172-dd4da55250e9",
+            "contextId": "1e93ab8e-8f78-4bfa-84db-5b2d454f8f2d",
+            "taskId": "7c26d62a-4cb0-439c-ba95-8c37ec602810",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.795204Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-04",
+            "contextId": "1e93ab8e-8f78-4bfa-84db-5b2d454f8f2d",
+            "taskId": "7c26d62a-4cb0-439c-ba95-8c37ec602810",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-05",
+      "sourceCaseSha256": "6c04370dd138af8c47246412f9b6ea6e5ff0d56202bff055c2ff134feb0038e9",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+        "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "3f696a57-dfa5-4ae3-ac68-71adc8541c12",
+            "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+            "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.848346Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-05",
+            "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+            "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-05",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+            "messageId": "followup-accepted-retry-05",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+            "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "29885a27-7bb2-4bd5-b6b8-7b1d089774fe",
+                "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+                "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:48.873401Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-05",
+                "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+                "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "3f696a57-dfa5-4ae3-ac68-71adc8541c12",
+                "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+                "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-05",
+                "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+                "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-05",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+        "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "29885a27-7bb2-4bd5-b6b8-7b1d089774fe",
+            "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+            "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.873401Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-05",
+            "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+            "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "3f696a57-dfa5-4ae3-ac68-71adc8541c12",
+            "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+            "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-05",
+            "contextId": "ae8f2e18-275a-4b2b-8561-262b89a298cc",
+            "taskId": "3ae84ccf-8c43-4cd9-a0d6-fde77f8823a6",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-05",
+      "sourceCaseSha256": "18bacd48ab7a1ae0f202a5f2d50848fa6c733b2fe807b2df3d89c79f804c8088",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "93f5a8ec-4176-43b0-98db-f4a3c8e564cb",
+        "contextId": "bba932dc-4319-402e-9e52-3173aa788bfd",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "63409849-164d-434e-ba95-441a6cad0fd1",
+            "contextId": "bba932dc-4319-402e-9e52-3173aa788bfd",
+            "taskId": "93f5a8ec-4176-43b0-98db-f4a3c8e564cb",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.908509Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-05",
+            "contextId": "bba932dc-4319-402e-9e52-3173aa788bfd",
+            "taskId": "93f5a8ec-4176-43b0-98db-f4a3c8e564cb",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-05",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "bba932dc-4319-402e-9e52-3173aa788bfd",
+            "messageId": "followup-rejected-absent-05",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "93f5a8ec-4176-43b0-98db-f4a3c8e564cb"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task 93f5a8ec-4176-43b0-98db-f4a3c8e564cb was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-05",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "93f5a8ec-4176-43b0-98db-f4a3c8e564cb",
+        "contextId": "bba932dc-4319-402e-9e52-3173aa788bfd",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "63409849-164d-434e-ba95-441a6cad0fd1",
+            "contextId": "bba932dc-4319-402e-9e52-3173aa788bfd",
+            "taskId": "93f5a8ec-4176-43b0-98db-f4a3c8e564cb",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.908509Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-05",
+            "contextId": "bba932dc-4319-402e-9e52-3173aa788bfd",
+            "taskId": "93f5a8ec-4176-43b0-98db-f4a3c8e564cb",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-06",
+      "sourceCaseSha256": "4a3f46dde5b1fefa89f56c1d58df9b8d2e761b1fe223fcbda12b6da47654ecb1",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+        "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "019a56df-3fd7-45cb-bf62-f6910a36794c",
+            "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+            "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.971905Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-06",
+            "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+            "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-06",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+            "messageId": "followup-accepted-retry-06",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+            "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "d6b64b9d-4e8b-49a7-bef5-afbf191651ef",
+                "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+                "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:48.995360Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-06",
+                "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+                "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "019a56df-3fd7-45cb-bf62-f6910a36794c",
+                "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+                "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-06",
+                "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+                "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-06",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+        "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "d6b64b9d-4e8b-49a7-bef5-afbf191651ef",
+            "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+            "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:48.995360Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-06",
+            "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+            "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "019a56df-3fd7-45cb-bf62-f6910a36794c",
+            "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+            "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-06",
+            "contextId": "11b7ff61-e91d-4a5b-9566-39f4e21358fa",
+            "taskId": "d3a9fc73-dd64-4b2b-a0ab-fa5dc9e077c0",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-06",
+      "sourceCaseSha256": "616240ae537d1249f72f5309b39ecce657b262410c31fc2de7ef77483f20c46f",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "55bc5bf9-1962-412f-9601-0b4b65167e03",
+        "contextId": "28ddd433-ed8f-47da-8ae9-12ac48ba0ae2",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "30caaadf-f976-438b-a673-22252c8bb351",
+            "contextId": "28ddd433-ed8f-47da-8ae9-12ac48ba0ae2",
+            "taskId": "55bc5bf9-1962-412f-9601-0b4b65167e03",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.028661Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-06",
+            "contextId": "28ddd433-ed8f-47da-8ae9-12ac48ba0ae2",
+            "taskId": "55bc5bf9-1962-412f-9601-0b4b65167e03",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-06",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "28ddd433-ed8f-47da-8ae9-12ac48ba0ae2",
+            "messageId": "followup-rejected-absent-06",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "55bc5bf9-1962-412f-9601-0b4b65167e03"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task 55bc5bf9-1962-412f-9601-0b4b65167e03 was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-06",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "55bc5bf9-1962-412f-9601-0b4b65167e03",
+        "contextId": "28ddd433-ed8f-47da-8ae9-12ac48ba0ae2",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "30caaadf-f976-438b-a673-22252c8bb351",
+            "contextId": "28ddd433-ed8f-47da-8ae9-12ac48ba0ae2",
+            "taskId": "55bc5bf9-1962-412f-9601-0b4b65167e03",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.028661Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-06",
+            "contextId": "28ddd433-ed8f-47da-8ae9-12ac48ba0ae2",
+            "taskId": "55bc5bf9-1962-412f-9601-0b4b65167e03",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-07",
+      "sourceCaseSha256": "a11c1670a588612a1333f550145504c82be6683c774dd61ce6c3aec714a65b37",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+        "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "78baff1c-e3f2-4e55-8d04-cc198370c50f",
+            "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+            "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.083334Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-07",
+            "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+            "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-07",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+            "messageId": "followup-accepted-retry-07",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+            "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "5a46e52c-bd33-401d-a510-319e4b79ed09",
+                "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+                "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:49.107370Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-07",
+                "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+                "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "78baff1c-e3f2-4e55-8d04-cc198370c50f",
+                "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+                "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-07",
+                "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+                "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-07",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+        "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "5a46e52c-bd33-401d-a510-319e4b79ed09",
+            "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+            "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.107370Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-07",
+            "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+            "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "78baff1c-e3f2-4e55-8d04-cc198370c50f",
+            "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+            "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-07",
+            "contextId": "440ea6be-b140-43f2-8ac7-d1e4b8513248",
+            "taskId": "09449d09-ebc9-4ac3-af4f-900f85fad7f9",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-07",
+      "sourceCaseSha256": "3b77712ca430c6e7b8aab8719428dece747ce140558ad35296fb1d10a1822a25",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "a7cb22ed-0b84-44e2-9ab1-a7c95cb92f23",
+        "contextId": "31ce8bb8-9351-4b00-9901-ec0556b93490",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "be055625-a845-41ba-8d3e-2d4934b7f09c",
+            "contextId": "31ce8bb8-9351-4b00-9901-ec0556b93490",
+            "taskId": "a7cb22ed-0b84-44e2-9ab1-a7c95cb92f23",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.140243Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-07",
+            "contextId": "31ce8bb8-9351-4b00-9901-ec0556b93490",
+            "taskId": "a7cb22ed-0b84-44e2-9ab1-a7c95cb92f23",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-07",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "31ce8bb8-9351-4b00-9901-ec0556b93490",
+            "messageId": "followup-rejected-absent-07",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "a7cb22ed-0b84-44e2-9ab1-a7c95cb92f23"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task a7cb22ed-0b84-44e2-9ab1-a7c95cb92f23 was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-07",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "a7cb22ed-0b84-44e2-9ab1-a7c95cb92f23",
+        "contextId": "31ce8bb8-9351-4b00-9901-ec0556b93490",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "be055625-a845-41ba-8d3e-2d4934b7f09c",
+            "contextId": "31ce8bb8-9351-4b00-9901-ec0556b93490",
+            "taskId": "a7cb22ed-0b84-44e2-9ab1-a7c95cb92f23",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.140243Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-07",
+            "contextId": "31ce8bb8-9351-4b00-9901-ec0556b93490",
+            "taskId": "a7cb22ed-0b84-44e2-9ab1-a7c95cb92f23",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-08",
+      "sourceCaseSha256": "fc5937a98c42fc94cc5e2afd59f6c22a52754c56d2dbc5df69d2fc75f35d3f4f",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+        "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "fba60aaf-74e7-4407-bfc5-7a325ef6898a",
+            "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+            "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.194406Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-08",
+            "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+            "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-08",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+            "messageId": "followup-accepted-retry-08",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+            "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "6e74e152-cdee-4fcb-b2c5-5b45657f81f6",
+                "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+                "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:49.218423Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-08",
+                "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+                "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "fba60aaf-74e7-4407-bfc5-7a325ef6898a",
+                "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+                "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-08",
+                "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+                "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-08",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+        "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "6e74e152-cdee-4fcb-b2c5-5b45657f81f6",
+            "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+            "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.218423Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-08",
+            "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+            "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "fba60aaf-74e7-4407-bfc5-7a325ef6898a",
+            "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+            "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-08",
+            "contextId": "67ee561c-2d68-4437-9de5-73aba8b27864",
+            "taskId": "106036e8-ca1f-4536-8235-89dcf2b7394d",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-08",
+      "sourceCaseSha256": "3a36ad56a0cb2f6b8933a89167ca3791fc65aa03d16a3cd3ef28f9d2cce4faec",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "e87a6b80-7815-45cd-b993-d295e9e0adec",
+        "contextId": "5375b6a1-440e-4700-86bc-b224b5d681ec",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "fa1e3259-b3ff-4533-a1ad-88a24256b92b",
+            "contextId": "5375b6a1-440e-4700-86bc-b224b5d681ec",
+            "taskId": "e87a6b80-7815-45cd-b993-d295e9e0adec",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.257880Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-08",
+            "contextId": "5375b6a1-440e-4700-86bc-b224b5d681ec",
+            "taskId": "e87a6b80-7815-45cd-b993-d295e9e0adec",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-08",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "5375b6a1-440e-4700-86bc-b224b5d681ec",
+            "messageId": "followup-rejected-absent-08",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "e87a6b80-7815-45cd-b993-d295e9e0adec"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task e87a6b80-7815-45cd-b993-d295e9e0adec was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-08",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "e87a6b80-7815-45cd-b993-d295e9e0adec",
+        "contextId": "5375b6a1-440e-4700-86bc-b224b5d681ec",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "fa1e3259-b3ff-4533-a1ad-88a24256b92b",
+            "contextId": "5375b6a1-440e-4700-86bc-b224b5d681ec",
+            "taskId": "e87a6b80-7815-45cd-b993-d295e9e0adec",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.257880Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-08",
+            "contextId": "5375b6a1-440e-4700-86bc-b224b5d681ec",
+            "taskId": "e87a6b80-7815-45cd-b993-d295e9e0adec",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accepted-retry-09",
+      "sourceCaseSha256": "eae8e3068145c3b4d4cb0d773adef58350943d0d3200d1d05105dc79276104d2",
+      "outcome": "accepted-and-persisted",
+      "beforeTask": {
+        "id": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+        "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "6dfa0404-4208-4af1-9b7a-e08854d8cb5b",
+            "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+            "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.313890Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-09",
+            "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+            "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-accepted-retry-09",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+            "messageId": "followup-accepted-retry-09",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467"
+          }
+        }
+      },
+      "sendResponse": {
+        "result": {
+          "task": {
+            "id": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+            "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+            "status": {
+              "state": "TASK_STATE_INPUT_REQUIRED",
+              "message": {
+                "messageId": "e0bf18be-f95d-4457-b2f0-75b7e7427f95",
+                "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+                "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              "timestamp": "2026-10-02T20:24:49.336559Z"
+            },
+            "history": [
+              {
+                "messageId": "initial-accepted-retry-09",
+                "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+                "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              },
+              {
+                "messageId": "6dfa0404-4208-4af1-9b7a-e08854d8cb5b",
+                "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+                "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+                "role": "ROLE_AGENT",
+                "parts": [
+                  {
+                    "text": "public fixture input required"
+                  }
+                ]
+              },
+              {
+                "messageId": "followup-accepted-retry-09",
+                "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+                "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+                "role": "ROLE_USER",
+                "parts": [
+                  {
+                    "text": "public fixture turn"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "rpc-followup-accepted-retry-09",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+        "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "e0bf18be-f95d-4457-b2f0-75b7e7427f95",
+            "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+            "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.336559Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-accepted-retry-09",
+            "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+            "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          },
+          {
+            "messageId": "6dfa0404-4208-4af1-9b7a-e08854d8cb5b",
+            "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+            "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          {
+            "messageId": "followup-accepted-retry-09",
+            "contextId": "a5f25985-a241-4fe1-9deb-8ac364dcf550",
+            "taskId": "06cb94b7-8029-4fe1-a8c9-3cefca522467",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rejected-absent-09",
+      "sourceCaseSha256": "c1f3e44e94294784cc20f6e36248ea556a2c8129de32338e2bacc2f12e4cb0c4",
+      "outcome": "rejected-and-absent-with-InternalError",
+      "beforeTask": {
+        "id": "049ec37c-500f-4fed-af91-89c363ee9a0b",
+        "contextId": "3aa86852-2339-45ec-9c00-114621929607",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "205b50a6-d9ef-46a7-8095-a37b9f41eeca",
+            "contextId": "3aa86852-2339-45ec-9c00-114621929607",
+            "taskId": "049ec37c-500f-4fed-af91-89c363ee9a0b",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.370930Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-09",
+            "contextId": "3aa86852-2339-45ec-9c00-114621929607",
+            "taskId": "049ec37c-500f-4fed-af91-89c363ee9a0b",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "id": "rpc-followup-rejected-absent-09",
+        "jsonrpc": "2.0",
+        "method": "SendMessage",
+        "params": {
+          "message": {
+            "contextId": "3aa86852-2339-45ec-9c00-114621929607",
+            "messageId": "followup-rejected-absent-09",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ],
+            "role": "ROLE_USER",
+            "taskId": "049ec37c-500f-4fed-af91-89c363ee9a0b"
+          }
+        }
+      },
+      "sendResponse": {
+        "error": {
+          "code": -32603,
+          "message": "Task 049ec37c-500f-4fed-af91-89c363ee9a0b was modified concurrently by another writer",
+          "data": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "INTERNAL_ERROR",
+              "domain": "a2a-protocol.org",
+              "metadata": {}
+            }
+          ]
+        },
+        "id": "rpc-followup-rejected-absent-09",
+        "jsonrpc": "2.0"
+      },
+      "httpStatus": 200,
+      "persistedTask": {
+        "id": "049ec37c-500f-4fed-af91-89c363ee9a0b",
+        "contextId": "3aa86852-2339-45ec-9c00-114621929607",
+        "status": {
+          "state": "TASK_STATE_INPUT_REQUIRED",
+          "message": {
+            "messageId": "205b50a6-d9ef-46a7-8095-a37b9f41eeca",
+            "contextId": "3aa86852-2339-45ec-9c00-114621929607",
+            "taskId": "049ec37c-500f-4fed-af91-89c363ee9a0b",
+            "role": "ROLE_AGENT",
+            "parts": [
+              {
+                "text": "public fixture input required"
+              }
+            ]
+          },
+          "timestamp": "2026-10-02T20:24:49.370930Z"
+        },
+        "history": [
+          {
+            "messageId": "initial-rejected-absent-09",
+            "contextId": "3aa86852-2339-45ec-9c00-114621929607",
+            "taskId": "049ec37c-500f-4fed-af91-89c363ee9a0b",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "public fixture turn"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

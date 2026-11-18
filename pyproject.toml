@@ -35,6 +35,7 @@ dependencies = [
 dev = [
     "ruff>=0.3",
     "mypy>=1.8",
+    "hypothesis>=6.0",
 ]
 
 [project.scripts]

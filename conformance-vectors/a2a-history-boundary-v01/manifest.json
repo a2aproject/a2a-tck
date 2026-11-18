@@ -1,0 +1,114 @@
+{
+  "profile": "a2a-history-boundary-v01",
+  "status": "provisional-application-profile",
+  "corpusSha256": "a72d8293dc25e35829eb448d10ec79372a390e6313334e5716085476cff6a2db",
+  "records": [
+    {
+      "id": "accepted-retry-00",
+      "sourceCaseSha256": "e1d6858fb0dd0e99a563666319afa043b3ba66174560840f61de09bd612629fc"
+    },
+    {
+      "id": "rejected-absent-00",
+      "sourceCaseSha256": "9eb92c99678f57ca17d2aa89a1cb2ff4df86be711774ab4ddf88412c1ff90f7b"
+    },
+    {
+      "id": "accepted-retry-01",
+      "sourceCaseSha256": "93c1eac5524bcd17a2f4e46c4a495cfa6f5c54459f01a49b8e8869d534464e86"
+    },
+    {
+      "id": "rejected-absent-01",
+      "sourceCaseSha256": "22005bf5100bbd778ab49a696aa33d392facd787dbf9a9eb5906f3cba4350329"
+    },
+    {
+      "id": "accepted-retry-02",
+      "sourceCaseSha256": "c1662ec18d388945952c4f2649b0c81542e5db834738e818f8b9525561426e98"
+    },
+    {
+      "id": "rejected-absent-02",
+      "sourceCaseSha256": "0960b9f5380729984ab7b9e64541be2c6d471a6a95a80ebf56cba5f54214bbd8"
+    },
+    {
+      "id": "accepted-retry-03",
+      "sourceCaseSha256": "4b897e696e047f3a4fdb98eba8a278eb487359ce0ae064b496f9898d4e69d844"
+    },
+    {
+      "id": "rejected-absent-03",
+      "sourceCaseSha256": "8ff6f3e9d8d593255b09a90e8d25feeac6b8a004cef675544aea54cc03e3687d"
+    },
+    {
+      "id": "accepted-retry-04",
+      "sourceCaseSha256": "79adfc0e405761e7daf27d17a822c59ce5207d3af4a835b352b9ea47ac6ed6f7"
+    },
+    {
+      "id": "rejected-absent-04",
+      "sourceCaseSha256": "2fc8b461ed076994d641157aa831c89f21f63a5cab350d350617835b0b24d354"
+    },
+    {
+      "id": "accepted-retry-05",
+      "sourceCaseSha256": "6c04370dd138af8c47246412f9b6ea6e5ff0d56202bff055c2ff134feb0038e9"
+    },
+    {
+      "id": "rejected-absent-05",
+      "sourceCaseSha256": "18bacd48ab7a1ae0f202a5f2d50848fa6c733b2fe807b2df3d89c79f804c8088"
+    },
+    {
+      "id": "accepted-retry-06",
+      "sourceCaseSha256": "4a3f46dde5b1fefa89f56c1d58df9b8d2e761b1fe223fcbda12b6da47654ecb1"
+    },
+    {
+      "id": "rejected-absent-06",
+      "sourceCaseSha256": "616240ae537d1249f72f5309b39ecce657b262410c31fc2de7ef77483f20c46f"
+    },
+    {
+      "id": "accepted-retry-07",
+      "sourceCaseSha256": "a11c1670a588612a1333f550145504c82be6683c774dd61ce6c3aec714a65b37"
+    },
+    {
+      "id": "rejected-absent-07",
+      "sourceCaseSha256": "3b77712ca430c6e7b8aab8719428dece747ce140558ad35296fb1d10a1822a25"
+    },
+    {
+      "id": "accepted-retry-08",
+      "sourceCaseSha256": "fc5937a98c42fc94cc5e2afd59f6c22a52754c56d2dbc5df69d2fc75f35d3f4f"
+    },
+    {
+      "id": "rejected-absent-08",
+      "sourceCaseSha256": "3a36ad56a0cb2f6b8933a89167ca3791fc65aa03d16a3cd3ef28f9d2cce4faec"
+    },
+    {
+      "id": "accepted-retry-09",
+      "sourceCaseSha256": "eae8e3068145c3b4d4cb0d773adef58350943d0d3200d1d05105dc79276104d2"
+    },
+    {
+      "id": "rejected-absent-09",
+      "sourceCaseSha256": "c1f3e44e94294784cc20f6e36248ea556a2c8129de32338e2bacc2f12e4cb0c4"
+    }
+  ],
+  "counts": {
+    "acceptedAndPersisted": 10,
+    "rejectedAndAbsentInternalError": 10,
+    "total": 20
+  },
+  "source": {
+    "observerReviewedHead": "0f20fe75983efc4b375b52593bed040585acf66c",
+    "observerMergeHead": "2c131b84f72cc8e54b95af0a9124509be72914ff",
+    "observerImplementationHead": "cba0a82a170ceaf762635b7d31c3e7b6530f2edf",
+    "sdkHead": "52030cf43f2e96d25949952e385e3b73fe93bc2a",
+    "mysqlVersion": "8.0.46",
+    "mysqlImage": "public.ecr.aws/docker/library/mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b",
+    "fixtureSha256": "58addb8dfea4fe0508e0fecbda3db1c231535c290ec05ed33858863bbfd1d778",
+    "consumerPinsSha256": "278cd12868ae94a275a0deb8ed46c574a61dc689c161521a6dfcc39f168f983e",
+    "recordedReportSha256": "46afbc0357f1706a80a60eb11d91b92aac90ade3ae0899ae90b47f8933498bda",
+    "publicProfile": "https://github.com/probityai/agent-evidence-observer/tree/2c131b84f72cc8e54b95af0a9124509be72914ff/interop/a2a-history-boundary-2026-10-02"
+  },
+  "doesNotAssert": [
+    "independent-custody",
+    "network-server-process",
+    "production-authentication",
+    "models",
+    "all-concurrency-schedules",
+    "normative-tck-adoption",
+    "producer-acceptance",
+    "recurring-adoption"
+  ]
+}
