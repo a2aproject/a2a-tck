@@ -74,3 +74,16 @@ def validate_message_response_contains_field(
     return _json.validate_message_response_contains_field(
         _unwrap_result(response), field, error_prefix="Response result",
     )
+
+
+def validate_message_response_field_equals(
+    response: Any,
+    field: str,
+    expected: Any,
+) -> list[str]:
+    """Validate a field value in the SendMessageResponse result."""
+    return _json.validate_message_response_field_equals(
+        _unwrap_result(response),
+        field,
+        expected,
+    )

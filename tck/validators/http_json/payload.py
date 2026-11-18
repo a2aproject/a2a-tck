@@ -73,3 +73,15 @@ def validate_message_response_contains_field(
     if not data:
         return [f"Response is not a JSON object, cannot check for '{field}'"]
     return _json.validate_message_response_contains_field(data, field)
+
+
+def validate_message_response_field_equals(
+    response: Any,
+    field: str,
+    expected: Any,
+) -> list[str]:
+    """Validate a field value in the SendMessageResponse body."""
+    data = _unwrap(response)
+    if not data:
+        return [f"Response is not a JSON object, cannot check '{field}'"]
+    return _json.validate_message_response_field_equals(data, field, expected)
