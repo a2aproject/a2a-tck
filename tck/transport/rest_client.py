@@ -310,7 +310,7 @@ class RESTClient(BaseTransportClient):
                             if data_str == "[DONE]":
                                 break
 
-                            event_data = json.loads(data_str)
+                            event_data = convert_protobuf_response_to_a2a_json(json.loads(data_str))
                             yield event_data
 
                         except json.JSONDecodeError as e:
@@ -516,7 +516,7 @@ class RESTClient(BaseTransportClient):
                             if data_str == "[DONE]":
                                 break
 
-                            event_data = json.loads(data_str)
+                            event_data = convert_protobuf_response_to_a2a_json(json.loads(data_str))
                             yield event_data
 
                         except json.JSONDecodeError as e:

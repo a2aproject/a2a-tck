@@ -170,9 +170,122 @@ def convert_protobuf_response_to_a2a_json(response: Dict[str, Any]) -> Dict[str,
         # Direct task object (not wrapped) - common for cancel/get responses
         a2a_task = convert_protobuf_task_to_a2a(response)
         return a2a_task
+    elif "status_update" in response:
+        # TaskStatusUpdateEvent, as emitted on the streaming wire
+        su = response["status_update"]
+        a2a: Dict[str, Any] = {"kind": "status-update"}
+        if "task_id" in su:
+            a2a["taskId"] = su["task_id"]
+        if "context_id" in su:
+            a2a["contextId"] = su["context_id"]
+        if "status" in su:
+            a2a["status"] = _convert_protobuf_status_to_a2a(su["status"])
+        if "final" in su:
+            a2a["final"] = su["final"]
+        if "metadata" in su:
+            a2a["metadata"] = su["metadata"]
+        return a2a
+    elif "artifact_update" in response:
+        # TaskArtifactUpdateEvent, as emitted on the streaming wire
+        au = response["artifact_update"]
+        a2a: Dict[str, Any] = {"kind": "artifact-update"}
+        if "task_id" in au:
+            a2a["taskId"] = au["task_id"]
+        if "context_id" in au:
+            a2a["contextId"] = au["context_id"]
+        if "artifact" in au:
+            a2a["artifact"] = _convert_protobuf_artifact_to_a2a(au["artifact"])
+        if "append" in au:
+            a2a["append"] = au["append"]
+        if "last_chunk" in au:
+            a2a["lastChunk"] = au["last_chunk"]
+        if "metadata" in au:
+            a2a["metadata"] = au["metadata"]
+        return a2a
     else:
         # Return as-is if format not recognized
         return response
+
+
+_TASK_STATE_MAP = {
+    "TASK_STATE_SUBMITTED": "submitted",
+    "TASK_STATE_WORKING": "working",
+    "TASK_STATE_COMPLETED": "completed",
+    "TASK_STATE_FAILED": "failed",
+    "TASK_STATE_CANCELLED": "canceled",
+    "TASK_STATE_INPUT_REQUIRED": "input-required",
+    "TASK_STATE_REJECTED": "rejected",
+    "TASK_STATE_AUTH_REQUIRED": "auth-required",
+}
+
+
+def _convert_protobuf_status_to_a2a(status: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert a protobuf TaskStatus dict to its A2A camelCase shape."""
+    a2a_status: Dict[str, Any] = {}
+    if "state" in status:
+        a2a_status["state"] = _TASK_STATE_MAP.get(status["state"], status["state"])
+    if "timestamp" in status:
+        a2a_status["timestamp"] = status["timestamp"]
+    if "message" in status:
+        # Convert status message if present
+        a2a_status["message"] = convert_protobuf_message_to_a2a(status["message"])
+    return a2a_status
+
+
+def _convert_protobuf_part_to_a2a(part: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert a protobuf Part dict to its A2A camelCase shape."""
+    a2a_part: Dict[str, Any] = {}
+    if "text" in part:
+        a2a_part["kind"] = "text"
+        a2a_part["text"] = part["text"]
+    elif "file" in part:
+        a2a_part["kind"] = "file"
+        file_data = part["file"]
+        a2a_file: Dict[str, Any] = {}
+        if "name" in file_data:
+            a2a_file["name"] = file_data["name"]
+        if "mime_type" in file_data:
+            a2a_file["mimeType"] = file_data["mime_type"]
+        if "uri" in file_data:
+            a2a_file["uri"] = file_data["uri"]
+        if "size_in_bytes" in file_data:
+            a2a_file["sizeInBytes"] = file_data["size_in_bytes"]
+        if "bytes" in file_data:
+            a2a_file["bytes"] = file_data["bytes"]
+        a2a_part["file"] = a2a_file
+    elif "data" in part:
+        a2a_part["kind"] = "data"
+        # Handle nested DataPart structure: {"data": {"data": <actual_data>}}
+        data_field = part["data"]
+        if isinstance(data_field, dict) and "data" in data_field:
+            # Extract the inner data from protobuf DataPart structure
+            a2a_part["data"] = data_field["data"]
+        else:
+            # Fallback for direct data (shouldn't happen with correct protobuf)
+            a2a_part["data"] = data_field
+
+    if "metadata" in part:
+        a2a_part["metadata"] = part["metadata"]
+
+    return a2a_part
+
+
+def _convert_protobuf_artifact_to_a2a(artifact: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert a protobuf Artifact dict to its A2A camelCase shape."""
+    a2a_artifact: Dict[str, Any] = {}
+    if "artifact_id" in artifact:
+        a2a_artifact["artifactId"] = artifact["artifact_id"]
+    if "name" in artifact:
+        a2a_artifact["name"] = artifact["name"]
+    if "description" in artifact:
+        a2a_artifact["description"] = artifact["description"]
+    if "parts" in artifact:
+        a2a_artifact["parts"] = [_convert_protobuf_part_to_a2a(p) for p in artifact["parts"]]
+    if "metadata" in artifact:
+        a2a_artifact["metadata"] = artifact["metadata"]
+    if "extensions" in artifact:
+        a2a_artifact["extensions"] = artifact["extensions"]
+    return a2a_artifact
 
 
 def convert_protobuf_task_to_a2a(task: Dict[str, Any]) -> Dict[str, Any]:
@@ -185,28 +298,7 @@ def convert_protobuf_task_to_a2a(task: Dict[str, Any]) -> Dict[str, Any]:
     if "context_id" in task:
         a2a_task["contextId"] = task["context_id"]
     if "status" in task:
-        # Convert protobuf status to A2A status format
-        status = task["status"]
-        a2a_status = {}
-        if "state" in status:
-            # Convert protobuf enum state to A2A state
-            state_map = {
-                "TASK_STATE_SUBMITTED": "submitted",
-                "TASK_STATE_WORKING": "working",
-                "TASK_STATE_COMPLETED": "completed",
-                "TASK_STATE_FAILED": "failed",
-                "TASK_STATE_CANCELLED": "canceled",
-                "TASK_STATE_INPUT_REQUIRED": "input-required",
-                "TASK_STATE_REJECTED": "rejected",
-                "TASK_STATE_AUTH_REQUIRED": "auth-required"
-            }
-            a2a_status["state"] = state_map.get(status["state"], status["state"])
-        if "timestamp" in status:
-            a2a_status["timestamp"] = status["timestamp"]
-        if "message" in status:
-            # Convert status message if present
-            a2a_status["message"] = convert_protobuf_message_to_a2a(status["message"])
-        a2a_task["status"] = a2a_status
+        a2a_task["status"] = _convert_protobuf_status_to_a2a(task["status"])
     if "artifacts" in task:
         a2a_task["artifacts"] = task["artifacts"]
     if "metadata" in task:

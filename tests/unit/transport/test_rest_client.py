@@ -351,6 +351,8 @@ class TestRESTClientStreamingMessage:
             "",
             'data: {"status_update": {"task_id": "task-stream-1", "status": {"state": "TASK_STATE_COMPLETED"}, "final": true}}',
             "",
+            'data: {"artifact_update": {"task_id": "task-stream-1", "artifact": {"artifact_id": "art-1", "name": "out.txt", "parts": [{"text": "hi"}]}}}',
+            "",
             "data: [DONE]",
         ]
 
@@ -381,20 +383,28 @@ class TestRESTClientStreamingMessage:
         async for response in client.send_streaming_message(message):
             responses.append(response)
 
-        # Verify we got expected streaming responses
-        assert len(responses) == 3
+        # Verify we got expected streaming responses, converted to A2A camelCase
+        assert len(responses) == 4
 
-        # First response should be initial task
-        assert "task" in responses[0]
-        assert responses[0]["task"]["id"] == "task-stream-1"
+        # First response should be the initial task
+        assert responses[0]["kind"] == "task"
+        assert responses[0]["id"] == "task-stream-1"
+        assert responses[0]["status"]["state"] == "submitted"
 
         # Subsequent responses should be status updates
-        assert "status_update" in responses[1]
-        assert responses[1]["status_update"]["status"]["state"] == "TASK_STATE_WORKING"
+        assert responses[1]["kind"] == "status-update"
+        assert responses[1]["taskId"] == "task-stream-1"
+        assert responses[1]["status"]["state"] == "working"
 
-        assert "status_update" in responses[2]
-        assert responses[2]["status_update"]["status"]["state"] == "TASK_STATE_COMPLETED"
-        assert responses[2]["status_update"]["final"] is True
+        assert responses[2]["kind"] == "status-update"
+        assert responses[2]["status"]["state"] == "completed"
+        assert responses[2]["final"] is True
+
+        # And an artifact update, with its artifact converted too
+        assert responses[3]["kind"] == "artifact-update"
+        assert responses[3]["taskId"] == "task-stream-1"
+        assert responses[3]["artifact"]["artifactId"] == "art-1"
+        assert responses[3]["artifact"]["parts"] == [{"kind": "text", "text": "hi"}]
 
         # Verify correct URL and headers were used
         mock_async_client.stream.assert_called_once_with(
@@ -473,8 +483,8 @@ class TestRESTClientStreamingMessage:
 
         # Should get 2 valid responses (invalid JSON skipped)
         assert len(responses) == 2
-        assert "task" in responses[0]
-        assert "status_update" in responses[1]
+        assert responses[0]["kind"] == "task"
+        assert responses[1]["kind"] == "status-update"
 
 
 @pytest.mark.core
@@ -609,14 +619,16 @@ class TestRESTClientTaskOperations:
 
         assert len(events) == 2
 
-        # First event should be current task state
-        assert "task" in events[0]
-        assert events[0]["task"]["id"] == "task-789"
+        # First event should be current task state, converted to A2A camelCase
+        assert events[0]["kind"] == "task"
+        assert events[0]["id"] == "task-789"
+        assert events[0]["status"]["state"] == "working"
 
-        # Second event should be status update
-        assert "status_update" in events[1]
-        assert events[1]["status_update"]["task_id"] == "task-789"
-        assert events[1]["status_update"]["final"] is True
+        # Second event should be status update, converted to A2A
+        assert events[1]["kind"] == "status-update"
+        assert events[1]["taskId"] == "task-789"
+        assert events[1]["status"]["state"] == "completed"
+        assert events[1]["final"] is True
 
         # Verify correct URL and headers were used
         mock_async_client.stream.assert_called_once_with(
