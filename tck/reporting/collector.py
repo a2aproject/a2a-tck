@@ -21,15 +21,23 @@ class TestResult:
     errors: list[str] = field(default_factory=list)
     level: Literal["MUST", "SHOULD", "MAY"] = "MUST"
     skipped: bool = False
+    xfail: bool = False
     test_id: str = ""
 
 
-def summarize_status(results: list[TestResult]) -> Literal["PASS", "FAIL", "SKIPPED"]:
-    """A failure dominates any later pass or skip for the same obligation."""
+def summarize_status(results: list[TestResult]) -> Literal["PASS", "FAIL", "SKIPPED", "XFAIL"]:
+    """A hard failure dominates any later pass or skip for the same obligation.
+
+    Results marked ``xfail`` are known/expected checker limitations rather than
+    spec violations, so they must not surface as ``FAIL`` in conformance
+    reports (which would contradict the suite's exit code 0).
+    """
     if not results:
         raise ValueError("Cannot summarize an empty set of test results")
-    if any(not result.passed and not result.skipped for result in results):
+    if any(not result.passed and not result.skipped and not result.xfail for result in results):
         return "FAIL"
+    if any(result.xfail for result in results):
+        return "XFAIL"
     return "SKIPPED" if all(result.skipped for result in results) else "PASS"
 
 
@@ -55,6 +63,7 @@ class CompatibilityCollector:
         errors: list[str] | None = None,
         level: str = "MUST",
         skipped: bool = False,
+        xfail: bool = False,
         test_id: str = "",
     ) -> None:
         """Record a single test result."""
@@ -68,6 +77,7 @@ class CompatibilityCollector:
                 errors=errors or [],
                 level=level,  # type: ignore[arg-type]
                 skipped=skipped,
+                xfail=xfail,
                 test_id=test_id,
             )
         )
@@ -111,7 +121,8 @@ class CompatibilityCollector:
         Returns a mapping of ``transport`` to a dict with:
         - ``total``: total number of results
         - ``passed``: number of passing results
-        - ``failed``: number of failing results
+        - ``failed``: number of failing results (excluding known/expected failures)
+        - ``xfailed``: number of known/expected failures (recorded with ``xfail=True``)
         """
         grouped: dict[str, list[TestResult]] = defaultdict(list)
         for r in self._results:
@@ -121,11 +132,13 @@ class CompatibilityCollector:
         for transport, results in grouped.items():
             passed = sum(1 for r in results if r.passed and not r.skipped)
             skipped = sum(1 for r in results if r.skipped)
+            xfailed = sum(1 for r in results if r.xfail and not r.passed and not r.skipped)
             out[transport] = {
                 "total": len(results),
                 "passed": passed,
-                "failed": len(results) - passed - skipped,
+                "failed": len(results) - passed - skipped - xfailed,
                 "skipped": skipped,
+                "xfailed": xfailed,
             }
         return out
 

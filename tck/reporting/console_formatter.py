@@ -83,15 +83,16 @@ class ConsoleFormatter:
         return f"\nOVERALL COMPATIBILITY: {value} (automated checks)"
 
     def _level_table(self, report: CompatibilityReport) -> str:
-        rows = [("Level", "Passed", "Failed", "Skipped", "Manual", "Not tested", "Total")]
+        rows = [("Level", "Passed", "Failed", "Xfail", "Skipped", "Manual", "Not tested", "Total")]
         for level in ("MUST", "SHOULD", "MAY"):
             reqs = [r for r in report.per_requirement.values() if r.level == level]
             passed = sum(1 for r in reqs if r.status == "PASS")
             skipped = sum(1 for r in reqs if r.status == "SKIPPED")
             manual = sum(1 for r in reqs if r.status == "MANUAL")
             failed = sum(1 for r in reqs if r.status == "FAIL")
+            xfailed = sum(1 for r in reqs if r.status == "XFAIL")
             not_tested = sum(1 for r in reqs if r.status == "NOT TESTED")
-            rows.append(tuple(str(value) for value in (level, passed, failed, skipped, manual, not_tested, len(reqs))))
+            rows.append(tuple(str(value) for value in (level, passed, failed, xfailed, skipped, manual, not_tested, len(reqs))))
         widths = [max(len(row[index]) for row in rows) + 2 for index in range(len(rows[0]))]
 
         def border(left: str, middle: str, right: str) -> str:

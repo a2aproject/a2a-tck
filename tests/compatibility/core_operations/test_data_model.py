@@ -21,7 +21,7 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
-from tests.compatibility._test_helpers import assert_and_record, fail_msg, record
+from tests.compatibility._test_helpers import assert_and_record, fail_msg, record, xfail_and_record
 from tests.compatibility.markers import core, must, should
 
 
@@ -335,10 +335,7 @@ class TestIgnoreUnrecognizedFields:
             errors.append(
                 f"Server rejected request with unrecognized fields: {detail}"
             )
-        passed = not errors
-        record(compatibility_collector, req, transport, passed=passed, errors=errors)
-        if errors:
-            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+        xfail_and_record(compatibility_collector, req, transport, errors)
 
     def test_extra_fields_ignored_rest(
         self,
@@ -373,7 +370,4 @@ class TestIgnoreUnrecognizedFields:
                 f"Server rejected request with unrecognized fields: "
                 f"HTTP {response.status_code}"
             )
-        passed = not errors
-        record(compatibility_collector, req, transport, passed=passed, errors=errors)
-        if errors:
-            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+        xfail_and_record(compatibility_collector, req, transport, errors)

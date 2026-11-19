@@ -27,7 +27,7 @@ from tests.compatibility._task_helpers import (
     create_multiturn_task_with_history,
     create_working_task,
 )
-from tests.compatibility._test_helpers import assert_and_record, fail_msg, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, get_client, xfail_and_record
 from tests.compatibility.markers import may, must, should
 
 
@@ -81,10 +81,7 @@ class TestHistoryLengthZeroGetTask:
                     f"history message(s), expected none"
                 )
 
-        passed = not errors
-        record(compatibility_collector, req, transport, passed=passed, errors=errors)
-        if errors:
-            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+        xfail_and_record(compatibility_collector, req, transport, errors)
 
 
 @must
@@ -165,10 +162,7 @@ class TestHistoryLengthZeroSendMessage:
                     f"history message(s), expected none"
                 )
 
-        passed = not errors
-        record(compatibility_collector, req, transport, passed=passed, errors=errors)
-        if errors:
-            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+        xfail_and_record(compatibility_collector, req, transport, errors)
 
 
 # ---------------------------------------------------------------------------
@@ -205,10 +199,7 @@ class TestHistoryPersistence:
                     "agent does not persist messages in task history"
                 )
 
-        passed = not errors
-        record(compatibility_collector, req, transport, passed=passed, errors=errors)
-        if errors:
-            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+        xfail_and_record(compatibility_collector, req, transport, errors)
 
 
 # ---------------------------------------------------------------------------
@@ -272,10 +263,7 @@ class TestHistoryOrdering:
                         f"expected {HISTORY_MESSAGES}, got {found}"
                     )
 
-        passed = not errors
-        record(compatibility_collector, req, transport, passed=passed, errors=errors)
-        if errors:
-            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+        xfail_and_record(compatibility_collector, req, transport, errors)
 
 
 @should
@@ -314,7 +302,4 @@ class TestHistoryContent:
                             f"in history; got: {texts}"
                         )
 
-        passed = not errors
-        record(compatibility_collector, req, transport, passed=passed, errors=errors)
-        if errors:
-            pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
+        xfail_and_record(compatibility_collector, req, transport, errors)

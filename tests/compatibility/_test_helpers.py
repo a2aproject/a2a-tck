@@ -47,6 +47,7 @@ def record(
     errors: list[str] | None = None,
     *,
     skipped: bool = False,
+    xfail: bool = False,
 ) -> None:
     """Record a result in the compatibility collector."""
     collector.record(
@@ -56,6 +57,7 @@ def record(
         passed=passed,
         errors=errors or [],
         skipped=skipped,
+        xfail=xfail,
     )
 
 
@@ -69,6 +71,24 @@ def assert_and_record(
     passed = not errors
     record(collector, req, transport, passed=passed, errors=errors)
     assert passed, fail_msg(req, transport, "; ".join(errors))
+
+
+def xfail_and_record(
+    collector: Any,
+    req: RequirementSpec,
+    transport: str,
+    errors: list[str],
+) -> None:
+    """Record the result and ``pytest.xfail`` on a known checker limitation.
+
+    Marks the recorded result as ``xfail`` so the conformance report reflects a
+    known limitation of the checker instead of declaring the SUT non-compliant
+    (which previously contradicted the suite's exit code 0).
+    """
+    passed = not errors
+    record(collector, req, transport, passed=passed, errors=errors, xfail=bool(errors))
+    if errors:
+        pytest.xfail(fail_msg(req, transport, "; ".join(errors)))
 
 
 def get_client(
