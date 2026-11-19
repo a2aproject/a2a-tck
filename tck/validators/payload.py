@@ -137,6 +137,12 @@ def get_message_parts(message: Any, transport: str) -> list[Any]:
     return mod.get_message_parts(message) if mod else []
 
 
+def get_message_role(message: Any, transport: str) -> str | None:
+    """Extract the sender role name from a Message."""
+    mod = _TRANSPORT_MODULES.get(transport)
+    return mod.get_message_role(message) if mod else None
+
+
 def get_part_type(part: Any, transport: str) -> str | None:
     """Determine which oneof content variant is set on a Part."""
     mod = _TRANSPORT_MODULES.get(transport)
