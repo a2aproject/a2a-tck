@@ -79,11 +79,19 @@ def _extract_result(raw: Any) -> dict | None:
 
 
 def _collect_keys_recursive(obj: Any, keys: set[str]) -> None:
-    """Recursively collect all dict keys."""
+    """Recursively collect dict keys of A2A model fields.
+
+    Keys inside ``metadata`` values (arbitrary JSON, spec section 3.2.5) and
+    inside the ``data`` payload of a DataPart (``kind: "data"``, spec section
+    4.1.6) are application-defined rather than protocol model fields, so they
+    are not collected.
+    """
     if isinstance(obj, dict):
         keys.update(obj.keys())
-        for v in obj.values():
-            _collect_keys_recursive(v, keys)
+        for key, value in obj.items():
+            if key == "metadata" or (key == "data" and obj.get("kind") == "data"):
+                continue
+            _collect_keys_recursive(value, keys)
     elif isinstance(obj, list):
         for item in obj:
             _collect_keys_recursive(item, keys)
@@ -217,6 +225,38 @@ class TestCamelCaseFieldNames:
             if snake_case_keys:
                 errors.append(f"Found snake_case field names: {snake_case_keys}")
             assert_and_record(compatibility_collector, req, transport, errors)
+
+    def test_snake_case_boundary(self) -> None:
+        """Model fields are checked; opaque application payloads are not.
+
+        DataPart ``data`` payloads (spec section 4.1.6) and ``metadata``
+        values (spec section 3.2.5) carry application JSON, so their keys are
+        not subject to the camelCase rule.
+        """
+        response = {
+            "taskId": "t-1",
+            "metadata": {"trace_id": "abc", "extra": {"inner_key": 1}},
+            "artifacts": [
+                {
+                    "artifactId": "a-1",
+                    "parts": [
+                        {
+                            "kind": "data",
+                            "data": {"agent_id": "x", "deep": {"inner_key": 1}},
+                        },
+                        {"kind": "text", "text": "hi"},
+                    ],
+                }
+            ],
+        }
+        keys: set[str] = set()
+        _collect_keys_recursive(response, keys)
+        assert not [k for k in keys if _SNAKE_CASE_PATTERN.match(k)]
+
+        bad_model = {"task_id": "t-1"}
+        keys = set()
+        _collect_keys_recursive(bad_model, keys)
+        assert "task_id" in keys
 
 
 @must
