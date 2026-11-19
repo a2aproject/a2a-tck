@@ -82,14 +82,15 @@ def _collect_keys_recursive(obj: Any, keys: set[str]) -> None:
     """Recursively collect dict keys of A2A model fields.
 
     Keys inside ``metadata`` values (arbitrary JSON, spec section 3.2.5) and
-    inside the ``data`` payload of a DataPart (``kind: "data"``, spec section
-    4.1.6) are application-defined rather than protocol model fields, so they
-    are not collected.
+    inside ``data`` payloads (DataPart content, spec section 4.1.6) are
+    application-defined rather than protocol model fields, so they are not
+    collected. ``data`` is the DataPart member itself in the schema, so this
+    covers both serialized forms.
     """
     if isinstance(obj, dict):
         keys.update(obj.keys())
         for key, value in obj.items():
-            if key == "metadata" or (key == "data" and obj.get("kind") == "data"):
+            if key in ("data", "metadata"):
                 continue
             _collect_keys_recursive(value, keys)
     elif isinstance(obj, list):
@@ -231,7 +232,9 @@ class TestCamelCaseFieldNames:
 
         DataPart ``data`` payloads (spec section 4.1.6) and ``metadata``
         values (spec section 3.2.5) carry application JSON, so their keys are
-        not subject to the camelCase rule.
+        not subject to the camelCase rule. This holds for both Part
+        serializations: ``{"kind": "data", "data": ...}`` and
+        ``{"data": ..., "mediaType": ...}``.
         """
         response = {
             "taskId": "t-1",
@@ -243,6 +246,10 @@ class TestCamelCaseFieldNames:
                         {
                             "kind": "data",
                             "data": {"agent_id": "x", "deep": {"inner_key": 1}},
+                        },
+                        {
+                            "data": {"agent_id": "example"},
+                            "mediaType": "application/json",
                         },
                         {"kind": "text", "text": "hi"},
                     ],
