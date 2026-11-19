@@ -41,6 +41,7 @@ class TransportResult:
     passed: int
     failed: int
     skipped: int = 0
+    xfailed: int = 0
 
 
 @dataclass
@@ -185,11 +186,13 @@ class CompatibilityAggregator:
         for transport, results in grouped.items():
             passed = sum(1 for r in results if r.passed and not r.skipped)
             skipped = sum(1 for r in results if r.skipped)
+            xfailed = sum(1 for r in results if r.xfail and not r.passed and not r.skipped)
             out[transport] = TransportResult(
                 total=len(results),
                 passed=passed,
-                failed=len(results) - passed - skipped,
+                failed=len(results) - passed - skipped - xfailed,
                 skipped=skipped,
+                xfailed=xfailed,
             )
         return out
 
@@ -204,7 +207,7 @@ class CompatibilityAggregator:
             if level is None
             else [r for r in per_requirement.values() if r.level == level]
         )
-        reqs = [r for r in reqs if r.status not in {"SKIPPED", "MANUAL"}]
+        reqs = [r for r in reqs if r.status not in {"SKIPPED", "MANUAL", "XFAIL"}]
         if not reqs:
             return 100.0
         passing = sum(1 for r in reqs if r.status == "PASS")

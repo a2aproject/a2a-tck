@@ -233,6 +233,7 @@ def test_should_requirement(
         level=requirement.level.value,
         passed=len(errors) == 0,
         errors=errors,
+        xfail=bool(errors),
     )
 
     if errors:
@@ -282,6 +283,7 @@ def test_may_requirement(
         level=requirement.level.value,
         passed=len(errors) == 0,
         errors=errors,
+        xfail=bool(errors),
     )
 
     if errors:

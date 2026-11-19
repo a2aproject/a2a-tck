@@ -137,6 +137,8 @@ class HTMLFormatter:
             status_class = "skipped"
         elif req.status == "MANUAL":
             status_class = "manual"
+        elif req.status == "XFAIL":
+            status_class = "xfail"
         elif req.status == "NOT TESTED":
             status_class = "not-tested"
         else:
@@ -149,6 +151,8 @@ class HTMLFormatter:
                 cell_class = ' class="pass"'
             elif result == "FAIL":
                 cell_class = ' class="fail"'
+            elif result == "XFAIL":
+                cell_class = ' class="xfail"'
             elif result == "SKIPPED":
                 cell_class = ' class="skipped"'
             transport_cells += f"<td{cell_class}>{escape(result)}</td>"
@@ -180,6 +184,7 @@ class HTMLFormatter:
                 f"<td>{escape(transport)}</td>"
                 f"<td>{t.passed}</td>"
                 f"<td>{t.failed}</td>"
+                f"<td>{t.xfailed}</td>"
                 f"<td>{t.skipped}</td>"
                 f"<td>{t.total}</td>"
                 f"<td>"
@@ -192,7 +197,7 @@ class HTMLFormatter:
             '<div class="section">\n'
             "<h2>Per-Transport Summary</h2>\n"
             "<table>\n"
-            "<tr><th>Transport</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Total</th><th>Progress</th></tr>\n"
+            "<tr><th>Transport</th><th>Passed</th><th>Failed</th><th>Xfail</th><th>Skipped</th><th>Total</th><th>Progress</th></tr>\n"
             f"{rows}"
             "</table>\n"
             "</div>\n"
@@ -313,6 +318,7 @@ th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
 th { background: #f5f5f5; }
 .pass { background: #d4edda; color: #155724; }
 .fail { background: #f8d7da; color: #721c24; }
+.xfail { background: #ffe8cc; color: #8a5300; }
 .skipped { background: #e2e3e5; color: #383d41; }
 .manual { background: #fff3cd; color: #664d03; }
 .not-tested { background: #cce5ff; color: #004085; }
