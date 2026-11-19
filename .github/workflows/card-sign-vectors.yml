@@ -1,0 +1,171 @@
+name: Card signature vectors
+
+# Reusable workflow: run an SDK's Agent Card signature verifier over the a2a-card-sign-v01 vectors
+# (conformance-vectors/a2a-card-sign-v01) and keep the report. Call it from an SDK repository:
+#
+#   jobs:
+#     card-sign:
+#       uses: a2aproject/a2a-tck/.github/workflows/card-sign-vectors.yml@<a2a-tck commit>
+#       with:
+#         tck-ref: <the same a2a-tck commit>
+#         setup: npm ci && npm run build
+#         verifier: node scripts/verify-card.mjs {card} {jwks}
+#
+# The verifier command runs once per vector from the caller's checkout, with {card} replaced by a file holding the
+# served card and {jwks} by the corpus test key set; exit status 0 is an accept. The job fails on any false accept under
+# the readings in no-false-accepts (by default the two s4 readings, so a card edited after signing is caught without the
+# SDK adopting a reading for the rest of the corpus) and on any reading listed in require. Divergences from a proposed
+# reading are reported and never fail the job.
+#
+# A second job runs the pinned Probity reader (probityai/agent-evidence-vectors) on its declared s3 and s4 subsets and
+# keeps its fresh report beside the SDK's, as an independent consumer of the same vectors.
+
+on:
+  workflow_call:
+    inputs:
+      verifier:
+        description: Command template run once per vector, with {card} and {jwks}; exit 0 means accept
+        required: true
+        type: string
+      setup:
+        description: Shell commands run in the caller's checkout before the vectors (install, build)
+        required: false
+        type: string
+        default: ""
+      require:
+        description: Space-separated readings the verifier must match exactly
+        required: false
+        type: string
+        default: ""
+      no-false-accepts:
+        description: Space-separated readings under which any false accept fails the job
+        required: false
+        type: string
+        default: "dual-name-tolerate dual-name-refuse"
+      tck-repository:
+        required: false
+        type: string
+        default: a2aproject/a2a-tck
+      tck-ref:
+        description: a2a-tck commit providing the runner and the vectors
+        required: false
+        type: string
+        default: main
+      python-version:
+        required: false
+        type: string
+        default: "3.12"
+      node-version:
+        description: Set to install Node.js for a JavaScript verifier
+        required: false
+        type: string
+        default: ""
+      probity:
+        description: Also run the pinned Probity reader and keep its report
+        required: false
+        type: boolean
+        default: true
+      probity-ref:
+        required: false
+        type: string
+        default: 49aca597ca51342bdfb527b6e7718a22a89e0ece
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: sdk
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.tck-repository }}
+          ref: ${{ inputs.tck-ref }}
+          path: tck
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - if: inputs.node-version != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+      - name: Prepare the verifier
+        if: inputs.setup != ''
+        working-directory: sdk
+        env:
+          SETUP: ${{ inputs.setup }}
+        run: bash -euo pipefail -c "$SETUP"
+      - name: Run the vectors
+        working-directory: sdk
+        env:
+          VERIFIER: ${{ inputs.verifier }}
+          REQUIRE: ${{ inputs.require }}
+          NO_FALSE_ACCEPTS: ${{ inputs.no-false-accepts }}
+        run: |
+          args=()
+          for r in $REQUIRE; do args+=(--require "$r"); done
+          for r in $NO_FALSE_ACCEPTS; do args+=(--no-false-accepts "$r"); done
+          set +e
+          # Run the runner by path, not with -m: the caller's checkout may have its own tck/ directory (a2a-python does),
+          # which would shadow this package. The runner needs only the standard library.
+          python "$GITHUB_WORKSPACE/tck/tck/conformance/card_sign.py" --verifier "$VERIFIER" --json-out "$GITHUB_WORKSPACE/card-sign-report.json" "${args[@]}" > "$GITHUB_WORKSPACE/card-sign-report.txt"
+          status=$?
+          cat "$GITHUB_WORKSPACE/card-sign-report.txt"
+          { echo '### Card signature vectors'; echo '```'; cat "$GITHUB_WORKSPACE/card-sign-report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: card-sign-sdk-report
+          path: |
+            card-sign-report.json
+            card-sign-report.txt
+          if-no-files-found: warn
+          retention-days: 90
+
+  probity:
+    if: inputs.probity
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: probityai/agent-evidence-vectors
+          ref: ${{ inputs.probity-ref }}
+          path: probity
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install the reader's pinned dependencies
+        run: python -m pip install -r probity/interop/a2a-s3-retain-2026-10-01/requirements.txt
+      - name: Run the reader on its s3 and s4 subsets
+        run: |
+          (cd probity/interop/a2a-s3-retain-2026-10-01 && python run_regression.py) > probity-s3-report.json
+          (cd probity/interop/a2a-s4-dual-name-2026-10-02 && python run_dual_name.py) > probity-s4-report.json
+          python - <<'PY'
+          import json, os
+          lines, ok = ["### Probity reader (independent consumer)", ""], True
+          for name in ("probity-s3-report.json", "probity-s4-report.json"):
+              report = json.load(open(name))
+              ok = ok and report.get("passed") is True
+              lines.append(f"- {name}: passed={report.get('passed')}, {len(report.get('results', []))} cases")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("\n".join(lines) + "\n")
+          raise SystemExit(0 if ok else 1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: card-sign-probity-report
+          path: |
+            probity-s3-report.json
+            probity-s4-report.json
+          if-no-files-found: warn
+          retention-days: 90

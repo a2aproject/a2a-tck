@@ -1,0 +1,13 @@
+{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "khLaGq9LmIvsjFv8YF0N4IJwRGvldb36SwqntLYct04",
+      "y": "XCMP49DgLRfdGJKDr5MacrOCNaDXIwSvoFjID8ORkmQ",
+      "kid": "hs-interop-test-v1",
+      "alg": "ES256",
+      "use": "sig"
+    }
+  ]
+}

@@ -1,0 +1,965 @@
+{
+  "corpus": "a2a-card-sign-v01",
+  "suite": "a2a-agent-card-signature-conformance",
+  "specRef": "https://a2a-protocol.org/latest/specification/#841-canonicalization-requirements",
+  "layer": "signature",
+  "scope": "Layer C: which Agent Card signatures a verifier accepts. Layer A is a2a-jcs-v01 (a2a-tck#228), Layer B is a2a-jcs-rule1-v01 (a2a-tck#245). In s0 and s1 every card carries every REQUIRED field of AgentCard; s2 is the group where a REQUIRED field is absent from the served JSON (Layer B's open point).",
+  "open_question": "https://github.com/a2aproject/A2A/issues/2122",
+  "spec_provenance": {
+    "text": "a2aproject/A2A specification/specification.md at 173695755607 (v1.0.0), section 8.4.1",
+    "required_set": "field_behavior = REQUIRED annotations of a2a.proto as generated in a2a-sdk 1.2.1 (a2a.types.a2a_pb2); on the fields these cases touch they agree with a2aproject/A2A specification/a2a.proto at 173695755607: AgentCard.description and AgentCard.skills and AgentSkill.tags are REQUIRED, AgentCapabilities.extensions is not, AgentCapabilities.streaming and push_notifications carry the optional keyword",
+    "worked_example": "The section's own worked example keeps description \"\" and skills [] and omits capabilities.extensions [], which is the rule-1-as-written tagging of S1-001, S1-003 and S1-007."
+  },
+  "jku_note": "The jku in every protected header is an example.com placeholder and is never fetched. Resolve the key from testkey_jwks.json by kid.",
+  "readings": {
+    "rule-1-as-written": "Section 8.4.1 rule 1 on the card as served: a REQUIRED field (proto annotation) stays even at its default value, a field with the optional keyword stays when set, any other field at its default value (\"\", 0, false, [], {}) is dropped. Applied recursively through message-typed fields. Then RFC 8785.",
+    "prune-empty": "Empty strings, arrays and objects removed recursively regardless of REQUIRED (false and 0 kept). Then RFC 8785. Matches a2a-sdk 1.2.1 and @a2a-js/sdk 1.3.0 byte for byte on every card here.",
+    "served-as-is": "The served JSON with `signatures` removed, nothing else. Then RFC 8785. Matches a2a-go a2acrypto at main 534a60fc byte for byte on every card here."
+  },
+  "relation_to_rule1_corpus": "On inputs that carry every REQUIRED field, a2a-jcs-rule1-v01's presence-preserving and inject-required-defaults resolutions both give the rule-1-as-written bytes.",
+  "test_key": {
+    "kid": "hs-interop-test-v1",
+    "alg": "ES256",
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "khLaGq9LmIvsjFv8YF0N4IJwRGvldb36SwqntLYct04",
+      "y": "XCMP49DgLRfdGJKDr5MacrOCNaDXIwSvoFjID8ORkmQ",
+      "kid": "hs-interop-test-v1",
+      "alg": "ES256",
+      "use": "sig"
+    },
+    "derivation": "d = int.from_bytes(sha256(phrase), 'big') mod (n - 1) + 1 on P-256",
+    "phrase": "HORIZON SHIELD A2A card-signing interop test key v1 (public, test vectors only)",
+    "note": "Published test key, so anyone can re-create the private key and re-sign every reference vector byte for byte (RFC 6979). It signs test vectors only and is nobody's production key."
+  },
+  "protected_header": {
+    "alg": "ES256",
+    "jku": "https://example.com/a2a-card-sign-v01/testkey_jwks.json",
+    "kid": "hs-interop-test-v1",
+    "typ": "JOSE"
+  },
+  "oracles": [
+    "rfc8785 (PyPI, 0.1.4)",
+    "gowebpki/jcs (Go, v1.0.1)"
+  ],
+  "generator": "https://github.com/ogasurfproject-jpg/horizon-shield/blob/main/workers/a2a-card-sign/interop-matrix/vectors.py",
+  "counts": {
+    "accept_any": 4,
+    "reject_any": 1,
+    "reading_dependent": 10,
+    "total": 44,
+    "absent_required": 11,
+    "unknown_fields": 13,
+    "dual_name": 5
+  },
+  "groups": [
+    "s0-control",
+    "s1-default-valued",
+    "s2-absent-required",
+    "s3-unknown-fields",
+    "s4-dual-name"
+  ],
+  "observed": {
+    "note": "Not part of the expectations. What each SDK's own verifier returned on each served card, on the date and versions below.",
+    "date": "2026-10-01",
+    "versions": {
+      "a2a-python": "a2a-sdk 1.2.1",
+      "a2a-js": "@a2a-js/sdk 1.3.0",
+      "a2a-go": "a2a-go main 534a60fc (2026-09-30)",
+      "aeoess/a2a-python@2491248": "aeoess/a2a-python branch candidate/served-scope-1278 at 2491248cf443 (2026-10-02), create_served_card_signature_verifier on the served JSON; a candidate for a2aproject/A2A#2122, not a release and not a PR",
+      "aeoess/a2a-python@5f9e52c": "aeoess/a2a-python branch candidate/served-scope-1278 at 5f9e52c (2026-10-02), create_served_card_signature_verifier on the served JSON, refusing a field given under both its JSON name and its protobuf name; a candidate for a2aproject/A2A#2122, not a release and not a PR"
+    },
+    "results": {
+      "S0-001": {
+        "a2a-python": true,
+        "a2a-js": true,
+        "a2a-go": true,
+        "aeoess/a2a-python@2491248": true,
+        "aeoess/a2a-python@5f9e52c": true
+      },
+      "S0-002": {
+        "a2a-python": true,
+        "a2a-js": true,
+        "a2a-go": true,
+        "aeoess/a2a-python@2491248": true,
+        "aeoess/a2a-python@5f9e52c": true
+      },
+      "S0-003": {
+        "a2a-python": true,
+        "a2a-js": true,
+        "a2a-go": true,
+        "aeoess/a2a-python@2491248": true,
+        "aeoess/a2a-python@5f9e52c": true
+      },
+      "S0-004": {
+        "a2a-python": true,
+        "a2a-js": true,
+        "a2a-go": true,
+        "aeoess/a2a-python@2491248": true,
+        "aeoess/a2a-python@5f9e52c": true
+      },
+      "S0-REJECT-005": {
+        "a2a-python": false,
+        "a2a-js": false,
+        "a2a-go": false,
+        "aeoess/a2a-python@2491248": false,
+        "aeoess/a2a-python@5f9e52c": false
+      },
+      "S1-001": {
+        "a2a-python": false,
+        "a2a-js": false,
+        "a2a-go": true,
+        "aeoess/a2a-python@2491248": true,
+        "aeoess/a2a-python@5f9e52c": true
+      },
+      "S1-002": {
+        "a2a-python": true,
+        "a2a-js": true,
+        "a2a-go": false,
+        "aeoess/a2a-python@2491248": false,
+        "aeoess/a2a-python@5f9e52c": false
+      },
+      "S1-003": {
+        "a2a-python": false,
+        "a2a-js": false,
+        "a2a-go": true,
+        "aeoess/a2a-python@2491248": true,
+        "aeoess/a2a-python@5f9e52c": true
+      },
+      "S1-004": {
+        "a2a-python": true,
+        "a2a-js": true,
+        "a2a-go": false,
+        "aeoess/a2a-python@2491248": false,
+        "aeoess/a2a-python@5f9e52c": false
+      },
+      "S1-005": {
+        "a2a-python": false,
+        "a2a-js": false,
+        "a2a-go": true,
+        "aeoess/a2a-python@2491248": true,
+        "aeoess/a2a-python@5f9e52c": true
+      },
+      "S1-006": {
+        "a2a-python": true,
+        "a2a-js": true,
+        "a2a-go": false,
+        "aeoess/a2a-python@2491248": false,
+        "aeoess/a2a-python@5f9e52c": false
+      },
+      "S1-007": {
+        "a2a-python": true,
+        "a2a-js": true,
+        "a2a-go": false,
+        "aeoess/a2a-python@2491248": true,
+        "aeoess/a2a-python@5f9e52c": true
+      },
+      "S1-008": {
+        "a2a-python": false,
+        "a2a-js": false,
+        "a2a-go": true,
+        "aeoess/a2a-python@2491248": false,
+        "aeoess/a2a-python@5f9e52c": false
+      }
+    },
+    "s2": {
+      "note": "Same meaning as observed.results. a2a-python#1287 is the PR head cdee28e installed from source.",
+      "results": {
+        "S2-001": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S2-002": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S2-003": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S2-004": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S2-005": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S2-006": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S2-007": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S2-008": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S2-009": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S2-010": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S2-WE-011": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": false,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        }
+      }
+    },
+    "s3": {
+      "note": "Same meaning as observed.results. a2a-python#1287 is the PR head cdee28e installed from source.",
+      "results": {
+        "S3-001": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S3-002": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S3-003": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S3-004": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S3-005": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S3-006": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S3-007": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S3-008": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S3-009": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true,
+          "a2a-python#1287": false,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S3-010": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S3-T-011": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        },
+        "S3-D-012": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": true,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": true,
+          "aeoess/a2a-python@5f9e52c": true
+        },
+        "S3-D-013": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false,
+          "a2a-python#1287": true,
+          "aeoess/a2a-python@2491248": false,
+          "aeoess/a2a-python@5f9e52c": false
+        }
+      }
+    },
+    "pinned": {
+      "aeoess/a2a-python@2491248": {
+        "commit": "2491248cf4435bb3125fd02f7bee077a2ca82fb7",
+        "source": "https://github.com/aeoess/a2a-python/tree/2491248cf4435bb3125fd02f7bee077a2ca82fb7",
+        "date": "2026-10-02",
+        "added_by": "observe_pinned.py"
+      },
+      "aeoess/a2a-python@5f9e52c": {
+        "commit": "5f9e52c1005693104e9f41be9a2097f5b34e105c",
+        "source": "https://github.com/aeoess/a2a-python/tree/5f9e52c1005693104e9f41be9a2097f5b34e105c",
+        "date": "2026-10-02",
+        "added_by": "observe_pinned.py"
+      }
+    },
+    "s4": {
+      "note": "Same meaning as observed.results.",
+      "results": {
+        "S4-001": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true,
+          "aeoess/a2a-python@5f9e52c": false,
+          "aeoess/a2a-python@2491248": true
+        },
+        "S4-002": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true,
+          "aeoess/a2a-python@5f9e52c": false,
+          "aeoess/a2a-python@2491248": true
+        },
+        "S4-003": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true,
+          "aeoess/a2a-python@5f9e52c": false,
+          "aeoess/a2a-python@2491248": true
+        },
+        "S4-004": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": true,
+          "aeoess/a2a-python@5f9e52c": true,
+          "aeoess/a2a-python@2491248": true
+        },
+        "S4-REJECT-005": {
+          "a2a-python": false,
+          "a2a-js": true,
+          "a2a-go": false,
+          "aeoess/a2a-python@5f9e52c": false,
+          "aeoess/a2a-python@2491248": false
+        }
+      }
+    },
+    "s1e": {
+      "note": "Same meaning as observed.results.",
+      "results": {
+        "S1-009": {
+          "a2a-python": false,
+          "a2a-js": false,
+          "a2a-go": true
+        },
+        "S1-010": {
+          "a2a-python": true,
+          "a2a-js": true,
+          "a2a-go": false
+        }
+      }
+    }
+  },
+  "vectors": [
+    {
+      "path": "s0-control/S0-001.json",
+      "sha256": "24828c6c333ae8267e2001d8e1c0768daffaeca74c3b38e227139ab074855279"
+    },
+    {
+      "path": "s0-control/S0-002.json",
+      "sha256": "bf90690841356dc26348128ef40d760db08e530ee4f5d9ce6bb016f010194d35"
+    },
+    {
+      "path": "s0-control/S0-003.json",
+      "sha256": "a3b87091d935ade89a1f1a87e12e0cfaadac6d2b8be6a47edb6e724ab3df29ce"
+    },
+    {
+      "path": "s0-control/S0-004.json",
+      "sha256": "dc35bb74b8deb1cd1ed1924f7ce11ab49735218e32135d57bfb4716ba74dcd04"
+    },
+    {
+      "path": "s0-control/S0-REJECT-005.json",
+      "sha256": "cd79714b5014cf1cb72258feb1c2d4ed07cdf1d52d4760f29d3ed3fcf09c246e"
+    },
+    {
+      "path": "s1-default-valued/S1-001.json",
+      "sha256": "72e4c1f98df9654568d893e6256ce188f0e462180f1ed27f3082f46f2afc96a5"
+    },
+    {
+      "path": "s1-default-valued/S1-002.json",
+      "sha256": "f04091e6028cfe75731e4eb19fad6acaabc9ae5b0965926f00029586d6d19d35"
+    },
+    {
+      "path": "s1-default-valued/S1-003.json",
+      "sha256": "cb06e3a634215d62853467b833baecf4f043582506a605dd76863cd55a08f828"
+    },
+    {
+      "path": "s1-default-valued/S1-004.json",
+      "sha256": "91adb902951d2b5e82e77d272d3bfa04a05db02cc956933efd76c00b5e895711"
+    },
+    {
+      "path": "s1-default-valued/S1-005.json",
+      "sha256": "7e402767b2f66a5022b950eb449bc4ddeaa0885b55ef062100da54779b5777e6"
+    },
+    {
+      "path": "s1-default-valued/S1-006.json",
+      "sha256": "1f5c60aac4973c3e48d3ccc3096971124f74bbbb6ad1670a73c0f1204659bb92"
+    },
+    {
+      "path": "s1-default-valued/S1-007.json",
+      "sha256": "7c765f513423889f5e94e0f2260408e7068da2a5feefbc83646b0ad2eb1b9836"
+    },
+    {
+      "path": "s1-default-valued/S1-008.json",
+      "sha256": "9ae36fbeb5f79800a00cdc642d9227ba5d1586bb01275735f193792a7fd7e679"
+    },
+    {
+      "path": "s1-default-valued/S1-009.json",
+      "sha256": "898e93e273dd62f1c6f8bdcc659707f18addd8b8a0817ce320acaccb3ccdde57"
+    },
+    {
+      "path": "s1-default-valued/S1-010.json",
+      "sha256": "7f69d267f75f877cadf6449c1cf9cd6d51499c9bd648a9728719be8304f32362"
+    },
+    {
+      "path": "s2-absent-required/S2-001.json",
+      "sha256": "6926485fe96b20872eb2d67a9a750c3ae387a311fdf319c611f3f89c95c236ef"
+    },
+    {
+      "path": "s2-absent-required/S2-002.json",
+      "sha256": "c9bf173d563dca46047be33b5cbb201d7957a0b442a6ba243fec54edc8cefbe0"
+    },
+    {
+      "path": "s2-absent-required/S2-003.json",
+      "sha256": "2c2c3a59eaa1295ba8795b7c2ffc7cc1e2f279eab315c2a2f8ffeafc7a3cb3b4"
+    },
+    {
+      "path": "s2-absent-required/S2-004.json",
+      "sha256": "d1adeca3cdff2c1261c68b0a4df07ec27abafc8eefff8215706d5c80ab026935"
+    },
+    {
+      "path": "s2-absent-required/S2-005.json",
+      "sha256": "2c532b01886ac112827153cb48e1c5303af8be9e9183226d6f90879d7006846c"
+    },
+    {
+      "path": "s2-absent-required/S2-006.json",
+      "sha256": "95d63457e7880d1a650b1ff7f9a836dc3019d51e048aa0a5f1f2f81d4eb4b23b"
+    },
+    {
+      "path": "s2-absent-required/S2-007.json",
+      "sha256": "1f35e7cf8835227f41409ce36cdd4025b6372722da6e43a15857fb40c567061d"
+    },
+    {
+      "path": "s2-absent-required/S2-008.json",
+      "sha256": "cbeef370cc6fa588017f7bc7d25bdcb7e648f38f453313a2b87daa7f1a3a38aa"
+    },
+    {
+      "path": "s2-absent-required/S2-009.json",
+      "sha256": "8a241de1aac019f335cc50d6434eefb143e30ff4f0bd0f0a8bd7d3d328c5ce5f"
+    },
+    {
+      "path": "s2-absent-required/S2-010.json",
+      "sha256": "863339e0881cfeae66e66a33836637745390a78ad70ac2524a26bbc41b53be48"
+    },
+    {
+      "path": "s2-absent-required/S2-WE-011.json",
+      "sha256": "118e4d13ae93f4ca88922f2786e9c2cbd9bd806686c7864afb95324fb5bff63c"
+    },
+    {
+      "path": "s3-unknown-fields/S3-001.json",
+      "sha256": "6e2b9d52854d302f9bd34adf77b43577b405946e047a933b67c13a87eb876ee5"
+    },
+    {
+      "path": "s3-unknown-fields/S3-002.json",
+      "sha256": "87cf41ecc947250ac46fc55f79c896185ef979fa9f1bec49360c8f1a6fffb5f5"
+    },
+    {
+      "path": "s3-unknown-fields/S3-003.json",
+      "sha256": "6ed7632e44df3290cfe5d0121c9e331914c884718a8a8c9c1b83e894808c5b7b"
+    },
+    {
+      "path": "s3-unknown-fields/S3-004.json",
+      "sha256": "5d5f0294d3d3db7e6aa27bd545ae853c7eabe560d72caff1ccf74cf128ead4d6"
+    },
+    {
+      "path": "s3-unknown-fields/S3-005.json",
+      "sha256": "73e9ba3ba8e17cf6fd3991a196fbff13388093586f229545a71d6dcfe2d3c4c6"
+    },
+    {
+      "path": "s3-unknown-fields/S3-006.json",
+      "sha256": "afd86256769e845e66849556358bbff608fb55237b7978a04dc0efb8a734844d"
+    },
+    {
+      "path": "s3-unknown-fields/S3-007.json",
+      "sha256": "2872c674a1e9377680bdf830607cff2eb57d532d292ea19c4bef0a0222030053"
+    },
+    {
+      "path": "s3-unknown-fields/S3-008.json",
+      "sha256": "6029dc5ead1c0548a602cb718fdfbdcd3e8c490029e4221b2c930e08f639a1bd"
+    },
+    {
+      "path": "s3-unknown-fields/S3-009.json",
+      "sha256": "c982ed899c341c57f0f6aa2d08e727ff09bac6616ca723728670631341868b03"
+    },
+    {
+      "path": "s3-unknown-fields/S3-010.json",
+      "sha256": "23b542a234d7cdfccaaaa3b1afc963cb78b65fe7f043b70f2337f74c9b08c397"
+    },
+    {
+      "path": "s3-unknown-fields/S3-T-011.json",
+      "sha256": "cfc44d55d01d2a1ec7f45e8cdb37e72262abcbd6eb3ca74ac4c52ddda9f3e691"
+    },
+    {
+      "path": "s3-unknown-fields/S3-D-012.json",
+      "sha256": "59dcb5c8070c3d12ff2e033f5cc6d85f341ba3e66c4fbd2815c5b5b757330759"
+    },
+    {
+      "path": "s3-unknown-fields/S3-D-013.json",
+      "sha256": "d967e534ab4409acf0172f87a430e7402ebb5ff29e97789db81bf6c470e34f75"
+    },
+    {
+      "path": "s4-dual-name/S4-001.json",
+      "sha256": "1f269ddaef45253add108464f5a3be28cb58c0238661a21255f720a8e34bdb82"
+    },
+    {
+      "path": "s4-dual-name/S4-002.json",
+      "sha256": "7640f73f820d1f3894689fc27ba2d0c0878c81c5c000ca966186347a4587f709"
+    },
+    {
+      "path": "s4-dual-name/S4-003.json",
+      "sha256": "5c9a23116cd44f5317ef26860b1cd02872b3c1519d7f1dce5c73c09dd315d775"
+    },
+    {
+      "path": "s4-dual-name/S4-004.json",
+      "sha256": "a25c3c96a3db401be9af297387ee6cb568bdb831bc638c075f91c2fd023fb48d"
+    },
+    {
+      "path": "s4-dual-name/S4-REJECT-005.json",
+      "sha256": "5c593379eae74b118ace438a05cad156643bfd150d9815f82a9858dc5ccc0cbf"
+    }
+  ],
+  "s2_readings": {
+    "rule-1-served-scope": "Rule 1 applied to the fields present in the served JSON. A field the served JSON does not carry stays absent. Then RFC 8785.",
+    "rule-1-descriptor-scope": "Rule 1 applied by walking the AgentCard descriptor: a REQUIRED field absent from the served JSON is emitted at its default (\"\" for a string, [] for a repeated field, {} for a message). Then RFC 8785. Matches a2a-python at a2aproject/a2a-python#1287 head cdee28e byte for byte on every s2 card.",
+    "note": "On s0 and s1 both scopes give the rule-1-as-written bytes. Only s2 separates them."
+  },
+  "s2_checks": {
+    "absent_description": {
+      "prune-empty=a2a-python-1.2.1": true,
+      "prune-empty=a2a-js-1.3.0": true,
+      "served-as-is=a2a-go": true,
+      "descriptor-scope=a2a-python#1287": true
+    },
+    "absent_version": {
+      "prune-empty=a2a-python-1.2.1": true,
+      "prune-empty=a2a-js-1.3.0": true,
+      "served-as-is=a2a-go": true,
+      "descriptor-scope=a2a-python#1287": true
+    },
+    "absent_skills": {
+      "prune-empty=a2a-python-1.2.1": true,
+      "prune-empty=a2a-js-1.3.0": true,
+      "served-as-is=a2a-go": true,
+      "descriptor-scope=a2a-python#1287": true
+    },
+    "absent_skill_tags": {
+      "prune-empty=a2a-python-1.2.1": true,
+      "prune-empty=a2a-js-1.3.0": true,
+      "served-as-is=a2a-go": true,
+      "descriptor-scope=a2a-python#1287": true
+    },
+    "absent_default_input_modes": {
+      "prune-empty=a2a-python-1.2.1": true,
+      "prune-empty=a2a-js-1.3.0": true,
+      "served-as-is=a2a-go": true,
+      "descriptor-scope=a2a-python#1287": true
+    },
+    "worked_example": {
+      "rule-1-served-scope": true,
+      "rule-1-descriptor-scope": false,
+      "prune-empty": false,
+      "served-as-is": false
+    }
+  },
+  "generator_s2": "https://github.com/ogasurfproject-jpg/horizon-shield/blob/main/workers/a2a-card-sign/interop-matrix/vectors_s2.py",
+  "scorer": "https://github.com/ogasurfproject-jpg/horizon-shield/blob/main/workers/a2a-card-sign/interop-matrix/score.py",
+  "s3_readings": {
+    "axis": "unknown-fields",
+    "unknown-retain": "Rule 1 served-scope on the fields the schema defines; every field outside the schema kept verbatim where it was served. Then RFC 8785.",
+    "unknown-exclude": "Every field outside the schema removed at every depth, then rule 1 served-scope. Then RFC 8785.",
+    "unknown-reject": "A card carrying any field outside the schema is refused.",
+    "note": "Scored separately from s0 to s2: an s3 vector lists only these three readings. On every s3 card the s0 to s2 readings agree on the known fields.",
+    "transition": "S3-D-012 and S3-D-013 carry two signatures, one per form, from the same key. Section 8.4.3: verify at least one signature; multiple signatures MAY be present. A verifier is scored on the reading it implements; a verifier that accepts either form accepts S3-D-013."
+  },
+  "s3_sdk_forms": {
+    "note": "Which reading each SDK's own canonicalization equals on each s3 card, byte for byte. Recorded, not required.",
+    "cases": {
+      "legacy_v03_top_level": {
+        "a2a-python-1.2.1": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-js-1.3.0": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-go": {
+          "equals": "unknown-retain",
+          "sha256": "4535dd37ee9349a4879e87d1ddbb4fe3e068459cbcbb43dcdc7e14e49da44e27",
+          "len": 526
+        },
+        "a2a-python#1287": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "unknown-retain",
+          "sha256": "4535dd37ee9349a4879e87d1ddbb4fe3e068459cbcbb43dcdc7e14e49da44e27",
+          "len": 526
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "unknown-retain",
+          "sha256": "4535dd37ee9349a4879e87d1ddbb4fe3e068459cbcbb43dcdc7e14e49da44e27",
+          "len": 526
+        }
+      },
+      "unknown_in_known_message": {
+        "a2a-python-1.2.1": {
+          "equals": "unknown-exclude",
+          "sha256": "36b819def19493548656a87897b81000af9bf7d378bbf958f36b5d2275047ff3",
+          "len": 510
+        },
+        "a2a-js-1.3.0": {
+          "equals": "unknown-exclude",
+          "sha256": "36b819def19493548656a87897b81000af9bf7d378bbf958f36b5d2275047ff3",
+          "len": 510
+        },
+        "a2a-go": {
+          "equals": "unknown-retain",
+          "sha256": "c2faffbaa3eec4d6bdb8af24cd3d18247bb0dd5a9747949439ea748cf7966e8d",
+          "len": 544
+        },
+        "a2a-python#1287": {
+          "equals": "unknown-exclude",
+          "sha256": "36b819def19493548656a87897b81000af9bf7d378bbf958f36b5d2275047ff3",
+          "len": 510
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "unknown-retain",
+          "sha256": "c2faffbaa3eec4d6bdb8af24cd3d18247bb0dd5a9747949439ea748cf7966e8d",
+          "len": 544
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "unknown-retain",
+          "sha256": "c2faffbaa3eec4d6bdb8af24cd3d18247bb0dd5a9747949439ea748cf7966e8d",
+          "len": 544
+        }
+      },
+      "unknown_top_level_object": {
+        "a2a-python-1.2.1": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-js-1.3.0": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-go": {
+          "equals": "unknown-retain",
+          "sha256": "3089a8791bc92ecfd0c4e9617ab1ba43f2179cb3dc5a96d5b39cb4cb7b057b95",
+          "len": 515
+        },
+        "a2a-python#1287": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "unknown-retain",
+          "sha256": "3089a8791bc92ecfd0c4e9617ab1ba43f2179cb3dc5a96d5b39cb4cb7b057b95",
+          "len": 515
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "unknown-retain",
+          "sha256": "3089a8791bc92ecfd0c4e9617ab1ba43f2179cb3dc5a96d5b39cb4cb7b057b95",
+          "len": 515
+        }
+      },
+      "unknown_in_repeated_element": {
+        "a2a-python-1.2.1": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-js-1.3.0": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-go": {
+          "equals": "unknown-retain",
+          "sha256": "24bf0333f30113eeb4d51ee7d5d98dff5343de252e7d1dffb140481b78cdf1d4",
+          "len": 452
+        },
+        "a2a-python#1287": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "unknown-retain",
+          "sha256": "24bf0333f30113eeb4d51ee7d5d98dff5343de252e7d1dffb140481b78cdf1d4",
+          "len": 452
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "unknown-retain",
+          "sha256": "24bf0333f30113eeb4d51ee7d5d98dff5343de252e7d1dffb140481b78cdf1d4",
+          "len": 452
+        }
+      },
+      "unknown_empty_value": {
+        "a2a-python-1.2.1": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-js-1.3.0": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-go": {
+          "equals": "unknown-retain",
+          "sha256": "11c59821c967c9da38ebe28dba5f41aa5b917ed275f34ffa1a302e516207c8da",
+          "len": 450
+        },
+        "a2a-python#1287": {
+          "equals": "unknown-exclude",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "unknown-retain",
+          "sha256": "11c59821c967c9da38ebe28dba5f41aa5b917ed275f34ffa1a302e516207c8da",
+          "len": 450
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "unknown-retain",
+          "sha256": "11c59821c967c9da38ebe28dba5f41aa5b917ed275f34ffa1a302e516207c8da",
+          "len": 450
+        }
+      }
+    }
+  },
+  "generator_s3": "vectors_s3.py",
+  "generator_s3_transition": "vectors_s3_transition.py",
+  "s4_readings": {
+    "axis": "dual-name",
+    "dual-name-tolerate": "The specification text at a2aproject/A2A 173695755607 (v1.0.0), which does not require refusal: canonicalize the received JSON under served scope with every member kept as served, both spellings included. Then RFC 8785.",
+    "dual-name-refuse": "The proposed sentence, not in the specification at 173695755607: \"A verifier MUST refuse a card in which the same schema field appears under both its JSON name and its protobuf name.\"",
+    "proposal": "https://github.com/a2aproject/A2A/issues/2122#issuecomment-5946904114",
+    "support": "https://github.com/a2aproject/A2A/issues/2122#issuecomment-5947101219",
+    "labelling": "https://github.com/a2aproject/A2A/issues/2122#issuecomment-5947250034",
+    "note": "Labelled against the proposal, as s3 is labelled against its readings. Accepting a dual-name vector is a divergence from the proposal, not a failure against the current text. If the sentence is adopted, the readings get pinned to the specification revision that carries it."
+  },
+  "s4_sdk_forms": {
+    "note": "Which reading each SDK's own canonicalization equals on each s4 card, byte for byte. Recorded, not required.",
+    "cases": {
+      "dual_top_level": {
+        "a2a-python-1.2.1": {
+          "equals": "neither",
+          "sha256": "51face563b32f89e6ae68e94d3e8a86f1d3794a6a854e9a1b0f2b4c8be21e92a",
+          "len": 433
+        },
+        "a2a-js-1.3.0": {
+          "equals": "neither",
+          "sha256": "d2988a6544f23a9f6d270f1c0d0a1bb67ea02cb08923d693cfdf97c2e2bdad40",
+          "len": 434
+        },
+        "a2a-go": {
+          "equals": "dual-name-tolerate",
+          "sha256": "a8973bf9954a8241a6c4364f946183cec3c36e7289824cbfbc8f72e4bdf88061",
+          "len": 470
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "refused",
+          "error": "CanonicalizationError"
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "dual-name-tolerate",
+          "sha256": "a8973bf9954a8241a6c4364f946183cec3c36e7289824cbfbc8f72e4bdf88061",
+          "len": 470
+        }
+      },
+      "dual_in_repeated_element": {
+        "a2a-python-1.2.1": {
+          "equals": "neither",
+          "sha256": "b0b811f5a009920f608d856123383cbad4010cf49d89bbfc8cc431187a9af400",
+          "len": 461
+        },
+        "a2a-js-1.3.0": {
+          "equals": "neither",
+          "sha256": "f9737a861bb50a6dfb2c0b61dc5bc1815871636a19667edcc59e332bca9aaab8",
+          "len": 462
+        },
+        "a2a-go": {
+          "equals": "dual-name-tolerate",
+          "sha256": "d16f72c57629531fd53937b2cad701a9dfc8c92363550a3f3fd61e80d96316b8",
+          "len": 490
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "refused",
+          "error": "CanonicalizationError"
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "dual-name-tolerate",
+          "sha256": "d16f72c57629531fd53937b2cad701a9dfc8c92363550a3f3fd61e80d96316b8",
+          "len": 490
+        }
+      },
+      "dual_in_map_value": {
+        "a2a-python-1.2.1": {
+          "equals": "neither",
+          "sha256": "918852cb2f530b17a13906ba3ca5d25beee8bc0511354fac89da35e77671cef2",
+          "len": 529
+        },
+        "a2a-js-1.3.0": {
+          "equals": "neither",
+          "sha256": "4ce20bf6917fbf813b204b75c3618848c547bb2677865c9f876da7eea302d896",
+          "len": 526
+        },
+        "a2a-go": {
+          "equals": "dual-name-tolerate",
+          "sha256": "d1c9ae67a9a2967c36803ca9f96a9fe2d9b19b4420efe3623c01bcf5eaa44aa3",
+          "len": 551
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "refused",
+          "error": "CanonicalizationError"
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "dual-name-tolerate",
+          "sha256": "d1c9ae67a9a2967c36803ca9f96a9fe2d9b19b4420efe3623c01bcf5eaa44aa3",
+          "len": 551
+        }
+      },
+      "single_spelling_control": {
+        "a2a-python-1.2.1": {
+          "equals": "dual-name-tolerate",
+          "sha256": "4ce20bf6917fbf813b204b75c3618848c547bb2677865c9f876da7eea302d896",
+          "len": 526
+        },
+        "a2a-js-1.3.0": {
+          "equals": "dual-name-tolerate",
+          "sha256": "4ce20bf6917fbf813b204b75c3618848c547bb2677865c9f876da7eea302d896",
+          "len": 526
+        },
+        "a2a-go": {
+          "equals": "dual-name-tolerate",
+          "sha256": "4ce20bf6917fbf813b204b75c3618848c547bb2677865c9f876da7eea302d896",
+          "len": 526
+        },
+        "aeoess/a2a-python@5f9e52c": {
+          "equals": "dual-name-tolerate",
+          "sha256": "4ce20bf6917fbf813b204b75c3618848c547bb2677865c9f876da7eea302d896",
+          "len": 526
+        },
+        "aeoess/a2a-python@2491248": {
+          "equals": "dual-name-tolerate",
+          "sha256": "4ce20bf6917fbf813b204b75c3618848c547bb2677865c9f876da7eea302d896",
+          "len": 526
+        }
+      }
+    }
+  },
+  "generator_s4": "vectors_s4.py",
+  "s1e_readings": {
+    "field-level-prune": "Empty strings, arrays and objects removed where they are field values, but an element of an array is never removed for being empty. A reader that checks only for empty fields.",
+    "rule-1-element-collapse": "Section 8.4.1 rule 1 (served scope) after removing every array element that becomes empty under recursive removal; a repeated field left with no element is then at its default and dropped.",
+    "refuse-empty-element": "The strict verifier reading of the sentence widened on #2122: a card carrying an element that becomes empty under recursive empty-value removal is refused, signed or not.",
+    "asked_on": "https://github.com/a2aproject/A2A/issues/2122#issuecomment-6083665390",
+    "sentence": "https://github.com/a2aproject/A2A/issues/2122#issuecomment-6077328276",
+    "note": "Readings named only for S1-009 and S1-010. On every other vector field-level-prune equals prune-empty and rule-1-element-collapse equals rule-1-served-scope (rule-1-as-written on s0 and s1), because no other card carries an empty element."
+  },
+  "generator_s1e": "vectors_s1e.py"
+}

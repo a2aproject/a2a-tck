@@ -1,0 +1,44 @@
+name: Card signature vectors self-test
+
+# Calls the reusable card-sign workflow on this repository with the official a2a-python SDK as one verifier and the
+# field-level-prune reading as another, so the workflow, the runner and the vectors are exercised together on every
+# change to any of them.
+
+on:
+  pull_request:
+    paths:
+      - conformance-vectors/a2a-card-sign-v01/**
+      - tck/conformance/**
+      - .github/workflows/card-sign-vectors.yml
+      - .github/workflows/card-sign-vectors-selftest.yml
+  push:
+    branches: [main]
+    paths:
+      - conformance-vectors/a2a-card-sign-v01/**
+      - tck/conformance/**
+      - .github/workflows/card-sign-vectors.yml
+      - .github/workflows/card-sign-vectors-selftest.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  a2a-python:
+    uses: ./.github/workflows/card-sign-vectors.yml
+    with:
+      tck-repository: ${{ github.repository }}
+      tck-ref: ${{ github.sha }}
+      setup: python -m pip install "a2a-sdk[signing]==1.2.1" "cryptography==50.0.2"
+      verifier: python tck/conformance/verifiers/a2a_python.py {card} {jwks}
+
+  # A reader written for the question rather than for one SDK: it builds the covered bytes from the served JSON under
+  # the reading the s1 pair names, with no SDK imported, and must reproduce that reading's column exactly.
+  field-level-prune:
+    uses: ./.github/workflows/card-sign-vectors.yml
+    with:
+      tck-repository: ${{ github.repository }}
+      tck-ref: ${{ github.sha }}
+      setup: python -m pip install "cryptography==50.0.2"
+      verifier: python tck/conformance/verifiers/field_level_prune.py {card} {jwks}
+      require: field-level-prune
