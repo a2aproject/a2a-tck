@@ -20,7 +20,12 @@ import pytest
 from tck.requirements.base import tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport import ALL_TRANSPORTS
-from tck.validators.payload import extract_history, get_message_parts, get_part_text
+from tck.validators.payload import (
+    extract_history,
+    get_message_parts,
+    get_message_role,
+    get_part_text,
+)
 from tests.compatibility._task_helpers import (
     HISTORY_MESSAGES,
     create_multiturn_task,
@@ -219,15 +224,37 @@ class TestHistoryPersistence:
 _MIN_HISTORY_FOR_ORDERING = 2
 
 
-def _extract_history_texts(history: list, transport: str) -> list[str]:
-    """Extract text content from history messages across transports."""
+def _extract_history_texts(
+    history: list, transport: str, role: str | None = None
+) -> list[str]:
+    """Extract text content from history messages across transports.
+
+    When ``role`` is given, only messages carrying that role contribute
+    texts, so an agent reply echoing a user message is not mistaken for
+    the sent user message.
+    """
     texts: list[str] = []
     for msg in history:
+        if role is not None and get_message_role(msg, transport) != role:
+            continue
         for part in get_message_parts(msg, transport):
             text = get_part_text(part, transport)
             if text:
                 texts.append(text)
     return texts
+
+
+def test_extract_history_texts_skips_agent_echo() -> None:
+    """Regression for #272: an agent echo is not counted as a user message."""
+    history = [
+        {"role": "ROLE_USER", "parts": [{"text": "TCK history message 1"}]},
+        {"role": "ROLE_USER", "parts": [{"text": "TCK history message 2"}]},
+        {"role": "ROLE_AGENT", "parts": [{"text": "TCK history message 2"}]},
+    ]
+    assert _extract_history_texts(history, "jsonrpc", role="ROLE_USER") == [
+        "TCK history message 1",
+        "TCK history message 2",
+    ]
 
 
 @should
@@ -259,7 +286,7 @@ class TestHistoryOrdering:
                     f"got {len(history)}"
                 )
             else:
-                texts = _extract_history_texts(history, transport)
+                texts = _extract_history_texts(history, transport, role="ROLE_USER")
                 found = [t for t in texts if t in HISTORY_MESSAGES]
                 if len(found) < _MIN_HISTORY_FOR_ORDERING:
                     errors.append(
@@ -306,7 +333,7 @@ class TestHistoryContent:
                     "GetTask returned no history; cannot verify content"
                 )
             else:
-                texts = _extract_history_texts(history, transport)
+                texts = _extract_history_texts(history, transport, role="ROLE_USER")
                 for expected_text in HISTORY_MESSAGES:
                     if expected_text not in texts:
                         errors.append(

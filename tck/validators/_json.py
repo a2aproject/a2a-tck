@@ -55,6 +55,13 @@ def get_message_parts(message: Any) -> list[Any]:
     return []
 
 
+def get_message_role(message: Any) -> str | None:
+    """Extract the role from a JSON message dict."""
+    if isinstance(message, dict):
+        return message.get("role")
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Part-level extractors
 # ---------------------------------------------------------------------------

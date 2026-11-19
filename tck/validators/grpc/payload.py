@@ -57,6 +57,13 @@ def get_message_parts(message: Any) -> list[Any]:
     return list(message.parts) if hasattr(message, "parts") else []
 
 
+def get_message_role(message: Any) -> str | None:
+    """Extract the role name from a gRPC Message proto."""
+    if not hasattr(message, "role"):
+        return None
+    return a2a_pb2.Role.Name(message.role)
+
+
 def get_part_type(part: Any) -> str | None:
     """Determine which oneof content variant is set on a Part."""
     if hasattr(part, "WhichOneof"):
