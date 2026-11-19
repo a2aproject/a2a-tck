@@ -232,7 +232,9 @@ def _extract_requirement_and_transport(
     * **Requirement ID**: first match of ``[A-Z][A-Z0-9_]+-[A-Z]+-\d+`` in
       the test function's docstring.
 
-    Returns ``(None, None)`` when extraction fails so the caller can skip.
+    Each element of the returned pair is ``None`` when it cannot be
+    extracted; callers merge the partial result with the crashed-frame
+    fallback rather than discarding a known field.
     """
     # --- transport ---
     transport: str | None = None
@@ -254,8 +256,6 @@ def _extract_requirement_and_transport(
         if m:
             requirement_id = m.group(1)
 
-    if transport is None or requirement_id is None:
-        return None, None
     return requirement_id, transport
 
 
@@ -298,6 +298,27 @@ def _extract_from_crashed_frame(
     return None, None
 
 
+def _resolve_failure_attribution(
+    item: pytest.Item, call: pytest.CallInfo[None]
+) -> tuple[str | None, str | None]:
+    """Combine item metadata and crashed-frame locals into an attribution pair.
+
+    ``_extract_requirement_and_transport`` may know one field but not the
+    other (e.g. a transport marker with a docstring that names no
+    requirement), and ``_extract_from_crashed_frame`` has the opposite
+    coverage (``req`` is a frame local while ``transport`` often lives at
+    module level). Each field is taken from whichever source knows it.
+    """
+    requirement_id, transport = _extract_requirement_and_transport(item)
+    if requirement_id is None or transport is None:
+        frame_requirement_id, frame_transport = _extract_from_crashed_frame(
+            item, call
+        )
+        requirement_id = requirement_id or frame_requirement_id
+        transport = transport or frame_transport
+    return requirement_id, transport
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo[None]
@@ -336,11 +357,7 @@ def pytest_runtest_makereport(
         # Test already called record() — nothing to do.
         return
 
-    requirement_id, transport = _extract_requirement_and_transport(item)
-    if requirement_id is None or transport is None:
-        frame_requirement_id, frame_transport = _extract_from_crashed_frame(item, call)
-        requirement_id = requirement_id or frame_requirement_id
-        transport = transport or frame_transport
+    requirement_id, transport = _resolve_failure_attribution(item, call)
     if requirement_id is None or transport is None:
         return
 
