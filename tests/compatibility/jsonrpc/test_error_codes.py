@@ -13,7 +13,6 @@ import json
 
 from typing import TYPE_CHECKING, Any
 
-import httpx
 import pytest
 
 from tck.requirements.base import tck_id
@@ -26,6 +25,8 @@ from tests.compatibility.markers import jsonrpc, must
 
 
 if TYPE_CHECKING:
+    import httpx
+
     from tck.transport.base import BaseTransportClient
 
 
@@ -55,13 +56,13 @@ _JSONRPC_ERROR_CODE_MAX = -32600
 
 
 def _jsonrpc_call(
-    base_url: str,
+    client: BaseTransportClient,
     method: str,
     params: dict,
     *,
     headers: dict[str, str] | None = None,
 ) -> httpx.Response:
-    """Make a raw JSON-RPC 2.0 call bypassing the client for header control."""
+    """Make a raw JSON-RPC 2.0 call through the client with custom headers."""
     payload = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -71,7 +72,7 @@ def _jsonrpc_call(
     hdrs = {"Content-Type": "application/json", A2A_VERSION_HEADER: A2A_VERSION}
     if headers:
         hdrs.update(headers)
-    return httpx.post(base_url, json=payload, headers=hdrs)
+    return client.raw_request("POST", json=payload, headers=hdrs)
 
 
 # ---------------------------------------------------------------------------
@@ -185,7 +186,7 @@ class TestJsonRpcErrorCodeMappings:
             "messageId": tck_id("error-code-004"),
         }
         response = _jsonrpc_call(
-            client.base_url, "SendStreamingMessage", {"message": msg}
+            client, "SendStreamingMessage", {"message": msg}
         )
         body = response.json()
         if "error" not in body:
@@ -218,8 +219,8 @@ class TestJsonRpcErrorCodeMappings:
                 }
             },
         }
-        response = httpx.post(
-            client.base_url,
+        response = client.raw_request(
+            "POST",
             # json.dumps, not str(): a bare str(dict) is Python repr (single
             # quotes), not valid JSON — that made the body itself unparseable
             # independent of the deliberately-wrong Content-Type header below,
@@ -266,7 +267,7 @@ class TestJsonRpcErrorCodeMappings:
             "messageId": tck_id("error-code-009"),
         }
         response = _jsonrpc_call(
-            client.base_url,
+            client,
             "SendMessage",
             {"message": msg},
             headers={A2A_VERSION_HEADER: "99.0"},
@@ -337,7 +338,7 @@ class TestJsonRpcErrorCodeRange:
                 "messageId": tck_id("range-check-003"),
             }
             raw = _jsonrpc_call(
-                client.base_url,
+                client,
                 "SendMessage",
                 {"message": msg},
                 headers={A2A_VERSION_HEADER: "99.0"},

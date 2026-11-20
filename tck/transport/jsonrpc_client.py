@@ -89,6 +89,14 @@ class JsonRpcClient(BaseTransportClient):
         """Close the HTTP client."""
         self._client.close()
 
+    def raw_request(self, method: str, path: str = "", **kwargs: Any) -> httpx.Response:
+        """Send a hand-built probe through this client's HTTP session.
+
+        The path is joined to the interface URL the same way as for regular
+        operations, so probes keep its path prefix and the session's settings.
+        """
+        return self._client.request(method, path, **kwargs)
+
     def _next_id(self) -> int:
         """Generate the next unique request ID."""
         return next(self._id_counter)
