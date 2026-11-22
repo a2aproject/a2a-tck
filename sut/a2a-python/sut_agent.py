@@ -231,6 +231,7 @@ async def main() -> None:
         agent_executor=TckAgentExecutor(),
         task_store=task_store,
         agent_card=agent_card,
+        validate_input_modes=True,
     )
 
     # JSON-RPC (mounted at root, matching the interface URL declared above)
