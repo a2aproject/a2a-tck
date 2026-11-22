@@ -75,9 +75,12 @@ class BaseTransportClient(ABC):
     Method signatures expose all parameters from the A2A proto request types.
     """
 
-    def __init__(self, base_url: str, transport: str) -> None:
+    def __init__(self, base_url: str, transport: str, tenant: str | None = None) -> None:
         self.base_url = base_url
         self.transport = transport
+        # The tenant declared by the ``AgentInterface`` this client was built from.
+        # Specification section 8.3: set it in every request, and omit it when none is declared.
+        self.tenant = tenant or None
 
     @abstractmethod
     def send_message(

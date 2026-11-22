@@ -100,8 +100,8 @@ class GrpcClient(BaseTransportClient):
 
     _METADATA = ((A2A_VERSION_HEADER.lower(), A2A_VERSION),)
 
-    def __init__(self, base_url: str) -> None:
-        super().__init__(base_url, TRANSPORT)
+    def __init__(self, base_url: str, tenant: str | None = None) -> None:
+        super().__init__(base_url, TRANSPORT, tenant)
         self._channel: grpc.Channel | None = None
         self._stub: a2a_pb2_grpc.A2AServiceStub | None = None
         self._connect()
@@ -156,10 +156,16 @@ class GrpcClient(BaseTransportClient):
             except grpc.RpcError as e2:
                 return make_err(e2)
 
+    def _apply_tenant(self, request: Any) -> Any:
+        """Set the interface's tenant on *request*, when one is declared."""
+        if self.tenant:
+            request.tenant = self.tenant
+        return request
+
     def _unary_call(self, rpc_name: str, request: Any) -> TransportResponse:
         """Execute a unary gRPC call with one retry on connection errors."""
         return self._call_with_retry(
-            rpc_name, request,
+            rpc_name, self._apply_tenant(request),
             make_ok=lambda r: GrpcResponse(
                 transport=self.transport, success=True, raw_response=r,
             ),
@@ -189,6 +195,7 @@ class GrpcClient(BaseTransportClient):
         up to the outer handler so that retriable errors trigger a reconnect
         and a second attempt.
         """
+        request = self._apply_tenant(request)
         for attempt in range(2):
             rpc = getattr(self._stub, rpc_name)
             try:
