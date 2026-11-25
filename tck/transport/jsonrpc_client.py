@@ -103,7 +103,7 @@ class JsonRpcClient(BaseTransportClient):
         }
         try:
             response = self._client.post(
-                "/",
+                self.base_url,
                 json=payload,
                 headers={"Content-Type": "application/json"},
             )
@@ -138,7 +138,7 @@ class JsonRpcClient(BaseTransportClient):
         try:
             request = self._client.build_request(
                 "POST",
-                "/",
+                self.base_url,
                 json=payload,
                 headers={
                     "Content-Type": "application/json",
