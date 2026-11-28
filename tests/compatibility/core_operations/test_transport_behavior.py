@@ -23,7 +23,7 @@ from tck.requirements.base import HTTP_JSON_CONTENT_TYPE, tck_id
 from tck.requirements.registry import get_requirement_by_id
 from tck.transport._helpers import A2A_VERSION, A2A_VERSION_HEADER
 from tck.validators.http_json.content_type import recommended_media_type, uses_recommended_media_type
-from tests.compatibility._test_helpers import assert_and_record, get_client, record
+from tests.compatibility._test_helpers import assert_and_record, get_client, record, skip_if_undeclared_text_refused
 from tests.compatibility.markers import grpc, http_json, jsonrpc, must, should, streaming
 
 
@@ -89,10 +89,12 @@ class TestJsonRpcFormat:
         jsonrpc_response: TransportResponse,
         validators: dict[str, Any],
         compatibility_collector: Any,
+        agent_card: dict[str, Any],
     ) -> None:
         """JSONRPC-FMT-001: Response conforms to JSON-RPC 2.0 via JsonRpcResponseValidator."""
         req = JSONRPC_FMT_001
         transport = "jsonrpc"
+        skip_if_undeclared_text_refused(jsonrpc_response, transport, _SAMPLE_MESSAGE, agent_card, compatibility_collector, req)
         validator = validators[transport]
         result = validator.validate(
             jsonrpc_response.raw_response, "Send Message Response"

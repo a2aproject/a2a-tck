@@ -20,6 +20,7 @@ from tck.transport.base import StreamingResponse
 from tck.transport.dispatch import execute_operation
 from tck.validators.error_binding import validate_expected_error
 from tck.validators.streaming import validate_streaming_events
+from tests.compatibility._test_helpers import skip_if_undeclared_text_refused
 from tests.compatibility.markers import may, must, should
 
 
@@ -177,6 +178,9 @@ def test_must_requirement(
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
     response = execute_operation(client, requirement)
+    skip_if_undeclared_text_refused(
+        response, transport, requirement.sample_input.get("message", {}), agent_card, compatibility_collector, requirement,
+    )
     errors = _validate_response(response, transport, requirement, validators)
 
     compatibility_collector.record(
@@ -225,6 +229,9 @@ def test_should_requirement(
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
     response = execute_operation(client, requirement)
+    skip_if_undeclared_text_refused(
+        response, transport, requirement.sample_input.get("message", {}), agent_card, compatibility_collector, requirement,
+    )
     errors = _validate_response(response, transport, requirement, validators)
 
     compatibility_collector.record(
@@ -274,6 +281,9 @@ def test_may_requirement(
         pytest.skip(f"Transport {transport!r} not configured (filtered by --transport)")
 
     response = execute_operation(client, requirement)
+    skip_if_undeclared_text_refused(
+        response, transport, requirement.sample_input.get("message", {}), agent_card, compatibility_collector, requirement,
+    )
     errors = _validate_response(response, transport, requirement, validators)
 
     compatibility_collector.record(

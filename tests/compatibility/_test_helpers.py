@@ -13,10 +13,14 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from tck.requirements.base import CONTENT_TYPE_NOT_SUPPORTED_ERROR
+from tck.validators.agent_card import supports_input_media_type
+from tck.validators.error_binding import validate_expected_error
+
 
 if TYPE_CHECKING:
     from tck.requirements.base import ErrorBinding, RequirementSpec
-    from tck.transport.base import BaseTransportClient
+    from tck.transport.base import BaseTransportClient, TransportResponse
 
 
 def expected_error_of(req: RequirementSpec) -> ErrorBinding:
@@ -69,6 +73,34 @@ def assert_and_record(
     passed = not errors
     record(collector, req, transport, passed=passed, errors=errors)
     assert passed, fail_msg(req, transport, "; ".join(errors))
+
+
+def skip_if_undeclared_text_refused(
+    response: TransportResponse,
+    transport: str,
+    message: dict[str, Any],
+    agent_card: dict[str, Any],
+    collector: Any,
+    req: RequirementSpec,
+) -> None:
+    """Skip when the agent refused a text part that its Agent Card does not declare.
+
+    CORE-SEND-003 requires ContentTypeNotSupportedError for an unsupported media
+    type. When the card declares no ``text/plain`` input mode, that refusal of the
+    TCK's own text part says nothing about the requirement under test.
+    """
+    if not any("text" in part for part in message.get("parts", [])):
+        return
+    if validate_expected_error(response, transport, CONTENT_TYPE_NOT_SUPPORTED_ERROR):
+        return
+    try:
+        if supports_input_media_type(agent_card, "text/plain"):
+            return
+    except ValueError:
+        # A malformed card is reported by the Agent Card tests
+        return
+    record(collector, req, transport, passed=False, skipped=True)
+    pytest.skip("Agent refused a text part, and its Agent Card declares no text/plain input mode")
 
 
 def get_client(
